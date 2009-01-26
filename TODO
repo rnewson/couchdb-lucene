@@ -8,3 +8,4 @@ Lots to do...
 * refresh reader after successful commit
 * use Tika (or similiar) to extract text from _attachments
 * Dublin Core?
+* use javascript to let couchdb user to program output transformation rather than current blanket strategy
