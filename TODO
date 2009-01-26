@@ -2,6 +2,7 @@ Lots to do...
 
 * remember where we left off and avoid redoing those things.
 * delete documents when deleted
+* delete databases that no longer exist (use TermEnum or TermDocs to find all databases in Lucene, use .deleteDocuments() to zap them)
 * delete old version of document when updated
 * store _id and _rev
 * refresh reader after successful commit
