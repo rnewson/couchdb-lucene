@@ -70,6 +70,8 @@ public final class Index {
 				if (writer != null) {
 					try {
 						if (commit) {
+							writer.commit();
+							writer.optimize();
 							writer.close();
 							progress.save();
 							log.info("Committed updates.");
@@ -96,6 +98,11 @@ public final class Index {
 			final DbInfo info = db.getInfo(dbname);
 			long from = progress.getProgress(dbname);
 			final long start = from;
+
+			if (from == -1) {
+				log.debug("Removing all documents for " + dbname);
+				writer.deleteDocuments(new Term(Config.DB, dbname));
+			}
 
 			boolean changed = false;
 			while (from < info.getUpdateSeq()) {
@@ -131,7 +138,7 @@ public final class Index {
 			add(doc, null, json, false);
 
 			// write it
-			writer.addDocument(doc);
+			writer.updateDocument(new Term(Config.ID, json.getString(Config.ID)), doc);
 		}
 
 		private void add(final Document out, final String key, final Object value, final boolean store) {
