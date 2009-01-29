@@ -71,8 +71,6 @@ public final class Index {
 					try {
 						if (commit) {
 							writer.commit();
-							writer.optimize();
-							writer.close();
 							progress.save();
 							log.info("Committed updates.");
 
@@ -83,6 +81,11 @@ public final class Index {
 								searcher = new IndexSearcher(reader);
 								oldReader.close();
 							}
+
+							if (reader.numDeletedDocs() > 1000) {
+								writer.expungeDeletes();
+							}
+							writer.close();
 						} else {
 							writer.rollback();
 							log.debug("No changes.");
@@ -102,6 +105,7 @@ public final class Index {
 			if (from == -1) {
 				log.debug("Removing all documents for " + dbname);
 				writer.deleteDocuments(new Term(Config.DB, dbname));
+				log.debug("Removed all documents for " + dbname);
 			}
 
 			boolean changed = false;
