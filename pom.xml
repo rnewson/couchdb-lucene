@@ -55,6 +55,7 @@
     </developer>
   </developers>
   <build>
+    <defaultGoal>assembly:assembly</defaultGoal>
     <plugins>
       <plugin>
 	<artifactId>maven-javadoc-plugin</artifactId>
