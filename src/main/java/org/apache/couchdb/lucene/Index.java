@@ -122,12 +122,14 @@ public final class Index {
 		private void updateDocument(final IndexWriter writer, final String dbname, final JSONObject obj)
 				throws IOException {
 			final Document doc = new Document();
-
+			final JSONObject json = obj.getJSONObject("doc");
 			// Standard properties.
 			doc.add(token(Config.DB, dbname, false));
+			add(doc, Config.ID, json.get(Config.ID), true);
+			add(doc, Config.REV, json.get(Config.REV), true);
 
 			// Custom properties
-			add(doc, null, obj.getJSONObject("doc"), false);
+			add(doc, null, json, false);
 
 			// write it
 			writer.addDocument(doc);
@@ -137,21 +139,19 @@ public final class Index {
 			if (value instanceof JSONObject) {
 				final JSONObject json = (JSONObject) value;
 				for (final Object obj : json.keySet()) {
-					add(out, (String) obj, json.get(obj), false);
+					add(out, (String) obj, json.get(obj), store);
 				}
 			} else if (value instanceof String) {
 				try {
 					final Date date = DATE_FORMAT.parse((String) value);
-					out.add(token(key, NumberTools.longToString(date.getTime()), false));
+					out.add(token(key, NumberTools.longToString(date.getTime()), store));
 				} catch (final java.text.ParseException e) {
-					out.add(text(key, (String) value, false));
+					out.add(text(key, (String) value, store));
 				}
 			} else if (value instanceof Integer) {
-				out.add(token(key, NumberTools.longToString((Integer) value), false));
-			} else if (value instanceof Long) {
-				out.add(token(key, NumberTools.longToString((Long) value), false));
+				out.add(token(key, NumberTools.longToString((Integer) value), store));
 			} else if (value instanceof Boolean) {
-				out.add(token(key, Boolean.toString((Boolean) value), false));
+				out.add(token(key, Boolean.toString((Boolean) value), store));
 			} else if (value instanceof JSONArray) {
 				final JSONArray arr = (JSONArray) value;
 				for (int i = 0, max = arr.size(); i < max; i++) {
