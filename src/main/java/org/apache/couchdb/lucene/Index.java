@@ -113,9 +113,18 @@ public final class Index {
 				final JSONObject obj = db.getAllDocsBySeq(dbname, from, Config.BATCH_SIZE);
 				final JSONArray rows = obj.getJSONArray("rows");
 				for (int i = 0, max = rows.size(); i < max; i++) {
-					updateDocument(writer, dbname, rows.getJSONObject(i));
-					changed = true;
+					final JSONObject row = rows.getJSONObject(i);
+					final JSONObject value = row.optJSONObject("value");
+					final JSONObject doc = row.optJSONObject("doc");
 
+					if (doc != null) {
+						updateDocument(writer, dbname, rows.getJSONObject(i));
+						changed = true;
+					}
+					if (value != null && value.optBoolean("deleted")) {
+						writer.deleteDocuments(new Term(Config.ID, row.getString("id")));
+						changed = true;
+					}
 				}
 				from += Config.BATCH_SIZE;
 			}
