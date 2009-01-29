@@ -30,10 +30,10 @@ public final class Progress {
 		final DataInputStream din = new DataInputStream(in);
 		try {
 			progress.clear();
-			final int size = din.readInt();
+			final int size = Integer.parseInt(din.readUTF());
 			for (int i = 0; i < size; i++) {
 				final String dbname = din.readUTF();
-				final long v = din.readLong();
+				final long v = Long.parseLong(din.readUTF());
 				setProgress(dbname, v);
 			}
 		} finally {
@@ -48,10 +48,10 @@ public final class Progress {
 		final FileOutputStream out = new FileOutputStream(tmp);
 		final DataOutputStream dout = new DataOutputStream(out);
 		try {
-			dout.writeInt(progress.size());
+			dout.writeUTF(Integer.toString(progress.size()));
 			for (final Entry<String, Long> entry : progress.entrySet()) {
 				dout.writeUTF(entry.getKey());
-				dout.writeLong(entry.getValue());
+				dout.writeUTF(Long.toString(entry.getValue()));
 			}
 			dout.flush();
 			out.getFD().sync();

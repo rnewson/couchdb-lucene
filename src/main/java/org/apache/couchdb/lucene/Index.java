@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
@@ -21,7 +20,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.MapFieldSelector;
-import org.apache.lucene.document.NumberTools;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -123,6 +121,7 @@ public final class Index {
 				throws IOException {
 			final Document doc = new Document();
 			final JSONObject json = obj.getJSONObject("doc");
+
 			// Standard properties.
 			doc.add(token(Config.DB, dbname, false));
 			add(doc, Config.ID, json.get(Config.ID), true);
@@ -143,13 +142,13 @@ public final class Index {
 				}
 			} else if (value instanceof String) {
 				try {
-					final Date date = DATE_FORMAT.parse((String) value);
-					out.add(token(key, NumberTools.longToString(date.getTime()), store));
+					DATE_FORMAT.parse((String) value);
+					out.add(token(key, (String) value, store));
 				} catch (final java.text.ParseException e) {
 					out.add(text(key, (String) value, store));
 				}
 			} else if (value instanceof Integer) {
-				out.add(token(key, NumberTools.longToString((Integer) value), store));
+				out.add(token(key, Integer.toString((Integer) value), store));
 			} else if (value instanceof Boolean) {
 				out.add(token(key, Boolean.toString((Boolean) value), store));
 			} else if (value instanceof JSONArray) {
@@ -178,7 +177,7 @@ public final class Index {
 
 	private final Database db = new Database(Config.DB_URL);
 
-	private final Timer timer = new Timer("IndexUpdater");
+	private final Timer timer = new Timer("IndexUpdater", true);
 
 	private final Directory dir;
 
@@ -215,15 +214,16 @@ public final class Index {
 
 	public String query(final String db, final String query, final String sort, final int skip, final int limit)
 			throws IOException, ParseException {
+		final BooleanQuery bq = new BooleanQuery();
+		bq.add(new TermQuery(new Term(Config.DB, db)), Occur.MUST);
+		bq.add(Config.QP.parse(query), Occur.MUST);
+
 		if (log.isDebugEnabled()) {
-			final String msg = String.format("db:%s, query:%s, sort:%s, skip:%,d, limit:%,d\n", db, query, sort, skip,
+			final String msg = String.format("db:%s, query:%s, sort:%s, skip:%,d, limit:%,d\n", db, bq, sort, skip,
 					limit);
 			log.debug(msg);
 		}
 
-		final BooleanQuery bq = new BooleanQuery();
-		bq.add(new TermQuery(new Term(Config.DB, db)), Occur.MUST);
-		bq.add(Config.QP.parse(query), Occur.MUST);
 		final TopDocs td;
 		if (sort == null)
 			td = searcher.search(bq, null, skip + limit);
