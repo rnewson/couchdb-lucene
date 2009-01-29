@@ -2,6 +2,7 @@ package org.apache.couchdb.lucene;
 
 import static java.lang.Math.min;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -72,7 +73,16 @@ public final class Index {
 					try {
 						if (commit) {
 							writer.close();
+							progress.save();
 							log.info("Committed updates.");
+
+							// TODO needs mutex.
+							final IndexReader oldReader = reader;
+							reader = reader.reopen();
+							if (reader != oldReader) {
+								searcher = new IndexSearcher(reader);
+								oldReader.close();
+							}
 						} else {
 							writer.rollback();
 							log.debug("No changes.");
@@ -86,25 +96,30 @@ public final class Index {
 
 		private boolean updateDatabase(final IndexWriter writer, final String dbname) throws HttpException, IOException {
 			final DbInfo info = db.getInfo(dbname);
-			log.debug(String.format("%s is at sequence %,d.", dbname, info.getUpdateSeq()));
+			long from = progress.getProgress(dbname);
+			final long start = from;
 
-			long from = 0;
 			boolean changed = false;
 			while (from < info.getUpdateSeq()) {
 				final JSONObject obj = db.getAllDocsBySeq(dbname, from, Config.BATCH_SIZE);
 				final JSONArray rows = obj.getJSONArray("rows");
 				for (int i = 0, max = rows.size(); i < max; i++) {
-					updateDocument(writer, dbname, rows.getJSONObject(i).getJSONObject("doc"));
+					updateDocument(writer, dbname, rows.getJSONObject(i));
 					changed = true;
 
 				}
 				from += Config.BATCH_SIZE;
 			}
+			progress.setProgress(dbname, info.getUpdateSeq());
+
+			if (changed) {
+				log.debug(String.format("%s: index caught up from %,d to %,d.", dbname, start, info.getUpdateSeq()));
+			}
 
 			return changed;
 		}
 
-		private void updateDocument(final IndexWriter writer, final String dbname, final JSONObject jsonDoc)
+		private void updateDocument(final IndexWriter writer, final String dbname, final JSONObject obj)
 				throws IOException {
 			final Document doc = new Document();
 
@@ -112,7 +127,7 @@ public final class Index {
 			doc.add(token(Config.DB, dbname, false));
 
 			// Custom properties
-			add(doc, null, jsonDoc, false);
+			add(doc, null, obj.getJSONObject("doc"), false);
 
 			// write it
 			writer.addDocument(doc);
@@ -171,15 +186,20 @@ public final class Index {
 
 	private IndexSearcher searcher;
 
+	private final Progress progress;
+
 	public Index() throws IOException {
-		dir = NIOFSDirectory.getDirectory("lucene");
+		final File f = new File("lucene");
+		dir = NIOFSDirectory.getDirectory(f);
 		if (!IndexReader.indexExists(dir)) {
 			newWriter().close();
 		}
+		this.progress = new Progress(f);
 	}
 
 	public void start() throws IOException {
 		log.info("couchdb-lucene is starting.");
+		this.progress.load();
 		this.reader = IndexReader.open(dir, true);
 		this.searcher = new IndexSearcher(this.reader);
 		timer.schedule(new IndexUpdateTask(), 0, Config.REFRESH_INTERVAL);
