@@ -1,0 +1,21 @@
+1  Install Maven 2.
+2 checkout repository
+3 type 'mvn'
+4 configure couchdb
+
+[external]
+fti= /usr/bin/java -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar
+
+[httpd_db_handlers]
+_fti = {couch_httpd_external, handle_external_req, <<"fti">>}
+
+Currently all fields of all documents are indexed, javascript control coming soon.
+
+Examples
+
+http://localhost:5984/dbname/_fti?q=field_name:value
+
+http://localhost:5984/dbname/_fti?q=field_name:value&sort=other_field
+
+return values is a JSON array of _id, _rev and sort_field values (the latter only when sort= is supplied)
+
