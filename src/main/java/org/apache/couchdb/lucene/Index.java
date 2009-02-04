@@ -261,7 +261,17 @@ public final class Index {
 		if (tfd != null) {
 			final JSONArray sort_order = new JSONArray();
 			for (final SortField field : tfd.fields) {
-				sort_order.add(field.getField());
+				switch (field.getType()) {
+				case SortField.DOC:
+					sort_order.add("DOC");
+					break;
+				case SortField.SCORE:
+					sort_order.add("SCORE");
+					break;
+				default:
+					sort_order.add(field.getField());
+					break;
+				}
 				// TODO include type and reverse.
 			}
 			json.element("sort_order", sort_order);

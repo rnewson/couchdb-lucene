@@ -33,24 +33,23 @@ public final class Main {
 		index.start();
 
 		// Main processing loop.
-		final BufferedReader reader = new BufferedReader(new InputStreamReader(
-				System.in, "UTF-8"));
+		final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
 		String line = null;
 		while ((line = reader.readLine()) != null) {
-			// Parse query.
-			final JSONObject obj = JSONObject.fromObject(line);
-			final String db = obj.getJSONObject("info").getString("db_name");
-			final JSONObject query = obj.getJSONObject("query");
-			final String q = query.getString("q");
-			final String sort = query.optString("sort", null);
-			final int skip = query.optInt("skip", 0);
-			final int limit = query.optInt("limit", 25);
-
 			try {
+				// Parse query.
+				final JSONObject obj = JSONObject.fromObject(line);
+				final String db = obj.getJSONObject("info").getString("db_name");
+				final JSONObject query = obj.getJSONObject("query");
+				final String q = query.getString("q");
+				final String sort = query.optString("sort", null);
+				final int skip = query.optInt("skip", 0);
+				final int limit = query.optInt("limit", 25);
+
 				// Execute query.
 				System.out.println(index.query(db, q, sort, skip, limit));
 			} catch (final Exception e) {
-				log.warn("Exception in main loop.", e);
+				log.warn("Exception in main loop (line=\"" + line + "\")", e);
 				System.out.println(Utils.throwableToJSON(e));
 			}
 		}
