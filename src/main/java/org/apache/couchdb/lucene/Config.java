@@ -22,6 +22,8 @@ final class Config {
 
 	static final String SEQ = "_seq";
 
+	static final int EXPUNGE_LIMIT = Integer.getInteger("couchdb.lucene.expunge", 1000);
+
 	static final int RAM_BUF = Integer.getInteger("couchdb.lucene.ram", 200);
 
 	static final int BATCH_SIZE = Integer.getInteger("couchdb.lucene.batch", 100);

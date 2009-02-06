@@ -82,13 +82,12 @@ public final class Index {
 								oldReader.close();
 							}
 
-							if (reader.numDeletedDocs() > 1000) {
+							if (reader.numDeletedDocs() >= Config.EXPUNGE_LIMIT) {
 								writer.expungeDeletes();
 							}
 							writer.close();
 						} else {
 							writer.rollback();
-							log.debug("No changes.");
 						}
 					} catch (final IOException e) {
 						log.warn("Exception while committing.", e);
@@ -296,6 +295,11 @@ public final class Index {
 		final JSONObject result = new JSONObject();
 		result.element("code", 200);
 		result.element("json", json);
+		
+		final JSONObject headers = new JSONObject();
+		headers.element("Content-Type", "text/plain");
+		
+		result.element("headers", headers);
 
 		return result.toString();
 	}
