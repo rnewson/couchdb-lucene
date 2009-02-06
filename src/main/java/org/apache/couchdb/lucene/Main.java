@@ -45,9 +45,10 @@ public final class Main {
 				final String sort = query.optString("sort", null);
 				final int skip = query.optInt("skip", 0);
 				final int limit = query.optInt("limit", 25);
+				final boolean debug = query.optBoolean("debug", false);
 
 				// Execute query.
-				System.out.println(index.query(db, q, sort, skip, limit));
+				System.out.println(index.query(db, q, sort, skip, limit, debug));
 			} catch (final Exception e) {
 				log.warn("Exception in main loop (line=\"" + line + "\")", e);
 				System.out.println(Utils.throwableToJSON(e));

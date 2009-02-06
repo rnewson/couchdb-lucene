@@ -231,17 +231,11 @@ public final class Index {
 		log.info("couchdb-lucene is stopped.");
 	}
 
-	public String query(final String db, final String query, final String sort, final int skip, final int limit)
-			throws IOException, ParseException {
+	public String query(final String db, final String query, final String sort, final int skip, final int limit,
+			final boolean debug) throws IOException, ParseException {
 		final BooleanQuery bq = new BooleanQuery();
 		bq.add(new TermQuery(new Term(Config.DB, db)), Occur.MUST);
 		bq.add(Config.QP.parse(query), Occur.MUST);
-
-		if (log.isDebugEnabled()) {
-			final String msg = String.format("db:%s, query:%s, sort:%s, skip:%,d, limit:%,d\n", db, bq, sort, skip,
-					limit);
-			log.debug(msg);
-		}
 
 		final TopDocs td;
 		if (sort == null)
@@ -294,12 +288,29 @@ public final class Index {
 
 		final JSONObject result = new JSONObject();
 		result.element("code", 200);
-		result.element("json", json);
-		
-		final JSONObject headers = new JSONObject();
-		headers.element("Content-Type", "text/plain");
-		
-		result.element("headers", headers);
+
+		if (debug) {
+			final StringBuilder builder = new StringBuilder(500);
+			// build basic lines.
+			builder.append("<dl>");
+			builder.append("<dt>database name</dt><dd>" + db + "</dd>");
+			builder.append("<dt>query</dt><dd>" + bq + "</dd>");
+			builder.append("<dt>sort</dt><dd>" + sort + "</dd>");
+			builder.append("<dt>skip</dt><dd>" + skip + "</dd>");
+			builder.append("<dt>limit</dt><dd>" + limit + "</dd>");
+			builder.append("<dt>total_rows</dt><dd>" + json.getInt("total_rows") + "</dd>");
+			builder.append("<dt>rows</dt><dd>");
+			builder.append("<ol start=\"" + skip + "\">");
+			for (int i = 0; i < rows.size(); i++) {
+				builder.append("<li>" + rows.get(i) + "</li>");
+			}
+			builder.append("</ol>");
+			builder.append("</dd>");
+			builder.append("</dl>");
+			result.element("body", builder.toString());
+		} else {
+			result.element("json", json);
+		}
 
 		return result.toString();
 	}
