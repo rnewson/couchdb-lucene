@@ -43,6 +43,25 @@ import org.apache.lucene.store.NIOFSDirectory;
  */
 public final class Index {
 
+	private final class IndexStartTask extends TimerTask {
+
+		@Override
+		public void run() {
+			log.info("couchdb-lucene is starting.");
+			try {
+				Index.this.progress.load();
+				Index.this.reader = IndexReader.open(dir, true);
+				Index.this.searcher = new IndexSearcher(Index.this.reader);
+			} catch (IOException e) {
+				System.out.println(Utils.throwableToJSON(e));
+				log.info("couchdb-lucene failed to started.");
+				return;
+			}
+			log.info("couchdb-lucene is started.");
+		}
+
+	}
+
 	private static final Logger log = LogManager.getLogger(Index.class);
 
 	private static final Pattern FLOAT_PATTERN = Pattern.compile("[-+]?[0-9]+\\.[0-9]+");
@@ -216,12 +235,8 @@ public final class Index {
 	}
 
 	public void start() throws IOException {
-		log.info("couchdb-lucene is starting.");
-		this.progress.load();
-		this.reader = IndexReader.open(dir, true);
-		this.searcher = new IndexSearcher(this.reader);
+		timer.schedule(new IndexStartTask(), 0);
 		timer.schedule(new IndexUpdateTask(), 0, Config.REFRESH_INTERVAL);
-		log.info("couchdb-lucene has started.");
 	}
 
 	public void stop() throws IOException {
@@ -233,6 +248,10 @@ public final class Index {
 
 	public String query(final String db, final String query, final String sort, final int skip, final int limit,
 			final boolean debug) throws IOException, ParseException {
+		if (reader == null) {
+			return Utils.error("couchdb-lucene is not started yet.");
+		}
+
 		final BooleanQuery bq = new BooleanQuery();
 		bq.add(new TermQuery(new Term(Config.DB, db)), Occur.MUST);
 		bq.add(Config.QP.parse(query), Occur.MUST);

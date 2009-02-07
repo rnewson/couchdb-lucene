@@ -4,9 +4,12 @@ import net.sf.json.JSONObject;
 
 class Utils {
 
-	public static JSONObject throwableToJSON(final Throwable t) {
-		return new JSONObject().element("code", "500").element("body",
-				t.getMessage() == null ? "Unknown error" : t.getMessage());
+	public static String throwableToJSON(final Throwable t) {
+		return error(t.getMessage() == null ? "Unknown error" : t.getMessage());
+	}
+
+	public static String error(final String txt) {
+		return new JSONObject().element("code", "500").element("body", txt).toString();
 	}
 
 }
