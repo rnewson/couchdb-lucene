@@ -55,8 +55,7 @@ public final class Index {
 				}
 
 				Index.this.progress.load();
-				Index.this.reader = IndexReader.open(dir, true);
-				Index.this.searcher = new IndexSearcher(Index.this.reader);
+				openReader();
 			} catch (IOException e) {
 				System.out.println(Utils.throwableToJSON(e));
 				log.info("couchdb-lucene failed to started.");
@@ -65,6 +64,31 @@ public final class Index {
 			log.info("couchdb-lucene is started.");
 		}
 
+	}
+
+	private void openReader() throws IOException {
+		final IndexReader oldReader;
+		synchronized (mutex) {
+			oldReader = this.reader;
+		}
+
+		final IndexReader newReader;
+		if (oldReader == null) {
+			newReader = IndexReader.open(dir, true);
+		} else {
+			newReader = oldReader.reopen();
+		}
+
+		if (oldReader != newReader) {
+			synchronized (mutex) {
+				this.reader = newReader;
+				this.reader.incRef();
+				this.searcher = new IndexSearcher(this.reader);
+			}
+			if (oldReader != null) {
+				oldReader.decRef();
+			}
+		}
 	}
 
 	private static final Logger log = LogManager.getLogger(Index.class);
@@ -94,13 +118,7 @@ public final class Index {
 							progress.save();
 							log.info("Committed updates.");
 
-							// TODO needs mutex.
-							final IndexReader oldReader = reader;
-							reader = reader.reopen();
-							if (reader != oldReader) {
-								searcher = new IndexSearcher(reader);
-								oldReader.close();
-							}
+							openReader();
 
 							if (reader.numDeletedDocs() >= Config.EXPUNGE_LIMIT) {
 								writer.expungeDeletes();
@@ -237,6 +255,8 @@ public final class Index {
 
 	private final Progress progress;
 
+	private final Object mutex = new Object();
+
 	public Index() throws IOException {
 		final File f = new File("lucene");
 		dir = NIOFSDirectory.getDirectory(f);
@@ -254,7 +274,7 @@ public final class Index {
 	public void stop() throws IOException {
 		log.info("couchdb-lucene is stopping.");
 		timer.cancel();
-		this.searcher.close();
+		this.reader.close();
 		log.info("couchdb-lucene is stopped.");
 	}
 
@@ -268,11 +288,21 @@ public final class Index {
 		bq.add(new TermQuery(new Term(Config.DB, db)), Occur.MUST);
 		bq.add(Config.QP.parse(query), Occur.MUST);
 
+		final IndexSearcher searcher;
+		synchronized (mutex) {
+			searcher = this.searcher;
+		}
+
+		searcher.getIndexReader().incRef();
 		final TopDocs td;
-		if (sort == null)
-			td = searcher.search(bq, null, skip + limit);
-		else
-			td = searcher.search(bq, null, skip + limit, new Sort(sort, !ascending));
+		try {
+			if (sort == null)
+				td = searcher.search(bq, null, skip + limit);
+			else
+				td = searcher.search(bq, null, skip + limit, new Sort(sort, !ascending));
+		} finally {
+			searcher.getIndexReader().decRef();
+		}
 
 		TopFieldDocs tfd = null;
 		if (td instanceof TopFieldDocs) {
@@ -285,18 +315,48 @@ public final class Index {
 		if (tfd != null) {
 			final JSONArray sort_order = new JSONArray();
 			for (final SortField field : tfd.fields) {
+				final JSONObject col = new JSONObject();
+				col.element("field", field.getField());
+				col.element("reverse", field.getReverse());
+
+				final String type;
 				switch (field.getType()) {
 				case SortField.DOC:
-					sort_order.add("DOC");
+					type = "doc";
 					break;
 				case SortField.SCORE:
-					sort_order.add("SCORE");
+					type = "score";
+					break;
+				case SortField.INT:
+					type = "int";
+					break;
+				case SortField.LONG:
+					type = "long";
+					break;
+				case SortField.BYTE:
+					type = "byte";
+					break;
+				case SortField.CUSTOM:
+					type = "custom";
+					break;
+				case SortField.DOUBLE:
+					type = "double";
+					break;
+				case SortField.FLOAT:
+					type = "float";
+					break;
+				case SortField.SHORT:
+					type = "short";
+					break;
+				case SortField.STRING:
+					type = "string";
 					break;
 				default:
-					sort_order.add(field.getField());
+					type = "unknown";
 					break;
 				}
-				// TODO include type and reverse.
+				col.element("type", type);
+				sort_order.add(col);
 			}
 			json.element("sort_order", sort_order);
 		}
@@ -330,6 +390,9 @@ public final class Index {
 			builder.append("<dt>skip</dt><dd>" + skip + "</dd>");
 			builder.append("<dt>limit</dt><dd>" + limit + "</dd>");
 			builder.append("<dt>total_rows</dt><dd>" + json.getInt("total_rows") + "</dd>");
+			if (json.get("sort_order") != null) {
+				builder.append("<dt>sort_order</dt><dd>" + json.get("sort_order") + "</dd>");
+			}
 			builder.append("<dt>rows</dt><dd>");
 			builder.append("<ol start=\"" + skip + "\">");
 			for (int i = 0; i < rows.size(); i++) {
