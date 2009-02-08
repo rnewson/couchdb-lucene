@@ -13,15 +13,13 @@ Indexing
 
 Currently all fields of all documents are indexed, javascript control coming soon.
 
-Numbers are padded so that you can perform correct range searches. e.g, a '0' becomes '00000000000000'. 
-
 Examples
 
 http://localhost:5984/dbname/_fti?q=field_name:value
 
 http://localhost:5984/dbname/_fti?q=field_name:value&sort=other_field
 
-http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document AND customer:[00000000000000 TO 00000000000010]
+http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
 
 return values is a JSON array of _id, _rev and sort_field values (the latter only when sort= is supplied)
 
