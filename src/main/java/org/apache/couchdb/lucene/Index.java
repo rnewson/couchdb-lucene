@@ -49,6 +49,11 @@ public final class Index {
 		public void run() {
 			log.info("couchdb-lucene is starting.");
 			try {
+				if (IndexWriter.isLocked(dir)) {
+					log.warn("Forcibly unlocking locked index at startup.");
+					IndexWriter.unlock(dir);
+				}
+				
 				Index.this.progress.load();
 				Index.this.reader = IndexReader.open(dir, true);
 				Index.this.searcher = new IndexSearcher(Index.this.reader);
