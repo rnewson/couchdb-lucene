@@ -46,9 +46,10 @@ public final class Main {
 				final int skip = query.optInt("skip", 0);
 				final int limit = query.optInt("limit", 25);
 				final boolean debug = query.optBoolean("debug", false);
+				final boolean asc = query.optBoolean("asc", true);
 
 				// Execute query.
-				System.out.println(index.query(db, q, sort, skip, limit, debug));
+				System.out.println(index.query(db, q, sort, asc, skip, limit, debug));
 			} catch (final Exception e) {
 				log.warn("Exception in main loop (line=\"" + line + "\")", e);
 				System.out.println(Utils.throwableToJSON(e));

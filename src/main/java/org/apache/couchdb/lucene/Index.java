@@ -124,7 +124,7 @@ public final class Index {
 				start = from = -1;
 				progress.setProgress(dbname, -1);
 			}
-			
+
 			if (from == -1) {
 				log.debug("index is inconsistent, reindexing all documents for " + dbname);
 				writer.deleteDocuments(new Term(Config.DB, dbname));
@@ -250,8 +250,8 @@ public final class Index {
 		log.info("couchdb-lucene is stopped.");
 	}
 
-	public String query(final String db, final String query, final String sort, final int skip, final int limit,
-			final boolean debug) throws IOException, ParseException {
+	public String query(final String db, final String query, final String sort, final boolean ascending,
+			final int skip, final int limit, final boolean debug) throws IOException, ParseException {
 		if (reader == null) {
 			return Utils.error("couchdb-lucene is not started yet.");
 		}
@@ -264,7 +264,7 @@ public final class Index {
 		if (sort == null)
 			td = searcher.search(bq, null, skip + limit);
 		else
-			td = searcher.search(bq, null, skip + limit, new Sort(sort));
+			td = searcher.search(bq, null, skip + limit, new Sort(sort, !ascending));
 
 		TopFieldDocs tfd = null;
 		if (td instanceof TopFieldDocs) {
