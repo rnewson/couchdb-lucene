@@ -19,7 +19,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.MapFieldSelector;
-import org.apache.lucene.document.NumberTools;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -209,16 +208,19 @@ public final class Index {
 					out.add(text(key, (String) value, store));
 				}
 			} else if (value instanceof Number) {
-				final Number number = (Number) value;
-				if (number instanceof Integer || number instanceof Long) {
-					out.add(token(key, NumberTools.longToString(number.longValue()), store));
-				} else if (number instanceof Float || number instanceof Double) {
-					out.add(token(key, NumberTools.longToString(Double.doubleToLongBits(number.longValue())), store));
-				} else {
-					log.warn("Unsupported number type: " + value.getClass());
-				}
+				out.add(token(key, value.toString(), store));
+				/*
+				 * final Number number = (Number) value; if (number instanceof
+				 * Integer || number instanceof Long) { out.add(token(key,
+				 * NumberTools.longToString(number.longValue()), store)); } else
+				 * if (number instanceof Float || number instanceof Double) {
+				 * out.add(token(key,
+				 * NumberTools.longToString(Double.doubleToLongBits
+				 * (number.longValue())), store)); } else {
+				 * log.warn("Unsupported number type: " + value.getClass()); }
+				 */
 			} else if (value instanceof Boolean) {
-				out.add(token(key, Boolean.toString((Boolean) value), store));
+				out.add(token(key, value.toString(), store));
 			} else if (value instanceof JSONArray) {
 				final JSONArray arr = (JSONArray) value;
 				for (int i = 0, max = arr.size(); i < max; i++) {
