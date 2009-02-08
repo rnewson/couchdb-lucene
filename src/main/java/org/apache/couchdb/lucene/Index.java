@@ -118,12 +118,16 @@ public final class Index {
 		private boolean updateDatabase(final IndexWriter writer, final String dbname) throws HttpException, IOException {
 			final DbInfo info = db.getInfo(dbname);
 			long from = progress.getProgress(dbname);
-			final long start = from;
+			long start = from;
 
+			if (from > info.getUpdateSeq()) {
+				start = from = -1;
+				progress.setProgress(dbname, -1);
+			}
+			
 			if (from == -1) {
-				log.debug("Removing all documents for " + dbname);
+				log.debug("index is inconsistent, reindexing all documents for " + dbname);
 				writer.deleteDocuments(new Term(Config.DB, dbname));
-				log.debug("Removed all documents for " + dbname);
 			}
 
 			boolean changed = false;
