@@ -13,6 +13,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.lang.time.DurationFormatUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -302,6 +303,7 @@ public final class Index {
 
 		searcher.getIndexReader().incRef();
 		final TopDocs td;
+		final long start = System.nanoTime();
 		try {
 			if (sort_fields == null) {
 				td = searcher.search(bq, null, skip + limit);
@@ -317,6 +319,7 @@ public final class Index {
 		} finally {
 			searcher.getIndexReader().decRef();
 		}
+		final long duration = System.nanoTime() - start;
 
 		TopFieldDocs tfd = null;
 		if (td instanceof TopFieldDocs) {
@@ -407,6 +410,8 @@ public final class Index {
 			if (json.get("sort_order") != null) {
 				builder.append("<dt>sort_order</dt><dd>" + json.get("sort_order") + "</dd>");
 			}
+			builder.append("<dt>duration</dt><dd>" + DurationFormatUtils.formatDurationHMS(duration / 1000000)
+					+ "</dd>");
 			builder.append("<dt>rows</dt><dd>");
 			builder.append("<ol start=\"" + skip + "\">");
 			for (int i = 0; i < rows.size(); i++) {
