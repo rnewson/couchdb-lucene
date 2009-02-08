@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -54,7 +53,7 @@ public final class Index {
 					log.warn("Forcibly unlocking locked index at startup.");
 					IndexWriter.unlock(dir);
 				}
-				
+
 				Index.this.progress.load();
 				Index.this.reader = IndexReader.open(dir, true);
 				Index.this.searcher = new IndexSearcher(Index.this.reader);
@@ -186,13 +185,20 @@ public final class Index {
 				}
 			} else if (value instanceof String) {
 				try {
-					final Date date = DATE_FORMAT.parse((String) value);
+					DATE_FORMAT.parse((String) value);
 					out.add(token(key, (String) value, store));
 				} catch (final java.text.ParseException e) {
 					out.add(text(key, (String) value, store));
 				}
-			} else if (value instanceof Integer) {
-				out.add(token(key, NumberTools.longToString((Integer) value), store));
+			} else if (value instanceof Number) {
+				final Number number = (Number) value;
+				if (number instanceof Integer || number instanceof Long) {
+					out.add(token(key, NumberTools.longToString(number.longValue()), store));
+				} else if (number instanceof Float || number instanceof Double) {
+					out.add(token(key, NumberTools.longToString(Double.doubleToLongBits(number.longValue())), store));
+				} else {
+					log.warn("Unsupported number type: " + value.getClass());
+				}
 			} else if (value instanceof Boolean) {
 				out.add(token(key, Boolean.toString((Boolean) value), store));
 			} else if (value instanceof JSONArray) {
