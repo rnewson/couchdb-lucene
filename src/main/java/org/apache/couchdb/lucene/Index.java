@@ -181,6 +181,11 @@ public final class Index {
 				throws IOException {
 			final Document doc = new Document();
 			final JSONObject json = obj.getJSONObject("doc");
+			
+			// Skip design documents.
+			if (json.getString(Config.ID).startsWith("_design")) {
+				return;
+			}
 
 			// Standard properties.
 			doc.add(token(Config.DB, dbname, false));
