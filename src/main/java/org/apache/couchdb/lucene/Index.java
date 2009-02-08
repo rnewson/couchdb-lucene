@@ -6,9 +6,9 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.regex.Pattern;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -20,6 +20,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.MapFieldSelector;
+import org.apache.lucene.document.NumberTools;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -68,10 +69,6 @@ public final class Index {
 	}
 
 	private static final Logger log = LogManager.getLogger(Index.class);
-
-	private static final Pattern FLOAT_PATTERN = Pattern.compile("[-+]?[0-9]+\\.[0-9]+");
-
-	private static final Pattern INTEGER_PATTERN = Pattern.compile("[-+]?[0-9]+");
 
 	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 
@@ -189,13 +186,13 @@ public final class Index {
 				}
 			} else if (value instanceof String) {
 				try {
-					DATE_FORMAT.parse((String) value);
+					final Date date = DATE_FORMAT.parse((String) value);
 					out.add(token(key, (String) value, store));
 				} catch (final java.text.ParseException e) {
 					out.add(text(key, (String) value, store));
 				}
 			} else if (value instanceof Integer) {
-				out.add(token(key, Integer.toString((Integer) value), store));
+				out.add(token(key, NumberTools.longToString((Integer) value), store));
 			} else if (value instanceof Boolean) {
 				out.add(token(key, Boolean.toString((Boolean) value), store));
 			} else if (value instanceof JSONArray) {
