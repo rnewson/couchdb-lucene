@@ -44,13 +44,14 @@ public final class Database {
 		return (String[]) JSONArray.fromObject(get("_all_dbs")).toArray(EMPTY_ARR);
 	}
 
-	/**
-	 * TODO return custom object not JSON.
-	 */
 	public JSONObject getAllDocsBySeq(final String dbname, final long from, final int limit) throws HttpException,
 			IOException {
 		return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%s&limit=%d&include_docs=true",
 				dbname, from, limit)));
+	}
+
+	public JSONObject getDoc(final String dbname, final String id, final String rev) throws HttpException, IOException {
+		return JSONObject.fromObject(get(String.format("%s/%s?rev=%s", dbname, id, rev)));
 	}
 
 	public DbInfo getInfo(final String dbname) throws HttpException, IOException {

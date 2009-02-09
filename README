@@ -25,12 +25,13 @@ return values is a JSON array of _id, _rev and sort_field values (the latter onl
 
 Parameters
 
-q                - the query to run (e.g, subject:hello)
-sort  (optional) - the comma-separated fields to sort on.
-asc   (optional) - sort ascending (true) or descending (false), only when sorting on a single field.
-limit (optional) - the maximum number of results to return
-skip  (optional) - the number of results to skip
-debug (optional) - if false, a normal application/json response with results appears. if true, an pretty-printed HTML blob is returned instead.
+q                       - the query to run (e.g, subject:hello)
+sort         (optional) - the comma-separated fields to sort on.
+asc          (optional) - sort ascending (true) or descending (false), only when sorting on a single field.
+limit        (optional) - the maximum number of results to return
+skip         (optional) - the number of results to skip
+include_docs (optional) - whether to include the source docs
+debug        (optional) - if false, a normal application/json response with results appears. if true, an pretty-printed HTML blob is returned instead.
 
 Development
 

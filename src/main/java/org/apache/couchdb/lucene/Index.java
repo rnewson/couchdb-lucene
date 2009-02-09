@@ -286,14 +286,15 @@ public final class Index {
 		log.info("couchdb-lucene is stopped.");
 	}
 
-	public String query(final String db, final String query, final String sort_fields, final boolean ascending,
-			final int skip, final int limit, final boolean debug) throws IOException, ParseException {
+	public String query(final String dbname, final String query, final String sort_fields, final boolean ascending,
+			final int skip, final int limit, final boolean include_docs, final boolean debug) throws IOException,
+			ParseException {
 		if (reader == null) {
 			return Utils.error("couchdb-lucene is not started yet.");
 		}
 
 		final BooleanQuery bq = new BooleanQuery();
-		bq.add(new TermQuery(new Term(Config.DB, db)), Occur.MUST);
+		bq.add(new TermQuery(new Term(Config.DB, dbname)), Occur.MUST);
 		bq.add(Config.QP.parse(query), Occur.MUST);
 
 		final IndexSearcher searcher;
@@ -390,6 +391,9 @@ public final class Index {
 				final FieldDoc fd = (FieldDoc) tfd.scoreDocs[i];
 				obj.element("sort_order", fd.fields);
 			}
+			if (include_docs) {
+				obj.element("doc", db.getDoc(dbname, obj.getString("_id"), obj.getString("_rev")));
+			}
 			rows.add(obj);
 		}
 		json.element("rows", rows);
@@ -401,7 +405,7 @@ public final class Index {
 			final StringBuilder builder = new StringBuilder(500);
 			// build basic lines.
 			builder.append("<dl>");
-			builder.append("<dt>database name</dt><dd>" + db + "</dd>");
+			builder.append("<dt>database name</dt><dd>" + dbname + "</dd>");
 			builder.append("<dt>query</dt><dd>" + bq + "</dd>");
 			builder.append("<dt>sort</dt><dd>" + sort_fields + "</dd>");
 			builder.append("<dt>skip</dt><dd>" + skip + "</dd>");

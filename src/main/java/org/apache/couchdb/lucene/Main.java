@@ -39,6 +39,8 @@ public final class Main {
 			try {
 				// Parse query.
 				final JSONObject obj = JSONObject.fromObject(line);
+				System.err.println(obj);
+
 				final String db = obj.getJSONObject("info").getString("db_name");
 				final JSONObject query = obj.getJSONObject("query");
 				final String q = query.getString("q");
@@ -47,9 +49,10 @@ public final class Main {
 				final int limit = query.optInt("limit", 25);
 				final boolean debug = query.optBoolean("debug", false);
 				final boolean asc = query.optBoolean("asc", true);
+				final boolean include_docs = query.optBoolean("include_docs", false);
 
 				// Execute query.
-				System.out.println(index.query(db, q, sort, asc, skip, limit, debug));
+				System.out.println(index.query(db, q, sort, asc, skip, limit, include_docs, debug));
 			} catch (final Exception e) {
 				log.warn("Exception in main loop (line=\"" + line + "\")", e);
 				System.out.println(Utils.throwableToJSON(e));
