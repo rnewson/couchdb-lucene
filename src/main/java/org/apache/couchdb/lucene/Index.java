@@ -320,7 +320,7 @@ public final class Index {
 		} finally {
 			searcher.getIndexReader().decRef();
 		}
-		final long duration = System.nanoTime() - start;
+		final long search_duration = System.nanoTime() - start;
 
 		TopFieldDocs tfd = null;
 		if (td instanceof TopFieldDocs) {
@@ -397,6 +397,7 @@ public final class Index {
 			rows.add(obj);
 		}
 		json.element("rows", rows);
+		final long total_duration = System.nanoTime() - start;
 
 		final JSONObject result = new JSONObject();
 		result.element("code", 200);
@@ -414,8 +415,10 @@ public final class Index {
 			if (json.get("sort_order") != null) {
 				builder.append("<dt>sort_order</dt><dd>" + json.get("sort_order") + "</dd>");
 			}
-			builder.append("<dt>duration</dt><dd>" + DurationFormatUtils.formatDurationHMS(duration / 1000000)
-					+ "</dd>");
+			builder.append("<dt>search duration</dt><dd>"
+					+ DurationFormatUtils.formatDurationHMS(search_duration / 1000000) + "</dd>");
+			builder.append("<dt>total duration</dt><dd>"
+					+ DurationFormatUtils.formatDurationHMS(total_duration / 1000000) + "</dd>");
 			builder.append("<dt>rows</dt><dd>");
 			builder.append("<ol start=\"" + skip + "\">");
 			for (int i = 0; i < rows.size(); i++) {
