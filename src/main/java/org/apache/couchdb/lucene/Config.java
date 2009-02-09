@@ -29,4 +29,7 @@ final class Config {
 	static final int BATCH_SIZE = Integer.getInteger("couchdb.lucene.batch", 250);
 
 	static final String DB_URL = System.getProperty("couchdb.url", "http://localhost:5984");
+
+	static final int MAX_LIMIT = Integer.getInteger("couchdb.lucene.max_fetch", 250);
+
 }

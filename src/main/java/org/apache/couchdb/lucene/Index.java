@@ -286,11 +286,15 @@ public final class Index {
 		log.info("couchdb-lucene is stopped.");
 	}
 
-	public String query(final String dbname, final String query, final String sort_fields, final boolean ascending,
-			final int skip, final int limit, final boolean include_docs, final boolean debug) throws IOException,
-			ParseException {
+	public synchronized String query(final String dbname, final String query, final String sort_fields,
+			final boolean ascending, final int skip, final int limit, final boolean include_docs, final boolean debug)
+			throws IOException, ParseException {
 		if (reader == null) {
 			return Utils.error("couchdb-lucene is not started yet.");
+		}
+
+		if (limit > Config.MAX_LIMIT) {
+			return Utils.error("limit of " + limit + " exceeds maximum limit of " + Config.MAX_LIMIT);
 		}
 
 		final BooleanQuery bq = new BooleanQuery();
