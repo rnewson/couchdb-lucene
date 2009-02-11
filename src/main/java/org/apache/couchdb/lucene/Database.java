@@ -1,8 +1,6 @@
 package org.apache.couchdb.lucene;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -13,7 +11,6 @@ import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.commons.io.IOUtils;
 
 /**
  * Communication with couchdb.
@@ -54,22 +51,26 @@ public final class Database {
 		return JSONObject.fromObject(get(String.format("%s/%s?rev=%s", dbname, id, rev)));
 	}
 
+	public JSONObject getDocs(final String dbname, final String... ids) throws HttpException, IOException {
+		final JSONArray keys = new JSONArray();
+		for (final String id : ids) {
+			keys.add(id);
+		}
+		final JSONObject req = new JSONObject();
+		req.element("keys", keys);
+
+		return JSONObject.fromObject(post(String.format("%s/_all_docs?include_docs=true", dbname), req.toString()));
+	}
+
 	public DbInfo getInfo(final String dbname) throws HttpException, IOException {
 		return new DbInfo(JSONObject.fromObject(get(dbname)));
 	}
 
-	private String get(final String path) throws HttpException, IOException {
+	private synchronized String get(final String path) throws HttpException, IOException {
 		final GetMethod get = new GetMethod(url(path));
 		try {
 			CLIENT.executeMethod(get);
-			final InputStream in = get.getResponseBodyAsStream();
-			try {
-				final StringWriter writer = new StringWriter();
-				IOUtils.copy(in, writer, "UTF-8");
-				return writer.toString();
-			} finally {
-				in.close();
-			}
+			return get.getResponseBodyAsString();
 		} finally {
 			get.releaseConnection();
 		}
@@ -79,11 +80,12 @@ public final class Database {
 		return String.format("%s/%s", url, path);
 	}
 
-	private int post(final String path, final String body) throws HttpException, IOException {
+	private synchronized String post(final String path, final String body) throws HttpException, IOException {
 		final PostMethod post = new PostMethod(url(path));
 		post.setRequestEntity(new StringRequestEntity(body, "application/json", "UTF-8"));
 		try {
-			return CLIENT.executeMethod(post);
+			CLIENT.executeMethod(post);
+			return post.getResponseBodyAsString();
 		} finally {
 			post.releaseConnection();
 		}

@@ -43,29 +43,6 @@ import org.apache.lucene.store.NIOFSDirectory;
  */
 public final class Index {
 
-	private final class IndexStartTask extends TimerTask {
-
-		@Override
-		public void run() {
-			log.info("couchdb-lucene is starting.");
-			try {
-				if (IndexWriter.isLocked(dir)) {
-					log.warn("Forcibly unlocking locked index at startup.");
-					IndexWriter.unlock(dir);
-				}
-
-				Index.this.progress.load();
-				openReader();
-			} catch (IOException e) {
-				System.out.println(Utils.throwableToJSON(e));
-				log.info("couchdb-lucene failed to started.");
-				return;
-			}
-			log.info("couchdb-lucene is started.");
-		}
-
-	}
-
 	private void openReader() throws IOException {
 		final IndexReader oldReader;
 		synchronized (mutex) {
@@ -275,7 +252,17 @@ public final class Index {
 	}
 
 	public void start() throws IOException {
-		timer.schedule(new IndexStartTask(), 0);
+		log.info("couchdb-lucene is starting.");
+		if (IndexWriter.isLocked(dir)) {
+			log.warn("Forcibly unlocking locked index at startup.");
+			IndexWriter.unlock(dir);
+		}
+
+		Index.this.progress.load();
+		openReader();
+
+		log.info("couchdb-lucene is started.");
+
 		timer.schedule(new IndexUpdateTask(), 0, Config.REFRESH_INTERVAL);
 	}
 
@@ -286,13 +273,9 @@ public final class Index {
 		log.info("couchdb-lucene is stopped.");
 	}
 
-	public synchronized String query(final String dbname, final String query, final String sort_fields,
-			final boolean ascending, final int skip, final int limit, final boolean include_docs, final boolean debug)
-			throws IOException, ParseException {
-		if (reader == null) {
-			return Utils.error("couchdb-lucene is not started yet.");
-		}
-
+	public String query(final String dbname, final String query, final String sort_fields, final boolean ascending,
+			final int skip, final int limit, final boolean include_docs, final boolean debug) throws IOException,
+			ParseException {
 		if (limit > Config.MAX_LIMIT) {
 			return Utils.error("limit of " + limit + " exceeds maximum limit of " + Config.MAX_LIMIT);
 		}
@@ -384,6 +367,7 @@ public final class Index {
 		}
 
 		final int max = min(td.totalHits, limit);
+		final String[] fetch_ids = include_docs ? new String[max] : null;
 		final JSONArray rows = new JSONArray();
 		for (int i = skip; i < skip + max; i++) {
 			final Document doc = searcher.doc(td.scoreDocs[i].doc, FS);
@@ -395,11 +379,23 @@ public final class Index {
 				final FieldDoc fd = (FieldDoc) tfd.scoreDocs[i];
 				obj.element("sort_order", fd.fields);
 			}
+			if (fetch_ids != null) {
+				fetch_ids[i - skip] = obj.getString(Config.ID);
+			}
 			if (include_docs) {
 				obj.element("doc", db.getDoc(dbname, obj.getString("_id"), obj.getString("_rev")));
 			}
 			rows.add(obj);
 		}
+
+		if (fetch_ids != null) {
+			final JSONObject fetch_docs = db.getDocs(dbname, fetch_ids);
+			final JSONArray arr = fetch_docs.getJSONArray("rows");
+			for (int i = 0; i < max; i++) {
+				rows.getJSONObject(i).element("doc", arr.getJSONObject(i).getJSONObject("doc"));
+			}
+		}
+
 		json.element("rows", rows);
 		final long total_duration = System.nanoTime() - start;
 
