@@ -3,3 +3,4 @@ Lots to do...
 * use Tika (or similiar) to extract text from _attachments
 * Dublin Core?
 * use javascript to let couchdb user to program output transformation rather than current blanket strategy
+* better lifecycle management (couchdb keeps killing our java process when it thinks a query is too slow, this prevents ever building a decent FieldCache for sorting, etc).
