@@ -21,6 +21,8 @@ http://localhost:5984/dbname/_fti?q=field_name:value&sort=other_field
 
 http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
 
+http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document AND customer:[100 TO 400]
+
 return values is a JSON array of _id, _rev and sort_field values (the latter only when sort= is supplied)
 
 Parameters
