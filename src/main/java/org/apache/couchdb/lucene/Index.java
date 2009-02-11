@@ -20,6 +20,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.MapFieldSelector;
+import org.apache.lucene.document.NumberTools;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -28,6 +29,7 @@ import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.ConstantScoreRangeQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -124,13 +126,17 @@ public final class Index {
 			}
 
 			if (from == -1) {
-				log.debug("index is inconsistent, reindexing all documents for " + dbname);
+				log.debug("index is missing or inconsistent, reindexing all documents for " + dbname);
 				writer.deleteDocuments(new Term(Config.DB, dbname));
 			}
 
 			boolean changed = false;
 			while (from < info.getUpdateSeq()) {
 				final JSONObject obj = db.getAllDocsBySeq(dbname, from, Config.BATCH_SIZE);
+				if (!obj.has("rows")) {
+					log.error("no rows found (" + obj + ").");
+					return false;
+				}
 				final JSONArray rows = obj.getJSONArray("rows");
 				for (int i = 0, max = rows.size(); i < max; i++) {
 					final JSONObject row = rows.getJSONObject(i);
@@ -169,8 +175,10 @@ public final class Index {
 
 			// Standard properties.
 			doc.add(token(Config.DB, dbname, false));
-			add(doc, Config.ID, json.get(Config.ID), true);
-			add(doc, Config.REV, json.get(Config.REV), true);
+
+			// While they appear numeric the API defines them as strings.
+			add(doc, Config.ID, json.getString(Config.ID), true);
+			add(doc, Config.REV, json.getString(Config.REV), true);
 
 			// Custom properties
 			add(doc, null, json, false);
@@ -193,17 +201,12 @@ public final class Index {
 					out.add(text(key, (String) value, store));
 				}
 			} else if (value instanceof Number) {
-				out.add(token(key, value.toString(), store));
-				/*
-				 * final Number number = (Number) value; if (number instanceof
-				 * Integer || number instanceof Long) { out.add(token(key,
-				 * NumberTools.longToString(number.longValue()), store)); } else
-				 * if (number instanceof Float || number instanceof Double) {
-				 * out.add(token(key,
-				 * NumberTools.longToString(Double.doubleToLongBits
-				 * (number.longValue())), store)); } else {
-				 * log.warn("Unsupported number type: " + value.getClass()); }
-				 */
+				final Number number = (Number) value;
+				if (value instanceof Long || value instanceof Integer) {
+					out.add(token(key, NumberTools.longToString(number.longValue()), store));
+				} else {
+					out.add(token(key, value.toString(), store));
+				}
 			} else if (value instanceof Boolean) {
 				out.add(token(key, value.toString(), store));
 			} else if (value instanceof JSONArray) {
@@ -439,17 +442,50 @@ public final class Index {
 
 	private Query parse(final String query) throws ParseException {
 		final Query result = Config.QP.parse(query);
-		//visit(result);
+		return visit(result);
+	}
+
+	/**
+	 * Visit (and optionally replace) any part of the query tree.
+	 * 
+	 * Currently only rewrites {@link ConstantScoreRangeQuery} for numeric
+	 * ranges.
+	 * 
+	 * @param result
+	 * @return
+	 */
+	private Query visit(final Query result) {
+		if (result instanceof BooleanQuery) {
+			final BooleanQuery bq = (BooleanQuery) result;
+			final BooleanClause[] bc = bq.getClauses();
+			for (int i = 0; i < bc.length; i++) {
+				bc[i].setQuery(visit(bc[i].getQuery()));
+			}
+			return result;
+		} else if (result instanceof ConstantScoreRangeQuery) {
+			final ConstantScoreRangeQuery rq = (ConstantScoreRangeQuery) result;
+			if (isNumericOrNull(rq.getLowerVal()) && isNumericOrNull(rq.getUpperVal())) {
+				return new ConstantScoreRangeQuery(rq.getField(), encodeNumber(rq.getLowerVal()), encodeNumber(rq
+						.getUpperVal()), rq.includesLower(), rq.includesUpper());
+			}
+			return result;
+		}
 		return result;
 	}
 
-	private void visit(final Query result) {
-		if (result instanceof BooleanQuery) {
-			final BooleanQuery bq = (BooleanQuery) result;
-			for (final BooleanClause bc : bq.getClauses()) {
-				visit(bc.getQuery());
-			}
+	private boolean isNumericOrNull(final String val) {
+		if (val == null)
+			return true;
+		try {
+			Long.parseLong(val);
+			return true;
+		} catch (final NumberFormatException e) {
+			return false;
 		}
+	}
+
+	private String encodeNumber(final String num) {
+		return num == null ? null : NumberTools.longToString(Long.parseLong(num));
 	}
 
 	private IndexWriter newWriter() throws IOException {

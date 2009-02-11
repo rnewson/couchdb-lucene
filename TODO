@@ -3,4 +3,3 @@ Lots to do...
 * use Tika (or similiar) to extract text from _attachments
 * Dublin Core?
 * use javascript to let couchdb user to program output transformation rather than current blanket strategy
-* translate range queries to use FieldCache for correct int/float handling.
