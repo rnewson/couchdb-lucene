@@ -26,9 +26,11 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
@@ -282,7 +284,7 @@ public final class Index {
 
 		final BooleanQuery bq = new BooleanQuery();
 		bq.add(new TermQuery(new Term(Config.DB, dbname)), Occur.MUST);
-		bq.add(Config.QP.parse(query), Occur.MUST);
+		bq.add(parse(query), Occur.MUST);
 
 		final IndexSearcher searcher;
 		synchronized (mutex) {
@@ -369,7 +371,7 @@ public final class Index {
 		final int max = min(td.totalHits, limit);
 		final String[] fetch_ids = include_docs ? new String[max] : null;
 		final JSONArray rows = new JSONArray();
-		for (int i = skip; i < skip + max; i++) {
+		for (int i = skip; i < max; i++) {
 			final Document doc = searcher.doc(td.scoreDocs[i].doc, FS);
 			final JSONObject obj = new JSONObject();
 			obj.element("_id", doc.get(Config.ID));
@@ -433,6 +435,21 @@ public final class Index {
 		}
 
 		return result.toString();
+	}
+
+	private Query parse(final String query) throws ParseException {
+		final Query result = Config.QP.parse(query);
+		//visit(result);
+		return result;
+	}
+
+	private void visit(final Query result) {
+		if (result instanceof BooleanQuery) {
+			final BooleanQuery bq = (BooleanQuery) result;
+			for (final BooleanClause bc : bq.getClauses()) {
+				visit(bc.getQuery());
+			}
+		}
 	}
 
 	private IndexWriter newWriter() throws IOException {
