@@ -1,16 +1,20 @@
 package org.apache.couchdb.lucene;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Communication with couchdb.
@@ -66,28 +70,33 @@ public final class Database {
 		return new DbInfo(JSONObject.fromObject(get(dbname)));
 	}
 
-	private synchronized String get(final String path) throws HttpException, IOException {
-		final GetMethod get = new GetMethod(url(path));
-		try {
-			CLIENT.executeMethod(get);
-			return get.getResponseBodyAsString();
-		} finally {
-			get.releaseConnection();
-		}
+	private String get(final String path) throws HttpException, IOException {
+		return execute(new GetMethod(url(path)));
 	}
 
 	private String url(final String path) {
 		return String.format("%s/%s", url, path);
 	}
 
-	private synchronized String post(final String path, final String body) throws HttpException, IOException {
+	private String post(final String path, final String body) throws HttpException, IOException {
 		final PostMethod post = new PostMethod(url(path));
 		post.setRequestEntity(new StringRequestEntity(body, "application/json", "UTF-8"));
+		return execute(post);
+	}
+
+	private synchronized String execute(final HttpMethodBase method) throws HttpException, IOException {
 		try {
-			CLIENT.executeMethod(post);
-			return post.getResponseBodyAsString();
+			CLIENT.executeMethod(method);
+			final InputStream in = method.getResponseBodyAsStream();
+			try {
+				final StringWriter writer = new StringWriter(2048);
+				IOUtils.copy(in, writer, method.getResponseCharSet());
+				return writer.toString();
+			} finally {
+				in.close();
+			}
 		} finally {
-			post.releaseConnection();
+			method.releaseConnection();
 		}
 	}
 
