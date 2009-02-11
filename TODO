@@ -3,5 +3,4 @@ Lots to do...
 * use Tika (or similiar) to extract text from _attachments
 * Dublin Core?
 * use javascript to let couchdb user to program output transformation rather than current blanket strategy
-* retrieve all X hits for include_docs in one call using multi fetch.
 * translate range queries to use FieldCache for correct int/float handling.
