@@ -21,6 +21,8 @@ final class Config {
 	static final String REV = "_rev";
 
 	static final String SEQ = "_seq";
+	
+	static final String INDEX_DIR = System.getProperty("couchdb.lucene.dir", "lucene");
 
 	static final int EXPUNGE_LIMIT = Integer.getInteger("couchdb.lucene.expunge", 1000);
 

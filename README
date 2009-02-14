@@ -40,3 +40,14 @@ Development
 To develop "live", type "mvn dependency:unpack-dependencies" and change the external line to something like this;
 
 fti=/usr/bin/java -cp /home/rnewson/Source/couchdb-lucene/target/classes:/home/rnewson/Source/couchdb-lucene/target/dependency org.apache.couchdb.lucene.Main
+
+Configuration
+
+couchdb-lucene respects several system properties;
+
+* couchdb.url - the url to contact CouchDB with (default is "http://localhost:5984")
+* couchdb.lucene.dir - specify the path to the lucene indexes (the default is to make a directory called 'lucene' relative to couchdb's current working directory.
+
+You can override these properties like this;
+
+fti=/usr/bin/java -D couchdb.lucene.dir=/tmp -cp /home/rnewson/Source/couchdb-lucene/target/classes:/home/rnewson/Source/couchdb-lucene/target/dependency org.apache.couchdb.lucene.Main

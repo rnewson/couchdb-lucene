@@ -248,7 +248,7 @@ public final class Index {
 	private final Object mutex = new Object();
 
 	public Index() throws IOException {
-		final File f = new File("lucene");
+		final File f = new File(Config.INDEX_DIR);
 		dir = NIOFSDirectory.getDirectory(f);
 		if (!IndexReader.indexExists(dir)) {
 			newWriter().close();
