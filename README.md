@@ -55,7 +55,8 @@ return values is a JSON array of _id, _rev and sort_field values (the latter onl
 To develop "live", type "mvn dependency:unpack-dependencies" and change the external line to something like this;
 
 <pre>
-fti=/usr/bin/java -cp /path/to/couchdb-lucene/target/classes:/path/to/couchdb-lucene/target/dependency org.apache.couchdb.lucene.Main
+fti=/usr/bin/java -cp /path/to/couchdb-lucene/target/classes:\
+/path/to/couchdb-lucene/target/dependency org.apache.couchdb.lucene.Main
 </pre>
 
 You will need to restart CouchDB if you change couchdb-lucene source code but this is very fast.
@@ -72,5 +73,8 @@ couchdb-lucene respects several system properties;
 You can override these properties like this;
 
 <pre>
-fti=/usr/bin/java -D couchdb.lucene.dir=/tmp -cp /home/rnewson/Source/couchdb-lucene/target/classes:/home/rnewson/Source/couchdb-lucene/target/dependency org.apache.couchdb.lucene.Main
+fti=/usr/bin/java -D couchdb.lucene.dir=/tmp \
+-cp /home/rnewson/Source/couchdb-lucene/target/classes:\
+/home/rnewson/Source/couchdb-lucene/target/dependency\
+org.apache.couchdb.lucene.Main
 </pre>
