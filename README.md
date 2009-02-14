@@ -26,13 +26,14 @@ Currently all fields of all documents are indexed, javascript control coming soo
 You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>. The following parameters can be passed for more sophisticated searches;
 
 <dl>
-<dt>q<dd>the query to run (e.g, subject:hello)<
+<dt>q<dd>the query to run (e.g, subject:hello)
 <dt>sort<dd>the comma-separated fields to sort on.
 <dt>asc<dd>sort ascending (true) or descending (false), only when sorting on a single field.
 <dt>limit<dd>the maximum number of results to return
 <dt>skip<dd>the number of results to skip
 <dt>include_docs<dd>whether to include the source docs
 <dt>debug<dd>if false, a normal application/json response with results appears. if true, an pretty-printed HTML blob is returned instead.
+</dl>
 
 <i>All parameters except 'q' are optional.</i>
 
@@ -54,7 +55,7 @@ return values is a JSON array of _id, _rev and sort_field values (the latter onl
 To develop "live", type "mvn dependency:unpack-dependencies" and change the external line to something like this;
 
 <pre>
-fti=/usr/bin/java -cp /home/rnewson/Source/couchdb-lucene/target/classes:/home/rnewson/Source/couchdb-lucene/target/dependency org.apache.couchdb.lucene.Main
+fti=/usr/bin/java -cp /path/to/couchdb-lucene/target/classes:/path/to/couchdb-lucene/target/dependency org.apache.couchdb.lucene.Main
 </pre>
 
 You will need to restart CouchDB if you change couchdb-lucene source code but this is very fast.
@@ -64,8 +65,8 @@ You will need to restart CouchDB if you change couchdb-lucene source code but th
 couchdb-lucene respects several system properties;
 
 <dl>
-<dd>couchdb.url<dt>the url to contact CouchDB with (default is "http://localhost:5984")
-<dd>couchdb.lucene.dir<dt>specify the path to the lucene indexes (the default is to make a directory called 'lucene' relative to couchdb's current working directory.
+<dt>couchdb.url<dd>the url to contact CouchDB with (default is "http://localhost:5984")
+<dt>couchdb.lucene.dir<dd>specify the path to the lucene indexes (the default is to make a directory called 'lucene' relative to couchdb's current working directory.
 </dl>
 
 You can override these properties like this;
