@@ -1,4 +1,4 @@
-<h1>Build couchdb-lucene<h1>
+<h1>Build couchdb-lucene</h1>
 
 <ol>
 <li>Install Maven 2.
