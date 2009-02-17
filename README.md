@@ -50,6 +50,33 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
 
 return values is a JSON array of _id, _rev and sort_field values (the latter only when sort= is supplied)
 
+<pre>
+{
+  "total_rows":49999,
+  "rows":
+  [
+    {"_id":"9","_rev":"2779848574","score":1.712123155593872},
+    {"_id":"8","_rev":"670155834","score":1.712123155593872}
+  ]
+}
+</pre>
+
+<pre>
+{
+  "total_rows":49999,
+  "sort_order":
+  [
+    {"field":"customer","reverse":false,"type":"string"},
+    {"reverse":false,"type":"doc"}
+  ],
+  "rows":
+  [
+    {"_id":"75000","_rev":"372496647","score":1.712123155593872,"sort_order":["00000000000000",50802]},
+    {"_id":"170036","_rev":"3628205594","score":1.712123155593872,"sort_order":["00000000000000",51716]}
+  ]
+}
+</pre>
+
 <h1>Working With The Source</h1>
 
 To develop "live", type "mvn dependency:unpack-dependencies" and change the external line to something like this;
