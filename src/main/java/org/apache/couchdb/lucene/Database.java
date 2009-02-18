@@ -24,7 +24,7 @@ import org.apache.commons.io.IOUtils;
  */
 public final class Database {
 
-	private static final HttpClient CLIENT = new HttpClient();
+	static final HttpClient CLIENT = new HttpClient();
 
 	private static final String[] EMPTY_ARR = new String[0];
 
@@ -69,12 +69,12 @@ public final class Database {
 	public DbInfo getInfo(final String dbname) throws HttpException, IOException {
 		return new DbInfo(JSONObject.fromObject(get(dbname)));
 	}
-
+	
 	private String get(final String path) throws HttpException, IOException {
 		return execute(new GetMethod(url(path)));
 	}
 
-	private String url(final String path) {
+	String url(final String path) {
 		return String.format("%s/%s", url, path);
 	}
 

@@ -22,6 +22,12 @@ final class Config {
 
 	static final String SEQ = "_seq";
 	
+	static final String BODY ="_body";
+	
+	static final String TITLE ="_title";
+
+	static final String AUTHOR ="_author";
+	
 	static final String INDEX_DIR = System.getProperty("couchdb.lucene.dir", "lucene");
 
 	static final int EXPUNGE_LIMIT = Integer.getInteger("couchdb.lucene.expunge", 1000);
