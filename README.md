@@ -27,6 +27,8 @@ Currently all fields of all documents are indexed, javascript control coming soo
 
 CouchDB uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to index attachments of the following types, assuming the correct content_type is set in couchdb;
 
+<h3>Supported Formats</h3>
+
 <ul>
 <li>Excel spreadsheets (application/vnd.ms-excel)
 <li>Word documents (application/msword)
@@ -60,6 +62,17 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 </dl>
 
 <i>All parameters except 'q' are optional.</i>
+
+<h2>Special Fields</h2>
+
+<dl>
+<dt>_id<dd>The _id of the document.
+<dt>_rev<dd>The _rev of the document.
+<dt>_db<dd>The source database of the document.
+<dt>_body<dd>Any text extracted from any attachment (name may change).
+<dt>_author<dd>The author of any attachment (name may change).
+<dt>_title<dd>The title of any attachment (name may change).
+</dl>
 
 <h2>Examples</h2>
 
