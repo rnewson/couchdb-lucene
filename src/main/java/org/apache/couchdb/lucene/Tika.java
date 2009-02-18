@@ -10,7 +10,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.lucene.document.Document;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParsingReader;
 
 public final class Tika {
@@ -18,7 +17,7 @@ public final class Tika {
 	public void parse(final InputStream in, final String contentType, final Document doc) {
 		final AutoDetectParser parser = new AutoDetectParser();
 		final Metadata md = new Metadata();
-
+		md.set(Metadata.CONTENT_TYPE, contentType);
 		final Reader reader = new ParsingReader(parser, in, md);
 		final String body;
 		try {
@@ -30,8 +29,6 @@ public final class Tika {
 		} catch (final IOException e) {
 			return;
 		}
-
-		System.err.printf("body: %s, md: %s\n", body, md);
 
 		doc.add(text(Config.BODY, body, false));
 
