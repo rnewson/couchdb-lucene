@@ -6,6 +6,7 @@ import static org.apache.couchdb.lucene.Utils.token;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
@@ -194,13 +195,15 @@ public final class Index {
 				while (it.hasNext()) {
 					final String name = (String) it.next();
 					final JSONObject att = attachments.getJSONObject(name);
-					final String url = db.url(String.format("%s/%s/%s", dbname, doc.get(Config.ID), name));
+					final String url = db.url(String.format("%s/%s/%s", dbname, doc.get(Config.ID), URLEncoder.encode(name)));
 					final GetMethod get = new GetMethod(url);
 					try {
 						synchronized (db) {
 							final int sc = Database.CLIENT.executeMethod(get);
 							if (sc == 200) {
 								TIKA.parse(get.getResponseBodyAsStream(), att.getString("content_type"), doc);
+							} else {
+								log.warn("Failed to retrieve attachment: " + sc);
 							}
 						}
 					} finally {
