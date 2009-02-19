@@ -38,7 +38,6 @@ public final class Main {
 		while ((line = reader.readLine()) != null) {
 			try {
 				// Parse query.
-				System.err.println(line);
 				final JSONObject obj = JSONObject.fromObject(line);
 
 				final String db = obj.getJSONObject("info").getString("db_name");

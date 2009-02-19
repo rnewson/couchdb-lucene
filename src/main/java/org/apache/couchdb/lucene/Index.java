@@ -6,7 +6,6 @@ import static org.apache.couchdb.lucene.Utils.token;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
@@ -180,12 +179,14 @@ public final class Index {
 
 			// Standard properties.
 			doc.add(token(Config.DB, dbname, false));
+			final String id = (String) json.remove(Config.ID);
+			final String rev = (String) json.remove(Config.REV);
 
-			// While they appear numeric the API defines them as strings.
-			add(doc, Config.ID, json.getString(Config.ID), true);
-			add(doc, Config.REV, json.getString(Config.REV), true);
+			// Index _id and _rev as tokens.
+			doc.add(token(Config.ID, id, true));
+			doc.add(token(Config.REV, rev, true));
 
-			// Custom properties
+			// Index all attributes.
 			add(doc, null, json, false);
 
 			// Attachments
@@ -195,7 +196,7 @@ public final class Index {
 				while (it.hasNext()) {
 					final String name = (String) it.next();
 					final JSONObject att = attachments.getJSONObject(name);
-					final String url = db.url(String.format("%s/%s/%s", dbname, db.encode(doc.get(Config.ID)), db.encode(name)));
+					final String url = db.url(String.format("%s/%s/%s", dbname, db.encode(id), db.encode(name)));
 					final GetMethod get = new GetMethod(url);
 					try {
 						synchronized (db) {
@@ -213,7 +214,7 @@ public final class Index {
 			}
 
 			// write it
-			writer.updateDocument(new Term(Config.ID, json.getString(Config.ID)), doc);
+			writer.updateDocument(new Term(Config.ID, id), doc);
 		}
 
 		private void add(final Document out, final String key, final Object value, final boolean store) {
