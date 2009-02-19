@@ -3,6 +3,8 @@ package org.apache.couchdb.lucene;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -69,13 +71,21 @@ public final class Database {
 	public DbInfo getInfo(final String dbname) throws HttpException, IOException {
 		return new DbInfo(JSONObject.fromObject(get(dbname)));
 	}
-	
+
 	private String get(final String path) throws HttpException, IOException {
 		return execute(new GetMethod(url(path)));
 	}
 
 	String url(final String path) {
 		return String.format("%s/%s", url, path);
+	}
+
+	String encode(final String path) {
+		try {
+			return URLEncoder.encode(path, "UTF-8");
+		} catch (final UnsupportedEncodingException e) {
+			throw new Error("UTF-8 support missing!");
+		}
 	}
 
 	private String post(final String path, final String body) throws HttpException, IOException {

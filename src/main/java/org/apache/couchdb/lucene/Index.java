@@ -195,7 +195,7 @@ public final class Index {
 				while (it.hasNext()) {
 					final String name = (String) it.next();
 					final JSONObject att = attachments.getJSONObject(name);
-					final String url = db.url(String.format("%s/%s/%s", dbname, doc.get(Config.ID), URLEncoder.encode(name)));
+					final String url = db.url(String.format("%s/%s/%s", dbname, db.encode(doc.get(Config.ID)), db.encode(name)));
 					final GetMethod get = new GetMethod(url);
 					try {
 						synchronized (db) {
