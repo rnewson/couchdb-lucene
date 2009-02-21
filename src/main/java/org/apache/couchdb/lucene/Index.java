@@ -1,11 +1,14 @@
 package org.apache.couchdb.lucene;
 
 import static java.lang.Math.min;
+import static org.apache.couchdb.lucene.Utils.text;
+import static org.apache.couchdb.lucene.Utils.token;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -13,15 +16,14 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.MapFieldSelector;
 import org.apache.lucene.document.NumberTools;
-import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
@@ -73,6 +75,8 @@ public final class Index {
 	}
 
 	private static final Logger log = LogManager.getLogger(Index.class);
+
+	private static final Tika TIKA = new Tika();
 
 	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 
@@ -175,16 +179,42 @@ public final class Index {
 
 			// Standard properties.
 			doc.add(token(Config.DB, dbname, false));
+			final String id = (String) json.remove(Config.ID);
+			final String rev = (String) json.remove(Config.REV);
 
-			// While they appear numeric the API defines them as strings.
-			add(doc, Config.ID, json.getString(Config.ID), true);
-			add(doc, Config.REV, json.getString(Config.REV), true);
+			// Index _id and _rev as tokens.
+			doc.add(token(Config.ID, id, true));
+			doc.add(token(Config.REV, rev, true));
 
-			// Custom properties
+			// Index all attributes.
 			add(doc, null, json, false);
 
+			// Attachments
+			if (json.has("_attachments")) {
+				final JSONObject attachments = json.getJSONObject("_attachments");
+				final Iterator it = attachments.keys();
+				while (it.hasNext()) {
+					final String name = (String) it.next();
+					final JSONObject att = attachments.getJSONObject(name);
+					final String url = db.url(String.format("%s/%s/%s", dbname, db.encode(id), db.encode(name)));
+					final GetMethod get = new GetMethod(url);
+					try {
+						synchronized (db) {
+							final int sc = Database.CLIENT.executeMethod(get);
+							if (sc == 200) {
+								TIKA.parse(get.getResponseBodyAsStream(), att.getString("content_type"), doc);
+							} else {
+								log.warn("Failed to retrieve attachment: " + sc);
+							}
+						}
+					} finally {
+						get.releaseConnection();
+					}
+				}
+			}
+
 			// write it
-			writer.updateDocument(new Term(Config.ID, json.getString(Config.ID)), doc);
+			writer.updateDocument(new Term(Config.ID, id), doc);
 		}
 
 		private void add(final Document out, final String key, final Object value, final boolean store) {
@@ -219,14 +249,6 @@ public final class Index {
 			} else {
 				log.warn("Unsupported data type: " + value.getClass());
 			}
-		}
-
-		private Field text(final String name, final String value, final boolean store) {
-			return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
-		}
-
-		private Field token(final String name, final String value, final boolean store) {
-			return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
 		}
 
 	}

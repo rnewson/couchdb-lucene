@@ -19,7 +19,33 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h1>Indexing Strategy</h1>
 
+<h2>Document Indexing</h2>
+
 Currently all fields of all documents are indexed, javascript control coming soon.
+
+<h2>Attachment Indexing</h2>
+
+CouchDB uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to index attachments of the following types, assuming the correct content_type is set in couchdb;
+
+<h3>Supported Formats</h3>
+
+<ul>
+<li>Excel spreadsheets (application/vnd.ms-excel)
+<li>Word documents (application/msword)
+<li>Powerpoint presentations (application/vnd.ms-powerpoint)
+<li>Visio (application/vnd.visio)
+<li>Outlook (application/vnd.ms-outlook)
+<li>XML (application/xml)
+<li>HTML (text/html)
+<li>Images (image/*)
+<li>Java class files
+<li>Java jar archives
+<li>MP3 (audio/mp3)
+<li>OpenDocument (application/vnd.oasis.opendocument.*)
+<li>Plain text (text/plain)
+<li>PDF (application/pdf)
+<li>RTF (application/rtf)
+</ul>
 
 <h1>Searching with couchdb-lucene</h1>
 
@@ -37,6 +63,17 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 
 <i>All parameters except 'q' are optional.</i>
 
+<h2>Special Fields</h2>
+
+<dl>
+<dt>_id<dd>The _id of the document.
+<dt>_rev<dd>The _rev of the document.
+<dt>_db<dd>The source database of the document.
+<dt>_body<dd>Any text extracted from any attachment (name may change).
+<dt>_author<dd>The author of any attachment (name may change).
+<dt>_title<dd>The title of any attachment (name may change).
+</dl>
+
 <h2>Examples</h2>
 
 <pre>
@@ -49,6 +86,33 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
 <h2>Search Results Format</h2>
 
 return values is a JSON array of _id, _rev and sort_field values (the latter only when sort= is supplied)
+
+<pre>
+{
+  "total_rows":49999,
+  "rows":
+  [
+    {"_id":"9","_rev":"2779848574","score":1.712123155593872},
+    {"_id":"8","_rev":"670155834","score":1.712123155593872}
+  ]
+}
+</pre>
+
+<pre>
+{
+  "total_rows":49999,
+  "sort_order":
+  [
+    {"field":"customer","reverse":false,"type":"string"},
+    {"reverse":false,"type":"doc"}
+  ],
+  "rows":
+  [
+    {"_id":"75000","_rev":"372496647","score":1.712123155593872,"sort_order":["00000000000000",50802]},
+    {"_id":"170036","_rev":"3628205594","score":1.712123155593872,"sort_order":["00000000000000",51716]}
+  ]
+}
+</pre>
 
 <h1>Working With The Source</h1>
 

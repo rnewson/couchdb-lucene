@@ -27,9 +27,9 @@
       <version>2.4.0</version>
     </dependency>
     <dependency>
-      <groupId>rhino</groupId>
-      <artifactId>js</artifactId>
-      <version>1.7R1</version>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika</artifactId>
+      <version>0.2</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
