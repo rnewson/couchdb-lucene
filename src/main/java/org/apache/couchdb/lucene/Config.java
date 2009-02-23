@@ -1,14 +1,12 @@
 package org.apache.couchdb.lucene;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.QueryParser;
 
 final class Config {
 
-	static final long REFRESH_INTERVAL = MINUTES.toMillis(Integer.getInteger("couchdb.lucene.refresh.mins", 5));
+	static final long REFRESH_INTERVAL = Integer.getInteger("couchdb.lucene.refresh.mins", 5) * 60000;
 
 	static final Analyzer ANALYZER = new StandardAnalyzer();
 
@@ -21,13 +19,13 @@ final class Config {
 	static final String REV = "_rev";
 
 	static final String SEQ = "_seq";
-	
-	static final String BODY ="_body";
-	
-	static final String TITLE ="_title";
 
-	static final String AUTHOR ="_author";
-	
+	static final String BODY = "_body";
+
+	static final String TITLE = "_title";
+
+	static final String AUTHOR = "_author";
+
 	static final String INDEX_DIR = System.getProperty("couchdb.lucene.dir", "lucene");
 
 	static final int EXPUNGE_LIMIT = Integer.getInteger("couchdb.lucene.expunge", 1000);
