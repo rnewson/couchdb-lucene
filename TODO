@@ -1,3 +1,4 @@
 
 * better lifecycle management (couchdb keeps killing our java process when it thinks a query is too slow, this prevents ever building a decent FieldCache for sorting, etc).
 * use javascript to let couchdb user to program output transformation rather than current blanket strategy
+* build sort cache asynchronously.
