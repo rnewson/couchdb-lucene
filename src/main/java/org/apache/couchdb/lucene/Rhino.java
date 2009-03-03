@@ -18,10 +18,26 @@ public final class Rhino {
 	public Rhino(final String fun) {
 		this.context = contextFactory.enterContext();
 		scope = context.initStandardObjects();
+		final Scriptable o = Context.toObject(this, scope);
+		System.err.println(o);
+		scope.put("out", scope, o);
 
 		final String script = String.format("function(json) { var fun=%s; return fun(eval('('+json+')')); }", fun);
 
 		this.function = context.compileFunction(scope, script, "", 0, null);
+
+	}
+
+	public void emit_text(final Object key, final String val) {
+		System.err.printf("%s: %s\n", key, val);
+	}
+
+	public void emit_int(final Object key, final Double val) {
+		System.err.printf("%s: %s\n", key, val);
+	}
+
+	public void emit_date(final Object key, final String val) {
+		System.err.printf("%s: %s\n", key, val.getClass());
 	}
 
 	public String parse(final String doc) {
