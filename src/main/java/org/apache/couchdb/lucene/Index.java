@@ -43,6 +43,7 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory;
+import org.mozilla.javascript.NativeObject;
 
 /**
  * High-level wrapper class over Lucene.
@@ -82,6 +83,8 @@ public final class Index {
 
 	private class IndexUpdateTask extends TimerTask {
 
+		private Rhino filter = null;
+
 		@Override
 		public void run() {
 			IndexWriter writer = null;
@@ -90,6 +93,16 @@ public final class Index {
 				final String[] dbnames = db.getAllDatabases();
 				writer = newWriter();
 				for (final String dbname : dbnames) {
+					// Database might supply a filter.
+					final JSONObject designDoc = db.getDoc(dbname, "_design/lucene", null);
+					if (designDoc.containsKey("filter")) {
+						filter = new Rhino(designDoc.getString("filter"));
+						System.err.println("FILTER: " + filter);
+					} else {
+						filter = null;
+						System.err.println(designDoc);
+					}
+
 					commit |= updateDatabase(writer, dbname);
 				}
 			} catch (final IOException e) {
@@ -175,6 +188,12 @@ public final class Index {
 			// Skip design documents.
 			if (json.getString(Config.ID).startsWith("_design")) {
 				return;
+			}
+
+			// Filter, if supplied.
+			if (filter != null) {
+				final NativeObject no = filter.parse(json.toString());
+				
 			}
 
 			// Standard properties.
