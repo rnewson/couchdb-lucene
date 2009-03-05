@@ -396,7 +396,7 @@ public final class Index {
 		final int max = min(td.totalHits, limit);
 		final String[] fetch_ids = include_docs ? new String[max] : null;
 		final JSONArray rows = new JSONArray();
-		for (int i = skip; i < max; i++) {
+		for (int i = skip; i < skip + max; i++) {
 			final Document doc = searcher.doc(td.scoreDocs[i].doc, FS);
 			final JSONObject obj = new JSONObject();
 			obj.element("_id", doc.get(Config.ID));
