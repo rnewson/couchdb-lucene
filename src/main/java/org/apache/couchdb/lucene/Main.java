@@ -30,11 +30,27 @@ public final class Main {
 
 	public static void main(final String[] args) throws IOException {
 		final Index index = new Index();
-		index.start();
+		final Thread startupThread = new Thread(new Runnable() {
 
-		// Main processing loop.
+			public void run() {
+				try {
+					index.start();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		startupThread.start();
+
 		final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
 		String line = null;
+
+		// Promptly returns errors until started.
+		while (startupThread.isAlive() && (line=reader.readLine()) != null) {
+			System.out.println(Utils.error("couchdb-lucene is unavailable."));
+		}
+
+		// Main processing loop.
 		while ((line = reader.readLine()) != null) {
 			try {
 				// Parse query.
