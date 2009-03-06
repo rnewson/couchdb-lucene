@@ -270,7 +270,7 @@ public final class Index {
 		this.progress = new Progress(f);
 	}
 
-	public void start() throws IOException {
+	public void start() throws Exception {
 		log.info("couchdb-lucene is starting.");
 		if (IndexWriter.isLocked(dir)) {
 			log.warn("Forcibly unlocking locked index at startup.");
@@ -279,6 +279,8 @@ public final class Index {
 
 		Index.this.progress.load();
 		openReader();
+		// Warm the searcher.
+		query("nomatch", "dummy_field:dummy_value", null, true, 0, 5, false, false);
 
 		log.info("couchdb-lucene is started.");
 

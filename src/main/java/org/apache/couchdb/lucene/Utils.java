@@ -12,7 +12,7 @@ class Utils {
 	}
 
 	public static String error(final String txt) {
-		return new JSONObject().element("code", "500").element("body", txt).toString();
+		return new JSONObject().element("code", 500).element("body", txt).toString();
 	}
 
 	public static Field text(final String name, final String value, final boolean store) {
