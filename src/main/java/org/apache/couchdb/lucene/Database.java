@@ -54,7 +54,10 @@ public final class Database {
 	}
 
 	public JSONObject getDoc(final String dbname, final String id, final String rev) throws HttpException, IOException {
-		return JSONObject.fromObject(get(String.format("%s/%s?rev=%s", dbname, id, rev)));
+		if (rev == null)
+			return JSONObject.fromObject(get(String.format("%s/%s", dbname, id)));
+		else
+			return JSONObject.fromObject(get(String.format("%s/%s?rev=%s", dbname, id, rev)));
 	}
 
 	public JSONObject getDocs(final String dbname, final String... ids) throws HttpException, IOException {
@@ -96,7 +99,7 @@ public final class Database {
 
 	private synchronized String execute(final HttpMethodBase method) throws HttpException, IOException {
 		try {
-			CLIENT.executeMethod(method);
+			CLIENT.executeMethod(method);			
 			final InputStream in = method.getResponseBodyAsStream();
 			try {
 				final StringWriter writer = new StringWriter(2048);

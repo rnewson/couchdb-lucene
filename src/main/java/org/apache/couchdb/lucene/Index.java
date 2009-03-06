@@ -79,6 +79,8 @@ public final class Index {
 
 	private class IndexUpdateTask extends TimerTask {
 
+		private Rhino filter = null;
+
 		@Override
 		public void run() {
 			IndexWriter writer = null;
@@ -87,6 +89,18 @@ public final class Index {
 				final String[] dbnames = db.getAllDatabases();
 				writer = newWriter();
 				for (final String dbname : dbnames) {
+					// Database might supply a filter.
+					final JSONObject designDoc = db.getDoc(dbname, "_design/lucene", null);
+					if (designDoc.containsKey("filter")) {
+						String filterFun = designDoc.getString("filter");
+						// Strip start and end double quotes.
+						filterFun = filterFun.replaceAll("^\"*", "");
+						filterFun = filterFun.replaceAll("\"*$", "");
+						filter = new Rhino(filterFun);
+					} else {
+						filter = null;
+					}
+
 					commit |= updateDatabase(writer, dbname);
 				}
 			} catch (final IOException e) {
@@ -167,11 +181,16 @@ public final class Index {
 		private void updateDocument(final IndexWriter writer, final String dbname, final JSONObject obj)
 				throws IOException {
 			final Document doc = new Document();
-			final JSONObject json = obj.getJSONObject("doc");
+			JSONObject json = obj.getJSONObject("doc");
 
 			// Skip design documents.
 			if (json.getString(Config.ID).startsWith("_design")) {
 				return;
+			}
+
+			// Filter, if supplied.
+			if (filter != null) {
+				json = JSONObject.fromObject(filter.parse(json.toString()));
 			}
 
 			// Standard properties.
