@@ -29,13 +29,15 @@ public final class Main {
 	private static final Logger log = LogManager.getLogger(Main.class);
 
 	public static void main(final String[] args) throws IOException {
+		System.out.println(Utils.error("couchdb-lucene is unavailable."));
+		
 		final Index index = new Index();
 		final Thread startupThread = new Thread(new Runnable() {
 
 			public void run() {
 				try {
 					index.start();
-				} catch (IOException e) {
+				} catch (final Exception e) {
 					e.printStackTrace();
 				}
 			}

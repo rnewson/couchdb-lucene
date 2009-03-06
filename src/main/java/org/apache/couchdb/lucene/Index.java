@@ -23,15 +23,12 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.MapFieldSelector;
-import org.apache.lucene.document.NumberTools;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.ConstantScoreRangeQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -231,12 +228,7 @@ public final class Index {
 					out.add(text(key, (String) value, store));
 				}
 			} else if (value instanceof Number) {
-				final Number number = (Number) value;
-				if (value instanceof Long || value instanceof Integer) {
-					out.add(token(key, NumberTools.longToString(number.longValue()), store));
-				} else {
-					out.add(token(key, value.toString(), store));
-				}
+				out.add(token(key, value.toString(), store));
 			} else if (value instanceof Boolean) {
 				out.add(token(key, value.toString(), store));
 			} else if (value instanceof JSONArray) {
@@ -278,7 +270,7 @@ public final class Index {
 		this.progress = new Progress(f);
 	}
 
-	public void start() throws IOException {
+	public void start() throws Exception {
 		log.info("couchdb-lucene is starting.");
 		if (IndexWriter.isLocked(dir)) {
 			log.warn("Forcibly unlocking locked index at startup.");
@@ -287,6 +279,8 @@ public final class Index {
 
 		Index.this.progress.load();
 		openReader();
+		// Warm the searcher.
+		query("nomatch", "dummy_field:dummy_value", null, true, 0, 5, false, false);
 
 		log.info("couchdb-lucene is started.");
 
@@ -463,51 +457,7 @@ public final class Index {
 	}
 
 	private Query parse(final String query) throws ParseException {
-		final Query result = Config.QP.parse(query);
-		return visit(result);
-	}
-
-	/**
-	 * Visit (and optionally replace) any part of the query tree.
-	 * 
-	 * Currently only rewrites {@link ConstantScoreRangeQuery} for numeric
-	 * ranges.
-	 * 
-	 * @param result
-	 * @return
-	 */
-	private Query visit(final Query result) {
-		if (result instanceof BooleanQuery) {
-			final BooleanQuery bq = (BooleanQuery) result;
-			final BooleanClause[] bc = bq.getClauses();
-			for (int i = 0; i < bc.length; i++) {
-				bc[i].setQuery(visit(bc[i].getQuery()));
-			}
-			return result;
-		} else if (result instanceof ConstantScoreRangeQuery) {
-			final ConstantScoreRangeQuery rq = (ConstantScoreRangeQuery) result;
-			if (isNumericOrNull(rq.getLowerVal()) && isNumericOrNull(rq.getUpperVal())) {
-				return new ConstantScoreRangeQuery(rq.getField(), encodeNumber(rq.getLowerVal()), encodeNumber(rq
-						.getUpperVal()), rq.includesLower(), rq.includesUpper());
-			}
-			return result;
-		}
-		return result;
-	}
-
-	private boolean isNumericOrNull(final String val) {
-		if (val == null)
-			return true;
-		try {
-			Long.parseLong(val);
-			return true;
-		} catch (final NumberFormatException e) {
-			return false;
-		}
-	}
-
-	private String encodeNumber(final String num) {
-		return num == null ? null : NumberTools.longToString(Long.parseLong(num));
+		return Config.QP.parse(query);
 	}
 
 	private IndexWriter newWriter() throws IOException {
