@@ -1,7 +1,6 @@
 package org.apache.couchdb.lucene;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 
 import net.sf.json.JSONObject;
@@ -10,16 +9,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 /**
- * Entry point. This class is invoked by couchdb directly using the following
- * configuration;
- * 
- * <pre>
- * [external]
- * fti = /usr/bin/java -cp /path/to/couchdb-lucene.jar
- * 
- * [httpd_db_handlers]
- * _fti = {couch_httpd_external, handle_external_req, &lt;&lt;&quot;fti&quot;&gt;&gt;}
- * </pre>
+ * Entry point for indexing and searching.
  * 
  * @author rnewson
  * 
@@ -28,9 +18,25 @@ public final class Main {
 
 	private static final Logger log = LogManager.getLogger(Main.class);
 
-	public static void main(final String[] args) throws IOException {
+	public static void main(final String[] args) throws Exception {
+		if (args.length >= 1 && args[0].equals("-index")) {
+			Index.main(args);
+			return;
+		}
+
+		if (args.length >= 1 && args[0].equals("-search")) {
+			Search.main(args);
+			return;
+		}
+
+		System.out.println(Utils.error("Invoke with -index or -search only."));
+		return;
+	}
+
+	private static void ddd() throws Exception {
+
 		System.out.println(Utils.error("couchdb-lucene is unavailable."));
-		
+
 		final Index index = new Index();
 		final Thread startupThread = new Thread(new Runnable() {
 
@@ -48,7 +54,7 @@ public final class Main {
 		String line = null;
 
 		// Promptly returns errors until started.
-		while (startupThread.isAlive() && (line=reader.readLine()) != null) {
+		while (startupThread.isAlive() && (line = reader.readLine()) != null) {
 			System.out.println(Utils.error("couchdb-lucene is unavailable."));
 		}
 
@@ -78,5 +84,4 @@ public final class Main {
 
 		index.stop();
 	}
-
 }

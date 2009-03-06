@@ -8,10 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -45,9 +43,29 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory;
 
 /**
- * High-level wrapper class over Lucene.
+ * Search entry point.
  */
-public final class Index {
+public final class Search {
+
+	private static final Logger logger = LogManager.getLogger(Search.class);
+
+	public static void main(final String[] args) throws Exception {
+		IndexSearcher searcher = null;
+		final Scanner scanner = new Scanner(System.in);
+		while (scanner.hasNextLine()) {
+			if (searcher == null && IndexReader.indexExists(Config.INDEX_DIR)) {
+				searcher = new IndexSearcher(Config.INDEX_DIR);
+			}
+
+			if (searcher == null) {
+				System.out.println("{\"code\":503,\"body\":\"couchdb-lucene not available.\"}");
+			} else {
+				final SearchRequest request = new SearchRequest(scanner.nextLine());
+				final String result = request.execute(searcher);
+				System.out.println(result);
+			}
+		}
+	}
 
 	private void openReader() throws IOException {
 		final IndexReader oldReader;
@@ -74,7 +92,7 @@ public final class Index {
 		}
 	}
 
-	private static final Logger log = LogManager.getLogger(Index.class);
+	private static final Logger log = LogManager.getLogger(Search.class);
 
 	private static final Tika TIKA = new Tika();
 
@@ -283,31 +301,7 @@ public final class Index {
 
 	private final Object mutex = new Object();
 
-	private static final Set<String> updates = new HashSet<String>();
-
-	/**
-	 * update notifications look like this;
-	 * 
-	 * {"type":"updated","db":"cas"}
-	 * 
-	 * type can be created, updated or deleted.
-	 */
-	public static void main(final String[] args) throws Exception {
-		final Scanner scanner = new Scanner(System.in);
-		while (scanner.hasNextLine()) {
-			final String line = scanner.nextLine();
-			final JSONObject obj = JSONObject.fromObject(line);
-			if (obj.has("type") && obj.has("db")) {
-				synchronized (updates) {
-					if (updates.add(obj.getString("db"))) {
-						updates.notify();
-					}
-				}
-			}
-		}
-	}
-
-	public Index() throws IOException {
+	public Search() throws IOException {
 		final File f = new File(Config.INDEX_DIR);
 		dir = NIOFSDirectory.getDirectory(f);
 		if (!IndexReader.indexExists(dir)) {
@@ -323,7 +317,7 @@ public final class Index {
 			IndexWriter.unlock(dir);
 		}
 
-		Index.this.progress.load();
+		Search.this.progress.load();
 		openReader();
 		// Warm the searcher.
 		query("nomatch", "dummy_field:dummy_value", null, true, 0, 5, false, false);
