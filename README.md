@@ -1,3 +1,11 @@
+<h1>News</h1>
+
+I'm working on integrating Rhino to allow customization of the indexing process.
+
+Additionally, I have a new of bug fixes waiting in the wings and a few other improvements.
+
+I have had little time in the last week or two to get much of this finished.
+
 <h1>Build couchdb-lucene</h1>
 
 <ol>
