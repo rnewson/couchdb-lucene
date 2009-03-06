@@ -43,7 +43,6 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory;
-import org.mozilla.javascript.NativeObject;
 
 /**
  * High-level wrapper class over Lucene.
@@ -183,7 +182,7 @@ public final class Index {
 		private void updateDocument(final IndexWriter writer, final String dbname, final JSONObject obj)
 				throws IOException {
 			final Document doc = new Document();
-			final JSONObject json = obj.getJSONObject("doc");
+			JSONObject json = obj.getJSONObject("doc");
 
 			// Skip design documents.
 			if (json.getString(Config.ID).startsWith("_design")) {
@@ -192,8 +191,7 @@ public final class Index {
 
 			// Filter, if supplied.
 			if (filter != null) {
-				final NativeObject no = filter.parse(json.toString());
-				
+				json = JSONObject.fromObject(filter.parse(json.toString()));
 			}
 
 			// Standard properties.

@@ -21,7 +21,7 @@ public final class Rhino {
 
 	private final String fun;
 
-	public Rhino(final String fun) throws Exception {
+	public Rhino(final String fun) throws IOException {
 		this.fun = fun;
 		this.context = contextFactory.enterContext();
 		context.setOptimizationLevel(9);
