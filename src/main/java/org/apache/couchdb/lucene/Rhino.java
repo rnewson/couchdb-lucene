@@ -24,6 +24,7 @@ public final class Rhino {
 	public Rhino(final String fun) throws Exception {
 		this.fun = fun;
 		this.context = contextFactory.enterContext();
+		context.setOptimizationLevel(9);
 		scope = context.initStandardObjects();
 
 		final String json2Script = loadJSONParser();
