@@ -88,7 +88,6 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 http://localhost:5984/dbname/_fti?q=field_name:value
 http://localhost:5984/dbname/_fti?q=field_name:value&sort=other_field
 http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
-http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document AND customer:[100 TO 400]
 </pre>
 
 <h2>Search Results Format</h2>
