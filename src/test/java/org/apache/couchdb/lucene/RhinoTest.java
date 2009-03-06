@@ -8,10 +8,10 @@ import org.junit.Test;
 public class RhinoTest {
 
 	@Test
-	public void testRhino() {
+	public void testRhino() throws Exception {
 		final Rhino rhino = new Rhino("function(doc) { delete doc.deleteme; return doc; }");
 		final String doc = "{\"deleteme\":\"true\", \"size\":13}";
-		assertThat((Double)rhino.parse(doc).get("size", null), CoreMatchers.is(13.0));
+		assertThat(rhino.parse(doc), CoreMatchers.equalTo("{\"size\":13}"));
 		rhino.close();
 	}
 
