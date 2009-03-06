@@ -50,13 +50,29 @@ public final class Search {
 	private static final Logger logger = LogManager.getLogger(Search.class);
 
 	public static void main(final String[] args) throws Exception {
+		IndexReader reader = null;
 		IndexSearcher searcher = null;
+
 		final Scanner scanner = new Scanner(System.in);
 		while (scanner.hasNextLine()) {
-			if (searcher == null && IndexReader.indexExists(Config.INDEX_DIR)) {
-				searcher = new IndexSearcher(Config.INDEX_DIR);
+			if (reader == null) {
+				// Open a reader and searcher if index exists.
+				if (IndexReader.indexExists(Config.INDEX_DIR)) {
+					reader = IndexReader.open(NIOFSDirectory.getDirectory(Config.INDEX_DIR), true);
+					searcher = new IndexSearcher(reader);
+				}
+			} else {
+				// Refresh reader and searcher if necessary.
+				final IndexReader newReader = reader.reopen();
+				if (reader != newReader) {
+					final IndexReader oldReader = reader;
+					reader = newReader;
+					searcher = new IndexSearcher(reader);
+					oldReader.close();
+				}
 			}
-
+			
+			// Process search request if index exists.
 			if (searcher == null) {
 				System.out.println("{\"code\":503,\"body\":\"couchdb-lucene not available.\"}");
 			} else {
