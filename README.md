@@ -19,7 +19,10 @@ I have had little time in the last week or two to get much of this finished.
 
 <pre>
 [external]
-fti= /usr/bin/java -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar
+searcher=/usr/bin/java -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -search
+
+[update_notification]
+indexer=/usr/bin/java -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -index
 
 [httpd_db_handlers]
 _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
@@ -29,7 +32,15 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h2>Document Indexing</h2>
 
-Currently all fields of all documents are indexed, javascript control coming soon.
+By default all attributes are indexed. You can customize this process by adding a design document at _design/lucene. You must supply a an attribute called "filter" which takes and returns a document. For example;
+
+<pre>
+{
+  "filter":"function(doc) { return doc; }"
+}
+</pre>
+
+The function is evaluated by <a href="http://www.mozilla.org/rhino/">Rhino</a>. You may add, modify and remove any attributes. Additionally, returning null will exclude the document from indexing entirely.
 
 <h2>Attachment Indexing</h2>
 
