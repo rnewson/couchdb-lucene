@@ -17,7 +17,9 @@ public final class Rhino {
 
 	private final Scriptable scope;
 
-	private final Function function;
+	private final Function userFun;
+
+	private final Function systemFun;
 
 	private final String fun;
 
@@ -27,15 +29,16 @@ public final class Rhino {
 		context.setOptimizationLevel(9);
 		scope = context.initStandardObjects();
 
-		final String json2Script = loadJSONParser();
+		// compile user-defined function.
+		this.userFun = context.compileFunction(scope, fun, "userFun", 0, null);
 
-		// evaluate JSON parser/stringifier.
-		context.evaluateString(scope, json2Script, "json2", 0, null);
+		// compile system function.
+		this.systemFun = context.compileFunction(scope,
+				"function(json,filter) { var doc=JSON.parse(json); doc=filter(doc); return JSON.stringify(doc); }",
+				"systemFun", 0, null);
 
-		// compile user-defined javascript function.
-		final String f = String.format("function(json) { var fun=%s; var obj=JSON.parse(json); "
-				+ "var result=fun(obj); return JSON.stringify(result); }", fun);
-		this.function = context.compileFunction(scope, f, "fn", 0, null);
+		// add JSON parser.
+		context.evaluateString(scope, loadJSONParser(), "json2", 0, null);
 	}
 
 	private String loadJSONParser() throws IOException {
@@ -48,7 +51,7 @@ public final class Rhino {
 	}
 
 	public String parse(final String doc) {
-		return (String) function.call(context, scope, null, new Object[] { doc });
+		return (String) systemFun.call(context, scope, null, new Object[] { doc, userFun });
 	}
 
 	public void close() {

@@ -95,11 +95,13 @@ public final class Index {
 					// Database might supply a filter.
 					final JSONObject designDoc = db.getDoc(dbname, "_design/lucene", null);
 					if (designDoc.containsKey("filter")) {
-						filter = new Rhino(designDoc.getString("filter"));
-						System.err.println("FILTER: " + filter);
+						String filterFun = designDoc.getString("filter");
+						// Strip start and end double quotes.
+						filterFun = filterFun.replaceAll("^\"*", "");
+						filterFun = filterFun.replaceAll("\"*$", "");
+						filter = new Rhino(filterFun);
 					} else {
 						filter = null;
-						System.err.println(designDoc);
 					}
 
 					commit |= updateDatabase(writer, dbname);
