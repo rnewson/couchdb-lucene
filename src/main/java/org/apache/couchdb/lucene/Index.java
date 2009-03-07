@@ -281,9 +281,22 @@ public final class Index {
 
 	private final Progress progress;
 
-	private final Object mutex = new Object();
+	private static final Object mutex = new Object();
 
 	private static final Set<String> updates = new HashSet<String>();
+
+	private static class Indexer implements Runnable {
+
+		public void run() {
+			while (true) {
+				synchronized (mutex) {
+
+				}
+
+			}
+		}
+
+	}
 
 	/**
 	 * update notifications look like this;
@@ -293,14 +306,19 @@ public final class Index {
 	 * type can be created, updated or deleted.
 	 */
 	public static void main(final String[] args) throws Exception {
+		final Runnable indexer = new Indexer();
+		final Thread indexerThread = new Thread(indexer, "indexer");
+		indexerThread.setDaemon(true);
+		indexerThread.start();
+
 		final Scanner scanner = new Scanner(System.in);
 		while (scanner.hasNextLine()) {
 			final String line = scanner.nextLine();
 			final JSONObject obj = JSONObject.fromObject(line);
 			if (obj.has("type") && obj.has("db")) {
-				synchronized (updates) {
+				synchronized (mutex) {
 					if (updates.add(obj.getString("db"))) {
-						updates.notify();
+						mutex.notify();
 					}
 				}
 			}

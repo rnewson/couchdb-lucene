@@ -1,8 +1,5 @@
 package org.apache.couchdb.lucene;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
 /**
  * Entry point for indexing and searching.
  * 
@@ -10,8 +7,6 @@ import org.apache.log4j.Logger;
  * 
  */
 public final class Main {
-
-	private static final Logger log = LogManager.getLogger(Main.class);
 
 	public static void main(final String[] args) throws Exception {
 		if (args.length >= 1 && args[0].equals("-index")) {
