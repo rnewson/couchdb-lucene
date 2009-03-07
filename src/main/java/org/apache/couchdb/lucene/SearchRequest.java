@@ -29,8 +29,6 @@ public final class SearchRequest {
 
 	private static final Database DB = new Database(Config.DB_URL);
 
-	private static final long FIVE_MINUTES = 5 * 60 * 1000;
-
 	private final String dbname;
 
 	private final Query q;
@@ -80,15 +78,19 @@ public final class SearchRequest {
 	}
 
 	public String execute(final IndexSearcher searcher) throws IOException {
+		// Decline requests over MAX_LIMIT.
+		if (limit > Config.MAX_LIMIT) {
+			return "{\"code\":400,\"body\":\"max limit was exceeded.\"}";
+		}
 		// Return "304 - Not Modified" if etag matches.
 		final String etag = getETag(searcher);
 		if (etag.equals(this.ifNoneMatch)) {
 			return "{\"code\":304}";
 		}
 
+		// Perform search.
 		final TopDocs td;
 		final StopWatch stopWatch = new StopWatch();
-		// Perform search.
 		if (sort == null) {
 			td = searcher.search(q, null, skip + limit);
 		} else {
@@ -137,6 +139,7 @@ public final class SearchRequest {
 
 		// Results can't change unless the IndexReader does.
 		final JSONObject headers = new JSONObject();
+		// TODO make a per-db etag (md5(dbname + update_seq)?).
 		headers.put("ETag", etag);
 		result.put("headers", headers);
 

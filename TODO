@@ -5,3 +5,4 @@
 * document rhino integration
 * code tidy in general.
 * add a _status uri that lets you see index state/progress.
+* add an _optimize option.

@@ -1,64 +1,65 @@
 package org.apache.couchdb.lucene;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.IndexInput;
+import org.apache.lucene.store.IndexOutput;
+
 public final class Progress {
+
+	private static final String FILENAME = "couchdb.status";
+
+	private final Directory dir;
 
 	private final Map<String, Long> progress = new HashMap<String, Long>();
 
-	private File dir;
-
-	public Progress(final File dir) {
+	public Progress(final Directory dir) {
 		this.dir = dir;
 	}
 
+	public long getProgress(final String dbname) {
+		final Long result = progress.get(dbname);
+		return result == null ? -1 : result;
+	}
+
 	public void load() throws IOException {
-		final File dest = new File(dir, "indexing.progress");
-		if (dest.exists() == false) {
+		if (dir.fileExists(FILENAME) == false) {
 			progress.clear();
 			return;
 		}
-		final FileInputStream in = new FileInputStream(dest);
-		final DataInputStream din = new DataInputStream(in);
+
+		final IndexInput in = dir.openInput(FILENAME);
 		try {
 			progress.clear();
-			final int size = Integer.parseInt(din.readUTF());
+			final int size = in.readVInt();
 			for (int i = 0; i < size; i++) {
-				final String dbname = din.readUTF();
-				final long v = Long.parseLong(din.readUTF());
-				setProgress(dbname, v);
+				final String dbname = in.readString();
+				final long update_seq = in.readVLong();
+				setProgress(dbname, update_seq);
 			}
 		} finally {
-			din.close();
+			in.close();
 		}
 	}
 
 	public void save() throws IOException {
-		final File tmp = new File(dir, "indexing.new");
-		final File dest = new File(dir, "indexing.progress");
-
-		final FileOutputStream out = new FileOutputStream(tmp);
-		final DataOutputStream dout = new DataOutputStream(out);
+		final String tmp = "couchdb.new";
+		final IndexOutput out = dir.createOutput(tmp);
 		try {
-			dout.writeUTF(Integer.toString(progress.size()));
+			out.writeVInt(progress.size());
 			for (final Entry<String, Long> entry : progress.entrySet()) {
-				dout.writeUTF(entry.getKey());
-				dout.writeUTF(Long.toString(entry.getValue()));
+				out.writeString(entry.getKey());
+				out.writeVLong(entry.getValue());
 			}
-			dout.flush();
-			out.getFD().sync();
 			out.close();
-			tmp.renameTo(dest);
+			dir.sync(tmp);
+			dir.renameFile(tmp, FILENAME);
 		} catch (final IOException e) {
-			tmp.delete();
+			dir.deleteFile(tmp);
 			throw e;
 		} finally {
 			out.close();
@@ -67,11 +68,6 @@ public final class Progress {
 
 	public void setProgress(final String dbname, final long progress) {
 		this.progress.put(dbname, progress);
-	}
-
-	public long getProgress(final String dbname) {
-		final Long result = progress.get(dbname);
-		return result == null ? -1 : result;
 	}
 
 }
