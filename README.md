@@ -25,7 +25,7 @@ You are advised to delete indexes created prior to this update.
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
 
 [external]
-searcher=/usr/bin/java -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -search
+fti=/usr/bin/java -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -search
 
 [update_notification]
 indexer=/usr/bin/java -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -index
