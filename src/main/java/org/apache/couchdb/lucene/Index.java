@@ -257,7 +257,7 @@ public final class Index {
 	 * 
 	 * type can be created, updated or deleted.
 	 */
-	public static void main(final String[] args) throws Exception {
+	public static void main(final String[] args) {
 		final Runnable indexer = new Indexer();
 		final Thread indexerThread = new Thread(indexer, "indexer");
 		indexerThread.setDaemon(true);

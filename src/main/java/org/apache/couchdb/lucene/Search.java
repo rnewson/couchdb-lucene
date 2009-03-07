@@ -2,6 +2,7 @@ package org.apache.couchdb.lucene;
 
 import java.util.Scanner;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.NIOFSDirectory;
@@ -41,8 +42,12 @@ public final class Search {
 				System.out.println("{\"code\":503,\"body\":\"couchdb-lucene not available.\"}");
 			} else {
 				final SearchRequest request = new SearchRequest(line);
-				final String result = request.execute(searcher);
-				System.out.println(result);
+				try {
+					final String result = request.execute(searcher);
+					System.out.println(result);
+				} catch (final Exception e) {
+					System.out.printf("{\"code\":400,\"body\":\"%s\"}\n", StringEscapeUtils.escapeHtml(e.getMessage()));
+				}
 			}
 		}
 		if (reader != null) {
