@@ -1,8 +1,6 @@
-* indexer as updater process
-* searcher as external
 * sort cache can take too long to build, respond with keep-alive messages.
-* revisit numeric handling (it's too surprising)
-* document rhino integration
-* code tidy in general.
 * add a _status uri that lets you see index state/progress.
 * add an _optimize option.
+* handle "create" and "delete" notifications explicitly.
+* batch updates (no hair trigger).
+

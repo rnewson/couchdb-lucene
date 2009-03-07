@@ -53,13 +53,13 @@ public final class Index {
 					waitForUpdateNotification();
 				}
 			} catch (final IOException e) {
-				Log.log(e);
+				Log.errlog(e);
 			}
 		}
 
 		private void updateIndex() throws IOException {
 			if (IndexWriter.isLocked(dir)) {
-				Log.log("Forcibly unlocking locked index at startup.");
+				Log.errlog("Forcibly unlocking locked index at startup.");
 				IndexWriter.unlock(dir);
 			}
 
@@ -87,7 +87,7 @@ public final class Index {
 					commit |= updateDatabase(writer, dbname, progress, rhino);
 				}
 			} catch (final IOException e) {
-				Log.log(e);
+				Log.errlog(e);
 				commit = false;
 			} finally {
 				if (commit) {
@@ -107,6 +107,7 @@ public final class Index {
 				} catch (final InterruptedException e) {
 					running = false;
 				}
+				Log.errlog("Update detected.");
 			}
 		}
 
@@ -129,7 +130,7 @@ public final class Index {
 			}
 
 			if (from == -1) {
-				Log.log("index is missing or inconsistent, reindexing all documents for %s.", dbname);
+				Log.errlog("index is missing or inconsistent, reindexing all documents for %s.", dbname);
 				writer.deleteDocuments(new Term(Config.DB, dbname));
 			}
 
@@ -137,7 +138,7 @@ public final class Index {
 			while (from < info.getUpdateSeq()) {
 				final JSONObject obj = DB.getAllDocsBySeq(dbname, from, Config.BATCH_SIZE);
 				if (!obj.has("rows")) {
-					Log.log("no rows found (%s).", obj);
+					Log.errlog("no rows found (%s).", obj);
 					return false;
 				}
 				final JSONArray rows = obj.getJSONArray("rows");
@@ -160,7 +161,7 @@ public final class Index {
 			progress.setProgress(dbname, info.getUpdateSeq());
 
 			if (changed) {
-				Log.log("%s: index caught up from %,d to %,d.", dbname, start, info.getUpdateSeq());
+				Log.errlog("%s: index caught up from %,d to %,d.", dbname, start, info.getUpdateSeq());
 			}
 
 			return changed;
@@ -207,7 +208,7 @@ public final class Index {
 						if (sc == 200) {
 							TIKA.parse(get.getResponseBodyAsStream(), att.getString("content_type"), doc);
 						} else {
-							Log.log("Failed to retrieve attachment: %d", sc);
+							Log.errlog("Failed to retrieve attachment: %d", sc);
 						}
 					} finally {
 						get.releaseConnection();
@@ -242,9 +243,9 @@ public final class Index {
 					add(out, key, arr.get(i), store);
 				}
 			} else if (value == null) {
-				Log.log("%s was null.", key);
+				Log.errlog("%s was null.", key);
 			} else {
-				Log.log("Unsupported data type: %s.", value.getClass());
+				Log.errlog("Unsupported data type: %s.", value.getClass());
 			}
 		}
 
