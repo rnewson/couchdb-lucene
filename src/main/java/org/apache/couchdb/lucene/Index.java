@@ -6,10 +6,11 @@ import static org.apache.couchdb.lucene.Utils.token;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -17,8 +18,10 @@ import net.sf.json.JSONObject;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -36,7 +39,7 @@ public final class Index {
 
 	private static final Object MUTEX = new Object();
 
-	private static final Set<String> updates = new HashSet<String>();
+	private static final Map<String, Long> updates = new HashMap<String, Long>();
 
 	private static class Indexer implements Runnable {
 
@@ -47,23 +50,12 @@ public final class Index {
 		public void run() {
 			try {
 				this.dir = FSDirectory.getDirectory(Config.INDEX_DIR);
-				Log.errlog("Optimizing index at startup.");
-				optimizeIndex();
 				while (running) {
 					updateIndex();
 					waitForUpdateNotification();
 				}
 			} catch (final IOException e) {
 				Log.errlog(e);
-			}
-		}
-
-		private void optimizeIndex() throws IOException {
-			final IndexWriter writer = newWriter();
-			try {
-				writer.optimize();
-			} finally {
-				writer.close();
 			}
 		}
 
@@ -74,18 +66,46 @@ public final class Index {
 			}
 
 			final String[] dbnames = DB.getAllDatabases();
+			Arrays.sort(dbnames);
+
 			Rhino rhino = null;
 
 			boolean commit = false;
+			boolean expunge = false;
 			final IndexWriter writer = newWriter();
 			Progress progress = null;
 			try {
+				// Delete all documents in non-extant databases.
+				final IndexReader reader = IndexReader.open(dir);
+				try {
+					final TermEnum terms = reader.terms(new Term(Config.DB, ""));
+					try {
+						while (terms.next()) {
+							final Term term = terms.term();
+							if (!term.field().equals(Config.DB))
+								break;
+							if (Arrays.binarySearch(dbnames, term.text()) < 0) {
+								Log.errlog("Database '%s' has been deleted," + " removing all documents from index.",
+										term.text());
+								delete(writer, term.text());
+								commit = true;
+								expunge = true;
+							}
+						}
+					} finally {
+						terms.close();
+					}
+				} finally {
+					reader.close();
+				}
+
+				// Update all extant databases.
 				progress = new Progress(dir);
 				progress.load();
 				for (final String dbname : dbnames) {
 					// Database might supply a transformation function.
 					final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene", null);
-					if (designDoc.containsKey("transform")) {
+					if (designDoc != null && designDoc.containsKey("transform")) {
 						String transform = designDoc.getString("transform");
 						// Strip start and end double quotes.
 						transform = transform.replaceAll("^\"*", "");
@@ -101,8 +121,11 @@ public final class Index {
 				commit = false;
 			} finally {
 				if (commit) {
-					// TODO use commit(userString) in 2.9/3.0.
-					writer.commit();
+					if (expunge) {
+						writer.expungeDeletes();
+					}
+					writer.close();
+					Log.errlog("Committed changes to index.");
 					progress.save();
 				} else {
 					writer.rollback();
@@ -124,27 +147,30 @@ public final class Index {
 			final IndexWriter result = new IndexWriter(dir, Config.ANALYZER, MaxFieldLength.UNLIMITED);
 			result.setUseCompoundFile(false);
 			result.setRAMBufferSizeMB(Config.RAM_BUF);
+			result.setMergeFactor(5);
 			return result;
 		}
 
 		private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
 				final Rhino rhino) throws HttpException, IOException {
-			final DbInfo info = DB.getInfo(dbname);
+			final JSONObject info = DB.getInfo(dbname);
+			final long update_seq = info.getLong("update_seq");
+
 			long from = progress.getProgress(dbname);
 			long start = from;
 
-			if (from > info.getUpdateSeq()) {
+			if (from > update_seq) {
 				start = from = -1;
 				progress.setProgress(dbname, -1);
 			}
 
 			if (from == -1) {
-				Log.errlog("index is missing or inconsistent, reindexing all documents for %s.", dbname);
-				writer.deleteDocuments(new Term(Config.DB, dbname));
+				Log.errlog("Indexing '%s' from scratch.", dbname);
+				delete(writer, dbname);
 			}
 
 			boolean changed = false;
-			while (from < info.getUpdateSeq()) {
+			while (from < update_seq) {
 				final JSONObject obj = DB.getAllDocsBySeq(dbname, from, Config.BATCH_SIZE);
 				if (!obj.has("rows")) {
 					Log.errlog("no rows found (%s).", obj);
@@ -167,16 +193,20 @@ public final class Index {
 				}
 				from += Config.BATCH_SIZE;
 			}
-			progress.setProgress(dbname, info.getUpdateSeq());
+			progress.setProgress(dbname, update_seq);
 
 			if (changed) {
 				synchronized (MUTEX) {
 					updates.remove(dbname);
 				}
-				Log.errlog("%s: index caught up from %,d to %,d.", dbname, start, info.getUpdateSeq());
+				Log.errlog("%s: index caught up from %,d to %,d.", dbname, start, update_seq);
 			}
 
 			return changed;
+		}
+
+		private void delete(final IndexWriter writer, final String dbname) throws IOException {
+			writer.deleteDocuments(new Term(Config.DB, dbname));
 		}
 
 		private void updateDocument(final IndexWriter writer, final String dbname, final JSONObject obj,
@@ -281,11 +311,9 @@ public final class Index {
 			final String line = scanner.nextLine();
 			final JSONObject obj = JSONObject.fromObject(line);
 			if (obj.has("type") && obj.has("db")) {
-				Log.errlog(obj.toString());
 				synchronized (MUTEX) {
-					if (updates.add(obj.getString("db"))) {
-						MUTEX.notify();
-					}
+					updates.put(obj.getString("db"), System.nanoTime());
+					MUTEX.notify();
 				}
 			}
 		}

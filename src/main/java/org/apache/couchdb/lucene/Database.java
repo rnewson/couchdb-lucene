@@ -71,8 +71,8 @@ public final class Database {
 		return JSONObject.fromObject(post(String.format("%s/_all_docs?include_docs=true", dbname), req.toString()));
 	}
 
-	public DbInfo getInfo(final String dbname) throws HttpException, IOException {
-		return new DbInfo(JSONObject.fromObject(get(dbname)));
+	public JSONObject getInfo(final String dbname) throws HttpException, IOException {
+		return JSONObject.fromObject(get(dbname));
 	}
 
 	private String get(final String path) throws HttpException, IOException {
@@ -99,7 +99,7 @@ public final class Database {
 
 	private synchronized String execute(final HttpMethodBase method) throws HttpException, IOException {
 		try {
-			CLIENT.executeMethod(method);			
+			CLIENT.executeMethod(method);
 			final InputStream in = method.getResponseBodyAsStream();
 			try {
 				final StringWriter writer = new StringWriter(2048);
