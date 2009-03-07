@@ -47,13 +47,23 @@ public final class Index {
 		public void run() {
 			try {
 				this.dir = FSDirectory.getDirectory(Config.INDEX_DIR);
-
+				Log.errlog("Optimizing index at startup.");
+				optimizeIndex();
 				while (running) {
 					updateIndex();
 					waitForUpdateNotification();
 				}
 			} catch (final IOException e) {
 				Log.errlog(e);
+			}
+		}
+
+		private void optimizeIndex() throws IOException {
+			final IndexWriter writer = newWriter();
+			try {
+				writer.optimize();
+			} finally {
+				writer.close();
 			}
 		}
 

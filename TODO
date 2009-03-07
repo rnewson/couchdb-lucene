@@ -3,4 +3,4 @@
 * add an _optimize option.
 * handle "create" and "delete" notifications explicitly.
 * batch updates (no hair trigger).
-
+* reindex when transform function changes.
