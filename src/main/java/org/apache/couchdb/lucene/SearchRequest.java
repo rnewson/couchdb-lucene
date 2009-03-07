@@ -7,6 +7,7 @@ import java.io.IOException;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.MapFieldSelector;
@@ -115,12 +116,12 @@ public final class SearchRequest {
 		result.element("code", 200);
 
 		if (debug) {
-			result.put("body", "<pre>" + json + "</pre>");
+			result.put("body", "<pre>" + StringEscapeUtils.escapeHtml(json.toString(2)) + "</pre>");
 		} else {
 			result.put("json", json);
 		}
 
-		return result.toString(2);
+		return result.toString();
 	}
 
 }
