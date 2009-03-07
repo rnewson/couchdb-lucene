@@ -28,6 +28,7 @@ public final class Search {
 				// Refresh reader and searcher if necessary.
 				final IndexReader newReader = reader.reopen();
 				if (reader != newReader) {
+					Log.outlog("Lucene index was updated, reopening searcher.");
 					final IndexReader oldReader = reader;
 					reader = newReader;
 					searcher = new IndexSearcher(reader);
