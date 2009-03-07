@@ -18,6 +18,7 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
@@ -122,16 +123,15 @@ public final class SearchRequest {
 
 		final JSONObject json = new JSONObject();
 		json.put("q", q.toString(Config.DEFAULT_FIELD));
-		// Include sort info (if requested).
-		if (td instanceof TopFieldDocs) {
-			json.put("sort", sort);
-			json.put("sort_order", ((TopFieldDocs) td).fields);
-		}
 		json.put("skip", skip);
 		json.put("limit", limit);
 		json.put("total_rows", td.totalHits);
 		json.put("search_duration", stopWatch.getElapsed("search"));
 		json.put("fetch_duration", stopWatch.getElapsed("fetch"));
+		// Include sort info (if requested).
+		if (td instanceof TopFieldDocs) {
+			json.put("sort_order", toString(((TopFieldDocs) td).fields));
+		}
 		json.put("rows", rows);
 
 		final JSONObject result = new JSONObject();
@@ -154,6 +154,59 @@ public final class SearchRequest {
 
 	private String getETag(final IndexSearcher searcher) {
 		return Long.toHexString(searcher.getIndexReader().getVersion());
+	}
+
+	private String toString(final Sort sort) {
+		return toString(sort.getSort());
+	}
+
+	private String toString(final SortField[] sortFields) {
+		final JSONArray result = new JSONArray();
+		for (final SortField field : sortFields) {
+			final JSONObject col = new JSONObject();
+			col.element("field", field.getField());
+			col.element("reverse", field.getReverse());
+
+			final String type;
+			switch (field.getType()) {
+			case SortField.DOC:
+				type = "doc";
+				break;
+			case SortField.SCORE:
+				type = "score";
+				break;
+			case SortField.INT:
+				type = "int";
+				break;
+			case SortField.LONG:
+				type = "long";
+				break;
+			case SortField.BYTE:
+				type = "byte";
+				break;
+			case SortField.CUSTOM:
+				type = "custom";
+				break;
+			case SortField.DOUBLE:
+				type = "double";
+				break;
+			case SortField.FLOAT:
+				type = "float";
+				break;
+			case SortField.SHORT:
+				type = "short";
+				break;
+			case SortField.STRING:
+				type = "string";
+				break;
+			default:
+				type = "unknown";
+				break;
+			}
+			col.element("type", type);
+			result.add(col);
+		}
+		return result.toString();
 	}
 
 }

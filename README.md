@@ -1,10 +1,13 @@
 <h1>News</h1>
 
-I'm working on integrating Rhino to allow customization of the indexing process.
+I've merged the changes from the beta branch which brings many improvements. Notably;
 
-Additionally, I have a new of bug fixes waiting in the wings and a few other improvements.
+<ol>
+<li>Indexing is a separate process to searching and is triggered by update notifications.
+<li>Rhino integration has landed, user customization of indexing is now possible.
+</ol>
 
-I have had little time in the last week or two to get much of this finished.
+You are advised to delete indexes created prior to this update.
 
 <h1>Build couchdb-lucene</h1>
 
@@ -32,11 +35,11 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h2>Document Indexing</h2>
 
-By default all attributes are indexed. You can customize this process by adding a design document at _design/lucene. You must supply a an attribute called "filter" which takes and returns a document. For example;
+By default all attributes are indexed. You can customize this process by adding a design document at _design/lucene. You must supply an attribute called "transform" which takes and returns a document. For example;
 
 <pre>
 {
-  "filter":"function(doc) { return doc; }"
+  "transform":"function(doc) { return doc; }"
 }
 </pre>
 
@@ -103,31 +106,80 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
 
 <h2>Search Results Format</h2>
 
-return values is a JSON array of _id, _rev and sort_field values (the latter only when sort= is supplied)
+Here's an example of a JSON response without sorting;
 
 <pre>
 {
-  "total_rows":49999,
-  "rows":
-  [
-    {"_id":"9","_rev":"2779848574","score":1.712123155593872},
-    {"_id":"8","_rev":"670155834","score":1.712123155593872}
+  "q": "+_db:enron +content:enron",
+  "skip": 0,
+  "limit": 2,
+  "total_rows": 176852,
+  "search_duration": 518,
+  "fetch_duration": 4,
+  "rows":   [
+        {
+      "_id": "hain-m-all_documents-257.",
+      "_rev": "3750319208",
+      "score": 1.601625680923462
+    },
+        {
+      "_id": "hain-m-notes_inbox-257.",
+      "_rev": "2603032545",
+      "score": 1.601625680923462
+    }
   ]
 }
 </pre>
 
+And the same with sorting;
+
 <pre>
 {
-  "total_rows":49999,
-  "sort_order":
-  [
-    {"field":"customer","reverse":false,"type":"string"},
-    {"reverse":false,"type":"doc"}
+  "q": "+_db:enron +content:enron",
+  "skip": 0,
+  "limit": 3,
+  "total_rows": 176852,
+  "search_duration": 660,
+  "fetch_duration": 4,
+  "sort_order":   [
+        {
+      "field": "source",
+      "reverse": false,
+      "type": "string"
+    },
+        {
+      "reverse": false,
+      "type": "doc"
+    }
   ],
-  "rows":
-  [
-    {"_id":"75000","_rev":"372496647","score":1.712123155593872,"sort_order":["00000000000000",50802]},
-    {"_id":"170036","_rev":"3628205594","score":1.712123155593872,"sort_order":["00000000000000",51716]}
+  "rows":   [
+        {
+      "_id": "shankman-j-inbox-105.",
+      "_rev": "4289412378",
+      "score": 0.6131107211112976,
+      "sort_order":       [
+        "enron",
+        6
+      ]
+    },
+        {
+      "_id": "shankman-j-inbox-8.",
+      "_rev": "1417542355",
+      "score": 0.7492915391921997,
+      "sort_order":       [
+        "enron",
+        7
+      ]
+    },
+        {
+      "_id": "shankman-j-inbox-30.",
+      "_rev": "951793815",
+      "score": 0.507369875907898,
+      "sort_order":       [
+        "enron",
+        8
+      ]
+    }
   ]
 }
 </pre>
