@@ -222,6 +222,8 @@ public final class Index {
 			// Pass through user-defined transformation (if any).
 			if (rhino != null) {
 				json = JSONObject.fromObject(rhino.parse(json.toString()));
+				if (json.isNullObject())
+					return;
 			}
 
 			// Standard properties.
