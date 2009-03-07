@@ -107,7 +107,6 @@ public final class Index {
 				} catch (final InterruptedException e) {
 					running = false;
 				}
-				Log.errlog("Update detected.");
 			}
 		}
 
@@ -161,6 +160,9 @@ public final class Index {
 			progress.setProgress(dbname, info.getUpdateSeq());
 
 			if (changed) {
+				synchronized (MUTEX) {
+					updates.remove(dbname);
+				}
 				Log.errlog("%s: index caught up from %,d to %,d.", dbname, start, info.getUpdateSeq());
 			}
 
@@ -269,6 +271,7 @@ public final class Index {
 			final String line = scanner.nextLine();
 			final JSONObject obj = JSONObject.fromObject(line);
 			if (obj.has("type") && obj.has("db")) {
+				Log.errlog(obj.toString());
 				synchronized (MUTEX) {
 					if (updates.add(obj.getString("db"))) {
 						MUTEX.notify();
