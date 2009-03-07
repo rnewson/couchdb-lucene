@@ -108,7 +108,11 @@ public final class SearchRequest {
 
 		final JSONObject json = new JSONObject();
 		json.element("q", q.toString(Config.DEFAULT_FIELD));
-		json.element("sort", sort);
+		// Include sort info (if requested).
+		if (td instanceof TopFieldDocs) {
+			json.element("sort", sort);
+			json.element("sort_order", ((TopFieldDocs) td).fields);
+		}
 		json.element("skip", skip);
 		json.element("limit", limit);
 		json.element("total_rows", td.totalHits);
