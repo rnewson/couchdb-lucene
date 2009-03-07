@@ -29,6 +29,8 @@ public final class SearchRequest {
 
 	private static final Database DB = new Database(Config.DB_URL);
 
+	private static final long FIVE_MINUTES = 5 * 60 * 1000;
+
 	private final String dbname;
 
 	private final Query q;
@@ -43,11 +45,15 @@ public final class SearchRequest {
 
 	private final boolean include_docs;
 
+	private final String ifNoneMatch;
+
 	public SearchRequest(final String json) throws ParseException {
 		final JSONObject obj = JSONObject.fromObject(json);
+		final JSONObject headers = obj.getJSONObject("headers");
 		final JSONObject info = obj.getJSONObject("info");
 		final JSONObject query = obj.getJSONObject("query");
 
+		this.ifNoneMatch = headers.optString("If-None-Match");
 		this.dbname = info.getString("db_name");
 		this.skip = query.optInt("skip", 0);
 		this.limit = query.optInt("limit", 25);
@@ -74,6 +80,12 @@ public final class SearchRequest {
 	}
 
 	public String execute(final IndexSearcher searcher) throws IOException {
+		// Return "304 - Not Modified" if etag matches.
+		final String etag = getETag(searcher);
+		if (etag.equals(this.ifNoneMatch)) {
+			return "{\"code\":304}";
+		}
+
 		final TopDocs td;
 		final StopWatch stopWatch = new StopWatch();
 		// Perform search.
@@ -107,29 +119,38 @@ public final class SearchRequest {
 		stopWatch.lap("fetch");
 
 		final JSONObject json = new JSONObject();
-		json.element("q", q.toString(Config.DEFAULT_FIELD));
+		json.put("q", q.toString(Config.DEFAULT_FIELD));
 		// Include sort info (if requested).
 		if (td instanceof TopFieldDocs) {
-			json.element("sort", sort);
-			json.element("sort_order", ((TopFieldDocs) td).fields);
+			json.put("sort", sort);
+			json.put("sort_order", ((TopFieldDocs) td).fields);
 		}
-		json.element("skip", skip);
-		json.element("limit", limit);
-		json.element("total_rows", td.totalHits);
-		json.element("search_duration", stopWatch.getElapsed("search"));
-		json.element("fetch_duration", stopWatch.getElapsed("fetch"));
-		json.element("rows", rows);
+		json.put("skip", skip);
+		json.put("limit", limit);
+		json.put("total_rows", td.totalHits);
+		json.put("search_duration", stopWatch.getElapsed("search"));
+		json.put("fetch_duration", stopWatch.getElapsed("fetch"));
+		json.put("rows", rows);
 
 		final JSONObject result = new JSONObject();
-		result.element("code", 200);
+		result.put("code", 200);
+
+		// Results can't change unless the IndexReader does.
+		final JSONObject headers = new JSONObject();
+		headers.put("ETag", etag);
+		result.put("headers", headers);
 
 		if (debug) {
-			result.put("body", "<pre>" + StringEscapeUtils.escapeHtml(json.toString(2)) + "</pre>");
+			result.put("body", String.format("<pre>%s</pre>", StringEscapeUtils.escapeHtml(json.toString(2))));
 		} else {
 			result.put("json", json);
 		}
 
 		return result.toString();
+	}
+
+	private String getETag(final IndexSearcher searcher) {
+		return Long.toHexString(searcher.getIndexReader().getVersion());
 	}
 
 }

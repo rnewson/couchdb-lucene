@@ -288,12 +288,7 @@ public final class Index {
 	private static class Indexer implements Runnable {
 
 		public void run() {
-			while (true) {
-				synchronized (mutex) {
-
-				}
-
-			}
+			// TODO use updates set to fetch new stuff.
 		}
 
 	}

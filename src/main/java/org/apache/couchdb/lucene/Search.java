@@ -42,7 +42,6 @@ public final class Search {
 			} else {
 				final SearchRequest request = new SearchRequest(line);
 				final String result = request.execute(searcher);
-				System.err.println("---> " + result);
 				System.out.println(result);
 			}
 		}
