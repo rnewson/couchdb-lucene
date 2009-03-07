@@ -107,6 +107,10 @@ public final class SearchRequest {
 		stopWatch.lap("fetch");
 
 		final JSONObject json = new JSONObject();
+		json.element("q", q.toString(Config.DEFAULT_FIELD));
+		json.element("sort", sort);
+		json.element("skip", skip);
+		json.element("limit", limit);
 		json.element("total_rows", td.totalHits);
 		json.element("search_duration", stopWatch.getElapsed("search"));
 		json.element("fetch_duration", stopWatch.getElapsed("fetch"));

@@ -10,7 +10,9 @@ final class Config {
 
 	static final Analyzer ANALYZER = new StandardAnalyzer();
 
-	static final QueryParser QP = new QueryParser("text", ANALYZER);
+	static final String DEFAULT_FIELD = System.getProperty("couchdb.lucene.default_field", "body");
+
+	static final QueryParser QP = new QueryParser(DEFAULT_FIELD, ANALYZER);
 
 	static final String DB = "_db";
 
