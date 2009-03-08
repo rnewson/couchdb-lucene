@@ -67,7 +67,7 @@ public final class Tika {
 
 	private void addAttribute(final String namespace, final String attributeName, final Metadata md, final Document doc) {
 		if (md.get(attributeName) != null) {
-			doc.add(token(namespace + attributeName, md.get(attributeName), false));
+			doc.add(text(namespace + attributeName, md.get(attributeName), false));
 		}
 	}
 }
