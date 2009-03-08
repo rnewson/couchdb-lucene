@@ -45,6 +45,7 @@ public final class Tika {
 		if (md.get(Metadata.AUTHOR) != null) {
 			doc.add(text(Config.AUTHOR, md.get(Metadata.AUTHOR), true));
 		}
+
 	}
 
 }
