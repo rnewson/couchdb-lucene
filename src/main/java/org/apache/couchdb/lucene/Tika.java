@@ -44,8 +44,6 @@ public final class Tika {
 		doc.add(text(Config.BODY, body, false));
 		// Add DC attributes.
 		addDublinCoreAttributes(md, doc);
-		
-		System.out.println(doc);
 	}
 
 	private void addDublinCoreAttributes(final Metadata md, final Document doc) {
