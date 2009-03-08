@@ -94,9 +94,30 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 <dt>_id<dd>The _id of the document.
 <dt>_rev<dd>The _rev of the document.
 <dt>_db<dd>The source database of the document.
-<dt>_body<dd>Any text extracted from any attachment (name may change).
-<dt>_author<dd>The author of any attachment (name may change).
-<dt>_title<dd>The title of any attachment (name may change).
+<dt>_body<dd>Any text extracted from any attachment.
+</dl>
+
+<h2>Dublin Core</h2>
+
+All Dublin Core attributes are indexed and stored if detected in the attachment. Descriptions of the fields come from the Tika javadocs.
+
+<dl>
+<dt>dc.contributor<dd> An entity responsible for making contributions to the content of the resource.
+<dt>dc.coverage<dd>The extent or scope of the content of the resource.
+<dt>dc.creator<dd>An entity primarily responsible for making the content of the resource.
+<dt>dc.date<dd>A date associated with an event in the life cycle of the resource.
+<dt>dc.description<dd>An account of the content of the resource.
+<dt>dc.format<dd>Typically, Format may include the media-type or dimensions of the resource.
+<dt>dc.identifier<dd>Recommended best practice is to identify the resource by means of a string or number conforming to a formal identification system.
+<dt>dc.language<dd>A language of the intellectual content of the resource.
+<dt>dc.modified<dd>Date on which the resource was changed.
+<dt>dc.publisher<dd>An entity responsible for making the resource available.
+<dt>dc.relation<dd>A reference to a related resource.
+<dt>dc.rights<dd>Information about rights held in and over the resource.
+<dt>dc.source<dd>A reference to a resource from which the present resource is derived.
+<dt>dc.subject<dd>The topic of the content of the resource.
+<dt>dc.title<dd>A name given to the resource.
+<dt>dc.type<dd>The nature or genre of the content of the resource.
 </dl>
 
 <h2>Examples</h2>
