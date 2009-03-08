@@ -4,3 +4,7 @@
 * handle "create" and "delete" notifications explicitly.
 * batch updates (no hair trigger).
 * reindex when transform function changes.
+* hit highlighting (lucene contrib).
+* clustering (carrot2).
+* distributed search.
+
