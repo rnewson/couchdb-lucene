@@ -50,7 +50,7 @@ The function is evaluated by <a href="http://www.mozilla.org/rhino/">Rhino</a>. 
 
 <h2>Attachment Indexing</h2>
 
-CouchDB uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to index attachments of the following types, assuming the correct content_type is set in couchdb;
+Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to index attachments of the following types, assuming the correct content_type is set in couchdb;
 
 <h3>Supported Formats</h3>
 
