@@ -1,8 +1,11 @@
 package org.apache.couchdb.lucene;
 
+import java.io.IOException;
 import java.util.Scanner;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import net.sf.json.JSONException;
+import net.sf.json.JSONObject;
+
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.NIOFSDirectory;
@@ -40,16 +43,38 @@ public final class Search {
 
 			// Process search request if index exists.
 			if (searcher == null) {
-				System.out.println("{\"code\":503,\"body\":\"couchdb-lucene not available.\"}");
-			} else {
-				final SearchRequest request = new SearchRequest(line);
-				try {
+				System.out.println(Utils.error(503, "couchdb-lucene not available."));
+				continue;
+			}
+
+			final JSONObject obj;
+			try {
+				obj = JSONObject.fromObject(line);
+			} catch (final JSONException e) {
+				System.out.println(Utils.error(400, "invalid JSON."));
+				continue;
+			}
+
+			if (!obj.has("query")) {
+				System.out.println(Utils.error(400, "No query found in request."));
+				continue;
+			}
+
+			final JSONObject query = obj.getJSONObject("query");
+
+			try {
+				// A query.
+				if (query.has("q")) {
+					final SearchRequest request = new SearchRequest(obj);
 					final String result = request.execute(searcher);
 					System.out.println(result);
-				} catch (final Exception e) {
-					System.out.printf("{\"code\":400,\"body\":\"%s\"}\n", StringEscapeUtils.escapeHtml(e.getMessage()));
+					continue;
 				}
+			} catch (final Exception e) {
+				System.out.println(Utils.error(400, e.getMessage()));
 			}
+
+			System.out.println(Utils.error(400, "Bad request."));
 		}
 		if (reader != null) {
 			reader.close();

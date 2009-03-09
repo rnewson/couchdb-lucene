@@ -46,8 +46,7 @@ public final class SearchRequest {
 
 	private final String ifNoneMatch;
 
-	public SearchRequest(final String json) throws ParseException {
-		final JSONObject obj = JSONObject.fromObject(json);
+	public SearchRequest(final JSONObject obj) throws ParseException {
 		final JSONObject headers = obj.getJSONObject("headers");
 		final JSONObject info = obj.getJSONObject("info");
 		final JSONObject query = obj.getJSONObject("query");

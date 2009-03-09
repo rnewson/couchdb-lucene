@@ -2,6 +2,7 @@ package org.apache.couchdb.lucene;
 
 import net.sf.json.JSONObject;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 
@@ -17,7 +18,11 @@ class Utils {
 	}
 
 	public static String error(final String txt) {
-		return new JSONObject().element("code", 500).element("body", txt).toString();
+		return error(500, txt);
+	}
+
+	public static String error(final int code, final String txt) {
+		return new JSONObject().element("code", code).element("body", StringEscapeUtils.escapeHtml(txt)).toString();
 	}
 
 	public static Field text(final String name, final String value, final boolean store) {

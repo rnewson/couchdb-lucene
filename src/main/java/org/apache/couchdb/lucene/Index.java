@@ -148,6 +148,7 @@ public final class Index {
 			result.setUseCompoundFile(false);
 			result.setRAMBufferSizeMB(Config.RAM_BUF);
 			result.setMergeFactor(5);
+			result.setMaxMergeDocs(1 * 1000 * 1000);
 			return result;
 		}
 
