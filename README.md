@@ -208,6 +208,20 @@ And the same with sorting;
 }
 </pre>
 
+<h1>Fetching information about the index</h1>
+
+Calling couchdb-lucene without arguments returns a JSON object with information about the index.
+
+<pre>
+http://127.0.0.1:5984/enron/_fti
+</pre>
+
+returns;
+
+<pre>
+{"doc_count":517350,"doc_del_count":1,"disk_size":318543045}
+</pre>
+
 <h1>Working With The Source</h1>
 
 To develop "live", type "mvn dependency:unpack-dependencies" and change the external line to something like this;
