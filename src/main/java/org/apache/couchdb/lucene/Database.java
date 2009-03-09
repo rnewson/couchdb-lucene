@@ -50,14 +50,14 @@ public final class Database {
 	public JSONObject getAllDocsBySeq(final String dbname, final long from, final int limit) throws HttpException,
 			IOException {
 		return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%s&limit=%d&include_docs=true",
-				dbname, from, limit)));
+				encode(dbname), from, limit)));
 	}
 
 	public JSONObject getDoc(final String dbname, final String id, final String rev) throws HttpException, IOException {
 		if (rev == null)
-			return JSONObject.fromObject(get(String.format("%s/%s", dbname, id)));
+			return JSONObject.fromObject(get(String.format("%s/%s", encode(dbname), id)));
 		else
-			return JSONObject.fromObject(get(String.format("%s/%s?rev=%s", dbname, id, rev)));
+			return JSONObject.fromObject(get(String.format("%s/%s?rev=%s", encode(dbname), id, rev)));
 	}
 
 	public JSONObject getDocs(final String dbname, final String... ids) throws HttpException, IOException {
@@ -68,11 +68,11 @@ public final class Database {
 		final JSONObject req = new JSONObject();
 		req.element("keys", keys);
 
-		return JSONObject.fromObject(post(String.format("%s/_all_docs?include_docs=true", dbname), req.toString()));
+		return JSONObject.fromObject(post(String.format("%s/_all_docs?include_docs=true", encode(dbname)), req.toString()));
 	}
 
 	public JSONObject getInfo(final String dbname) throws HttpException, IOException {
-		return JSONObject.fromObject(get(dbname));
+		return JSONObject.fromObject(get(encode(dbname)));
 	}
 
 	private String get(final String path) throws HttpException, IOException {
