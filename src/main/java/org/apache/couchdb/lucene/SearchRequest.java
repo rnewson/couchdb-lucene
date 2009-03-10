@@ -69,11 +69,29 @@ public final class SearchRequest {
 		if (sort == null) {
 			this.sort = null;
 		} else {
-			if (sort.indexOf(",") != -1) {
-				this.sort = new Sort(sort.split(","));
-			} else {
-				this.sort = new Sort(sort, !query.optBoolean("asc", true));
+			final String[] split = sort.split(",");
+			final SortField[] sort_fields = new SortField[split.length];
+			for (int i = 0; i < split.length; i++) {
+				switch (split[i].charAt(0)) {
+				case '/':
+					sort_fields[i] = new SortField(split[i].substring(1));
+					break;
+				case '\\':
+					sort_fields[i] = new SortField(split[i].substring(1), true);
+					break;
+				default:
+					sort_fields[i] = new SortField(split[i]);
+					break;
+				}
 			}
+
+			if (sort_fields.length == 1) {
+				// Let Lucene add doc as secondary sort order.
+				this.sort = new Sort(sort_fields[0].getField(), sort_fields[0].getReverse());
+			} else {
+				this.sort = new Sort(sort_fields);
+			}
+			System.err.println(sort);
 		}
 	}
 

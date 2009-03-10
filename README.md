@@ -78,8 +78,7 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 
 <dl>
 <dt>q<dd>the query to run (e.g, subject:hello)
-<dt>sort<dd>the comma-separated fields to sort on.
-<dt>asc<dd>sort ascending (true) or descending (false), only when sorting on a single field.
+<dt>sort<dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).
 <dt>limit<dd>the maximum number of results to return
 <dt>skip<dd>the number of results to skip
 <dt>include_docs<dd>whether to include the source docs
