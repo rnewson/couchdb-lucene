@@ -91,7 +91,6 @@ public final class SearchRequest {
 			} else {
 				this.sort = new Sort(sort_fields);
 			}
-			System.err.println(sort);
 		}
 	}
 
