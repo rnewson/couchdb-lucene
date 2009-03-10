@@ -7,4 +7,4 @@
 * hit highlighting (lucene contrib).
 * clustering (carrot2).
 * distributed search.
-
+* JSONQuery? (http://docs.persvr.org/documentation/jsonquery)
