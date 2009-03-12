@@ -1,8 +1,18 @@
+Search Performance
+
 * sort cache can take too long to build, respond with keep-alive messages.
-* add a _status uri that lets you see index state/progress.
 * add an _optimize option.
-* handle "create" and "delete" notifications explicitly.
+* add Cache-Control: max-age=(minimum number of seconds before we commit)
+* retrieve a page in one request not N requests.
+
+Index Performance
+
 * batch updates (no hair trigger).
+
+Misc
+
+* add a _status uri that lets you see index state/progress.
+* handle "create" and "delete" notifications explicitly.
 * reindex when transform function changes.
 * hit highlighting (lucene contrib).
 * clustering (carrot2).
