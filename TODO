@@ -3,6 +3,7 @@ Search Performance
 * sort cache can take too long to build, respond with keep-alive messages.
 * add an _optimize option.
 * add Cache-Control: max-age=(minimum number of seconds before we commit)
+* distributed scoring.
 
 Index Performance
 
