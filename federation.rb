@@ -23,7 +23,7 @@ for server in servers
       if json.has_key?('sort_order')
         result['rows'].sort!{|a,b| a['sort_order'] <=> b['sort_order']}
       else
-        result['rows'].sort!{|a,b| [a['score'],a['_id']] <=> [b['score'],b['_id']]}
+        result['rows'].sort!{|b,a| [a['score'],a['_id']] <=> [b['score'],b['_id']]}
       end
       # Drop extraneous rows.
       result['rows'].slice!(result['limit']..result['rows'].size)      
