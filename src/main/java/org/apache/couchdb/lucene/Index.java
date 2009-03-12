@@ -116,7 +116,7 @@ public final class Index {
 					}
 					commit |= updateDatabase(writer, dbname, progress, rhino);
 				}
-			} catch (final IOException e) {
+			} catch (final Exception e) {
 				Log.errlog(e);
 				commit = false;
 			} finally {
