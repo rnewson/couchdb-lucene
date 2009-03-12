@@ -53,11 +53,8 @@ public final class Database {
 				encode(dbname), from, limit)));
 	}
 
-	public JSONObject getDoc(final String dbname, final String id, final String rev) throws HttpException, IOException {
-		if (rev == null)
+	public JSONObject getDoc(final String dbname, final String id) throws HttpException, IOException {
 			return JSONObject.fromObject(get(String.format("%s/%s", encode(dbname), id)));
-		else
-			return JSONObject.fromObject(get(String.format("%s/%s?rev=%s", encode(dbname), id, rev)));
 	}
 
 	public JSONObject getDocs(final String dbname, final String... ids) throws HttpException, IOException {

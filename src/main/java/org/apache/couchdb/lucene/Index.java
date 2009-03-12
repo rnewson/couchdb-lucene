@@ -104,7 +104,7 @@ public final class Index {
 				progress.load();
 				for (final String dbname : dbnames) {
 					// Database might supply a transformation function.
-					final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene", null);
+					final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene");
 					if (designDoc != null && designDoc.containsKey("transform")) {
 						String transform = designDoc.getString("transform");
 						// Strip start and end double quotes.
@@ -230,11 +230,11 @@ public final class Index {
 			// Standard properties.
 			doc.add(token(Config.DB, dbname, false));
 			final String id = (String) json.remove(Config.ID);
-			final String rev = (String) json.remove(Config.REV);
+			// Discard _rev
+			json.remove("_rev");
 
 			// Index _id and _rev as tokens.
 			doc.add(token(Config.ID, id, true));
-			doc.add(token(Config.REV, rev, true));
 
 			// Index all attributes.
 			add(doc, null, json, false);
