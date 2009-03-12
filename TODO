@@ -4,6 +4,7 @@ Search Performance
 * add an _optimize option.
 * add Cache-Control: max-age=(minimum number of seconds before we commit)
 * retrieve a page in one request not N requests.
+* distributed scoring.
 
 Index Performance
 
