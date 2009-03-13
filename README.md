@@ -92,7 +92,6 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 
 <dl>
 <dt>_id<dd>The _id of the document.
-<dt>_rev<dd>The _rev of the document.
 <dt>_db<dd>The source database of the document.
 <dt>_body<dd>Any text extracted from any attachment.
 </dl>
@@ -143,12 +142,10 @@ Here's an example of a JSON response without sorting;
   "rows":   [
         {
       "_id": "hain-m-all_documents-257.",
-      "_rev": "3750319208",
       "score": 1.601625680923462
     },
         {
       "_id": "hain-m-notes_inbox-257.",
-      "_rev": "2603032545",
       "score": 1.601625680923462
     }
   ]
@@ -179,7 +176,6 @@ And the same with sorting;
   "rows":   [
         {
       "_id": "shankman-j-inbox-105.",
-      "_rev": "4289412378",
       "score": 0.6131107211112976,
       "sort_order":       [
         "enron",
@@ -188,7 +184,6 @@ And the same with sorting;
     },
         {
       "_id": "shankman-j-inbox-8.",
-      "_rev": "1417542355",
       "score": 0.7492915391921997,
       "sort_order":       [
         "enron",
@@ -197,7 +192,6 @@ And the same with sorting;
     },
         {
       "_id": "shankman-j-inbox-30.",
-      "_rev": "951793815",
       "score": 0.507369875907898,
       "sort_order":       [
         "enron",

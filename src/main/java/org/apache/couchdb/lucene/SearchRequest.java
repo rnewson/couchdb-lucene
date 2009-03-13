@@ -26,7 +26,7 @@ import org.apache.lucene.search.BooleanClause.Occur;
 
 public final class SearchRequest {
 
-	private static final FieldSelector FS = new MapFieldSelector(new String[] { Config.ID, Config.REV });
+	private static final FieldSelector FS = new MapFieldSelector(new String[] { Config.ID });
 
 	private static final Database DB = new Database(Config.DB_URL);
 
@@ -117,23 +117,30 @@ public final class SearchRequest {
 		// Fetch matches (if any).
 		final int max = min(td.totalHits, limit);
 		final JSONArray rows = new JSONArray();
+		final String[] fetch_ids = new String[max];
 		for (int i = skip; i < skip + max; i++) {
 			final Document doc = searcher.doc(td.scoreDocs[i].doc, FS);
 			final JSONObject obj = new JSONObject();
 			// Include basic details.
-			obj.element("_id", doc.get(Config.ID));
-			obj.element("_rev", doc.get(Config.REV));
-			obj.element("score", td.scoreDocs[i].score);
+			obj.put("_id", doc.get(Config.ID));
+			obj.put("score", td.scoreDocs[i].score);
 			// Include sort order (if any).
 			if (td instanceof TopFieldDocs) {
 				final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
-				obj.element("sort_order", fd.fields);
+				obj.put("sort_order", fd.fields);
 			}
 			// Fetch document (if requested).
 			if (include_docs) {
-				obj.element("doc", DB.getDoc(dbname, obj.getString("_id"), obj.getString("_rev")));
+				fetch_ids[i - skip] = doc.get(Config.ID);
 			}
 			rows.add(obj);
+		}
+		// Fetch documents (if requested).
+		if (include_docs) {
+			final JSONArray fetched_docs = DB.getDocs(dbname, fetch_ids).getJSONArray("rows");
+			for (int i = 0; i < max; i++) {
+				rows.getJSONObject(i).put("doc", fetched_docs.get(i));
+			}
 		}
 		stopWatch.lap("fetch");
 
@@ -171,10 +178,6 @@ public final class SearchRequest {
 
 	private String getETag(final IndexSearcher searcher) {
 		return Long.toHexString(searcher.getIndexReader().getVersion());
-	}
-
-	private String toString(final Sort sort) {
-		return toString(sort.getSort());
 	}
 
 	private String toString(final SortField[] sortFields) {

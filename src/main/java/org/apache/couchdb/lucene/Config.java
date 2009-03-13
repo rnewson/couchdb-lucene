@@ -16,8 +16,6 @@ final class Config {
 
 	static final String ID = "_id";
 
-	static final String REV = "_rev";
-
 	static final String SEQ = "_seq";
 
 	static final String BODY = "_body";
