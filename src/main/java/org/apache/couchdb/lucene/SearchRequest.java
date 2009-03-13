@@ -153,9 +153,10 @@ public final class SearchRequest {
 		final JSONObject result = new JSONObject();
 		result.put("code", 200);
 
-		// Results can't change unless the IndexReader does.
 		final JSONObject headers = new JSONObject();
-		// TODO make a per-db etag (md5(dbname + update_seq)?).
+		// Cache for 5 minutes.
+		headers.put("Cache-Control", "max-age=300");
+		// Results can't change unless the IndexReader does.
 		headers.put("ETag", etag);
 		result.put("headers", headers);
 
