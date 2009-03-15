@@ -52,6 +52,11 @@ public final class Database {
 				encode(dbname), startkey)));
 	}
 
+	public JSONObject getAllDocsBySeq(final String dbname, final long startkey, final int limit) throws HttpException, IOException {
+		return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%d&limit=%d&include_docs=true",
+				encode(dbname), startkey, limit)));
+	}
+
 	public JSONObject getDoc(final String dbname, final String id) throws HttpException, IOException {
 		return JSONObject.fromObject(get(String.format("%s/%s", encode(dbname), id)));
 	}

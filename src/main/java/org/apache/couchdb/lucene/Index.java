@@ -165,6 +165,10 @@ public final class Index {
 
 		private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
 				final Rhino rhino) throws HttpException, IOException {
+			final JSONObject info = DB.getInfo(dbname);
+
+			final long target_seq = info.getLong("update_seq");
+
 			final String cur_sig = progress.getSignature(dbname);
 			final String new_sig = rhino == null ? Progress.NO_SIGNATURE : rhino.getSignature();
 
@@ -175,39 +179,37 @@ public final class Index {
 				progress.update(dbname, new_sig, 0);
 			}
 
-			final JSONObject obj = DB.getAllDocsBySeq(dbname, progress.getSeq(dbname));
-
-			if (!obj.has("rows")) {
-				Log.errlog("no rows found (%s).", obj);
-				return false;
-			}
-
-			// Process all rows
-			final JSONArray rows = obj.getJSONArray("rows");
 			long update_seq = 0;
-			for (int i = 0, max = rows.size(); i < max; i++) {
-				final JSONObject row = rows.getJSONObject(i);
-				final JSONObject value = row.optJSONObject("value");
-				final JSONObject doc = row.optJSONObject("doc");
+			while (update_seq < target_seq) {
+				final JSONObject obj = DB.getAllDocsBySeq(dbname, progress.getSeq(dbname), Config.BATCH_SIZE);
 
-				// New or updated document.
-				if (doc != null) {
-					updateDocument(writer, dbname, rows.getJSONObject(i), rhino);
+				if (!obj.has("rows")) {
+					Log.errlog("no rows found (%s).", obj);
+					return false;
 				}
 
-				// Deleted document.
-				if (value != null && value.optBoolean("deleted")) {
-					writer.deleteDocuments(new Term(Config.ID, row.getString("id")));
+				// Process all rows
+				final JSONArray rows = obj.getJSONArray("rows");
+				for (int i = 0, max = rows.size(); i < max; i++) {
+					final JSONObject row = rows.getJSONObject(i);
+					final JSONObject value = row.optJSONObject("value");
+					final JSONObject doc = row.optJSONObject("doc");
+
+					// New or updated document.
+					if (doc != null) {
+						updateDocument(writer, dbname, rows.getJSONObject(i), rhino);
+					}
+
+					// Deleted document.
+					if (value != null && value.optBoolean("deleted")) {
+						writer.deleteDocuments(new Term(Config.ID, row.getString("id")));
+					}
+
+					update_seq = row.getLong("key");
 				}
-
-				update_seq = row.getLong("key");
+				progress.update(dbname, new_sig, update_seq);
 			}
 
-			if (rows.isEmpty()) {
-				return false; // no change.
-			}
-
-			progress.update(dbname, new_sig, update_seq);
 			Log.errlog("%s: index caught up to %,d.", dbname, update_seq);
 			return true;
 		}
