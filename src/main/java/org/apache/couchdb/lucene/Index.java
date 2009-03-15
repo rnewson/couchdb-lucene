@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Scanner;
 
@@ -16,6 +17,8 @@ import net.sf.json.JSONObject;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.LogByteSizeMergePolicy;
@@ -276,8 +279,9 @@ public final class Index {
 				}
 			} else if (value instanceof String) {
 				try {
-					DATE_FORMAT.parse((String) value);
-					out.add(token(key, (String) value, store));
+					final Date date = DATE_FORMAT.parse((String) value);
+					out.add(new Field(key, (String) value, Store.YES, Field.Index.NO));
+					out.add(new Field(key, Long.toString(date.getTime()), Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
 				} catch (final java.text.ParseException e) {
 					out.add(text(key, (String) value, store));
 				}
