@@ -40,8 +40,6 @@ public final class Index {
 
 	private static final Object MUTEX = new Object();
 
-	private static final Map<String, Long> updates = new HashMap<String, Long>();
-
 	private static class Indexer implements Runnable {
 
 		private Directory dir;
@@ -311,7 +309,6 @@ public final class Index {
 			final JSONObject obj = JSONObject.fromObject(line);
 			if (obj.has("type") && obj.has("db")) {
 				synchronized (MUTEX) {
-					updates.put(obj.getString("db"), System.nanoTime());
 					MUTEX.notify();
 				}
 			}
