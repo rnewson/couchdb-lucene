@@ -79,9 +79,9 @@ public final class Index {
 					// Remove documents from deleted databases.
 					final TermEnum terms = reader.terms(new Term(Config.DB, ""));
 					try {
-						while (terms.next()) {
+						do {
 							final Term term = terms.term();
-							if (!term.field().equals(Config.DB))
+							if (term == null || Config.DB.equals(term.field()) == false)
 								break;
 							if (Arrays.binarySearch(dbnames, term.text()) < 0) {
 								Log.errlog("Database '%s' has been deleted," + " removing all documents from index.",
@@ -89,7 +89,8 @@ public final class Index {
 								delete(term.text(), writer);
 								commit = true;
 							}
-						}
+
+						} while (terms.next());
 					} finally {
 						terms.close();
 					}

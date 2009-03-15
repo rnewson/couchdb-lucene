@@ -15,10 +15,12 @@ public final class Log {
 
 	public static void outlog(final Exception e) {
 		outlog("%s", e.getMessage());
+		e.printStackTrace(System.out);
 	}
 
 	public static void errlog(final Exception e) {
 		errlog("%s", e.getMessage());
+		e.printStackTrace();
 	}
 
 }
