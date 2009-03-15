@@ -23,7 +23,7 @@ public final class Progress {
 
 	public long getProgress(final String dbname) {
 		final Long result = progress.get(dbname);
-		return result == null ? -1 : result;
+		return result == null ? 0 : result;
 	}
 
 	public void load() throws IOException {

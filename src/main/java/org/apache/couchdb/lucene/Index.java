@@ -20,6 +20,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.LogByteSizeMergePolicy;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -125,8 +126,15 @@ public final class Index {
 						writer.expungeDeletes();
 					}
 					writer.close();
-					Log.errlog("Committed changes to index.");
 					progress.save();
+
+					final IndexReader reader = IndexReader.open(dir);
+					try {
+						Log.errlog("Committed changes to index (%,d documents in index, %,d deletes).", reader
+								.numDocs(), reader.numDeletedDocs());
+					} finally {
+						reader.close();
+					}
 				} else {
 					writer.rollback();
 				}
@@ -145,65 +153,53 @@ public final class Index {
 
 		private IndexWriter newWriter() throws IOException {
 			final IndexWriter result = new IndexWriter(dir, Config.ANALYZER, MaxFieldLength.UNLIMITED);
+
+			// Customize merge policy.
+			final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy();
+			mp.setMergeFactor(5);
+			mp.setMaxMergeMB(1000);
+			result.setMergePolicy(mp);
+
+			// Customer other settings.
 			result.setUseCompoundFile(false);
 			result.setRAMBufferSizeMB(Config.RAM_BUF);
-			result.setMergeFactor(5);
-			result.setMaxMergeDocs(1 * 1000 * 1000);
+
 			return result;
 		}
 
 		private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
 				final Rhino rhino) throws HttpException, IOException {
-			final JSONObject info = DB.getInfo(dbname);
-			final long update_seq = info.getLong("update_seq");
+			final JSONObject obj = DB.getAllDocsBySeq(dbname, progress.getProgress(dbname));
 
-			long from = progress.getProgress(dbname);
-			long start = from;
-
-			if (from > update_seq) {
-				start = from = -1;
-				progress.setProgress(dbname, -1);
+			if (!obj.has("rows")) {
+				Log.errlog("no rows found (%s).", obj);
+				return false;
 			}
+			// Process all rows
+			final JSONArray rows = obj.getJSONArray("rows");
+			long update_seq = 0;
+			for (int i = 0, max = rows.size(); i < max; i++) {
+				final JSONObject row = rows.getJSONObject(i);
+				final JSONObject value = row.optJSONObject("value");
+				final JSONObject doc = row.optJSONObject("doc");
 
-			if (from == -1) {
-				Log.errlog("Indexing '%s' from scratch.", dbname);
-				delete(writer, dbname);
-			}
-
-			boolean changed = false;
-			while (from < update_seq) {
-				final JSONObject obj = DB.getAllDocsBySeq(dbname, from, Config.BATCH_SIZE);
-				if (!obj.has("rows")) {
-					Log.errlog("no rows found (%s).", obj);
-					return false;
+				if (doc != null) {
+					updateDocument(writer, dbname, rows.getJSONObject(i), rhino);
 				}
-				final JSONArray rows = obj.getJSONArray("rows");
-				for (int i = 0, max = rows.size(); i < max; i++) {
-					final JSONObject row = rows.getJSONObject(i);
-					final JSONObject value = row.optJSONObject("value");
-					final JSONObject doc = row.optJSONObject("doc");
-
-					if (doc != null) {
-						updateDocument(writer, dbname, rows.getJSONObject(i), rhino);
-						changed = true;
-					}
-					if (value != null && value.optBoolean("deleted")) {
-						writer.deleteDocuments(new Term(Config.ID, row.getString("id")));
-						changed = true;
-					}
+				if (value != null && value.optBoolean("deleted")) {
+					writer.deleteDocuments(new Term(Config.ID, row.getString("id")));
 				}
-				from += Config.BATCH_SIZE;
+
+				update_seq = row.getLong("key");
 			}
+
+			if (rows.isEmpty()) {
+				return false; // no change.
+			}
+
 			progress.setProgress(dbname, update_seq);
-
-			if (changed) {
-				synchronized (MUTEX) {
-					updates.remove(dbname);
-				}
-				Log.errlog("%s: index caught up from %,d to %,d.", dbname, start, update_seq);
-			}
-
-			return changed;
+			Log.errlog("%s: index caught up to %,d.", dbname, update_seq);
+			return true;
 		}
 
 		private void delete(final IndexWriter writer, final String dbname) throws IOException {
