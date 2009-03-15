@@ -115,7 +115,7 @@ public final class SearchRequest {
 		}
 		stopWatch.lap("search");
 		// Fetch matches (if any).
-		final int max = min(td.totalHits, limit);
+		final int max = min(td.totalHits - skip, limit);
 		final JSONArray rows = new JSONArray();
 		final String[] fetch_ids = new String[max];
 		for (int i = skip; i < skip + max; i++) {
