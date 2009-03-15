@@ -1,73 +1,76 @@
 package org.apache.couchdb.lucene;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.IndexInput;
-import org.apache.lucene.store.IndexOutput;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermDocs;
 
 public final class Progress {
 
-	private static final String FILENAME = "couchdb.status";
+	public static final String NO_SIGNATURE = "";
 
-	private final Directory dir;
+	private static final String PROGRESS_KEY = "_couchdb";
 
-	private final Map<String, Long> progress = new HashMap<String, Long>();
+	private static final String PROGRESS_VALUE = "status";
 
-	public Progress(final Directory dir) {
-		this.dir = dir;
+	private static final Term PROGRESS_TERM = new Term(PROGRESS_KEY, PROGRESS_VALUE);
+
+	private Document progress = newDocument();
+
+	public Progress() {
 	}
 
-	public long getProgress(final String dbname) {
-		final Long result = progress.get(dbname);
-		return result == null ? 0 : result;
+	public long getSeq(final String dbname) {
+		final Field field = progress.getField(seqField(dbname));
+		return field == null ? 0 : Long.parseLong(field.stringValue());
 	}
 
-	public void load() throws IOException {
-		if (dir.fileExists(FILENAME) == false) {
-			progress.clear();
-			return;
-		}
+	public String getSignature(final String dbname) {
+		final Field field = progress.getField(sigField(dbname));
+		return field == null ? NO_SIGNATURE : field.stringValue();
+	}
 
-		final IndexInput in = dir.openInput(FILENAME);
+	public void load(final IndexReader reader) throws IOException {
+		final TermDocs termDocs = reader.termDocs(PROGRESS_TERM);
 		try {
-			progress.clear();
-			final int size = in.readVInt();
-			for (int i = 0; i < size; i++) {
-				final String dbname = in.readString();
-				final long update_seq = in.readVLong();
-				setProgress(dbname, update_seq);
-			}
+			progress = termDocs.next() ? reader.document(termDocs.doc()) : newDocument();
 		} finally {
-			in.close();
+			termDocs.close();
 		}
 	}
 
-	public void save() throws IOException {
-		final String tmp = "couchdb.new";
-		final IndexOutput out = dir.createOutput(tmp);
-		try {
-			out.writeVInt(progress.size());
-			for (final Entry<String, Long> entry : progress.entrySet()) {
-				out.writeString(entry.getKey());
-				out.writeVLong(entry.getValue());
-			}
-			out.close();
-			dir.sync(tmp);
-			dir.renameFile(tmp, FILENAME);
-		} catch (final IOException e) {
-			dir.deleteFile(tmp);
-			throw e;
-		} finally {
-			out.close();
-		}
+	public void save(final IndexWriter writer) throws IOException {
+		writer.updateDocument(PROGRESS_TERM, progress);
 	}
 
-	public void setProgress(final String dbname, final long progress) {
-		this.progress.put(dbname, progress);
+	public void update(final String dbname, final String sig, final long seq) {
+		// Update seq.
+		progress.removeFields(seqField(dbname));
+		progress.add(new Field(seqField(dbname), Long.toString(seq), Store.YES, Field.Index.NO));
+
+		// Update sig.
+		progress.removeFields(sigField(dbname));
+		progress.add(new Field(sigField(dbname), sig, Store.YES, Field.Index.NO));
+	}
+
+	private Document newDocument() {
+		final Document result = new Document();
+		// Add unique identifier.
+		result.add(new Field(PROGRESS_KEY, PROGRESS_VALUE, Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
+		return result;
+	}
+
+	private String seqField(final String dbname) {
+		return dbname + "-seq";
+	}
+
+	private String sigField(final String dbname) {
+		return dbname + "-sig";
 	}
 
 }

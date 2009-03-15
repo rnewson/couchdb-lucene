@@ -2,6 +2,7 @@ package org.apache.couchdb.lucene;
 
 import net.sf.json.JSONObject;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -19,6 +20,10 @@ class Utils {
 
 	public static String error(final String txt) {
 		return error(500, txt);
+	}
+
+	public static String digest(final String data) {
+		return DigestUtils.md5Hex(data);
 	}
 
 	public static String error(final int code, final String txt) {

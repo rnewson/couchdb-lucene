@@ -7,9 +7,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Scanner;
 
 import net.sf.json.JSONArray;
@@ -70,13 +68,15 @@ public final class Index {
 			Rhino rhino = null;
 
 			boolean commit = false;
-			boolean expunge = false;
 			final IndexWriter writer = newWriter();
-			Progress progress = null;
+			final Progress progress = new Progress();
 			try {
-				// Delete all documents in non-extant databases.
 				final IndexReader reader = IndexReader.open(dir);
 				try {
+					// Load status.
+					progress.load(reader);
+
+					// Remove documents from deleted databases.
 					final TermEnum terms = reader.terms(new Term(Config.DB, ""));
 					try {
 						while (terms.next()) {
@@ -86,9 +86,8 @@ public final class Index {
 							if (Arrays.binarySearch(dbnames, term.text()) < 0) {
 								Log.errlog("Database '%s' has been deleted," + " removing all documents from index.",
 										term.text());
-								delete(writer, term.text());
+								delete(term.text(), writer);
 								commit = true;
-								expunge = true;
 							}
 						}
 					} finally {
@@ -99,8 +98,6 @@ public final class Index {
 				}
 
 				// Update all extant databases.
-				progress = new Progress(dir);
-				progress.load();
 				for (final String dbname : dbnames) {
 					// Database might supply a transformation function.
 					final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene");
@@ -120,11 +117,8 @@ public final class Index {
 				commit = false;
 			} finally {
 				if (commit) {
-					if (expunge) {
-						writer.expungeDeletes();
-					}
+					progress.save(writer);
 					writer.close();
-					progress.save();
 
 					final IndexReader reader = IndexReader.open(dir);
 					try {
@@ -167,12 +161,23 @@ public final class Index {
 
 		private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
 				final Rhino rhino) throws HttpException, IOException {
-			final JSONObject obj = DB.getAllDocsBySeq(dbname, progress.getProgress(dbname));
+			final String cur_sig = progress.getSignature(dbname);
+			final String new_sig = rhino == null ? Progress.NO_SIGNATURE : rhino.getSignature();
+
+			// Signature changed.
+			if (cur_sig.equals(new_sig) == false) {
+				Log.errlog("%s's signature changed, reindexing.", dbname);
+				delete(dbname, writer);
+				progress.update(dbname, new_sig, 0);
+			}
+
+			final JSONObject obj = DB.getAllDocsBySeq(dbname, progress.getSeq(dbname));
 
 			if (!obj.has("rows")) {
 				Log.errlog("no rows found (%s).", obj);
 				return false;
 			}
+
 			// Process all rows
 			final JSONArray rows = obj.getJSONArray("rows");
 			long update_seq = 0;
@@ -181,9 +186,12 @@ public final class Index {
 				final JSONObject value = row.optJSONObject("value");
 				final JSONObject doc = row.optJSONObject("doc");
 
+				// New or updated document.
 				if (doc != null) {
 					updateDocument(writer, dbname, rows.getJSONObject(i), rhino);
 				}
+
+				// Deleted document.
 				if (value != null && value.optBoolean("deleted")) {
 					writer.deleteDocuments(new Term(Config.ID, row.getString("id")));
 				}
@@ -195,12 +203,12 @@ public final class Index {
 				return false; // no change.
 			}
 
-			progress.setProgress(dbname, update_seq);
+			progress.update(dbname, new_sig, update_seq);
 			Log.errlog("%s: index caught up to %,d.", dbname, update_seq);
 			return true;
 		}
 
-		private void delete(final IndexWriter writer, final String dbname) throws IOException {
+		private void delete(final String dbname, final IndexWriter writer) throws IOException {
 			writer.deleteDocuments(new Term(Config.DB, dbname));
 		}
 

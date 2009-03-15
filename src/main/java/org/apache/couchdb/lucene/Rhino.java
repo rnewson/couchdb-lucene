@@ -54,6 +54,10 @@ public final class Rhino {
 		return (String) systemFun.call(context, scope, null, new Object[] { doc, userFun });
 	}
 
+	public String getSignature() {
+		return Utils.digest(fun);
+	}
+
 	public void close() {
 		Context.exit();
 	}
