@@ -30,7 +30,7 @@ import org.apache.lucene.store.FSDirectory;
  */
 public final class Index {
 
-	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'");
 
 	private static final Database DB = new Database(Config.DB_URL);
 
