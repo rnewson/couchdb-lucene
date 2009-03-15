@@ -146,6 +146,7 @@ public final class SearchRequest {
 
 		final JSONObject json = new JSONObject();
 		json.put("q", q.toString(Config.DEFAULT_FIELD));
+		json.put("etag", etag);
 		json.put("skip", skip);
 		json.put("limit", limit);
 		json.put("total_rows", td.totalHits);
