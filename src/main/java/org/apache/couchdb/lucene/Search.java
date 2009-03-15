@@ -87,6 +87,9 @@ public final class Search {
 						final JSONObject info = new JSONObject();
 						info.put("code", 200);
 						info.put("json", json);
+						final JSONObject headers = new JSONObject();
+						headers.put("Content-Type", "text/plain");
+						info.put("headers", headers);
 
 						System.out.println(info);
 					}

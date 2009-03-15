@@ -36,9 +36,16 @@ public final class Progress {
 	}
 
 	public void load(final IndexReader reader) throws IOException {
+		progress = newDocument();
+
 		final TermDocs termDocs = reader.termDocs(PROGRESS_TERM);
 		try {
-			progress = termDocs.next() ? reader.document(termDocs.doc()) : newDocument();
+			while (termDocs.next()) {
+				final int doc = termDocs.doc();
+				if (!reader.isDeleted(doc)) {
+					progress = reader.document(doc);
+				}
+			}
 		} finally {
 			termDocs.close();
 		}
@@ -61,7 +68,7 @@ public final class Progress {
 	private Document newDocument() {
 		final Document result = new Document();
 		// Add unique identifier.
-		result.add(new Field(PROGRESS_KEY, PROGRESS_VALUE, Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
+		result.add(new Field(PROGRESS_KEY, PROGRESS_VALUE, Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
 		return result;
 	}
 

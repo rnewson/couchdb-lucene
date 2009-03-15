@@ -67,7 +67,7 @@ public final class Index {
 
 			Rhino rhino = null;
 
-			boolean commit = false;
+			boolean commit = true;
 			final IndexWriter writer = newWriter();
 			final Progress progress = new Progress();
 			try {
@@ -87,7 +87,6 @@ public final class Index {
 								Log.errlog("Database '%s' has been deleted," + " removing all documents from index.",
 										term.text());
 								delete(term.text(), writer);
-								commit = true;
 							}
 
 						} while (terms.next());
@@ -111,7 +110,7 @@ public final class Index {
 					} else {
 						rhino = null;
 					}
-					commit |= updateDatabase(writer, dbname, progress, rhino);
+					updateDatabase(writer, dbname, progress, rhino);
 				}
 			} catch (final Exception e) {
 				Log.errlog(e);
@@ -129,6 +128,7 @@ public final class Index {
 						reader.close();
 					}
 				} else {
+					Log.errlog("Closing writer without changing index.");
 					writer.rollback();
 				}
 			}
@@ -165,9 +165,9 @@ public final class Index {
 			final String cur_sig = progress.getSignature(dbname);
 			final String new_sig = rhino == null ? Progress.NO_SIGNATURE : rhino.getSignature();
 
-			// Signature changed.
-			if (cur_sig.equals(new_sig) == false) {
-				Log.errlog("%s's signature changed, reindexing.", dbname);
+			// Reindex the database if sequence is 0 or signature changed.
+			if (progress.getSeq(dbname) == 0 || cur_sig.equals(new_sig) == false) {
+				Log.errlog("Indexing '%s' from scratch.", dbname);
 				delete(dbname, writer);
 				progress.update(dbname, new_sig, 0);
 			}
