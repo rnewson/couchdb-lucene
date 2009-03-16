@@ -237,3 +237,12 @@ fti=/usr/bin/java -D couchdb.lucene.dir=/tmp \
 /home/rnewson/Source/couchdb-lucene/target/dependency\
 org.apache.couchdb.lucene.Main
 </pre>
+
+<h2>Basic Authentication</h2>
+
+If you put couchdb behind an authenticating proxy you can still configure couchdb-lucene to pull from it by specifying additional system properties. Currently only Basic authentication is supported.
+
+<dl>
+<dt>couchdb.user<dd>the user to authenticate as.
+<dt>couchdb.password<dd>the password to authenticate with.
+</dl>
