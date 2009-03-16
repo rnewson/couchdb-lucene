@@ -179,9 +179,9 @@ public final class Index {
 				progress.update(dbname, new_sig, 0);
 			}
 
-			long update_seq = 0;
+			long update_seq = progress.getSeq(dbname);
 			while (update_seq < target_seq) {
-				final JSONObject obj = DB.getAllDocsBySeq(dbname, progress.getSeq(dbname), Config.BATCH_SIZE);
+				final JSONObject obj = DB.getAllDocsBySeq(dbname, update_seq, Config.BATCH_SIZE);
 
 				if (!obj.has("rows")) {
 					Log.errlog("no rows found (%s).", obj);
@@ -207,9 +207,9 @@ public final class Index {
 
 					update_seq = row.getLong("key");
 				}
-				progress.update(dbname, new_sig, update_seq);
 			}
 
+			progress.update(dbname, new_sig, update_seq);
 			Log.errlog("%s: index caught up to %,d.", dbname, update_seq);
 			return true;
 		}
