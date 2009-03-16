@@ -1,13 +1,6 @@
 <h1>News</h1>
 
-I've merged the changes from the beta branch which brings many improvements. Notably;
-
-<ol>
-<li>Indexing is a separate process to searching and is triggered by update notifications.
-<li>Rhino integration has landed, user customization of indexing is now possible.
-</ol>
-
-You are advised to delete indexes created prior to this update.
+Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.
 
 <h1>Build couchdb-lucene</h1>
 
