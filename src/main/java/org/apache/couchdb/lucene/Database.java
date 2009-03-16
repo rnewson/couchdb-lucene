@@ -9,9 +9,12 @@ import java.net.URLEncoder;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethodBase;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -32,6 +35,11 @@ public final class Database {
 
 	static {
 		CLIENT.getParams().setCookiePolicy(CookiePolicy.IGNORE_COOKIES);
+		if (Config.DB_USER != null && Config.DB_PASSWORD != null) {
+			CLIENT.getParams().setAuthenticationPreemptive(true);
+			final Credentials creds = new UsernamePasswordCredentials(Config.DB_USER, Config.DB_PASSWORD);
+			CLIENT.getState().setCredentials(AuthScope.ANY, creds);
+		}
 	}
 
 	private final String url;
@@ -52,7 +60,8 @@ public final class Database {
 				encode(dbname), startkey)));
 	}
 
-	public JSONObject getAllDocsBySeq(final String dbname, final long startkey, final int limit) throws HttpException, IOException {
+	public JSONObject getAllDocsBySeq(final String dbname, final long startkey, final int limit) throws HttpException,
+			IOException {
 		return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%d&limit=%d&include_docs=true",
 				encode(dbname), startkey, limit)));
 	}
