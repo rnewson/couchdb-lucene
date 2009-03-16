@@ -39,6 +39,7 @@ public final class Database {
 			CLIENT.getParams().setAuthenticationPreemptive(true);
 			final Credentials creds = new UsernamePasswordCredentials(Config.DB_USER, Config.DB_PASSWORD);
 			CLIENT.getState().setCredentials(AuthScope.ANY, creds);
+			Log.errlog("Authenticating to couchdb as '%s'.", Config.DB_USER);
 		}
 	}
 
@@ -110,7 +111,11 @@ public final class Database {
 
 	private synchronized String execute(final HttpMethodBase method) throws HttpException, IOException {
 		try {
-			CLIENT.executeMethod(method);
+
+			final int sc = CLIENT.executeMethod(method);
+			if (sc == 401) {
+				throw new HttpException("Unauthorized.");
+			}
 			final InputStream in = method.getResponseBodyAsStream();
 			try {
 				final StringWriter writer = new StringWriter(2048);
