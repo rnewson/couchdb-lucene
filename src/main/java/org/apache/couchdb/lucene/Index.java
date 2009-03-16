@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -41,11 +43,24 @@ public final class Index {
 
 	private static final Object MUTEX = new Object();
 
+	private static final Timer TIMER = new Timer("Timer", true);
+
+	private static class CheckpointTask extends TimerTask {
+
+		@Override
+		public void run() {
+			wakeupIndexer();
+		}
+
+	}
+
 	private static class Indexer implements Runnable {
 
 		private Directory dir;
 
 		private boolean running = true;
+
+		private long lastCommit = System.currentTimeMillis();
 
 		public void run() {
 			try {
@@ -59,7 +74,7 @@ public final class Index {
 			}
 		}
 
-		private void updateIndex() throws IOException {
+		private synchronized void updateIndex() throws IOException {
 			if (IndexWriter.isLocked(dir)) {
 				Log.errlog("Forcibly unlocking locked index at startup.");
 				IndexWriter.unlock(dir);
@@ -70,7 +85,7 @@ public final class Index {
 
 			Rhino rhino = null;
 
-			boolean commit = true;
+			boolean commit = false;
 			final IndexWriter writer = newWriter();
 			final Progress progress = new Progress();
 			try {
@@ -90,8 +105,8 @@ public final class Index {
 								Log.errlog("Database '%s' has been deleted," + " removing all documents from index.",
 										term.text());
 								delete(term.text(), writer);
+								commit = true;
 							}
-
 						} while (terms.next());
 					} finally {
 						terms.close();
@@ -113,7 +128,7 @@ public final class Index {
 					} else {
 						rhino = null;
 					}
-					updateDatabase(writer, dbname, progress, rhino);
+					commit |= updateDatabase(writer, dbname, progress, rhino);
 				}
 			} catch (final Exception e) {
 				Log.errlog(e);
@@ -122,6 +137,7 @@ public final class Index {
 				if (commit) {
 					progress.save(writer);
 					writer.close();
+					lastCommit = System.currentTimeMillis();
 
 					final IndexReader reader = IndexReader.open(dir);
 					try {
@@ -165,18 +181,27 @@ public final class Index {
 
 		private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
 				final Rhino rhino) throws HttpException, IOException {
-			final JSONObject info = DB.getInfo(dbname);
+			final long cur_seq = progress.getSeq(dbname);
+			final long target_seq = DB.getInfo(dbname).getLong("update_seq");
 
-			final long target_seq = info.getLong("update_seq");
+			final boolean time_threshold_passed = (System.currentTimeMillis() - lastCommit) >= Config.TIME_THRESHOLD * 1000;
+			final boolean change_threshold_passed = (target_seq - cur_seq) >= Config.CHANGE_THRESHOLD;
+			
+			if (!(time_threshold_passed || change_threshold_passed)) {
+				return false;
+			}
 
 			final String cur_sig = progress.getSignature(dbname);
 			final String new_sig = rhino == null ? Progress.NO_SIGNATURE : rhino.getSignature();
+
+			boolean result = false;
 
 			// Reindex the database if sequence is 0 or signature changed.
 			if (progress.getSeq(dbname) == 0 || cur_sig.equals(new_sig) == false) {
 				Log.errlog("Indexing '%s' from scratch.", dbname);
 				delete(dbname, writer);
 				progress.update(dbname, new_sig, 0);
+				result = true;
 			}
 
 			long update_seq = progress.getSeq(dbname);
@@ -198,20 +223,25 @@ public final class Index {
 					// New or updated document.
 					if (doc != null) {
 						updateDocument(writer, dbname, rows.getJSONObject(i), rhino);
+						result = true;
 					}
 
 					// Deleted document.
 					if (value != null && value.optBoolean("deleted")) {
 						writer.deleteDocuments(new Term(Config.ID, row.getString("id")));
+						result = true;
 					}
 
 					update_seq = row.getLong("key");
 				}
 			}
 
-			progress.update(dbname, new_sig, update_seq);
-			Log.errlog("%s: index caught up to %,d.", dbname, update_seq);
-			return true;
+			if (result) {
+				progress.update(dbname, new_sig, update_seq);
+				Log.errlog("%s: index caught up to %,d.", dbname, update_seq);
+			}
+
+			return result;
 		}
 
 		private void delete(final String dbname, final IndexWriter writer) throws IOException {
@@ -313,21 +343,29 @@ public final class Index {
 	 * type can be created, updated or deleted.
 	 */
 	public static void main(final String[] args) {
-		final Runnable indexer = new Indexer();
-		final Thread indexerThread = new Thread(indexer, "indexer");
-		indexerThread.setDaemon(true);
-		indexerThread.start();
+		start("indexer", new Indexer());
+		TIMER.schedule(new CheckpointTask(), Config.TIME_THRESHOLD * 1000, Config.TIME_THRESHOLD * 1000);
 
 		final Scanner scanner = new Scanner(System.in);
 		while (scanner.hasNextLine()) {
 			final String line = scanner.nextLine();
 			final JSONObject obj = JSONObject.fromObject(line);
 			if (obj.has("type") && obj.has("db")) {
-				synchronized (MUTEX) {
-					MUTEX.notify();
-				}
+				wakeupIndexer();
 			}
 		}
+	}
+
+	private static void wakeupIndexer() {
+		synchronized (MUTEX) {
+			MUTEX.notify();
+		}
+	}
+
+	private static void start(final String name, final Runnable runnable) {
+		final Thread thread = new Thread(runnable, name);
+		thread.setDaemon(true);
+		thread.start();
 	}
 
 }
