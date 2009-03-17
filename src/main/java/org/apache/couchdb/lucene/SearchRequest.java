@@ -182,8 +182,7 @@ public final class SearchRequest {
 		result.put("code", 200);
 
 		final JSONObject headers = new JSONObject();
-		// Cache for 5 minutes.
-		headers.put("Cache-Control", "max-age=300");
+		headers.put("Cache-Control", "max-age=" + Config.TIME_THRESHOLD);
 		// Results can't change unless the IndexReader does.
 		headers.put("ETag", etag);
 		result.put("headers", headers);
