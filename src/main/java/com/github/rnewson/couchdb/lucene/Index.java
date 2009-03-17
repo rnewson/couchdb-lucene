@@ -296,7 +296,7 @@ public final class Index {
 			doc.add(token(Config.ID, id, true));
 
 			// Index all attributes.
-			add(doc, null, json, false);
+			add(null, doc, null, json, false);
 
 			// Attachments
 			if (json.has("_attachments")) {
@@ -321,32 +321,37 @@ public final class Index {
 			}
 
 			// write it
+			System.err.println(doc);
 			writer.updateDocument(new Term(Config.ID, id), doc);
 		}
 
-		private void add(final Document out, final String key, final Object value, final boolean store) {
+		private void add(final String prefix, final Document out, final String key, final Object value,
+				final boolean store) {
+			final String prefixed_key = prefix != null ? prefix + "." + key : key;
+
 			if (value instanceof JSONObject) {
 				final JSONObject json = (JSONObject) value;
 				for (final Object obj : json.keySet()) {
-					add(out, (String) obj, json.get(obj), store);
+					add(prefixed_key, out, (String) obj, json.get(obj), store);
+				}
+			} else if (value instanceof JSONArray) {
+				final JSONArray arr = (JSONArray) value;
+				for (int i = 0, max = arr.size(); i < max; i++) {
+					add(prefixed_key, out, key, arr.get(i), store);
 				}
 			} else if (value instanceof String) {
 				try {
 					final Date date = DATE_FORMAT.parse((String) value);
-					out.add(new Field(key, (String) value, Store.YES, Field.Index.NO));
-					out.add(new Field(key, Long.toString(date.getTime()), Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
+					out.add(new Field(prefixed_key, (String) value, Store.YES, Field.Index.NO));
+					out.add(new Field(prefixed_key, Long.toString(date.getTime()), Store.NO,
+							Field.Index.NOT_ANALYZED_NO_NORMS));
 				} catch (final java.text.ParseException e) {
-					out.add(text(key, (String) value, store));
+					out.add(text(prefixed_key, (String) value, store));
 				}
 			} else if (value instanceof Number) {
-				out.add(token(key, value.toString(), store));
+				out.add(token(prefixed_key, value.toString(), store));
 			} else if (value instanceof Boolean) {
-				out.add(token(key, value.toString(), store));
-			} else if (value instanceof JSONArray) {
-				final JSONArray arr = (JSONArray) value;
-				for (int i = 0, max = arr.size(); i < max; i++) {
-					add(out, key, arr.get(i), store);
-				}
+				out.add(token(prefixed_key, value.toString(), store));
 			} else if (value == null) {
 				Log.errlog("%s was null.", key);
 			} else {
