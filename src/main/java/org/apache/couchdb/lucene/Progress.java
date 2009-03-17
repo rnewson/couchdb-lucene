@@ -55,6 +55,11 @@ public final class Progress {
 		writer.updateDocument(PROGRESS_TERM, progress);
 	}
 
+	public void remove(final String dbname) {
+		progress.removeFields(seqField(dbname));
+		progress.removeFields(sigField(dbname));
+	}
+
 	public void update(final String dbname, final String sig, final long seq) {
 		// Update seq.
 		progress.removeFields(seqField(dbname));

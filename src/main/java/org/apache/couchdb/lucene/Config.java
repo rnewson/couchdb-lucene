@@ -31,7 +31,7 @@ final class Config {
 	static final int BATCH_SIZE = Integer.getInteger("couchdb.lucene.batch", 1000);
 
 	static final String DB_URL = System.getProperty("couchdb.url", "http://localhost:5984");
-	
+
 	static final String DB_USER = System.getProperty("couchdb.user");
 
 	static final String DB_PASSWORD = System.getProperty("couchdb.password");

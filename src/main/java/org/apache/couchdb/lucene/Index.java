@@ -86,6 +86,7 @@ public final class Index {
 			Rhino rhino = null;
 
 			boolean commit = false;
+			boolean expunge = false;
 			final IndexWriter writer = newWriter();
 			final Progress progress = new Progress();
 			try {
@@ -104,8 +105,9 @@ public final class Index {
 							if (Arrays.binarySearch(dbnames, term.text()) < 0) {
 								Log.errlog("Database '%s' has been deleted," + " removing all documents from index.",
 										term.text());
-								delete(term.text(), writer);
+								delete(term.text(), progress, writer);
 								commit = true;
+								expunge = true;
 							}
 						} while (terms.next());
 					} finally {
@@ -136,6 +138,9 @@ public final class Index {
 			} finally {
 				if (commit) {
 					progress.save(writer);
+					if (expunge) {
+						writer.expungeDeletes();
+					}
 					writer.close();
 					lastCommit = System.currentTimeMillis();
 
@@ -185,7 +190,7 @@ public final class Index {
 
 			final boolean time_threshold_passed = (System.currentTimeMillis() - lastCommit) >= Config.TIME_THRESHOLD * 1000;
 			final boolean change_threshold_passed = (target_seq - cur_seq) >= Config.CHANGE_THRESHOLD;
-			
+
 			if (!(time_threshold_passed || change_threshold_passed)) {
 				return false;
 			}
@@ -198,7 +203,7 @@ public final class Index {
 			// Reindex the database if sequence is 0 or signature changed.
 			if (progress.getSeq(dbname) == 0 || cur_sig.equals(new_sig) == false) {
 				Log.errlog("Indexing '%s' from scratch.", dbname);
-				delete(dbname, writer);
+				delete(dbname, progress, writer);
 				progress.update(dbname, new_sig, 0);
 				result = true;
 			}
@@ -243,8 +248,9 @@ public final class Index {
 			return result;
 		}
 
-		private void delete(final String dbname, final IndexWriter writer) throws IOException {
+		private void delete(final String dbname, final Progress progress, final IndexWriter writer) throws IOException {
 			writer.deleteDocuments(new Term(Config.DB, dbname));
+			progress.remove(dbname);
 		}
 
 		private void updateDocument(final IndexWriter writer, final String dbname, final JSONObject obj,
