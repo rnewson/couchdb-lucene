@@ -3,6 +3,8 @@ package org.apache.couchdb.lucene;
 import static java.lang.Math.min;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -44,6 +46,8 @@ public final class SearchRequest {
 
 	private final boolean include_docs;
 
+	private final boolean rewrite_query;
+
 	private final String ifNoneMatch;
 
 	public SearchRequest(final JSONObject obj) throws ParseException {
@@ -57,6 +61,7 @@ public final class SearchRequest {
 		this.limit = query.optInt("limit", 25);
 		this.debug = query.optBoolean("debug", false);
 		this.include_docs = query.optBoolean("include_docs", false);
+		this.rewrite_query = query.optBoolean("rewrite", false);
 
 		// Parse query.
 		final BooleanQuery q = new BooleanQuery();
@@ -105,58 +110,73 @@ public final class SearchRequest {
 			return "{\"code\":304}";
 		}
 
-		// Perform search.
-		final TopDocs td;
-		final StopWatch stopWatch = new StopWatch();
-		if (sort == null) {
-			td = searcher.search(q, null, skip + limit);
-		} else {
-			td = searcher.search(q, null, skip + limit, sort);
-		}
-		stopWatch.lap("search");
-		// Fetch matches (if any).
-		final int max = min(td.totalHits - skip, limit);
-		final JSONArray rows = new JSONArray();
-		final String[] fetch_ids = new String[max];
-		for (int i = skip; i < skip + max; i++) {
-			final Document doc = searcher.doc(td.scoreDocs[i].doc, FS);
-			final JSONObject obj = new JSONObject();
-			// Include basic details.
-			obj.put("_id", doc.get(Config.ID));
-			obj.put("score", td.scoreDocs[i].score);
-			// Include sort order (if any).
-			if (td instanceof TopFieldDocs) {
-				final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
-				obj.put("sort_order", fd.fields);
-			}
-			// Fetch document (if requested).
-			if (include_docs) {
-				fetch_ids[i - skip] = doc.get(Config.ID);
-			}
-			rows.add(obj);
-		}
-		// Fetch documents (if requested).
-		if (include_docs) {
-			final JSONArray fetched_docs = DB.getDocs(dbname, fetch_ids).getJSONArray("rows");
-			for (int i = 0; i < max; i++) {
-				rows.getJSONObject(i).put("doc", fetched_docs.get(i));
-			}
-		}
-		stopWatch.lap("fetch");
-
 		final JSONObject json = new JSONObject();
 		json.put("q", q.toString(Config.DEFAULT_FIELD));
 		json.put("etag", etag);
-		json.put("skip", skip);
-		json.put("limit", limit);
-		json.put("total_rows", td.totalHits);
-		json.put("search_duration", stopWatch.getElapsed("search"));
-		json.put("fetch_duration", stopWatch.getElapsed("fetch"));
-		// Include sort info (if requested).
-		if (td instanceof TopFieldDocs) {
-			json.put("sort_order", toString(((TopFieldDocs) td).fields));
+
+		if (rewrite_query) {
+			final Query rewritten_q = q.rewrite(searcher.getIndexReader());
+			json.put("rewritten_q", rewritten_q.toString(Config.DEFAULT_FIELD));
+			final JSONObject freqs = new JSONObject();
+
+			final Set terms = new HashSet();
+			rewritten_q.extractTerms(terms);
+			for (final Object term : terms) {
+				final int freq = searcher.docFreq((Term) term);
+				freqs.put(term, freq);
+			}
+			json.put("freqs", freqs);
+		} else {
+			// Perform search.
+			final TopDocs td;
+			final StopWatch stopWatch = new StopWatch();
+			if (sort == null) {
+				td = searcher.search(q, null, skip + limit);
+			} else {
+				td = searcher.search(q, null, skip + limit, sort);
+			}
+			stopWatch.lap("search");
+			// Fetch matches (if any).
+			final int max = min(td.totalHits - skip, limit);
+			final JSONArray rows = new JSONArray();
+			final String[] fetch_ids = new String[max];
+			for (int i = skip; i < skip + max; i++) {
+				final Document doc = searcher.doc(td.scoreDocs[i].doc, FS);
+				final JSONObject obj = new JSONObject();
+				// Include basic details.
+				obj.put("_id", doc.get(Config.ID));
+				obj.put("score", td.scoreDocs[i].score);
+				// Include sort order (if any).
+				if (td instanceof TopFieldDocs) {
+					final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
+					obj.put("sort_order", fd.fields);
+				}
+				// Fetch document (if requested).
+				if (include_docs) {
+					fetch_ids[i - skip] = doc.get(Config.ID);
+				}
+				rows.add(obj);
+			}
+			// Fetch documents (if requested).
+			if (include_docs) {
+				final JSONArray fetched_docs = DB.getDocs(dbname, fetch_ids).getJSONArray("rows");
+				for (int i = 0; i < max; i++) {
+					rows.getJSONObject(i).put("doc", fetched_docs.get(i));
+				}
+			}
+			stopWatch.lap("fetch");
+
+			json.put("skip", skip);
+			json.put("limit", limit);
+			json.put("total_rows", td.totalHits);
+			json.put("search_duration", stopWatch.getElapsed("search"));
+			json.put("fetch_duration", stopWatch.getElapsed("fetch"));
+			// Include sort info (if requested).
+			if (td instanceof TopFieldDocs) {
+				json.put("sort_order", toString(((TopFieldDocs) td).fields));
+			}
+			json.put("rows", rows);
 		}
-		json.put("rows", rows);
 
 		final JSONObject result = new JSONObject();
 		result.put("code", 200);
