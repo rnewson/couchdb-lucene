@@ -3,6 +3,8 @@
   <groupId>org.apache.couchdb.lucene</groupId>
   <artifactId>couchdb-lucene</artifactId>
   <name>CouchDB Lucene</name>
+  <description>Full-text indexing for CouchDB</description>
+  <url>http://github.com/rnewson/couchdb-lucene/</url>
   <version>SNAPSHOT</version>
   <dependencies>
     <dependency>
@@ -49,6 +51,17 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <issueManagement>
+    <system>lighthouseapp</system>
+    <url>http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene/tickets</url>
+  </issueManagement>
+  <licenses>
+    <license>
+      <name>Apache 2</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
   <developers>
     <developer>
       <id>rnewson</id>
