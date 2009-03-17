@@ -77,6 +77,7 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 <dt>include_docs<dd>whether to include the source docs
 <dt>stale=ok<dd>If you set the <i>stale</i> option <i>ok</i>, couchdb-lucene may not perform any refreshing on the index. Searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will use the latest data committed to the index.
 <dt>debug<dd>if false, a normal application/json response with results appears. if true, an pretty-printed HTML blob is returned instead.
+<dt>rewrite<dd>(EXPERT) if true, returns a json response with a rewritten query and term frequencies. This allows correct distributed scoring when combining the results from multiple nodes.
 </dl>
 
 <i>All parameters except 'q' are optional.</i>
