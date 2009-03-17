@@ -147,7 +147,6 @@ public final class Index {
 						reader.close();
 					}
 				} else {
-					Log.errlog("Closing writer without changing index.");
 					writer.rollback();
 				}
 			}
