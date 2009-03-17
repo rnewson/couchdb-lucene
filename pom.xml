@@ -55,6 +55,10 @@
     <system>lighthouseapp</system>
     <url>http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene/tickets</url>
   </issueManagement>
+  <scm>
+    <connection>scm:git:git://github.com/rnewson/couchdb-lucene.git</connection>
+    <url>http://github.com/rnewson/couchdb-lucene/</url>
+  </scm>
   <licenses>
     <license>
       <name>Apache 2</name>
