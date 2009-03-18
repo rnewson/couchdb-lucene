@@ -81,6 +81,9 @@ public final class Search {
 						final JSONObject json = new JSONObject();
 						json.put("doc_count", reader.numDocs());
 						json.put("doc_del_count", reader.numDeletedDocs());
+						json.put("last_modified", IndexReader.lastModified(Config.INDEX_DIR));
+						json.put("current", reader.isCurrent());
+						json.put("optimized", reader.isOptimized());
 						json.put("disk_size", size(reader.directory()));
 						reader.directory();
 
