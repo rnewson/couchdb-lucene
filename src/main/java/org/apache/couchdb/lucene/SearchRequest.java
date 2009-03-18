@@ -161,7 +161,7 @@ public final class SearchRequest {
 			if (include_docs) {
 				final JSONArray fetched_docs = DB.getDocs(dbname, fetch_ids).getJSONArray("rows");
 				for (int i = 0; i < max; i++) {
-					rows.getJSONObject(i).put("doc", fetched_docs.get(i));
+					rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
 				}
 			}
 			stopWatch.lap("fetch");
