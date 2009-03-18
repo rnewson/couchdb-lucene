@@ -1,4 +1,4 @@
-package org.apache.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene;
 
 /**
  * Copyright 2009 Robert Newson
@@ -16,19 +16,27 @@ package org.apache.couchdb.lucene;
  * limitations under the License.
  */
 
-import static org.junit.Assert.assertThat;
+/**
+ * Entry point for indexing and searching.
+ * 
+ * @author rnewson
+ * 
+ */
+public final class Main {
 
-import org.hamcrest.CoreMatchers;
-import org.junit.Test;
+	public static void main(final String[] args) throws Exception {
+		if (args.length >= 1 && args[0].equals("-index")) {
+			Index.main(args);
+			return;
+		}
 
-public class RhinoTest {
+		if (args.length >= 1 && args[0].equals("-search")) {
+			Search.main(args);
+			return;
+		}
 
-	@Test
-	public void testRhino() throws Exception {
-		final Rhino rhino = new Rhino("function(doc) { delete doc.deleteme; doc.size++; return doc; }");
-		final String doc = "{\"deleteme\":\"true\", \"size\":13}";
-		assertThat(rhino.parse(doc), CoreMatchers.equalTo("{\"size\":14}"));
-		rhino.close();
+		System.out.println(Utils.error("Invoke with -index or -search only."));
+		return;
 	}
 
 }

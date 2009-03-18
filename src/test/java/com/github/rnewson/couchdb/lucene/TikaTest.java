@@ -1,4 +1,4 @@
-package org.apache.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene;
 
 /**
  * Copyright 2009 Robert Newson
@@ -26,6 +26,9 @@ import java.io.InputStream;
 import org.apache.lucene.document.Document;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.github.rnewson.couchdb.lucene.Config;
+import com.github.rnewson.couchdb.lucene.Tika;
 
 public class TikaTest {
 

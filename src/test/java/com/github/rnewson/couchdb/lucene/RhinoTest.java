@@ -1,4 +1,4 @@
-package org.apache.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene;
 
 /**
  * Copyright 2009 Robert Newson
@@ -16,27 +16,21 @@ package org.apache.couchdb.lucene;
  * limitations under the License.
  */
 
-public final class Log {
+import static org.junit.Assert.assertThat;
 
-	public static void outlog(final String fmt, final Object... args) {
-		System.out.print("{\"log\":\"");
-		System.out.printf(fmt, args);
-		System.out.println("\"}");
-	}
+import org.hamcrest.CoreMatchers;
+import org.junit.Test;
 
-	public static void errlog(final String fmt, final Object... args) {
-		System.err.printf(fmt, args);
-		System.err.println();
-	}
+import com.github.rnewson.couchdb.lucene.Rhino;
 
-	public static void outlog(final Exception e) {
-		outlog("%s", e.getMessage());
-		e.printStackTrace(System.out);
-	}
+public class RhinoTest {
 
-	public static void errlog(final Exception e) {
-		errlog("%s", e.getMessage());
-		e.printStackTrace();
+	@Test
+	public void testRhino() throws Exception {
+		final Rhino rhino = new Rhino("function(doc) { delete doc.deleteme; doc.size++; return doc; }");
+		final String doc = "{\"deleteme\":\"true\", \"size\":13}";
+		assertThat(rhino.parse(doc), CoreMatchers.equalTo("{\"size\":14}"));
+		rhino.close();
 	}
 
 }

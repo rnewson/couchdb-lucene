@@ -1,4 +1,4 @@
-package org.apache.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene;
 
 /**
  * Copyright 2009 Robert Newson
@@ -16,27 +16,27 @@ package org.apache.couchdb.lucene;
  * limitations under the License.
  */
 
-/**
- * Entry point for indexing and searching.
- * 
- * @author rnewson
- * 
- */
-public final class Main {
+public final class Log {
 
-	public static void main(final String[] args) throws Exception {
-		if (args.length >= 1 && args[0].equals("-index")) {
-			Index.main(args);
-			return;
-		}
+	public static void outlog(final String fmt, final Object... args) {
+		System.out.print("{\"log\":\"");
+		System.out.printf(fmt, args);
+		System.out.println("\"}");
+	}
 
-		if (args.length >= 1 && args[0].equals("-search")) {
-			Search.main(args);
-			return;
-		}
+	public static void errlog(final String fmt, final Object... args) {
+		System.err.printf(fmt, args);
+		System.err.println();
+	}
 
-		System.out.println(Utils.error("Invoke with -index or -search only."));
-		return;
+	public static void outlog(final Exception e) {
+		outlog("%s", e.getMessage());
+		e.printStackTrace(System.out);
+	}
+
+	public static void errlog(final Exception e) {
+		errlog("%s", e.getMessage());
+		e.printStackTrace();
 	}
 
 }

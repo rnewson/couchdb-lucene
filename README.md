@@ -216,7 +216,7 @@ To develop "live", type "mvn dependency:unpack-dependencies" and change the exte
 
 <pre>
 fti=/usr/bin/java -cp /path/to/couchdb-lucene/target/classes:\
-/path/to/couchdb-lucene/target/dependency org.apache.couchdb.lucene.Main
+/path/to/couchdb-lucene/target/dependency com.github.rnewson.couchdb.lucene.Main
 </pre>
 
 You will need to restart CouchDB if you change couchdb-lucene source code but this is very fast.
@@ -236,7 +236,7 @@ You can override these properties like this;
 fti=/usr/bin/java -D couchdb.lucene.dir=/tmp \
 -cp /home/rnewson/Source/couchdb-lucene/target/classes:\
 /home/rnewson/Source/couchdb-lucene/target/dependency\
-org.apache.couchdb.lucene.Main
+com.github.rnewson.couchdb.lucene.Main
 </pre>
 
 <h2>Basic Authentication</h2>

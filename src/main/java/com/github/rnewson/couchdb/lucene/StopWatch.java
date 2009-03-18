@@ -1,4 +1,4 @@
-package org.apache.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene;
 
 /**
  * Copyright 2009 Robert Newson

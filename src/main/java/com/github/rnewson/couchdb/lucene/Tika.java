@@ -1,4 +1,4 @@
-package org.apache.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene;
 
 /**
  * Copyright 2009 Robert Newson
@@ -16,8 +16,8 @@ package org.apache.couchdb.lucene;
  * limitations under the License.
  */
 
-import static org.apache.couchdb.lucene.Utils.text;
-import static org.apache.couchdb.lucene.Utils.token;
+import static com.github.rnewson.couchdb.lucene.Utils.text;
+import static com.github.rnewson.couchdb.lucene.Utils.token;
 
 import java.io.IOException;
 import java.io.InputStream;
