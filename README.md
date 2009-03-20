@@ -31,11 +31,61 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h2>Document Indexing</h2>
 
-By default all attributes are indexed. You can customize this process by adding a design document at _design/lucene. You must supply an attribute called "transform" which takes and returns a document. For example;
+By default all attributes are indexed. You can customize this process by adding a design document at _design/lucene. You must supply an attribute called "transform" which takes and returns a document. 
 
 <pre>
 {
   "transform":"function(doc) { return doc; }"
+}
+</pre>
+
+<h3>Example Transforms</h3>
+
+<h4>Index Everything (supplying no _design/lucene is equivalent and faster)</h4>
+
+<pre>
+function(doc) {
+  return doc;
+}
+</pre>
+
+<h4>Index Nothing</h4>
+
+<pre>
+function(doc) {
+  return null;
+}
+</pre>
+
+<h4>Don't Index Confidential Fields</h4>
+
+<pre>
+function(doc) {
+  delete doc.social_security_number;
+  delete doc.date_of_birth;
+  return doc;
+}
+</pre>
+
+<h4>Search Across All Properties</h4>
+
+<pre>
+function(doc) {
+  function DumpObject(obj)  {
+    var result = "";
+    for (var property in obj) {
+      var value=obj[property];
+      if (typeof value == 'object') {
+        result += DumpObject(value) + " "; 
+      } else {
+        result += value + " ";
+      }
+    } 
+    return result;
+  }
+
+  doc.all=DumpObject(doc); 
+  return doc;
 }
 </pre>
 
