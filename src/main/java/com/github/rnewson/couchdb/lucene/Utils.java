@@ -16,6 +16,9 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import net.sf.json.JSONObject;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -40,6 +43,15 @@ class Utils {
 
 	public static String digest(final String data) {
 		return DigestUtils.md5Hex(data);
+	}
+
+	public static String error(final int code, final Throwable t) {
+		final StringWriter writer = new StringWriter();
+		final PrintWriter printWriter = new PrintWriter(writer);
+		if (t.getMessage() != null)
+			printWriter.append(t.getMessage());
+		t.printStackTrace(printWriter);
+		return new JSONObject().element("code", code).element("body", writer.toString()).toString();
 	}
 
 	public static String error(final int code, final String txt) {

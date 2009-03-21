@@ -17,7 +17,6 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import static com.github.rnewson.couchdb.lucene.Utils.text;
-import static com.github.rnewson.couchdb.lucene.Utils.token;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +37,7 @@ public final class Tika {
 
 	private static final String DC = "dc.";
 
-	public void parse(final InputStream in, final String contentType, final Document doc) {
+	public void parse(final InputStream in, final String contentType, final Document doc) throws IOException {
 		final AutoDetectParser parser = new AutoDetectParser();
 		final Metadata md = new Metadata();
 		md.set(Metadata.CONTENT_TYPE, contentType);

@@ -113,7 +113,7 @@ public final class Search {
 						System.out.println(info);
 					}
 				} catch (final Exception e) {
-					System.out.println(Utils.error(400, e.getMessage()));
+					System.out.println(Utils.error(400, e));
 				}
 
 				System.out.println(Utils.error(400, "Bad request."));
