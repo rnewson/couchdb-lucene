@@ -17,6 +17,7 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import static java.lang.Math.min;
+import static java.lang.Math.max;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -153,7 +154,8 @@ public final class SearchRequest {
 			}
 			stopWatch.lap("search");
 			// Fetch matches (if any).
-			final int max = min(td.totalHits - skip, limit);
+			final int max = max(0, min(td.totalHits - skip, limit));
+			
 			final JSONArray rows = new JSONArray();
 			final String[] fetch_ids = new String[max];
 			for (int i = skip; i < skip + max; i++) {
