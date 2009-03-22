@@ -19,10 +19,12 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.IOException;
 import java.util.Scanner;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory;
@@ -95,13 +97,19 @@ public final class Search {
 					// info.
 					if (query.keySet().isEmpty()) {
 						final JSONObject json = new JSONObject();
+						json.put("current", reader.isCurrent());
+						json.put("disk_size", size(reader.directory()));
 						json.put("doc_count", reader.numDocs());
 						json.put("doc_del_count", reader.numDeletedDocs());
+						final JSONArray fields = new JSONArray();
+						for (final Object field : reader.getFieldNames(FieldOption.INDEXED)) {
+							if (((String) field).startsWith("_"))
+								continue;
+							fields.add(field);
+						}
+						json.put("fields", fields);
 						json.put("last_modified", IndexReader.lastModified(Config.INDEX_DIR));
-						json.put("current", reader.isCurrent());
 						json.put("optimized", reader.isOptimized());
-						json.put("disk_size", size(reader.directory()));
-						reader.directory();
 
 						final JSONObject info = new JSONObject();
 						info.put("code", 200);
