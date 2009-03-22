@@ -120,14 +120,14 @@ Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to 
 You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>. The following parameters can be passed for more sophisticated searches;
 
 <dl>
-<dt>q<dd>the query to run (e.g, subject:hello)
-<dt>sort<dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).
-<dt>limit<dd>the maximum number of results to return
-<dt>skip<dd>the number of results to skip
-<dt>include_docs<dd>whether to include the source docs
-<dt>stale=ok<dd>If you set the <i>stale</i> option <i>ok</i>, couchdb-lucene may not perform any refreshing on the index. Searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will use the latest data committed to the index.
-<dt>debug<dd>if false, a normal application/json response with results appears. if true, an pretty-printed HTML blob is returned instead.
-<dt>rewrite<dd>(EXPERT) if true, returns a json response with a rewritten query and term frequencies. This allows correct distributed scoring when combining the results from multiple nodes.
+<dt>q</dt><dd>the query to run (e.g, subject:hello)</dd>
+<dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).</dd>
+<dt>limit</dt><dd>the maximum number of results to return</dd>
+<dt>skip</dt><dd>the number of results to skip</dd>
+<dt>include_docs</dt><dd>whether to include the source docs</dd>
+<dt>stale=ok</dt><dd>If you set the <i>stale</i> option <i>ok</i>, couchdb-lucene may not perform any refreshing on the index. Searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will use the latest data committed to the index.</dd>
+<dt>debug</dt><dd>if false, a normal application/json response with results appears. if true, an pretty-printed HTML blob is returned instead.</dd>
+<dt>rewrite</dt><dd>(EXPERT) if true, returns a json response with a rewritten query and term frequencies. This allows correct distributed scoring when combining the results from multiple nodes.</dd>
 </dl>
 
 <i>All parameters except 'q' are optional.</i>
@@ -135,9 +135,9 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 <h2>Special Fields</h2>
 
 <dl>
-<dt>_id<dd>The _id of the document.
-<dt>_db<dd>The source database of the document.
-<dt>_body<dd>Any text extracted from any attachment.
+<dt>_id</dt><dd>The _id of the document.</dd>
+<dt>_db</dt><dd>The source database of the document.</dd>
+<dt>_body</dt><dd>Any text extracted from any attachment.</dd>
 </dl>
 
 <h2>Dublin Core</h2>
@@ -145,22 +145,22 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 All Dublin Core attributes are indexed and stored if detected in the attachment. Descriptions of the fields come from the Tika javadocs.
 
 <dl>
-<dt>dc.contributor<dd> An entity responsible for making contributions to the content of the resource.
-<dt>dc.coverage<dd>The extent or scope of the content of the resource.
-<dt>dc.creator<dd>An entity primarily responsible for making the content of the resource.
-<dt>dc.date<dd>A date associated with an event in the life cycle of the resource.
-<dt>dc.description<dd>An account of the content of the resource.
-<dt>dc.format<dd>Typically, Format may include the media-type or dimensions of the resource.
-<dt>dc.identifier<dd>Recommended best practice is to identify the resource by means of a string or number conforming to a formal identification system.
-<dt>dc.language<dd>A language of the intellectual content of the resource.
-<dt>dc.modified<dd>Date on which the resource was changed.
-<dt>dc.publisher<dd>An entity responsible for making the resource available.
-<dt>dc.relation<dd>A reference to a related resource.
-<dt>dc.rights<dd>Information about rights held in and over the resource.
-<dt>dc.source<dd>A reference to a resource from which the present resource is derived.
-<dt>dc.subject<dd>The topic of the content of the resource.
-<dt>dc.title<dd>A name given to the resource.
-<dt>dc.type<dd>The nature or genre of the content of the resource.
+<dt>dc.contributor</dt><dd> An entity responsible for making contributions to the content of the resource.</dd>
+<dt>dc.coverage</dt><dd>The extent or scope of the content of the resource.</dd>
+<dt>dc.creator</dt><dd>An entity primarily responsible for making the content of the resource.</dd>
+<dt>dc.date</dt><dd>A date associated with an event in the life cycle of the resource.</dd>
+<dt>dc.description</dt><dd>An account of the content of the resource.</dd>
+<dt>dc.format</dt><dd>Typically, Format may include the media-type or dimensions of the resource.</dd>
+<dt>dc.identifier</dt><dd>Recommended best practice is to identify the resource by means of a string or number conforming to a formal identification system.</dd>
+<dt>dc.language</dt><dd>A language of the intellectual content of the resource.</dd>
+<dt>dc.modified</dt><dd>Date on which the resource was changed.</dd>
+<dt>dc.publisher</dt><dd>An entity responsible for making the resource available.</dd>
+<dt>dc.relation</dt><dd>A reference to a related resource.</dd>
+<dt>dc.rights</dt><dd>Information about rights held in and over the resource.</dd>
+<dt>dc.source</dt><dd>A reference to a resource from which the present resource is derived.</dd>
+<dt>dc.subject</dt><dd>The topic of the content of the resource.</dd>
+<dt>dc.title</dt><dd>A name given to the resource.</dd>
+<dt>dc.type</dt><dd>The nature or genre of the content of the resource.</dd>
 </dl>
 
 <h2>Examples</h2>
@@ -276,8 +276,8 @@ You will need to restart CouchDB if you change couchdb-lucene source code but th
 couchdb-lucene respects several system properties;
 
 <dl>
-<dt>couchdb.url<dd>the url to contact CouchDB with (default is "http://localhost:5984")
-<dt>couchdb.lucene.dir<dd>specify the path to the lucene indexes (the default is to make a directory called 'lucene' relative to couchdb's current working directory.
+<dt>couchdb.url</dt><dd>the url to contact CouchDB with (default is "http://localhost:5984")</dd>
+<dt>couchdb.lucene.dir</dt><dd>specify the path to the lucene indexes (the default is to make a directory called 'lucene' relative to couchdb's current working directory.</dd>
 </dl>
 
 You can override these properties like this;
@@ -294,6 +294,6 @@ com.github.rnewson.couchdb.lucene.Main
 If you put couchdb behind an authenticating proxy you can still configure couchdb-lucene to pull from it by specifying additional system properties. Currently only Basic authentication is supported.
 
 <dl>
-<dt>couchdb.user<dd>the user to authenticate as.
-<dt>couchdb.password<dd>the password to authenticate with.
+<dt>couchdb.user</dt><dd>the user to authenticate as.</dd>
+<dt>couchdb.password</dt><dd>the password to authenticate with.</dd>
 </dl>
