@@ -1,6 +1,12 @@
 <h1>News</h1>
 
+<p>
 Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.
+</p>
+
+<p>
+Now includes the n-gram based LanguageIdentifier from Nutch (0.9).
+</p>
 
 <h1>Build couchdb-lucene</h1>
 
