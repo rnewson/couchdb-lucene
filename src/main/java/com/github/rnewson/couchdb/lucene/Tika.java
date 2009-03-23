@@ -31,6 +31,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParsingReader;
 
+import com.ibm.icu.text.CharsetDetector;
+
 public final class Tika {
 
 	private static final Logger log = LogManager.getLogger(Tika.class);
@@ -79,7 +81,7 @@ public final class Tika {
 		addAttribute(DC, DublinCore.TITLE, md, doc);
 		addAttribute(DC, DublinCore.TYPE, md, doc);
 	}
-
+	
 	private void addAttribute(final String namespace, final String attributeName, final Metadata md, final Document doc) {
 		if (md.get(attributeName) != null) {
 			doc.add(text(namespace + attributeName, md.get(attributeName), false));

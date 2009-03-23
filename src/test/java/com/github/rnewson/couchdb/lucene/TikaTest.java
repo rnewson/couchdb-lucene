@@ -29,6 +29,9 @@ import org.apache.lucene.document.Document;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.ibm.icu.text.CharsetDetector;
+import com.ibm.icu.text.CharsetMatch;
+
 public class TikaTest {
 
 	private Tika tika;
@@ -54,20 +57,28 @@ public class TikaTest {
 
 	@Test
 	public void testEnglish() throws IOException {
-		tika.parse(new ByteArrayInputStream("english text goes here".getBytes()), "text/plain", doc);
-		assertThat(doc.getField("dc.language").stringValue(), is("en"));
+		assertThat(detectLanguage("english"), is(nullValue()));
+		assertThat(detectLanguage("english text here"), is("en"));
 	}
-	
+
 	@Test
 	public void testGerman() throws IOException {
-		tika.parse(new ByteArrayInputStream("Alle Menschen sind frei und gleich".getBytes()), "text/plain", doc);
-		assertThat(doc.getField("dc.language").stringValue(), is("de"));
+		assertThat(detectLanguage("Alle Menschen sind frei und gleich"), is("de"));
 	}
 
 	@Test
 	public void testFrench() throws IOException {
-		tika.parse(new ByteArrayInputStream("Me permettez-vous, dans ma gratitude".getBytes()), "text/plain", doc);
-		assertThat(doc.getField("dc.language").stringValue(), is("fr"));
+		assertThat(detectLanguage("Me permettez-vous, dans ma gratitude"), is("fr"));
+	}
+
+	private String detectLanguage(final String in) throws IOException {
+		CharsetDetector detector = new CharsetDetector();
+		detector.setText(new ByteArrayInputStream(in.getBytes()));
+		CharsetMatch match = detector.detect();
+		if (match.getConfidence() < 50) {
+			return null;
+		}
+		return match.getLanguage();
 	}
 
 	private void parse(final String resource, final String type) throws IOException {

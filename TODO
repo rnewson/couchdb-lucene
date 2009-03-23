@@ -15,3 +15,4 @@ Misc
 * distributed search.
 * JSONQuery? (http://docs.persvr.org/documentation/jsonquery)
 * geospatial (need TrieRangeQuery from 2.9)
+* use Nutch's ngram LanguageIdentifier and override Tika's guess.
