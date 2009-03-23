@@ -18,15 +18,54 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.sf.json.JSONObject;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.br.BrazilianAnalyzer;
+import org.apache.lucene.analysis.cjk.CJKAnalyzer;
+import org.apache.lucene.analysis.cz.CzechAnalyzer;
+import org.apache.lucene.analysis.de.GermanAnalyzer;
+import org.apache.lucene.analysis.el.GreekAnalyzer;
+import org.apache.lucene.analysis.fr.FrenchAnalyzer;
+import org.apache.lucene.analysis.nl.DutchAnalyzer;
+import org.apache.lucene.analysis.ru.RussianAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.th.ThaiAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 
 class Utils {
+
+	private static final Map<String, Analyzer> ANALYZERS = new HashMap<String, Analyzer>();
+
+	static {
+		ANALYZERS.put("de", new GermanAnalyzer());
+		ANALYZERS.put("fr", new FrenchAnalyzer());
+		ANALYZERS.put("el", new GreekAnalyzer());
+		ANALYZERS.put("nl", new DutchAnalyzer());
+		ANALYZERS.put("ru", new RussianAnalyzer());
+		ANALYZERS.put("br", new BrazilianAnalyzer());
+		ANALYZERS.put("cz", new CzechAnalyzer());
+		ANALYZERS.put("th", new ThaiAnalyzer());
+		ANALYZERS.put("en", new StandardAnalyzer());
+
+		final Analyzer cjk = new CJKAnalyzer();
+		ANALYZERS.put("zh", cjk);
+		ANALYZERS.put("ja", cjk);
+		ANALYZERS.put("ko", cjk);
+	}
+
+	public static final Analyzer DEFAULT_ANALYZER = new StandardAnalyzer();
+
+	public static synchronized Analyzer getAnalyzer(final String language) {
+		final Analyzer result = ANALYZERS.get(language);
+		return result != null ? result : DEFAULT_ANALYZER;
+	}
 
 	public static void log(final String fmt, final Object... args) {
 		final String msg = String.format(fmt, args);

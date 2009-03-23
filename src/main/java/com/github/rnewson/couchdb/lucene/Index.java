@@ -34,6 +34,7 @@ import net.sf.json.JSONObject;
 
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -184,7 +185,7 @@ public final class Index {
 		}
 
 		private IndexWriter newWriter() throws IOException {
-			final IndexWriter result = new IndexWriter(dir, Config.ANALYZER, MaxFieldLength.UNLIMITED);
+			final IndexWriter result = new IndexWriter(dir, Utils.DEFAULT_ANALYZER, MaxFieldLength.UNLIMITED);
 
 			// Customize merge policy.
 			final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy();
@@ -320,8 +321,12 @@ public final class Index {
 				}
 			}
 
+			// Determine analyzer.
+			final String language = doc.get("dc.language");
+			final Analyzer analyzer = Utils.getAnalyzer(language);
+
 			// write it
-			writer.updateDocument(new Term(Config.ID, id), doc);
+			writer.updateDocument(new Term(Config.ID, id), doc, analyzer);
 		}
 
 		private void add(final Document out, final String key, final Object value, final boolean store) {

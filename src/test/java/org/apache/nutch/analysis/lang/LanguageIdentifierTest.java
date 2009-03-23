@@ -11,7 +11,7 @@ public class LanguageIdentifierTest {
 
 	@Test
 	public void testEnglish() throws IOException {
-		assertThat(detectLanguage("english here"), is("en"));
+		assertThat(detectLanguage("my head hurts"), is("en"));
 		assertThat(detectLanguage("english text here"), is("en"));
 	}
 
