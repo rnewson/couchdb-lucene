@@ -26,18 +26,19 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
+import org.apache.nutch.analysis.lang.LanguageIdentifier;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParsingReader;
-
-import com.ibm.icu.text.CharsetDetector;
 
 public final class Tika {
 
 	private static final Logger log = LogManager.getLogger(Tika.class);
 
 	private static final String DC = "dc.";
+
+	private final LanguageIdentifier languageIdentifier = new LanguageIdentifier();
 
 	public void parse(final InputStream in, final String contentType, final Document doc) throws IOException {
 		final AutoDetectParser parser = new AutoDetectParser();
@@ -59,8 +60,12 @@ public final class Tika {
 
 		// Add body text.
 		doc.add(text(Config.BODY, body, false));
+
 		// Add DC attributes.
 		addDublinCoreAttributes(md, doc);
+
+		// Detect language.
+		doc.add(text(DC + DublinCore.LANGUAGE, languageIdentifier.identify(body), false));
 	}
 
 	private void addDublinCoreAttributes(final Metadata md, final Document doc) {
@@ -71,7 +76,7 @@ public final class Tika {
 		addAttribute(DC, DublinCore.DESCRIPTION, md, doc);
 		addAttribute(DC, DublinCore.FORMAT, md, doc);
 		addAttribute(DC, DublinCore.IDENTIFIER, md, doc);
-		addAttribute(DC, DublinCore.LANGUAGE, md, doc);
+		// addAttribute(DC, DublinCore.LANGUAGE, md, doc);
 		addAttribute(DC, DublinCore.MODIFIED, md, doc);
 		addAttribute(DC, DublinCore.PUBLISHER, md, doc);
 		addAttribute(DC, DublinCore.RELATION, md, doc);
@@ -81,7 +86,7 @@ public final class Tika {
 		addAttribute(DC, DublinCore.TITLE, md, doc);
 		addAttribute(DC, DublinCore.TYPE, md, doc);
 	}
-	
+
 	private void addAttribute(final String namespace, final String attributeName, final Metadata md, final Document doc) {
 		if (md.get(attributeName) != null) {
 			doc.add(text(namespace + attributeName, md.get(attributeName), false));
