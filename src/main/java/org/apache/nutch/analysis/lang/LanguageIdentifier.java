@@ -42,8 +42,7 @@ import org.apache.nutch.analysis.lang.NGramProfile.NGramEntry;
  * @author J&eacute;r&ocirc;me Charron
  */
 public class LanguageIdentifier {
-  
- 
+  	
   private final static int DEFAULT_ANALYSIS_LENGTH = 0;    // 0 means full content
   
   private final static float SCORE_THRESOLD = 0.00F;
@@ -72,6 +71,7 @@ public class LanguageIdentifier {
   /** My singleton instance */
   private static LanguageIdentifier identifier = null;
 
+  public static final LanguageIdentifier INSTANCE = new LanguageIdentifier();
 
   /**
    * Constructs a new Language Identifier.

@@ -38,8 +38,6 @@ public final class Tika {
 
 	private static final String DC = "dc.";
 
-	private final LanguageIdentifier languageIdentifier = new LanguageIdentifier();
-
 	public void parse(final InputStream in, final String contentType, final Document doc) throws IOException {
 		final AutoDetectParser parser = new AutoDetectParser();
 		final Metadata md = new Metadata();
@@ -65,7 +63,7 @@ public final class Tika {
 		addDublinCoreAttributes(md, doc);
 
 		// Detect language.
-		doc.add(text(DC + DublinCore.LANGUAGE, languageIdentifier.identify(body), false));
+		doc.add(text(DC + DublinCore.LANGUAGE, LanguageIdentifier.INSTANCE.identify(body), false));
 	}
 
 	private void addDublinCoreAttributes(final Metadata md, final Document doc) {

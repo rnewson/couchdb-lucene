@@ -46,6 +46,7 @@ import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.nutch.analysis.lang.LanguageIdentifier;
 
 /**
  * High-level wrapper class over Lucene.
@@ -341,6 +342,9 @@ public final class Index {
 					out.add(new Field(key, (String) value, Store.YES, Field.Index.NO));
 					out.add(new Field(key, Long.toString(date.getTime()), Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
 				} catch (final java.text.ParseException e) {
+					if (out.getField("dc.language") == null) {
+						out.add(text("dc.language", LanguageIdentifier.INSTANCE.identify((String) value), false));
+					}
 					out.add(text(key, (String) value, store));
 				}
 			} else if (value instanceof Number) {
