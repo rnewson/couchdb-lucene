@@ -16,19 +16,18 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.lucene.document.Document;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.github.rnewson.couchdb.lucene.Config;
-import com.github.rnewson.couchdb.lucene.Tika;
 
 public class TikaTest {
 
@@ -51,6 +50,24 @@ public class TikaTest {
 	public void testXML() throws IOException {
 		parse("example.xml", "text/xml");
 		assertThat(doc.getField(Config.BODY), not(nullValue()));
+	}
+
+	@Test
+	public void testEnglish() throws IOException {
+		tika.parse(new ByteArrayInputStream("english text goes here".getBytes()), "text/plain", doc);
+		assertThat(doc.getField("dc.language").stringValue(), is("en"));
+	}
+	
+	@Test
+	public void testGerman() throws IOException {
+		tika.parse(new ByteArrayInputStream("Alle Menschen sind frei und gleich".getBytes()), "text/plain", doc);
+		assertThat(doc.getField("dc.language").stringValue(), is("de"));
+	}
+
+	@Test
+	public void testFrench() throws IOException {
+		tika.parse(new ByteArrayInputStream("Me permettez-vous, dans ma gratitude".getBytes()), "text/plain", doc);
+		assertThat(doc.getField("dc.language").stringValue(), is("fr"));
 	}
 
 	private void parse(final String resource, final String type) throws IOException {
