@@ -16,8 +16,8 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
-import static java.lang.Math.min;
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -32,6 +32,7 @@ import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.MapFieldSelector;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
@@ -67,6 +68,8 @@ public final class SearchRequest {
 
 	private final String ifNoneMatch;
 
+	private String language;
+
 	public SearchRequest(final JSONObject obj) throws ParseException {
 		final JSONObject headers = obj.getJSONObject("headers");
 		final JSONObject info = obj.getJSONObject("info");
@@ -79,11 +82,14 @@ public final class SearchRequest {
 		this.debug = query.optBoolean("debug", false);
 		this.include_docs = query.optBoolean("include_docs", false);
 		this.rewrite_query = query.optBoolean("rewrite", false);
+		this.language = query.optString("lang", "en");
+		
+		final QueryParser qp = new QueryParser(Config.DEFAULT_FIELD, Utils.getAnalyzer(language));
 
 		// Parse query.
 		final BooleanQuery q = new BooleanQuery();
 		q.add(new TermQuery(new Term(Config.DB, this.dbname)), Occur.MUST);
-		q.add(Config.QP.parse(query.getString("q")), Occur.MUST);
+		q.add(qp.parse(query.getString("q")), Occur.MUST);
 		this.q = q;
 
 		// Parse sort order.
