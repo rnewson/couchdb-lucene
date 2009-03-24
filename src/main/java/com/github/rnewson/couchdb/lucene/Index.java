@@ -321,7 +321,6 @@ public final class Index {
 			}
 
 			// write it
-			System.err.println(doc);
 			writer.updateDocument(new Term(Config.ID, id), doc);
 		}
 
