@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Function;
@@ -42,6 +43,14 @@ public final class Rhino {
 	public Rhino(final String fun) throws IOException {
 		this.fun = fun;
 		this.context = contextFactory.enterContext();
+
+		final ClassShutter shutter = new ClassShutter() {
+			public boolean visibleToScripts(final String fullClassName) {
+				return false;
+			}
+		};
+		this.context.setClassShutter(shutter);
+		
 		context.setOptimizationLevel(9);
 		scope = context.initStandardObjects();
 

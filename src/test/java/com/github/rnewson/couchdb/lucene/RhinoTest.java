@@ -21,8 +21,6 @@ import static org.junit.Assert.assertThat;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
-import com.github.rnewson.couchdb.lucene.Rhino;
-
 public class RhinoTest {
 
 	@Test
