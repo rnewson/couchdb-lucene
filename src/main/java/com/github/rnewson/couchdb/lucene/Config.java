@@ -54,8 +54,13 @@ final class Config {
 
 	static final int MAX_LIMIT = Integer.getInteger("couchdb.lucene.max_fetch", 250);
 
-	static final int CHANGE_THRESHOLD = Integer.getInteger("couchdb.lucene.change_threshold", 100);
 
-	static final int TIME_THRESHOLD = Integer.getInteger("couchdb.lucene.time_threshold", 60);
+	static final int COMMIT_MIN = Integer.getInteger("couchdb.lucene.commit.min", 10 * 1000);
+
+	static final int COMMIT_MAX = Integer.getInteger("couchdb.lucene.commit.max", 5 * 60 * 1000);
+
+	@Deprecated
+	static final int TIME_THRESHOLD = 0;
+	static final int CHANGE_THRESHOLD = 0;
 
 }
