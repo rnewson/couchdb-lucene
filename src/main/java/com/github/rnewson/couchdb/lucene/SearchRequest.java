@@ -16,8 +16,8 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
-import static java.lang.Math.min;
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -155,7 +155,7 @@ public final class SearchRequest {
 			stopWatch.lap("search");
 			// Fetch matches (if any).
 			final int max = max(0, min(td.totalHits - skip, limit));
-			
+
 			final JSONArray rows = new JSONArray();
 			final String[] fetch_ids = new String[max];
 			for (int i = skip; i < skip + max; i++) {
@@ -200,7 +200,7 @@ public final class SearchRequest {
 		result.put("code", 200);
 
 		final JSONObject headers = new JSONObject();
-		headers.put("Cache-Control", "max-age=" + Config.TIME_THRESHOLD);
+		headers.put("Cache-Control", "max-age=" + Config.COMMIT_MAX / 1000);
 		// Results can't change unless the IndexReader does.
 		headers.put("ETag", etag);
 		result.put("headers", headers);
