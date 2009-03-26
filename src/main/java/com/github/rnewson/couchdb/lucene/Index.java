@@ -26,8 +26,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -46,9 +44,6 @@ import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
-/**
- * High-level wrapper class over Lucene.
- */
 public final class Index {
 
 	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'");
@@ -57,37 +52,82 @@ public final class Index {
 
 	private static final Tika TIKA = new Tika();
 
-	private static final Object MUTEX = new Object();
+	static class Indexer implements Runnable {
 
-	private static final Timer TIMER = new Timer("Timer", true);
+		private boolean isStale = true;
 
-	private static class CheckpointTask extends TimerTask {
+		private final Directory dir;
 
-		@Override
-		public void run() {
-			wakeupIndexer();
+		public Indexer(final Directory dir) {
+			this.dir = dir;
 		}
 
-	}
+		public synchronized boolean isStale() {
+			return isStale;
+		}
 
-	private static class Indexer implements Runnable {
+		public synchronized void setStale(final boolean isStale) {
+			this.isStale = isStale;
+		}
 
-		private Directory dir;
-
-		private boolean running = true;
-
-		private long lastCommit = System.currentTimeMillis();
+		public synchronized boolean setStale(final boolean expected, final boolean update) {
+			if (isStale == expected) {
+				isStale = update;
+				return true;
+			}
+			return false;
+		}
 
 		public void run() {
-			try {
-				this.dir = FSDirectory.getDirectory(Config.INDEX_DIR);
-				while (running) {
-					updateIndex();
-					waitForUpdateNotification();
+			while (true) {
+				if (!isStale()) {
+					sleep();
+				} else {
+					final long commitBy = System.currentTimeMillis() + Config.COMMIT_MAX;
+					boolean quiet = false;
+					while (!quiet && System.currentTimeMillis() < commitBy) {
+						setStale(false);
+						sleep();
+						quiet = !isStale();
+					}
+
+					/*
+					 * Either no update has occurred in the last COMMIT_MIN
+					 * interval or continual updates have occurred for
+					 * COMMIT_MAX interval. Either way, index all changes and
+					 * commit.
+					 */
+					try {
+						updateIndex();
+					} catch (final IOException e) {
+						Log.errlog(e);
+					}
 				}
-			} catch (final IOException e) {
-				Log.errlog(e);
 			}
+		}
+
+		private void sleep() {
+			try {
+				Thread.sleep(Config.COMMIT_MIN);
+			} catch (final InterruptedException e) {
+				Log.errlog("Interrupted while sleeping, indexer is exiting.");
+			}
+		}
+
+		private IndexWriter newWriter() throws IOException {
+			final IndexWriter result = new IndexWriter(Config.INDEX_DIR, Config.ANALYZER, MaxFieldLength.UNLIMITED);
+
+			// Customize merge policy.
+			final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy();
+			mp.setMergeFactor(5);
+			mp.setMaxMergeMB(1000);
+			result.setMergePolicy(mp);
+
+			// Customize other settings.
+			result.setUseCompoundFile(false);
+			result.setRAMBufferSizeMB(Config.RAM_BUF);
+
+			return result;
 		}
 
 		private synchronized void updateIndex() throws IOException {
@@ -158,7 +198,6 @@ public final class Index {
 						writer.expungeDeletes();
 					}
 					writer.close();
-					lastCommit = System.currentTimeMillis();
 
 					final IndexReader reader = IndexReader.open(dir);
 					try {
@@ -173,43 +212,9 @@ public final class Index {
 			}
 		}
 
-		private void waitForUpdateNotification() {
-			synchronized (MUTEX) {
-				try {
-					MUTEX.wait();
-				} catch (final InterruptedException e) {
-					running = false;
-				}
-			}
-		}
-
-		private IndexWriter newWriter() throws IOException {
-			final IndexWriter result = new IndexWriter(dir, Config.ANALYZER, MaxFieldLength.UNLIMITED);
-
-			// Customize merge policy.
-			final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy();
-			mp.setMergeFactor(5);
-			mp.setMaxMergeMB(1000);
-			result.setMergePolicy(mp);
-
-			// Customer other settings.
-			result.setUseCompoundFile(false);
-			result.setRAMBufferSizeMB(Config.RAM_BUF);
-
-			return result;
-		}
-
 		private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
 				final Rhino rhino) throws HttpException, IOException {
-			final long cur_seq = progress.getSeq(dbname);
 			final long target_seq = DB.getInfo(dbname).getLong("update_seq");
-
-			final boolean time_threshold_passed = (System.currentTimeMillis() - lastCommit) >= Config.TIME_THRESHOLD * 1000;
-			final boolean change_threshold_passed = (target_seq - cur_seq) >= Config.CHANGE_THRESHOLD;
-
-			if (!(time_threshold_passed || change_threshold_passed)) {
-				return false;
-			}
 
 			final String cur_sig = progress.getSignature(dbname);
 			final String new_sig = rhino == null ? Progress.NO_SIGNATURE : rhino.getSignature();
@@ -360,37 +365,20 @@ public final class Index {
 
 	}
 
-	/**
-	 * update notifications look like this;
-	 * 
-	 * {"type":"updated","db":"cas"}
-	 * 
-	 * type can be created, updated or deleted.
-	 */
-	public static void main(final String[] args) {
-		start("indexer", new Indexer());
-		TIMER.schedule(new CheckpointTask(), Config.TIME_THRESHOLD * 1000, Config.TIME_THRESHOLD * 1000);
+	public static void main(String[] args) throws Exception {
+		final Indexer indexer = new Indexer(FSDirectory.getDirectory(Config.INDEX_DIR));
+		final Thread thread = new Thread(indexer, "index");
+		thread.setDaemon(true);
+		thread.start();
 
 		final Scanner scanner = new Scanner(System.in);
 		while (scanner.hasNextLine()) {
 			final String line = scanner.nextLine();
 			final JSONObject obj = JSONObject.fromObject(line);
 			if (obj.has("type") && obj.has("db")) {
-				wakeupIndexer();
+				indexer.setStale(true);
 			}
 		}
-	}
-
-	private static void wakeupIndexer() {
-		synchronized (MUTEX) {
-			MUTEX.notify();
-		}
-	}
-
-	private static void start(final String name, final Runnable runnable) {
-		final Thread thread = new Thread(runnable, name);
-		thread.setDaemon(true);
-		thread.start();
 	}
 
 }
