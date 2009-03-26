@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -47,8 +46,6 @@ import org.apache.lucene.store.FSDirectory;
 
 public final class Index {
 
-	private static final AtomicBoolean DIRTY = new AtomicBoolean(true);
-
 	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'");
 
 	private static final Database DB = new Database(Config.DB_URL);
@@ -57,33 +54,63 @@ public final class Index {
 
 	static class Indexer implements Runnable {
 
+		private boolean isStale = true;
+
 		private final Directory dir;
 
 		public Indexer(final Directory dir) {
 			this.dir = dir;
 		}
 
+		public synchronized boolean isStale() {
+			return isStale;
+		}
+
+		public synchronized void setStale(final boolean isStale) {
+			this.isStale = isStale;
+		}
+
+		public synchronized boolean setStale(final boolean expected, final boolean update) {
+			if (isStale == expected) {
+				isStale = update;
+				return true;
+			}
+			return false;
+		}
+
 		public void run() {
 			while (true) {
-				final long commitAt = System.nanoTime() + Config.COMMIT_MAX * 1000000;
-				while (DIRTY.compareAndSet(true, false) && System.nanoTime() <= commitAt) {
+				if (!isStale()) {
+					sleep();
+				} else {
+					final long commitBy = System.currentTimeMillis() + Config.COMMIT_MAX;
+					boolean quiet = false;
+					while (!quiet && System.currentTimeMillis() < commitBy) {
+						setStale(false);
+						sleep();
+						quiet = !isStale();
+					}
+
+					/*
+					 * Either no update has occurred in the last COMMIT_MIN
+					 * interval or continual updates have occurred for
+					 * COMMIT_MAX interval. Either way, index all changes and
+					 * commit.
+					 */
 					try {
-						Thread.sleep(Config.COMMIT_MIN);
-					} catch (final InterruptedException e) {
-						Log.errlog("Interrupted while sleeping, indexer is exiting.");
-						return;
+						updateIndex();
+					} catch (final IOException e) {
+						Log.errlog(e);
 					}
 				}
-				/*
-				 * Either no update has occurred in the last COMMIT_MIN interval
-				 * or continual updates have occurred for COMMIT_MAX interval.
-				 * Either way, index all changes and commit.
-				 */
-				try {
-					updateIndex();
-				} catch (final IOException e) {
-					Log.errlog(e);
-				}
+			}
+		}
+
+		private void sleep() {
+			try {
+				Thread.sleep(Config.COMMIT_MIN);
+			} catch (final InterruptedException e) {
+				Log.errlog("Interrupted while sleeping, indexer is exiting.");
 			}
 		}
 
@@ -341,6 +368,7 @@ public final class Index {
 	public static void main(String[] args) throws Exception {
 		final Indexer indexer = new Indexer(FSDirectory.getDirectory(Config.INDEX_DIR));
 		final Thread thread = new Thread(indexer, "index");
+		thread.setDaemon(true);
 		thread.start();
 
 		final Scanner scanner = new Scanner(System.in);
@@ -348,7 +376,7 @@ public final class Index {
 			final String line = scanner.nextLine();
 			final JSONObject obj = JSONObject.fromObject(line);
 			if (obj.has("type") && obj.has("db")) {
-				DIRTY.compareAndSet(false, true);
+				indexer.setStale(true);
 			}
 		}
 	}
