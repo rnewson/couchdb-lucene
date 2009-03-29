@@ -26,6 +26,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
+import org.apache.nutch.analysis.lang.LanguageIdentifier;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -35,7 +36,7 @@ public final class Tika {
 
 	private static final Logger log = LogManager.getLogger(Tika.class);
 
-	private static final String DC = "dc.";
+	private static final String DC = "_dc.";
 
 	public void parse(final InputStream in, final String contentType, final Document doc) throws IOException {
 		final AutoDetectParser parser = new AutoDetectParser();
@@ -57,8 +58,14 @@ public final class Tika {
 
 		// Add body text.
 		doc.add(text(Config.BODY, body, false));
+
 		// Add DC attributes.
 		addDublinCoreAttributes(md, doc);
+
+		// Detect language.
+		final String language = LanguageIdentifier.INSTANCE.identify(body);
+		if (language != null && language.length() > 0)
+			doc.add(text(DC + DublinCore.LANGUAGE, language, false));
 	}
 
 	private void addDublinCoreAttributes(final Metadata md, final Document doc) {

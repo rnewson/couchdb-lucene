@@ -300,12 +300,9 @@ public final class Index {
 			// Index _id and _rev as tokens.
 			doc.add(token(Config.ID, id, true));
 
-			// Index all attributes.
-			add(null, doc, null, json, false);
-
 			// Attachments
 			if (json.has("_attachments")) {
-				final JSONObject attachments = json.getJSONObject("_attachments");
+				final JSONObject attachments = (JSONObject) json.remove("_attachments");
 				final Iterator it = attachments.keys();
 				while (it.hasNext()) {
 					final String name = (String) it.next();
@@ -325,6 +322,9 @@ public final class Index {
 				}
 			}
 
+			// Index all attributes.
+			add(null, doc, null, json, false);
+			
 			// write it
 			writer.updateDocument(new Term(Config.ID, id), doc);
 		}

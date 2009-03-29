@@ -27,9 +27,6 @@ import org.apache.lucene.document.Document;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.github.rnewson.couchdb.lucene.Config;
-import com.github.rnewson.couchdb.lucene.Tika;
-
 public class TikaTest {
 
 	private Tika tika;
