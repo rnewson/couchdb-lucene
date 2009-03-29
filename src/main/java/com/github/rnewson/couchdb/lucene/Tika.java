@@ -63,7 +63,7 @@ public final class Tika {
 		addDublinCoreAttributes(md, doc);
 
 		// Detect language.
-		final String language = LanguageIdentifier.INSTANCE.identify(body);
+		final String language = LanguageIdentifier.identifyLanguage(body);
 		if (language != null && language.length() > 0)
 			doc.add(text(DC + DublinCore.LANGUAGE, language, false));
 	}
