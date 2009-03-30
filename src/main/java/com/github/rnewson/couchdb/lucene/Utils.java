@@ -25,6 +25,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.index.Term;
 
 class Utils {
 
@@ -64,6 +65,18 @@ class Utils {
 
 	public static Field token(final String name, final String value, final boolean store) {
 		return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
+	}
+
+	public static Field uniqueField(final String dbname, final String id) {
+		return token(Config.UID, qualify(dbname, id), false);
+	}
+
+	public static Term uniqueTerm(final String dbname, final String id) {
+		return new Term(Config.UID, qualify(dbname, id));
+	}
+
+	private static String qualify(final String dbname, final String id) {
+		return String.format("%s-%s", dbname, id);
 	}
 
 }

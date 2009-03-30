@@ -18,6 +18,8 @@ package com.github.rnewson.couchdb.lucene;
 
 import static com.github.rnewson.couchdb.lucene.Utils.text;
 import static com.github.rnewson.couchdb.lucene.Utils.token;
+import static com.github.rnewson.couchdb.lucene.Utils.uniqueField;
+import static com.github.rnewson.couchdb.lucene.Utils.uniqueTerm;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -253,7 +255,7 @@ public final class Index {
 
 					// Deleted document.
 					if (value != null && value.optBoolean("deleted")) {
-						writer.deleteDocuments(new Term(Config.ID, row.getString("id")));
+						writer.deleteDocuments(Utils.uniqueTerm(dbname, row.getString("id")));
 						result = true;
 					}
 
@@ -291,14 +293,15 @@ public final class Index {
 					return;
 			}
 
-			// Standard properties.
-			doc.add(token(Config.DB, dbname, false));
-			final String id = (String) json.remove(Config.ID);
 			// Discard _rev
 			json.remove("_rev");
+			// Remove _id.
+			final String id = (String) json.remove(Config.ID);
 
-			// Index _id and _rev as tokens.
+			// Index db, id and uid as tokens.
+			doc.add(token(Config.DB, dbname, false));
 			doc.add(token(Config.ID, id, true));
+			doc.add(uniqueField(dbname, id));
 
 			// Attachments
 			if (json.has("_attachments")) {
@@ -324,9 +327,9 @@ public final class Index {
 
 			// Index all attributes.
 			add(null, doc, null, json, false);
-			
+
 			// write it
-			writer.updateDocument(new Term(Config.ID, id), doc);
+			writer.updateDocument(uniqueTerm(dbname, id), doc);
 		}
 
 		private void add(final String prefix, final Document out, final String key, final Object value,

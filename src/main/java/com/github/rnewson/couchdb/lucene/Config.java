@@ -32,6 +32,8 @@ final class Config {
 
 	static final String ID = "_id";
 
+	static final String UID = "_uid";
+
 	static final String SEQ = "_seq";
 
 	static final String BODY = "_body";
