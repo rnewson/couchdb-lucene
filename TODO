@@ -1,3 +1,7 @@
+API Changes.
+
+* allow _design/lucene to list valid date formats so we can parse them correctly.
+
 Search Performance
 
 * sort cache can take too long to build, respond with keep-alive messages.
