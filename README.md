@@ -283,7 +283,7 @@ couchdb-lucene respects several system properties;
 You can override these properties like this;
 
 <pre>
-fti=/usr/bin/java -D couchdb.lucene.dir=/tmp \
+fti=/usr/bin/java -Dcouchdb.lucene.dir=/tmp \
 -cp /home/rnewson/Source/couchdb-lucene/target/classes:\
 /home/rnewson/Source/couchdb-lucene/target/dependency\
 com.github.rnewson.couchdb.lucene.Main
