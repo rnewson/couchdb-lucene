@@ -43,7 +43,7 @@ import org.apache.nutch.analysis.lang.NGramProfile.NGramEntry;
 public class LanguageIdentifier {
 
 	private final static int DEFAULT_ANALYSIS_LENGTH = 0; // 0 means full
-															// content
+	// content
 
 	private final static float SCORE_THRESOLD = 0.00F;
 
@@ -96,9 +96,11 @@ public class LanguageIdentifier {
 		// Gets the value of the maximum size of data to analyze
 		analyzeLength = DEFAULT_ANALYSIS_LENGTH;
 
+		final ClassLoader classLoader = LanguageIdentifier.class.getClassLoader();
+
 		Properties p = new Properties();
 		try {
-			p.load(this.getClass().getResourceAsStream("langmappings.properties"));
+			p.load(classLoader.getResourceAsStream("nutch/langmappings.properties"));
 
 			Enumeration alllanguages = p.keys();
 
@@ -112,8 +114,7 @@ public class LanguageIdentifier {
 			while (alllanguages.hasMoreElements()) {
 				String lang = (String) (alllanguages.nextElement());
 
-				InputStream is = this.getClass().getClassLoader().getResourceAsStream(
-						"org/apache/nutch/analysis/lang/" + lang + "." + NGramProfile.FILE_EXTENSION);
+				InputStream is = classLoader.getResourceAsStream("nutch/" + lang + "." + NGramProfile.FILE_EXTENSION);
 
 				if (is != null) {
 					NGramProfile profile = new NGramProfile(lang, minLength, maxLength);
@@ -154,13 +155,12 @@ public class LanguageIdentifier {
 			if (LOG.isInfoEnabled()) {
 				LOG.info(list.toString());
 			}
-			// Create the suspect profile
-			suspect = new NGramProfile("suspect", minLength, maxLength);
 		} catch (Exception e) {
-			if (LOG.isFatalEnabled()) {
-				LOG.fatal(e.toString());
-			}
+			LOG.fatal(e.toString(), e);
 		}
+
+		// Create the suspect profile
+		suspect = new NGramProfile("suspect", minLength, maxLength);
 	}
 
 	/**
