@@ -24,7 +24,9 @@ final class Config {
 
 	static final Analyzer ANALYZER = new StandardAnalyzer();
 
-	static final String DEFAULT_FIELD = System.getProperty("couchdb.lucene.default_field", "body");
+	static final String BODY = "_body";
+
+	static final String DEFAULT_FIELD = BODY; //System.getProperty("couchdb.lucene.default_field", BODY);
 
 	static final QueryParser QP = new QueryParser(DEFAULT_FIELD, ANALYZER);
 
@@ -35,8 +37,6 @@ final class Config {
 	static final String UID = "_uid";
 
 	static final String SEQ = "_seq";
-
-	static final String BODY = "_body";
 
 	static final String TITLE = "_title";
 
