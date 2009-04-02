@@ -26,10 +26,10 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.BooleanClause.Occur;
 
 class Utils {
 
@@ -71,10 +71,10 @@ class Utils {
 		return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
 	}
 
-    public static Query docQuery(final String dbname, final String id) {
-        BooleanQuery q = new BooleanQuery();
-        q.add(new TermQuery(new Term(Config.DB, dbname)), Occur.MUST);
-        q.add(new TermQuery(new Term(Config.ID, id)), Occur.MUST);
-        return q;
-    }
+	public static Query docQuery(final String dbname, final String id) {
+		BooleanQuery q = new BooleanQuery();
+		q.add(new TermQuery(new Term(Config.DB, dbname)), Occur.MUST);
+		q.add(new TermQuery(new Term(Config.ID, id)), Occur.MUST);
+		return q;
+	}
 }

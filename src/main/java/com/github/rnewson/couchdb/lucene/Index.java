@@ -143,8 +143,6 @@ public final class Index {
 			final String[] dbnames = DB.getAllDatabases();
 			Arrays.sort(dbnames);
 
-			Rhino rhino = null;
-
 			boolean commit = false;
 			boolean expunge = false;
 			final IndexWriter writer = newWriter();
@@ -181,26 +179,29 @@ public final class Index {
 				for (final String dbname : dbnames) {
 					// Database might supply a transformation function.
 					final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene");
+					String transform;
 					if (designDoc != null && designDoc.containsKey("transform")) {
-						String transform = designDoc.getString("transform");
+						transform = designDoc.getString("transform");
 						// Strip start and end double quotes.
 						transform = transform.replaceAll("^\"*", "");
 						transform = transform.replaceAll("\"*$", "");
-						if (rhino != null)
-							rhino.close();
-						rhino = new Rhino(transform);
 					} else {
-						rhino = null;
+						transform = null;
 					}
-					commit |= updateDatabase(writer, dbname, progress, rhino);
+
+					final Rhino rhino = transform == null ? null : new Rhino(transform);
+					try {
+						commit |= updateDatabase(writer, dbname, progress, rhino);
+					} finally {
+						if (rhino != null) {
+							rhino.close();
+						}
+					}
 				}
 			} catch (final Exception e) {
 				Log.errlog(e);
 				commit = false;
 			} finally {
-				if (rhino != null)
-					rhino.close();
-				
 				if (commit) {
 					progress.save(writer);
 					if (expunge) {
