@@ -22,6 +22,7 @@ import static com.github.rnewson.couchdb.lucene.Utils.token;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -47,7 +48,9 @@ import org.apache.lucene.store.FSDirectory;
 
 public final class Index {
 
-	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'");
+	private static final DateFormat[] DATE_FORMATS = new DateFormat[] {
+			new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'"),
+			new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") };
 
 	private static final Database DB = new Database(Config.DB_URL);
 
@@ -248,14 +251,14 @@ public final class Index {
 
 					// New or updated document.
 					if (doc != null) {
-                        writer.deleteDocuments(docQuery(dbname, row.getString("id")));
+						writer.deleteDocuments(docQuery(dbname, row.getString("id")));
 						updateDocument(writer, dbname, rows.getJSONObject(i), rhino);
 						result = true;
 					}
 
 					// Deleted document.
 					if (value != null && value.optBoolean("deleted")) {
-                        writer.deleteDocuments(docQuery(dbname, row.getString("id")));
+						writer.deleteDocuments(docQuery(dbname, row.getString("id")));
 						result = true;
 					}
 
@@ -346,12 +349,11 @@ public final class Index {
 					add(prefixed_key, out, key, arr.get(i), store);
 				}
 			} else if (value instanceof String) {
-				try {
-					final Date date = DATE_FORMAT.parse((String) value);
-					out.add(new Field(prefixed_key, (String) value, Store.YES, Field.Index.NO));
+				final Date date = parseDate((String) value);
+				if (date != null) {
 					out.add(new Field(prefixed_key, Long.toString(date.getTime()), Store.NO,
 							Field.Index.NOT_ANALYZED_NO_NORMS));
-				} catch (final java.text.ParseException e) {
+				} else {
 					out.add(text(prefixed_key, (String) value, store));
 				}
 			} else if (value instanceof Number) {
@@ -365,6 +367,17 @@ public final class Index {
 			}
 		}
 
+	}
+
+	private static Date parseDate(final String str) {
+		for (final DateFormat df : DATE_FORMATS) {
+			try {
+				return df.parse(str);
+			} catch (final ParseException e) {
+				continue;
+			}
+		}
+		return null;
 	}
 
 	public static void main(String[] args) throws Exception {
