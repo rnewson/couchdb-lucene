@@ -16,10 +16,9 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import static com.github.rnewson.couchdb.lucene.Utils.docQuery;
 import static com.github.rnewson.couchdb.lucene.Utils.text;
 import static com.github.rnewson.couchdb.lucene.Utils.token;
-import static com.github.rnewson.couchdb.lucene.Utils.uniqueField;
-import static com.github.rnewson.couchdb.lucene.Utils.uniqueTerm;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -249,13 +248,14 @@ public final class Index {
 
 					// New or updated document.
 					if (doc != null) {
+                        writer.deleteDocuments(docQuery(dbname, row.getString("id")));
 						updateDocument(writer, dbname, rows.getJSONObject(i), rhino);
 						result = true;
 					}
 
 					// Deleted document.
 					if (value != null && value.optBoolean("deleted")) {
-						writer.deleteDocuments(Utils.uniqueTerm(dbname, row.getString("id")));
+                        writer.deleteDocuments(docQuery(dbname, row.getString("id")));
 						result = true;
 					}
 
@@ -301,7 +301,6 @@ public final class Index {
 			// Index db, id and uid as tokens.
 			doc.add(token(Config.DB, dbname, false));
 			doc.add(token(Config.ID, id, true));
-			doc.add(uniqueField(dbname, id));
 
 			// Attachments
 			if (json.has("_attachments")) {
@@ -329,7 +328,7 @@ public final class Index {
 			add(null, doc, null, json, false);
 
 			// write it
-			writer.updateDocument(uniqueTerm(dbname, id), doc);
+			writer.addDocument(doc);
 		}
 
 		private void add(final String prefix, final Document out, final String key, final Object value,
