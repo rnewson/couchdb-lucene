@@ -186,6 +186,8 @@ public final class Index {
 						// Strip start and end double quotes.
 						transform = transform.replaceAll("^\"*", "");
 						transform = transform.replaceAll("\"*$", "");
+						if (rhino != null)
+							rhino.close();
 						rhino = new Rhino(transform);
 					} else {
 						rhino = null;
@@ -196,6 +198,9 @@ public final class Index {
 				Log.errlog(e);
 				commit = false;
 			} finally {
+				if (rhino != null)
+					rhino.close();
+				
 				if (commit) {
 					progress.save(writer);
 					if (expunge) {
