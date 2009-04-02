@@ -82,7 +82,7 @@ public class LanguageIdentifierTest {
 
 	private void assertLanguage(final String file, final String expectedLanguage) throws Exception {
 		final InputStream in = LanguageIdentifier.class.getClassLoader().getResourceAsStream(file);
-		final String txt = IOUtils.toString(in);
+		final String txt = IOUtils.toString(in, "UTF-8");
 		in.close();
 		assertThat(LanguageIdentifier.identifyLanguage(txt), is(expectedLanguage));
 	}
