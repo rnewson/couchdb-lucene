@@ -18,13 +18,10 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-
-import net.sf.json.JSONObject;
 
 import org.apache.commons.io.IOUtils;
-import org.mozilla.javascript.ClassShutter;
 import org.apache.lucene.document.Document;
+import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Function;
@@ -53,16 +50,9 @@ public final class Rhino {
 
     private final Function systemFun;
 
-    private final String dbname;
-
     private final String fun;
 
-    public Rhino(final String fun) throws Exception {
-        this("", fun);
-    }
-
     public Rhino(final String dbname, final String fun) throws Exception {
-        this.dbname = dbname;
         this.fun = fun;
         this.context = contextFactory.enterContext();
         this.context.setClassShutter(SHUTTER);
@@ -90,10 +80,6 @@ public final class Rhino {
         } finally {
             in.close();
         }
-    }
-
-    public Document[] map(final String doc) {
-        return this.map("", doc);
     }
 
     public Document[] map(final String docid, final String doc) {

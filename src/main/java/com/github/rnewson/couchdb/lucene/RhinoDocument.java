@@ -17,14 +17,14 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -45,11 +45,11 @@ public class RhinoDocument extends ScriptableObject {
             new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'"),
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") };
 
-    private static final Map Index = new HashMap();
+    private static final Map<String, Field.Index> Index = new HashMap<String, Field.Index>();
 
-    private static final Map Store = new HashMap();
+    private static final Map<String, Field.Store> Store = new HashMap<String, Field.Store>();
 
-    private static final Map TermVector = new HashMap();
+    private static final Map<String, Field.TermVector> TermVector = new HashMap<String, Field.TermVector>();
 
     static {
         Store.put("NO", Field.Store.NO);
@@ -127,13 +127,18 @@ public class RhinoDocument extends ScriptableObject {
         final String field = args[0].toString();
         final String attname = args[1].toString();
         final String url = DB.url(String.format("%s/%s/%s", dbname, DB.encode(docid), DB.encode(attname)));
-        System.err.println("ATTACHMENT: " + url);
+
         final GetMethod get = new GetMethod(url);
         try {
             final int sc = Database.CLIENT.executeMethod(get);
             if (sc == 200) {
-                final String ctype = get.getResponseHeader("content-type").toString();
-                TIKA.parse(get.getResponseBodyAsStream(), ctype, field, doc.doc);
+                final String ctype = get.getResponseHeader("content-type").getValue();
+                final InputStream in = get.getResponseBodyAsStream();
+                try {
+                    TIKA.parse(in, ctype, field, doc.doc);
+                } finally {
+                    in.close();
+                }
             } else {
                 throw Context.reportRuntimeError("failed to retrieve attachment: " + sc);
             }

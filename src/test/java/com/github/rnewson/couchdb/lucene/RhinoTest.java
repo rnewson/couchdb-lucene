@@ -18,65 +18,67 @@ package com.github.rnewson.couchdb.lucene;
 
 import static org.junit.Assert.assertThat;
 
-import net.sf.json.JSONObject;
-
 import org.apache.lucene.document.Document;
 import org.hamcrest.CoreMatchers;
+import org.junit.After;
 import org.junit.Test;
 
 public class RhinoTest {
 
+    private Rhino rhino;
+
+    @After
+    public void cleanup() {
+        if (rhino != null)
+            rhino.close();
+    }
+
     @Test
     public void testRhino() throws Exception {
-        final Rhino rhino = new Rhino("function(doc) { var ret = new Document(); "
+        rhino = new Rhino("db,", "function(doc) { var ret = new Document(); "
                 + "ret.field(\"foo\", doc.size); return ret }");
         final String doc = "{\"deleteme\":\"true\", \"size\":13}";
-        Document[] ret = rhino.map(doc);
+        Document[] ret = rhino.map("doc", doc);
         assertThat(ret.length, CoreMatchers.equalTo(1));
         assertThat(ret[0].getField("foo"), CoreMatchers.notNullValue());
-        rhino.close();
     }
 
     @Test
     public void testNoReturn() throws Exception {
-        final Rhino rhino = new Rhino("function(doc) {}");
-        Document[] ret = rhino.map("{}");
+        rhino = new Rhino("db", "function(doc) {}");
+        Document[] ret = rhino.map("doc", "{}");
         assertThat(ret.length, CoreMatchers.equalTo(0));
-        rhino.close();
     }
 
     @Test(expected = RuntimeException.class)
     public void testBadReturn() throws Exception {
-        final Rhino rhino = new Rhino("function(doc) {return 1;}");
-        rhino.map("{}");
-        rhino.close();
+        rhino = new Rhino("db", "function(doc) {return 1;}");
+        rhino.map("doc", "{}");
     }
 
     @Test
     public void testCtor() throws Exception {
-        final Rhino rhino = new Rhino("function(doc) { return new Document(\"foo\", 1); }");
-        Document[] ret = rhino.map("{}");
+        rhino = new Rhino("db", "function(doc) { return new Document(\"foo\", 1); }");
+        Document[] ret = rhino.map("doc", "{}");
         assertThat(ret.length, CoreMatchers.equalTo(1));
         assertThat(ret[0].getField("foo"), CoreMatchers.notNullValue());
-        rhino.close();
     }
 
     @Test
     public void testMultipleReturn() throws Exception {
-        final Rhino rhino = new Rhino("function(doc) { " + "var ret = []; "
+        rhino = new Rhino("db", "function(doc) { " + "var ret = []; "
                 + "for(var v in doc) {var d = new Document(); d.field(v, doc[v]); ret.push(d)} " + "return ret; " + "}");
-        Document[] ret = rhino.map("{\"foo\": 1, \"bar\": 2}");
+        Document[] ret = rhino.map("doc", "{\"foo\": 1, \"bar\": 2}");
         assertThat(ret.length, CoreMatchers.equalTo(2));
-        rhino.close();
     }
 
     @Test
     public void testDate() throws Exception {
-        final Rhino rhino = new Rhino("function(doc) { var ret = new Document(); "
+        rhino = new Rhino("db", "function(doc) { var ret = new Document(); "
                 + "ret.date(\"bar\", \"2009-01-0T00:00:00Z\"); return ret;}");
-        Document[] ret = rhino.map("{\"foo\": 1, \"bar\": 2}");
+        Document[] ret = rhino.map("doc", "{\"foo\": 1, \"bar\": 2}");
         assertThat(ret.length, CoreMatchers.equalTo(1));
         assertThat(ret[0].getField("bar"), CoreMatchers.notNullValue());
-        rhino.close();
     }
+
 }

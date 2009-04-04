@@ -17,27 +17,17 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import static com.github.rnewson.couchdb.lucene.Utils.docQuery;
-import static com.github.rnewson.couchdb.lucene.Utils.text;
 import static com.github.rnewson.couchdb.lucene.Utils.token;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.Iterator;
 import java.util.Scanner;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
 
 import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.LogByteSizeMergePolicy;
@@ -48,10 +38,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public final class Index {
-
-    private static final DateFormat[] DATE_FORMATS = new DateFormat[] {
-            new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'"),
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") };
 
     private static final Database DB = new Database(Config.DB_URL);
 
