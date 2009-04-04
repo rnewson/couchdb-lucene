@@ -1,5 +1,7 @@
 <h1>News</h1>
 
+The indexing API has completely changed, please re-read this document and report any surprises/bugs to the bug tracker;
+
 Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.
 
 <h1>Build couchdb-lucene</h1>
