@@ -101,17 +101,6 @@ function(doc) {
 }
 </pre>
 
-<h4>Multiple Documents</h4>
-
-<pre>
-function(doc) {
-  var result = [];
-  result.subject = doc.subject;
-  result.content = doc.content;
-  return result;
-}
-</pre>
-
 <h4>A More Complex Example</h4>
 
 <pre>
