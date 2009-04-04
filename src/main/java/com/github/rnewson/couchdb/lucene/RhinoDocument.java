@@ -29,6 +29,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
@@ -155,7 +156,6 @@ public class RhinoDocument extends ScriptableObject {
         }
 
         final String field = args[0].toString();
-        final String value = args[1].toString();
 
         final Field.Store str;
         if (args.length > 2) {
@@ -164,6 +164,18 @@ public class RhinoDocument extends ScriptableObject {
         } else {
             str = Field.Store.NO;
         }
+        
+        // Is it a native date?
+        try {
+            final Date date = (Date) Context.jsToJava(args[1], Date.class);
+            doc.doc.add(new Field(field, Long.toString(date.getTime()), str, Field.Index.NOT_ANALYZED_NO_NORMS));
+            return;
+        } catch (final EvaluatorException e) {
+            // Ignore.
+        }
+        
+        // Try to parse it as a string.
+        final String value= Context.toString(args[1]);
 
         final DateFormat[] formats;
         if (args.length > 3) {
