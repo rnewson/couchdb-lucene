@@ -31,21 +31,19 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h2>Document Indexing</h2>
 
-By default all attributes are indexed. You can customize this process by adding a design document at _design/lucene. You must supply an attribute called "transform" which takes and returns a document. 
+You must supply a transform function in order to enable couchdb-lucene .
 
-<pre>
-{
-  "transform":"function(doc) { return doc; }"
-}
-</pre>
+Add a design document called _design/lucene in your database with an attribute called "transform". The value of this attribute is a Javascript function.
+
+The transform function can return null, to prevent indexing, and either a single Document or an array of Documents.
 
 <h3>Example Transforms</h3>
 
-<h4>Index Everything (supplying no _design/lucene is equivalent and faster)</h4>
+<h4>Index Everything</h4>
 
 <pre>
 function(doc) {
-  return doc;
+  return new Document(doc);
 }
 </pre>
 
@@ -57,39 +55,59 @@ function(doc) {
 }
 </pre>
 
-<h4>Don't Index Confidential Fields</h4>
+<h4>Index Select Fields</h4>
 
 <pre>
 function(doc) {
-  delete doc.social_security_number;
-  delete doc.date_of_birth;
-  return doc;
+  var result = new Document();
+  result.subject = doc.subject;
+  result.content = doc.content;
+  return result;
 }
 </pre>
 
-<h4>Search Across All Properties</h4>
+<h4>Index Attachments</h4>
 
 <pre>
 function(doc) {
-  function DumpObject(obj)  {
-    var result = "";
-    for (var property in obj) {
-      var value=obj[property];
-      if (typeof value == 'object') {
-        result += DumpObject(value) + " "; 
-      } else {
-        result += value + " ";
-      }
-    } 
-    return result;
+  var result = new Document();
+  for(var a in doc._attachments) {
+    result.attachment("attachment", a);
   }
-
-  doc.all=DumpObject(doc); 
-  return doc;
+  return result;
 }
 </pre>
 
-The function is evaluated by <a href="http://www.mozilla.org/rhino/">Rhino</a>. You may add, modify and remove any attributes. Additionally, returning null will exclude the document from indexing entirely.
+<h4>Multiple Documents</h4>
+
+<pre>
+function(doc) {
+  var result = [];
+  result.subject = doc.subject;
+  result.content = doc.content;
+  return result;
+}
+</pre>
+
+<h4>A More Complex Example</h4>
+
+<pre>
+function(doc) {
+    var mk = function(name, value, group) {
+        var ret = new Document(name, value, "yes");
+        ret.field("group", group, "yes");
+        return ret;
+    };
+    var ret = [];
+    if(doc.type != "reference") return null;
+    for(var g in doc.groups) {
+        ret.push(mk("library", doc.groups[g].library, g));
+        ret.push(mk("method", doc.groups[g].method, g));
+        ret.push(mk("target", doc.groups[g].target, g));
+    }
+    return ret;
+}
+</pre>
 
 <h2>Attachment Indexing</h2>
 
