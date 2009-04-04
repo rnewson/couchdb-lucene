@@ -31,6 +31,7 @@ import java.util.Scanner;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import net.sf.json.JSONSerializer;
 
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -53,8 +54,6 @@ public final class Index {
 			new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") };
 
 	private static final Database DB = new Database(Config.DB_URL);
-
-	private static final Tika TIKA = new Tika();
 
 	static class Indexer implements Runnable {
 
@@ -189,7 +188,7 @@ public final class Index {
 						transform = null;
 					}
 
-					final Rhino rhino = transform == null ? null : new Rhino(transform);
+					final Rhino rhino = transform == null ? null : new Rhino(dbname, transform);
 					try {
 						commit |= updateDatabase(writer, dbname, progress, rhino);
 					} finally {
@@ -224,7 +223,11 @@ public final class Index {
 
 		private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
 				final Rhino rhino) throws HttpException, IOException {
-			final long target_seq = DB.getInfo(dbname).getLong("update_seq");
+			
+            // Bail for now until we delete when there's no transform.
+            if(rhino == null) return false;
+            
+            final long target_seq = DB.getInfo(dbname).getLong("update_seq");
 
 			final String cur_sig = progress.getSignature(dbname);
 			final String new_sig = rhino == null ? Progress.NO_SIGNATURE : rhino.getSignature();
@@ -254,11 +257,19 @@ public final class Index {
 					final JSONObject row = rows.getJSONObject(i);
 					final JSONObject value = row.optJSONObject("value");
 					final JSONObject doc = row.optJSONObject("doc");
+                    final String docid = row.getString("id");
 
 					// New or updated document.
-					if (doc != null) {
-						writer.deleteDocuments(docQuery(dbname, row.getString("id")));
-						updateDocument(writer, dbname, rows.getJSONObject(i), rhino);
+					if (doc != null && !docid.startsWith("_design")) {
+                        writer.deleteDocuments(docQuery(dbname, row.getString("id")));
+			            final Document[] docs = rhino.map(docid, doc.toString()); 
+
+                        for (int j = 0; j < docs.length; j++) {
+			                docs[j].add(token(Config.DB, dbname, false));
+			                docs[j].add(token(Config.ID, docid, true));
+                            writer.addDocument(docs[j]);
+                        }
+
 						result = true;
 					}
 
@@ -284,107 +295,8 @@ public final class Index {
 			writer.deleteDocuments(new Term(Config.DB, dbname));
 			progress.remove(dbname);
 		}
-
-		private void updateDocument(final IndexWriter writer, final String dbname, final JSONObject obj,
-				final Rhino rhino) throws IOException {
-			final Document doc = new Document();
-			JSONObject json = obj.getJSONObject("doc");
-
-			// Skip design documents.
-			if (json.getString(Config.ID).startsWith("_design")) {
-				return;
-			}
-
-			// Pass through user-defined transformation (if any).
-			if (rhino != null) {
-				json = JSONObject.fromObject(rhino.parse(json.toString()));
-				if (json.isNullObject())
-					return;
-			}
-
-			// Discard _rev
-			json.remove("_rev");
-			// Remove _id.
-			final String id = (String) json.remove(Config.ID);
-
-			// Index db, id and uid as tokens.
-			doc.add(token(Config.DB, dbname, false));
-			doc.add(token(Config.ID, id, true));
-
-			// Attachments
-			if (json.has("_attachments")) {
-				final JSONObject attachments = (JSONObject) json.remove("_attachments");
-				final Iterator it = attachments.keys();
-				while (it.hasNext()) {
-					final String name = (String) it.next();
-					final JSONObject att = attachments.getJSONObject(name);
-					final String url = DB.url(String.format("%s/%s/%s", dbname, DB.encode(id), DB.encode(name)));
-					final GetMethod get = new GetMethod(url);
-					try {
-						final int sc = Database.CLIENT.executeMethod(get);
-						if (sc == 200) {
-							TIKA.parse(get.getResponseBodyAsStream(), att.getString("content_type"), doc);
-						} else {
-							Log.errlog("Failed to retrieve attachment: %d", sc);
-						}
-					} finally {
-						get.releaseConnection();
-					}
-				}
-			}
-
-			// Index all attributes.
-			add(null, doc, null, json, false);
-
-			// write it
-			writer.addDocument(doc);
-		}
-
-		private void add(final String prefix, final Document out, final String key, final Object value,
-				final boolean store) {
-			final String prefixed_key = prefix != null ? prefix + "." + key : key;
-
-			if (value instanceof JSONObject) {
-				final JSONObject json = (JSONObject) value;
-				for (final Object obj : json.keySet()) {
-					add(prefixed_key, out, (String) obj, json.get(obj), store);
-				}
-			} else if (value instanceof JSONArray) {
-				final JSONArray arr = (JSONArray) value;
-				for (int i = 0, max = arr.size(); i < max; i++) {
-					add(prefixed_key, out, key, arr.get(i), store);
-				}
-			} else if (value instanceof String) {
-				final Date date = parseDate((String) value);
-				if (date != null) {
-					out.add(new Field(prefixed_key, Long.toString(date.getTime()), Store.NO,
-							Field.Index.NOT_ANALYZED_NO_NORMS));
-				} else {
-					out.add(text(prefixed_key, (String) value, store));
-				}
-			} else if (value instanceof Number) {
-				out.add(token(prefixed_key, value.toString(), store));
-			} else if (value instanceof Boolean) {
-				out.add(token(prefixed_key, value.toString(), store));
-			} else if (value == null) {
-				Log.errlog("%s was null.", key);
-			} else {
-				Log.errlog("Unsupported data type: %s.", value.getClass());
-			}
-		}
-
 	}
 
-	private static Date parseDate(final String str) {
-		for (final DateFormat df : DATE_FORMATS) {
-			try {
-				return df.parse(str);
-			} catch (final ParseException e) {
-				continue;
-			}
-		}
-		return null;
-	}
 
 	public static void main(String[] args) throws Exception {
 		final Indexer indexer = new Indexer(FSDirectory.getDirectory(Config.INDEX_DIR));

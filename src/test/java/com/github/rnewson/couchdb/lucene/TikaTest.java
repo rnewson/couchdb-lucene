@@ -40,20 +40,20 @@ public class TikaTest {
 
 	@Test
 	public void testPDF() throws IOException {
-		parse("paxos-simple.pdf", "application/pdf");
-		assertThat(doc.getField(Config.BODY), not(nullValue()));
+		parse("paxos-simple.pdf", "application/pdf", "foo");
+		assertThat(doc.getField("foo"), not(nullValue()));
 	}
 
 	@Test
 	public void testXML() throws IOException {
-		parse("example.xml", "text/xml");
-		assertThat(doc.getField(Config.BODY), not(nullValue()));
+		parse("example.xml", "text/xml", "bar");
+		assertThat(doc.getField("bar"), not(nullValue()));
 	}
 
-	private void parse(final String resource, final String type) throws IOException {
+	private void parse(final String resource, final String type, final String field) throws IOException {
 		final InputStream in = getClass().getClassLoader().getResourceAsStream(resource);
 		try {
-			tika.parse(in, type, doc);
+			tika.parse(in, type, field, doc);
 		} finally {
 			in.close();
 		}

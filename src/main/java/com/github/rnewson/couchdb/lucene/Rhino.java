@@ -18,13 +18,20 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+
+import net.sf.json.JSONObject;
 
 import org.apache.commons.io.IOUtils;
 import org.mozilla.javascript.ClassShutter;
+import org.apache.lucene.document.Document;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.Undefined;
 
 public final class Rhino {
 
@@ -46,12 +53,21 @@ public final class Rhino {
 
 	private final Function systemFun;
 
+    private final String dbname;
+
 	private final String fun;
 
-	public Rhino(final String fun) throws IOException {
+    public Rhino(final String fun) throws Exception {
+        this("", fun);
+    }
+
+	public Rhino(final String dbname, final String fun) throws Exception {
+        this.dbname = dbname;
 		this.fun = fun;
 		this.context = contextFactory.enterContext();
 		this.context.setClassShutter(SHUTTER);
+		this.context.putThreadLocal("dbname", dbname);
+		context.setOptimizationLevel(9);
 		scope = context.initStandardObjects();
 
 		// compile user-defined function.
@@ -59,8 +75,10 @@ public final class Rhino {
 
 		// compile system function.
 		this.systemFun = context.compileFunction(scope,
-				"function(json,filter) { var doc=JSON.parse(json); doc=filter(doc); return JSON.stringify(doc); }",
+				"function(json, func) { var doc=JSON.parse(json); return func(doc); }",
 				"systemFun", 0, null);
+
+        ScriptableObject.defineClass(scope, RhinoDocument.class);
 
 		// add JSON parser.
 		context.evaluateString(scope, loadJSONParser(), "json2", 0, null);
@@ -75,8 +93,31 @@ public final class Rhino {
 		}
 	}
 
-	public String parse(final String doc) {
-		return (String) systemFun.call(context, scope, null, new Object[] { doc, userFun });
+    public Document[] map(final String doc) {
+        return this.map("", doc);
+    }
+
+	public Document[] map(final String docid, final String doc) {
+        context.putThreadLocal("docid", docid);
+        Object ret = systemFun.call(context, scope, null, new Object[] {doc, userFun });
+        if (ret == null || ret instanceof Undefined) {
+            return new Document[] {};
+        } else if (ret instanceof RhinoDocument) {
+            return new Document[] {((RhinoDocument) ret).doc};
+        } else if (ret instanceof NativeArray) {
+            final NativeArray na = (NativeArray) ret;
+            final Document[] mapped = new Document[(int)na.getLength()];
+            for (int i = 0; i < (int) na.getLength(); i++) {
+                ret = na.get(i, null);
+                if (!(ret instanceof RhinoDocument)) {
+                    throw new RuntimeException("Invalid object type: " + ret.getClass().getName());
+                }
+                mapped[i] = ((RhinoDocument) ret).doc;
+            }
+            return mapped;
+        }
+
+        throw new RuntimeException("Invalid object type: " + ret.getClass().getName());
 	}
 
 	public String getSignature() {
@@ -90,5 +131,4 @@ public final class Rhino {
 	public String toString() {
 		return fun;
 	}
-
 }

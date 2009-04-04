@@ -28,6 +28,7 @@ import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.MapFieldSelector;
 import org.apache.lucene.index.Term;
@@ -44,8 +45,6 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.BooleanClause.Occur;
 
 public final class SearchRequest {
-
-	private static final FieldSelector FS = new MapFieldSelector(new String[] { Config.ID });
 
 	private static final Database DB = new Database(Config.DB_URL);
 
@@ -159,10 +158,19 @@ public final class SearchRequest {
 			final JSONArray rows = new JSONArray();
 			final String[] fetch_ids = new String[max];
 			for (int i = skip; i < skip + max; i++) {
-				final Document doc = searcher.doc(td.scoreDocs[i].doc, FS);
+				final Document doc = searcher.doc(td.scoreDocs[i].doc);
 				final JSONObject obj = new JSONObject();
 				// Include basic details.
-				obj.put("_id", doc.get(Config.ID));
+                for (Object f : doc.getFields()) {
+                    Field fld = (Field) f;
+                    System.err.println("Looking at field: " + fld.name());
+                    if (!fld.isStored()) continue;
+                    String name = fld.name();
+                    String value = fld.stringValue();
+                    if (value != null) {
+                        obj.put(name, value);
+                    }
+                }
 				obj.put("score", td.scoreDocs[i].score);
 				// Include sort order (if any).
 				if (td instanceof TopFieldDocs) {

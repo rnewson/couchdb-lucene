@@ -38,7 +38,8 @@ public final class Tika {
 
 	private static final String DC = "_dc.";
 
-	public void parse(final InputStream in, final String contentType, final Document doc) throws IOException {
+	public void parse(final InputStream in, final String contentType, final String fieldName, final Document doc)
+            throws IOException {
 		final AutoDetectParser parser = new AutoDetectParser();
 		final Metadata md = new Metadata();
 		md.set(Metadata.CONTENT_TYPE, contentType);
@@ -57,7 +58,7 @@ public final class Tika {
 		}
 
 		// Add body text.
-		doc.add(text(Config.BODY, body, false));
+		doc.add(text(fieldName, body, false));
 
 		// Add DC attributes.
 		addDublinCoreAttributes(md, doc);
@@ -87,7 +88,8 @@ public final class Tika {
 		addAttribute(DC, DublinCore.TYPE, md, doc);
 	}
 
-	private void addAttribute(final String namespace, final String attributeName, final Metadata md, final Document doc) {
+	private void addAttribute(final String namespace, final String attributeName, final Metadata md,
+            final Document doc) {
 		if (md.get(attributeName) != null) {
 			doc.add(text(namespace + attributeName, md.get(attributeName), false));
 		}
