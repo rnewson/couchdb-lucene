@@ -162,24 +162,24 @@ public final class Index {
 
                 // Update all extant databases.
                 for (final String dbname : dbnames) {
-                    // Database might supply a transformation function.
                     final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene");
-                    String transform;
-                    if (designDoc != null && designDoc.containsKey("transform")) {
-                        transform = designDoc.getString("transform");
+
+                    // Database must supply a transformation function to be
+                    // indexed.
+                    if (designDoc == null || !designDoc.containsKey("transform")) {
+                        delete(dbname, progress, writer);
+                    } else {
+                        String transform = designDoc.getString("transform");
                         // Strip start and end double quotes.
                         transform = transform.replaceAll("^\"*", "");
                         transform = transform.replaceAll("\"*$", "");
-                    } else {
-                        transform = null;
-                    }
-
-                    final Rhino rhino = transform == null ? null : new Rhino(dbname, transform);
-                    try {
-                        commit |= updateDatabase(writer, dbname, progress, rhino);
-                    } finally {
-                        if (rhino != null) {
-                            rhino.close();
+                        final Rhino rhino = new Rhino(dbname, transform);
+                        try {
+                            commit |= updateDatabase(writer, dbname, progress, rhino);
+                        } finally {
+                            if (rhino != null) {
+                                rhino.close();
+                            }
                         }
                     }
                 }
@@ -209,15 +209,12 @@ public final class Index {
 
         private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
                 final Rhino rhino) throws HttpException, IOException {
-
-            // Bail for now until we delete when there's no transform.
-            if (rhino == null)
-                return false;
+            assert rhino != null;
 
             final long target_seq = DB.getInfo(dbname).getLong("update_seq");
 
             final String cur_sig = progress.getSignature(dbname);
-            final String new_sig = rhino == null ? Progress.NO_SIGNATURE : rhino.getSignature();
+            final String new_sig = rhino.getSignature();
 
             boolean result = false;
 
