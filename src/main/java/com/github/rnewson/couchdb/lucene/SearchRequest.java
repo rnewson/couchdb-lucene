@@ -29,8 +29,6 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.FieldSelector;
-import org.apache.lucene.document.MapFieldSelector;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.BooleanQuery;
@@ -127,12 +125,12 @@ public final class SearchRequest {
         }
 
         final JSONObject json = new JSONObject();
-        json.put("q", q.toString(Config.DEFAULT_FIELD));
+        json.put("q", q.toString());
         json.put("etag", etag);
 
         if (rewrite_query) {
             final Query rewritten_q = q.rewrite(searcher.getIndexReader());
-            json.put("rewritten_q", rewritten_q.toString(Config.DEFAULT_FIELD));
+            json.put("rewritten_q", rewritten_q.toString());
             final JSONObject freqs = new JSONObject();
 
             final Set terms = new HashSet();
@@ -163,7 +161,7 @@ public final class SearchRequest {
                 // Include basic details.
                 for (Object f : doc.getFields()) {
                     Field fld = (Field) f;
-                    System.err.println("Looking at field: " + fld.name());
+
                     if (!fld.isStored())
                         continue;
                     String name = fld.name();
