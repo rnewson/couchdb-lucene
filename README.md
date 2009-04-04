@@ -52,12 +52,24 @@ var doc = new Document();
 Several functions are available that populate a Document.
 
 <pre>
-doc.field("name", "value"); // Indexed, analyzed but not stored.
-doc.field("name", "value", "yes"); // Indexed, analyzed and stored.
-doc.field("name", "value", "yes", "not_analyzed"); // Indexed, stored but not analyzed.
-doc.attachment("name", "attachment name"); // Extract text from the named attachment and index it (but not store it).
-doc.date("name", "value"); // Interpret "value" as a date using the default date formats.
-doc.date("name", "value", "format"); // intrepret "value" as a date using the supplied format string (see Java's SimpleDateFormat class for the syntax).
+// Indexed, analyzed but not stored.
+doc.field("name", "value"); 
+
+// Indexed, analyzed and stored.
+doc.field("name", "value", "yes"); 
+
+// Indexed, stored but not analyzed.
+doc.field("name", "value", "yes", "not_analyzed");
+
+// Extract text from the named attachment and index it (but not store it).
+doc.attachment("name", "attachment name"); 
+
+// Interpret "value" as a date using the default date formats.
+doc.date("name", "value"); 
+
+// intrepret "value" as a date using the supplied format string
+// (see Java's SimpleDateFormat class for the syntax).
+doc.date("name", "value", "format"); 
 </pre>
 
 <h3>Example Transforms</h3>
