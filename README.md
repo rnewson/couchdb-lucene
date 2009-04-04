@@ -62,14 +62,6 @@ doc.date("name", "value", "format"); // intrepret "value" as a date using the su
 
 <h3>Example Transforms</h3>
 
-<h4>Index Everything</h4>
-
-<pre>
-function(doc) {
-  return new Document(doc);
-}
-</pre>
-
 <h4>Index Nothing</h4>
 
 <pre>
