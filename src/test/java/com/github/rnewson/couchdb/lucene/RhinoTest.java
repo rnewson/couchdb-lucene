@@ -26,17 +26,16 @@ import org.junit.Test;
 
 public class RhinoTest {
 
-	@Test
-	public void testRhino() throws Exception {
-		final Rhino rhino = new Rhino("function(doc) { var ret = new Document(); "
+    @Test
+    public void testRhino() throws Exception {
+        final Rhino rhino = new Rhino("function(doc) { var ret = new Document(); "
                 + "ret.field(\"foo\", doc.size); return ret }");
-		final String doc = "{\"deleteme\":\"true\", \"size\":13}";
+        final String doc = "{\"deleteme\":\"true\", \"size\":13}";
         Document[] ret = rhino.map(doc);
         assertThat(ret.length, CoreMatchers.equalTo(1));
         assertThat(ret[0].getField("foo"), CoreMatchers.notNullValue());
-		rhino.close();
-	}
-
+        rhino.close();
+    }
 
     @Test
     public void testNoReturn() throws Exception {
@@ -45,14 +44,14 @@ public class RhinoTest {
         assertThat(ret.length, CoreMatchers.equalTo(0));
         rhino.close();
     }
-    
+
     @Test(expected = RuntimeException.class)
     public void testBadReturn() throws Exception {
         final Rhino rhino = new Rhino("function(doc) {return 1;}");
         rhino.map("{}");
         rhino.close();
     }
-    
+
     @Test
     public void testCtor() throws Exception {
         final Rhino rhino = new Rhino("function(doc) { return new Document(\"foo\", 1); }");
@@ -64,11 +63,8 @@ public class RhinoTest {
 
     @Test
     public void testMultipleReturn() throws Exception {
-        final Rhino rhino = new Rhino("function(doc) { "
-                + "var ret = []; "
-                + "for(var v in doc) {var d = new Document(); d.field(v, doc[v]); ret.push(d)} "
-                + "return ret; "
-                + "}");
+        final Rhino rhino = new Rhino("function(doc) { " + "var ret = []; "
+                + "for(var v in doc) {var d = new Document(); d.field(v, doc[v]); ret.push(d)} " + "return ret; " + "}");
         Document[] ret = rhino.map("{\"foo\": 1, \"bar\": 2}");
         assertThat(ret.length, CoreMatchers.equalTo(2));
         rhino.close();

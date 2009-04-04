@@ -36,21 +36,20 @@ import org.mozilla.javascript.ScriptableObject;
 public class RhinoDocument extends ScriptableObject {
 
     public final Document doc;
-    
+
     private static final Database DB = new Database(Config.DB_URL);
 
     private static final Tika TIKA = new Tika();
 
     private static final DateFormat[] DATE_FORMATS = new DateFormat[] {
-        new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'"),
-        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-    };
+            new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'"),
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") };
 
     private static final Map Index = new HashMap();
 
     private static final Map Store = new HashMap();
 
-    private static final Map TermVector = new HashMap() ;
+    private static final Map TermVector = new HashMap();
 
     static {
         Store.put("NO", Field.Store.NO);
@@ -79,14 +78,15 @@ public class RhinoDocument extends ScriptableObject {
 
     public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
         RhinoDocument doc = new RhinoDocument();
-        if (args.length >= 2) jsFunction_field(cx, doc, args, ctorObj);
+        if (args.length >= 2)
+            jsFunction_field(cx, doc, args, ctorObj);
         return doc;
     }
 
     public static void jsFunction_field(final Context cx, final Scriptable thisObj, final Object[] args,
             final Function funObj) {
         final RhinoDocument doc = checkInstance(thisObj);
-        if(args.length < 2) {
+        if (args.length < 2) {
             throw Context.reportRuntimeError("Invalid number of arguments.");
         }
 
@@ -94,20 +94,23 @@ public class RhinoDocument extends ScriptableObject {
         Field.Index idx = null;
         Field.TermVector tv = null;
 
-        if(args.length >= 3) {
+        if (args.length >= 3) {
             str = (Field.Store) Store.get(args[2].toString().toUpperCase());
         }
-        if(str == null) str = Field.Store.NO;
+        if (str == null)
+            str = Field.Store.NO;
 
-        if(args.length >= 4) {
+        if (args.length >= 4) {
             idx = (Field.Index) Index.get(args[3].toString().toUpperCase());
         }
-        if(idx == null) idx = Field.Index.ANALYZED;
+        if (idx == null)
+            idx = Field.Index.ANALYZED;
 
-        if(args.length >= 5) {
+        if (args.length >= 5) {
             tv = (Field.TermVector) TermVector.get(args[4].toString().toUpperCase());
         }
-        if(tv == null) tv = Field.TermVector.NO;
+        if (tv == null)
+            tv = Field.TermVector.NO;
 
         doc.doc.add(new Field(args[0].toString(), args[1].toString(), str, idx, tv));
     }
@@ -115,7 +118,7 @@ public class RhinoDocument extends ScriptableObject {
     public static void jsFunction_attachment(final Context cx, final Scriptable thisObj, final Object[] args,
             final Function funObj) throws IOException {
         final RhinoDocument doc = checkInstance(thisObj);
-        if(args.length < 2) {
+        if (args.length < 2) {
             throw Context.reportRuntimeError("Invalid number of arguments.");
         }
 
@@ -145,12 +148,12 @@ public class RhinoDocument extends ScriptableObject {
         if (args.length < 2) {
             throw Context.reportRuntimeError("field name and value required.");
         }
-        
+
         final String field = args[0].toString();
         final String value = args[1].toString();
 
         final Field.Store str;
-        if(args.length > 2) {
+        if (args.length > 2) {
             final String strtype = args[2].toString().toUpperCase();
             str = Store.get(strtype) == null ? Field.Store.NO : (Field.Store) Store.get(strtype);
         } else {
@@ -158,7 +161,7 @@ public class RhinoDocument extends ScriptableObject {
         }
 
         final DateFormat[] formats;
-        if(args.length > 3) {
+        if (args.length > 3) {
             formats = new DateFormat[] { new SimpleDateFormat(args[3].toString()) };
         } else {
             formats = DATE_FORMATS;
@@ -184,7 +187,7 @@ public class RhinoDocument extends ScriptableObject {
     }
 
     private static RhinoDocument checkInstance(Scriptable obj) {
-        if(obj == null || !(obj instanceof RhinoDocument)) {
+        if (obj == null || !(obj instanceof RhinoDocument)) {
             throw Context.reportRuntimeError("called on incompatible object.");
         }
         return (RhinoDocument) obj;

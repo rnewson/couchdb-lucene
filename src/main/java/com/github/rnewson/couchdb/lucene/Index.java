@@ -49,269 +49,269 @@ import org.apache.lucene.store.FSDirectory;
 
 public final class Index {
 
-	private static final DateFormat[] DATE_FORMATS = new DateFormat[] {
-			new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'"),
-			new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") };
+    private static final DateFormat[] DATE_FORMATS = new DateFormat[] {
+            new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'"),
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") };
 
-	private static final Database DB = new Database(Config.DB_URL);
+    private static final Database DB = new Database(Config.DB_URL);
 
-	static class Indexer implements Runnable {
+    static class Indexer implements Runnable {
 
-		private boolean isStale = true;
+        private boolean isStale = true;
 
-		private final Directory dir;
+        private final Directory dir;
 
-		public Indexer(final Directory dir) {
-			this.dir = dir;
-		}
+        public Indexer(final Directory dir) {
+            this.dir = dir;
+        }
 
-		public synchronized boolean isStale() {
-			return isStale;
-		}
+        public synchronized boolean isStale() {
+            return isStale;
+        }
 
-		public synchronized void setStale(final boolean isStale) {
-			this.isStale = isStale;
-		}
+        public synchronized void setStale(final boolean isStale) {
+            this.isStale = isStale;
+        }
 
-		public synchronized boolean setStale(final boolean expected, final boolean update) {
-			if (isStale == expected) {
-				isStale = update;
-				return true;
-			}
-			return false;
-		}
+        public synchronized boolean setStale(final boolean expected, final boolean update) {
+            if (isStale == expected) {
+                isStale = update;
+                return true;
+            }
+            return false;
+        }
 
-		public void run() {
-			while (true) {
-				if (!isStale()) {
-					sleep();
-				} else {
-					final long commitBy = System.currentTimeMillis() + Config.COMMIT_MAX;
-					boolean quiet = false;
-					while (!quiet && System.currentTimeMillis() < commitBy) {
-						setStale(false);
-						sleep();
-						quiet = !isStale();
-					}
+        public void run() {
+            while (true) {
+                if (!isStale()) {
+                    sleep();
+                } else {
+                    final long commitBy = System.currentTimeMillis() + Config.COMMIT_MAX;
+                    boolean quiet = false;
+                    while (!quiet && System.currentTimeMillis() < commitBy) {
+                        setStale(false);
+                        sleep();
+                        quiet = !isStale();
+                    }
 
-					/*
-					 * Either no update has occurred in the last COMMIT_MIN
-					 * interval or continual updates have occurred for
-					 * COMMIT_MAX interval. Either way, index all changes and
-					 * commit.
-					 */
-					try {
-						updateIndex();
-					} catch (final IOException e) {
-						Log.errlog(e);
-					}
-				}
-			}
-		}
+                    /*
+                     * Either no update has occurred in the last COMMIT_MIN
+                     * interval or continual updates have occurred for
+                     * COMMIT_MAX interval. Either way, index all changes and
+                     * commit.
+                     */
+                    try {
+                        updateIndex();
+                    } catch (final IOException e) {
+                        Log.errlog(e);
+                    }
+                }
+            }
+        }
 
-		private void sleep() {
-			try {
-				Thread.sleep(Config.COMMIT_MIN);
-			} catch (final InterruptedException e) {
-				Log.errlog("Interrupted while sleeping, indexer is exiting.");
-			}
-		}
+        private void sleep() {
+            try {
+                Thread.sleep(Config.COMMIT_MIN);
+            } catch (final InterruptedException e) {
+                Log.errlog("Interrupted while sleeping, indexer is exiting.");
+            }
+        }
 
-		private IndexWriter newWriter() throws IOException {
-			final IndexWriter result = new IndexWriter(Config.INDEX_DIR, Config.ANALYZER, MaxFieldLength.UNLIMITED);
+        private IndexWriter newWriter() throws IOException {
+            final IndexWriter result = new IndexWriter(Config.INDEX_DIR, Config.ANALYZER, MaxFieldLength.UNLIMITED);
 
-			// Customize merge policy.
-			final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy();
-			mp.setMergeFactor(5);
-			mp.setMaxMergeMB(1000);
-			result.setMergePolicy(mp);
+            // Customize merge policy.
+            final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy();
+            mp.setMergeFactor(5);
+            mp.setMaxMergeMB(1000);
+            result.setMergePolicy(mp);
 
-			// Customize other settings.
-			result.setUseCompoundFile(false);
-			result.setRAMBufferSizeMB(Config.RAM_BUF);
+            // Customize other settings.
+            result.setUseCompoundFile(false);
+            result.setRAMBufferSizeMB(Config.RAM_BUF);
 
-			return result;
-		}
+            return result;
+        }
 
-		private synchronized void updateIndex() throws IOException {
-			if (IndexWriter.isLocked(dir)) {
-				Log.errlog("Forcibly unlocking locked index at startup.");
-				IndexWriter.unlock(dir);
-			}
+        private synchronized void updateIndex() throws IOException {
+            if (IndexWriter.isLocked(dir)) {
+                Log.errlog("Forcibly unlocking locked index at startup.");
+                IndexWriter.unlock(dir);
+            }
 
-			final String[] dbnames = DB.getAllDatabases();
-			Arrays.sort(dbnames);
+            final String[] dbnames = DB.getAllDatabases();
+            Arrays.sort(dbnames);
 
-			boolean commit = false;
-			boolean expunge = false;
-			final IndexWriter writer = newWriter();
-			final Progress progress = new Progress();
-			try {
-				final IndexReader reader = IndexReader.open(dir);
-				try {
-					// Load status.
-					progress.load(reader);
+            boolean commit = false;
+            boolean expunge = false;
+            final IndexWriter writer = newWriter();
+            final Progress progress = new Progress();
+            try {
+                final IndexReader reader = IndexReader.open(dir);
+                try {
+                    // Load status.
+                    progress.load(reader);
 
-					// Remove documents from deleted databases.
-					final TermEnum terms = reader.terms(new Term(Config.DB, ""));
-					try {
-						do {
-							final Term term = terms.term();
-							if (term == null || Config.DB.equals(term.field()) == false)
-								break;
-							if (Arrays.binarySearch(dbnames, term.text()) < 0) {
-								Log.errlog("Database '%s' has been deleted," + " removing all documents from index.",
-										term.text());
-								delete(term.text(), progress, writer);
-								commit = true;
-								expunge = true;
-							}
-						} while (terms.next());
-					} finally {
-						terms.close();
-					}
-				} finally {
-					reader.close();
-				}
+                    // Remove documents from deleted databases.
+                    final TermEnum terms = reader.terms(new Term(Config.DB, ""));
+                    try {
+                        do {
+                            final Term term = terms.term();
+                            if (term == null || Config.DB.equals(term.field()) == false)
+                                break;
+                            if (Arrays.binarySearch(dbnames, term.text()) < 0) {
+                                Log.errlog("Database '%s' has been deleted," + " removing all documents from index.",
+                                        term.text());
+                                delete(term.text(), progress, writer);
+                                commit = true;
+                                expunge = true;
+                            }
+                        } while (terms.next());
+                    } finally {
+                        terms.close();
+                    }
+                } finally {
+                    reader.close();
+                }
 
-				// Update all extant databases.
-				for (final String dbname : dbnames) {
-					// Database might supply a transformation function.
-					final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene");
-					String transform;
-					if (designDoc != null && designDoc.containsKey("transform")) {
-						transform = designDoc.getString("transform");
-						// Strip start and end double quotes.
-						transform = transform.replaceAll("^\"*", "");
-						transform = transform.replaceAll("\"*$", "");
-					} else {
-						transform = null;
-					}
+                // Update all extant databases.
+                for (final String dbname : dbnames) {
+                    // Database might supply a transformation function.
+                    final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene");
+                    String transform;
+                    if (designDoc != null && designDoc.containsKey("transform")) {
+                        transform = designDoc.getString("transform");
+                        // Strip start and end double quotes.
+                        transform = transform.replaceAll("^\"*", "");
+                        transform = transform.replaceAll("\"*$", "");
+                    } else {
+                        transform = null;
+                    }
 
-					final Rhino rhino = transform == null ? null : new Rhino(dbname, transform);
-					try {
-						commit |= updateDatabase(writer, dbname, progress, rhino);
-					} finally {
-						if (rhino != null) {
-							rhino.close();
-						}
-					}
-				}
-			} catch (final Exception e) {
-				Log.errlog(e);
-				commit = false;
-			} finally {
-				if (commit) {
-					progress.save(writer);
-					if (expunge) {
-						writer.expungeDeletes();
-					}
-					writer.close();
+                    final Rhino rhino = transform == null ? null : new Rhino(dbname, transform);
+                    try {
+                        commit |= updateDatabase(writer, dbname, progress, rhino);
+                    } finally {
+                        if (rhino != null) {
+                            rhino.close();
+                        }
+                    }
+                }
+            } catch (final Exception e) {
+                Log.errlog(e);
+                commit = false;
+            } finally {
+                if (commit) {
+                    progress.save(writer);
+                    if (expunge) {
+                        writer.expungeDeletes();
+                    }
+                    writer.close();
 
-					final IndexReader reader = IndexReader.open(dir);
-					try {
-						Log.errlog("Committed changes to index (%,d documents in index, %,d deletes).", reader
-								.numDocs(), reader.numDeletedDocs());
-					} finally {
-						reader.close();
-					}
-				} else {
-					writer.rollback();
-				}
-			}
-		}
+                    final IndexReader reader = IndexReader.open(dir);
+                    try {
+                        Log.errlog("Committed changes to index (%,d documents in index, %,d deletes).", reader
+                                .numDocs(), reader.numDeletedDocs());
+                    } finally {
+                        reader.close();
+                    }
+                } else {
+                    writer.rollback();
+                }
+            }
+        }
 
-		private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
-				final Rhino rhino) throws HttpException, IOException {
-			
+        private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
+                final Rhino rhino) throws HttpException, IOException {
+
             // Bail for now until we delete when there's no transform.
-            if(rhino == null) return false;
-            
+            if (rhino == null)
+                return false;
+
             final long target_seq = DB.getInfo(dbname).getLong("update_seq");
 
-			final String cur_sig = progress.getSignature(dbname);
-			final String new_sig = rhino == null ? Progress.NO_SIGNATURE : rhino.getSignature();
+            final String cur_sig = progress.getSignature(dbname);
+            final String new_sig = rhino == null ? Progress.NO_SIGNATURE : rhino.getSignature();
 
-			boolean result = false;
+            boolean result = false;
 
-			// Reindex the database if sequence is 0 or signature changed.
-			if (progress.getSeq(dbname) == 0 || cur_sig.equals(new_sig) == false) {
-				Log.errlog("Indexing '%s' from scratch.", dbname);
-				delete(dbname, progress, writer);
-				progress.update(dbname, new_sig, 0);
-				result = true;
-			}
+            // Reindex the database if sequence is 0 or signature changed.
+            if (progress.getSeq(dbname) == 0 || cur_sig.equals(new_sig) == false) {
+                Log.errlog("Indexing '%s' from scratch.", dbname);
+                delete(dbname, progress, writer);
+                progress.update(dbname, new_sig, 0);
+                result = true;
+            }
 
-			long update_seq = progress.getSeq(dbname);
-			while (update_seq < target_seq) {
-				final JSONObject obj = DB.getAllDocsBySeq(dbname, update_seq, Config.BATCH_SIZE);
+            long update_seq = progress.getSeq(dbname);
+            while (update_seq < target_seq) {
+                final JSONObject obj = DB.getAllDocsBySeq(dbname, update_seq, Config.BATCH_SIZE);
 
-				if (!obj.has("rows")) {
-					Log.errlog("no rows found (%s).", obj);
-					return false;
-				}
+                if (!obj.has("rows")) {
+                    Log.errlog("no rows found (%s).", obj);
+                    return false;
+                }
 
-				// Process all rows
-				final JSONArray rows = obj.getJSONArray("rows");
-				for (int i = 0, max = rows.size(); i < max; i++) {
-					final JSONObject row = rows.getJSONObject(i);
-					final JSONObject value = row.optJSONObject("value");
-					final JSONObject doc = row.optJSONObject("doc");
+                // Process all rows
+                final JSONArray rows = obj.getJSONArray("rows");
+                for (int i = 0, max = rows.size(); i < max; i++) {
+                    final JSONObject row = rows.getJSONObject(i);
+                    final JSONObject value = row.optJSONObject("value");
+                    final JSONObject doc = row.optJSONObject("doc");
                     final String docid = row.getString("id");
 
-					// New or updated document.
-					if (doc != null && !docid.startsWith("_design")) {
+                    // New or updated document.
+                    if (doc != null && !docid.startsWith("_design")) {
                         writer.deleteDocuments(docQuery(dbname, row.getString("id")));
-			            final Document[] docs = rhino.map(docid, doc.toString()); 
+                        final Document[] docs = rhino.map(docid, doc.toString());
 
                         for (int j = 0; j < docs.length; j++) {
-			                docs[j].add(token(Config.DB, dbname, false));
-			                docs[j].add(token(Config.ID, docid, true));
+                            docs[j].add(token(Config.DB, dbname, false));
+                            docs[j].add(token(Config.ID, docid, true));
                             writer.addDocument(docs[j]);
                         }
 
-						result = true;
-					}
+                        result = true;
+                    }
 
-					// Deleted document.
-					if (value != null && value.optBoolean("deleted")) {
-						writer.deleteDocuments(docQuery(dbname, row.getString("id")));
-						result = true;
-					}
+                    // Deleted document.
+                    if (value != null && value.optBoolean("deleted")) {
+                        writer.deleteDocuments(docQuery(dbname, row.getString("id")));
+                        result = true;
+                    }
 
-					update_seq = row.getLong("key");
-				}
-			}
+                    update_seq = row.getLong("key");
+                }
+            }
 
-			if (result) {
-				progress.update(dbname, new_sig, update_seq);
-				Log.errlog("%s: index caught up to %,d.", dbname, update_seq);
-			}
+            if (result) {
+                progress.update(dbname, new_sig, update_seq);
+                Log.errlog("%s: index caught up to %,d.", dbname, update_seq);
+            }
 
-			return result;
-		}
+            return result;
+        }
 
-		private void delete(final String dbname, final Progress progress, final IndexWriter writer) throws IOException {
-			writer.deleteDocuments(new Term(Config.DB, dbname));
-			progress.remove(dbname);
-		}
-	}
+        private void delete(final String dbname, final Progress progress, final IndexWriter writer) throws IOException {
+            writer.deleteDocuments(new Term(Config.DB, dbname));
+            progress.remove(dbname);
+        }
+    }
 
+    public static void main(String[] args) throws Exception {
+        final Indexer indexer = new Indexer(FSDirectory.getDirectory(Config.INDEX_DIR));
+        final Thread thread = new Thread(indexer, "index");
+        thread.setDaemon(true);
+        thread.start();
 
-	public static void main(String[] args) throws Exception {
-		final Indexer indexer = new Indexer(FSDirectory.getDirectory(Config.INDEX_DIR));
-		final Thread thread = new Thread(indexer, "index");
-		thread.setDaemon(true);
-		thread.start();
-
-		final Scanner scanner = new Scanner(System.in);
-		while (scanner.hasNextLine()) {
-			final String line = scanner.nextLine();
-			final JSONObject obj = JSONObject.fromObject(line);
-			if (obj.has("type") && obj.has("db")) {
-				indexer.setStale(true);
-			}
-		}
-	}
+        final Scanner scanner = new Scanner(System.in);
+        while (scanner.hasNextLine()) {
+            final String line = scanner.nextLine();
+            final JSONObject obj = JSONObject.fromObject(line);
+            if (obj.has("type") && obj.has("db")) {
+                indexer.setStale(true);
+            }
+        }
+    }
 
 }

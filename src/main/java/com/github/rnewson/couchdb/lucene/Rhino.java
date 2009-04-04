@@ -35,78 +35,77 @@ import org.mozilla.javascript.Undefined;
 
 public final class Rhino {
 
-	private static final ClassShutter SHUTTER = new ClassShutter() {
+    private static final ClassShutter SHUTTER = new ClassShutter() {
 
-		public boolean visibleToScripts(String fullClassName) {
-			return false;
-		}
+        public boolean visibleToScripts(String fullClassName) {
+            return false;
+        }
 
-	};
+    };
 
-	private final ContextFactory contextFactory = new ContextFactory();
+    private final ContextFactory contextFactory = new ContextFactory();
 
-	private final Context context;
+    private final Context context;
 
-	private final Scriptable scope;
+    private final Scriptable scope;
 
-	private final Function userFun;
+    private final Function userFun;
 
-	private final Function systemFun;
+    private final Function systemFun;
 
     private final String dbname;
 
-	private final String fun;
+    private final String fun;
 
     public Rhino(final String fun) throws Exception {
         this("", fun);
     }
 
-	public Rhino(final String dbname, final String fun) throws Exception {
+    public Rhino(final String dbname, final String fun) throws Exception {
         this.dbname = dbname;
-		this.fun = fun;
-		this.context = contextFactory.enterContext();
-		this.context.setClassShutter(SHUTTER);
-		this.context.putThreadLocal("dbname", dbname);
-		context.setOptimizationLevel(9);
-		scope = context.initStandardObjects();
+        this.fun = fun;
+        this.context = contextFactory.enterContext();
+        this.context.setClassShutter(SHUTTER);
+        this.context.putThreadLocal("dbname", dbname);
+        context.setOptimizationLevel(9);
+        scope = context.initStandardObjects();
 
-		// compile user-defined function.
-		this.userFun = context.compileFunction(scope, fun, "userFun", 0, null);
+        // compile user-defined function.
+        this.userFun = context.compileFunction(scope, fun, "userFun", 0, null);
 
-		// compile system function.
-		this.systemFun = context.compileFunction(scope,
-				"function(json, func) { var doc=JSON.parse(json); return func(doc); }",
-				"systemFun", 0, null);
+        // compile system function.
+        this.systemFun = context.compileFunction(scope,
+                "function(json, func) { var doc=JSON.parse(json); return func(doc); }", "systemFun", 0, null);
 
         ScriptableObject.defineClass(scope, RhinoDocument.class);
 
-		// add JSON parser.
-		context.evaluateString(scope, loadJSONParser(), "json2", 0, null);
-	}
+        // add JSON parser.
+        context.evaluateString(scope, loadJSONParser(), "json2", 0, null);
+    }
 
-	private String loadJSONParser() throws IOException {
-		final InputStream in = Rhino.class.getClassLoader().getResourceAsStream("json2.js");
-		try {
-			return IOUtils.toString(in, "UTF-8");
-		} finally {
-			in.close();
-		}
-	}
+    private String loadJSONParser() throws IOException {
+        final InputStream in = Rhino.class.getClassLoader().getResourceAsStream("json2.js");
+        try {
+            return IOUtils.toString(in, "UTF-8");
+        } finally {
+            in.close();
+        }
+    }
 
     public Document[] map(final String doc) {
         return this.map("", doc);
     }
 
-	public Document[] map(final String docid, final String doc) {
+    public Document[] map(final String docid, final String doc) {
         context.putThreadLocal("docid", docid);
-        Object ret = systemFun.call(context, scope, null, new Object[] {doc, userFun });
+        Object ret = systemFun.call(context, scope, null, new Object[] { doc, userFun });
         if (ret == null || ret instanceof Undefined) {
             return new Document[] {};
         } else if (ret instanceof RhinoDocument) {
-            return new Document[] {((RhinoDocument) ret).doc};
+            return new Document[] { ((RhinoDocument) ret).doc };
         } else if (ret instanceof NativeArray) {
             final NativeArray na = (NativeArray) ret;
-            final Document[] mapped = new Document[(int)na.getLength()];
+            final Document[] mapped = new Document[(int) na.getLength()];
             for (int i = 0; i < (int) na.getLength(); i++) {
                 ret = na.get(i, null);
                 if (!(ret instanceof RhinoDocument)) {
@@ -118,17 +117,17 @@ public final class Rhino {
         }
 
         throw new RuntimeException("Invalid object type: " + ret.getClass().getName());
-	}
+    }
 
-	public String getSignature() {
-		return Utils.digest(fun);
-	}
+    public String getSignature() {
+        return Utils.digest(fun);
+    }
 
-	public void close() {
-		Context.exit();
-	}
+    public void close() {
+        Context.exit();
+    }
 
-	public String toString() {
-		return fun;
-	}
+    public String toString() {
+        return fun;
+    }
 }

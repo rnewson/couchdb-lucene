@@ -29,34 +29,34 @@ import org.junit.Test;
 
 public class TikaTest {
 
-	private Tika tika;
-	private Document doc;
+    private Tika tika;
+    private Document doc;
 
-	@Before
-	public void setup() {
-		tika = new Tika();
-		doc = new Document();
-	}
+    @Before
+    public void setup() {
+        tika = new Tika();
+        doc = new Document();
+    }
 
-	@Test
-	public void testPDF() throws IOException {
-		parse("paxos-simple.pdf", "application/pdf", "foo");
-		assertThat(doc.getField("foo"), not(nullValue()));
-	}
+    @Test
+    public void testPDF() throws IOException {
+        parse("paxos-simple.pdf", "application/pdf", "foo");
+        assertThat(doc.getField("foo"), not(nullValue()));
+    }
 
-	@Test
-	public void testXML() throws IOException {
-		parse("example.xml", "text/xml", "bar");
-		assertThat(doc.getField("bar"), not(nullValue()));
-	}
+    @Test
+    public void testXML() throws IOException {
+        parse("example.xml", "text/xml", "bar");
+        assertThat(doc.getField("bar"), not(nullValue()));
+    }
 
-	private void parse(final String resource, final String type, final String field) throws IOException {
-		final InputStream in = getClass().getClassLoader().getResourceAsStream(resource);
-		try {
-			tika.parse(in, type, field, doc);
-		} finally {
-			in.close();
-		}
-	}
+    private void parse(final String resource, final String type, final String field) throws IOException {
+        final InputStream in = getClass().getClassLoader().getResourceAsStream(resource);
+        try {
+            tika.parse(in, type, field, doc);
+        } finally {
+            in.close();
+        }
+    }
 
 }

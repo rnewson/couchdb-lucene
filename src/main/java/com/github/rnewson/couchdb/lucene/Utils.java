@@ -33,48 +33,48 @@ import org.apache.lucene.search.BooleanClause.Occur;
 
 class Utils {
 
-	public static void log(final String fmt, final Object... args) {
-		final String msg = String.format(fmt, args);
-		System.out.printf("{\"log\":\"%s\"}\n", msg);
-	}
+    public static void log(final String fmt, final Object... args) {
+        final String msg = String.format(fmt, args);
+        System.out.printf("{\"log\":\"%s\"}\n", msg);
+    }
 
-	public static String throwableToJSON(final Throwable t) {
-		return error(t.getMessage() == null ? "Unknown error" : String.format("%s: %s", t.getClass(), t.getMessage()));
-	}
+    public static String throwableToJSON(final Throwable t) {
+        return error(t.getMessage() == null ? "Unknown error" : String.format("%s: %s", t.getClass(), t.getMessage()));
+    }
 
-	public static String error(final String txt) {
-		return error(500, txt);
-	}
+    public static String error(final String txt) {
+        return error(500, txt);
+    }
 
-	public static String digest(final String data) {
-		return DigestUtils.md5Hex(data);
-	}
+    public static String digest(final String data) {
+        return DigestUtils.md5Hex(data);
+    }
 
-	public static String error(final int code, final Throwable t) {
-		final StringWriter writer = new StringWriter();
-		final PrintWriter printWriter = new PrintWriter(writer);
-		if (t.getMessage() != null)
-			printWriter.append(t.getMessage());
-		t.printStackTrace(printWriter);
-		return new JSONObject().element("code", code).element("body", writer.toString()).toString();
-	}
+    public static String error(final int code, final Throwable t) {
+        final StringWriter writer = new StringWriter();
+        final PrintWriter printWriter = new PrintWriter(writer);
+        if (t.getMessage() != null)
+            printWriter.append(t.getMessage());
+        t.printStackTrace(printWriter);
+        return new JSONObject().element("code", code).element("body", writer.toString()).toString();
+    }
 
-	public static String error(final int code, final String txt) {
-		return new JSONObject().element("code", code).element("body", StringEscapeUtils.escapeHtml(txt)).toString();
-	}
+    public static String error(final int code, final String txt) {
+        return new JSONObject().element("code", code).element("body", StringEscapeUtils.escapeHtml(txt)).toString();
+    }
 
-	public static Field text(final String name, final String value, final boolean store) {
-		return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
-	}
+    public static Field text(final String name, final String value, final boolean store) {
+        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
+    }
 
-	public static Field token(final String name, final String value, final boolean store) {
-		return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
-	}
+    public static Field token(final String name, final String value, final boolean store) {
+        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
+    }
 
-	public static Query docQuery(final String dbname, final String id) {
-		BooleanQuery q = new BooleanQuery();
-		q.add(new TermQuery(new Term(Config.DB, dbname)), Occur.MUST);
-		q.add(new TermQuery(new Term(Config.ID, id)), Occur.MUST);
-		return q;
-	}
+    public static Query docQuery(final String dbname, final String id) {
+        BooleanQuery q = new BooleanQuery();
+        q.add(new TermQuery(new Term(Config.DB, dbname)), Occur.MUST);
+        q.add(new TermQuery(new Term(Config.ID, id)), Occur.MUST);
+        return q;
+    }
 }
