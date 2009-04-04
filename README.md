@@ -83,8 +83,8 @@ function(doc) {
 <pre>
 function(doc) {
   var result = new Document();
-  result.subject = doc.subject;
-  result.content = doc.content;
+  result.field("subject", doc.subject, "yes");
+  result.field("content", doc.content);
   return result;
 }
 </pre>
