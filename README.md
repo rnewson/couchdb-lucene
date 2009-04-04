@@ -85,6 +85,7 @@ function(doc) {
   var result = new Document();
   result.field("subject", doc.subject, "yes");
   result.field("content", doc.content);
+  result.date("indexed_at", new Date());
   return result;
 }
 </pre>
