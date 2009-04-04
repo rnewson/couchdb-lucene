@@ -37,6 +37,27 @@ Add a design document called _design/lucene in your database with an attribute c
 
 The transform function can return null, to prevent indexing, and either a single Document or an array of Documents.
 
+The transform function is called for each document in the database. To pass information to Lucene, you must populate Document instances with data from the original CouchDB document.
+
+<h3>The Document class</h3>
+
+You may construct a new Document instance with;
+
+<pre>
+var doc = new Document();
+</pre>
+
+Several functions are available that populate a Document.
+
+<pre>
+doc.field("name", "value"); // Indexed, analyzed but not stored.
+doc.field("name", "value", "yes"); // Indexed, analyzed and stored.
+doc.field("name", "value", "yes", "not_analyzed"); // Indexed, stored but not analyzed.
+doc.attachment("name", "attachment name"); // Extract text from the named attachment and index it (but not store it).
+doc.date("name", "value"); // Interpret "value" as a date using the default date formats.
+doc.date("name", "value", "format"); // intrepret "value" as a date using the supplied format string (see Java's SimpleDateFormat class for the syntax).
+</pre>
+
 <h3>Example Transforms</h3>
 
 <h4>Index Everything</h4>
@@ -153,9 +174,8 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 <h2>Special Fields</h2>
 
 <dl>
-<dt>_id</dt><dd>The _id of the document.</dd>
 <dt>_db</dt><dd>The source database of the document.</dd>
-<dt>_body</dt><dd>Any text extracted from any attachment.</dd>
+<dt>_id</dt><dd>The _id of the document.</dd>
 </dl>
 
 <h2>Dublin Core</h2>
