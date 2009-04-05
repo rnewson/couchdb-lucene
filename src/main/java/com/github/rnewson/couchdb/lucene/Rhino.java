@@ -40,7 +40,7 @@ public final class Rhino {
 
     };
 
-    private final ContextFactory contextFactory = new ContextFactory();
+    private static final ContextFactory contextFactory = new ContextFactory();
 
     private final Context context;
 
@@ -55,6 +55,7 @@ public final class Rhino {
     public Rhino(final String dbname, final String fun) throws Exception {
         this.fun = fun;
         this.context = contextFactory.enterContext();
+        
         this.context.setClassShutter(SHUTTER);
         this.context.putThreadLocal("dbname", dbname);
         context.setOptimizationLevel(9);
