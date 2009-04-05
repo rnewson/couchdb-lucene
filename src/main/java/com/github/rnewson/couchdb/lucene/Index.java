@@ -249,7 +249,6 @@ public final class Index {
                         for (int j = 0; j < docs.length; j++) {
                             docs[j].add(token(Config.DB, dbname, false));
                             docs[j].add(token(Config.ID, docid, true));
-                            System.err.println(docs[j]);
                             writer.addDocument(docs[j]);
                         }
 
