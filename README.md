@@ -90,12 +90,23 @@ function(doc) {
           break;
         default:
           ret.field(key, obj[key]);
+	  /* Uncomment next line to include
+	   * all attributes into a single field.
+           */
+	  // ret.field("all", obj[key]);
           break;
       }
     }
   }
   
+  // Index all attributes
   idx(doc);
+
+  // Index all attachments
+  for(var a in doc._attachments) {
+    ret.attachment("attachment", a);
+  }
+
   return ret;
 }
 </pre>
