@@ -1,20 +1,12 @@
-API Changes.
+Performance
 
-* allow _design/lucene to list valid date formats so we can parse them correctly.
+* Allow customization of mf/mmb/optimize.
 
-Search Performance
+Features
 
-* sort cache can take too long to build, respond with keep-alive messages.
-* add an _optimize option.
-* distributed scoring.
-
-Index Performance
-
-Misc
-
+* _show and _list-like support for search results.
+* distributed search.
 * hit highlighting (lucene contrib).
 * clustering (carrot2).
-* distributed search.
 * JSONQuery? (http://docs.persvr.org/documentation/jsonquery)
 * geospatial (need TrieRangeQuery from 2.9)
-* use Nutch's ngram LanguageIdentifier and override Tika's guess.
