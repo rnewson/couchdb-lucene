@@ -4,6 +4,10 @@ The indexing API has completely changed, please re-read this document and report
 
 Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.
 
+<h1>System Requirements</h1>
+
+Sun JDK 5 or higher is necessary. Couchdb-lucene is known to be incompatible with OpenJDK as it includes an earlier, and incompatible, version of the Rhino Javascript library.
+
 <h1>Build couchdb-lucene</h1>
 
 <ol>
