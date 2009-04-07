@@ -4,6 +4,7 @@ Performance
 
 Features
 
+* LuceneDictionary/spellcheck/suggestions mode.
 * _show and _list-like support for search results.
 * distributed search.
 * hit highlighting (lucene contrib).
