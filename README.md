@@ -1,6 +1,8 @@
 <h1>News</h1>
 
-The indexing API has completely changed, please re-read this document and report any surprises/bugs to the bug tracker;
+The indexing API in 0.3 will change once again to allow multiple design documents and "views" into Lucene. It will also move much of the Lucene-specific stuff into an options object. Please read the TODO for details.
+
+The indexing API in 0.2 has completely changed, please re-read this document and report any surprises/bugs to the bug tracker;
 
 Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.
 

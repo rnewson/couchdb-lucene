@@ -1,3 +1,26 @@
+Indexing API.
+
+This is going to become much more like the view API in 0.3.
+
+Specifically, you will add attributes to a design document of your own choosing and you will be able to specify multiple transform functions. Access to results will also require the name of the design document and the view name.
+
+{
+  "views": { ... }
+  "fulltext":
+  {
+    "view1": {
+      "defaults": {"field": "data", "index": "analyzed", "store": "no"},    
+      "index": "function(doc) { var ret = new Document(); ret.add(doc.subject); ret.add(doc.body); return ret; }"
+    },
+    "view2": {
+      "index": "function(doc) { var ret = new Document(); doc.add(doc.subject, {"field":"subject"}); return ret; }"
+    }
+  }
+}
+
+Note also that the transform function is now called 'index' and has changed in syntax to be less Lucene-centric.
+
+
 Performance
 
 * Allow customization of mf/mmb/optimize.
