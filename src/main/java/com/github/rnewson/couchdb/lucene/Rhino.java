@@ -55,8 +55,11 @@ public final class Rhino {
     public Rhino(final String dbname, final String fun) throws Exception {
         this.fun = fun;
         this.context = contextFactory.enterContext();
-        
-        this.context.setClassShutter(SHUTTER);
+        try {
+            this.context.setClassShutter(SHUTTER);
+        } catch (final SecurityException e) {
+            // Thrown if already set and Rhino reassociates a previous context with this thread.
+        }
         this.context.putThreadLocal("dbname", dbname);
         context.setOptimizationLevel(9);
         scope = context.initStandardObjects();

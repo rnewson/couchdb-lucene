@@ -22,6 +22,7 @@ import org.apache.lucene.document.Document;
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Test;
+import org.mozilla.javascript.EcmaError;
 
 public class RhinoTest {
 
@@ -29,8 +30,9 @@ public class RhinoTest {
 
     @After
     public void cleanup() {
-        if (rhino != null)
+        if (rhino != null) {
             rhino.close();
+        }
     }
 
     @Test
@@ -48,6 +50,22 @@ public class RhinoTest {
         rhino = new Rhino("db", "function(doc) {}");
         Document[] ret = rhino.map("doc", "{}");
         assertThat(ret.length, CoreMatchers.equalTo(0));
+    }
+
+    @Test(expected = EcmaError.class)
+    public void testBadCode() throws Exception {
+        rhino = new Rhino("db", "function(doc) {no_such_function(); }");
+        rhino.map("doc", "{}");
+    }
+
+    @Test
+    public void testBadCodeRecovers() throws Exception {
+        try {
+            testBadCode();
+        } catch (EcmaError e) {
+            // Ignored.
+        }
+        testRhino();
     }
 
     @Test(expected = RuntimeException.class)
