@@ -374,3 +374,7 @@ If you put couchdb behind an authenticating proxy you can still configure couchd
 <dt>couchdb.user</dt><dd>the user to authenticate as.</dd>
 <dt>couchdb.password</dt><dd>the password to authenticate with.</dd>
 </dl>
+
+<h2>IPv6</h2>
+
+The default for couchdb.url is problematic on an IPv6 system. Specify -Dcouchdb.url=http://[::1]:5984 to resolve it.
