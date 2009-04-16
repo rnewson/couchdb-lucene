@@ -162,6 +162,9 @@ public final class Index {
 
                 // Update all extant databases.
                 for (final String dbname : dbnames) {
+                    // get all of them.
+                    // http://127.0.0.1:5984/enron-0/_all_docs?startkey="_design"&endkey="_design0"
+                    
                     final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene");
 
                     // Database must supply a transformation function to be
