@@ -78,7 +78,7 @@ public final class Search {
                 if (reader != null && reopen) {
                     final IndexReader newReader = reader.reopen();
                     if (reader != newReader) {
-                        Log.outlog("Lucene index was updated, reopening searcher.");
+                        Log.log("Lucene index was updated, reopening searcher.");
                         final IndexReader oldReader = reader;
                         reader = newReader;
                         searcher = new IndexSearcher(reader);

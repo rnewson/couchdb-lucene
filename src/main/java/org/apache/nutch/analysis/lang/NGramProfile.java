@@ -315,7 +315,7 @@ public class NGramProfile {
                 }
             }
         } catch (Exception e) {
-            Log.errlog(e);
+            Log.log(e);
         }
         return sum;
     }
@@ -375,7 +375,7 @@ public class NGramProfile {
                 text.append(new String(buffer, 0, len, encoding));
             }
         } catch (IOException e) {
-            Log.errlog(e);
+            Log.log(e);
         }
 
         newProfile.analyze(text);
@@ -518,7 +518,7 @@ public class NGramProfile {
             }
 
         } catch (Exception e) {
-            Log.errlog(e);
+            Log.log(e);
         }
     }
 

@@ -1,5 +1,7 @@
 package com.github.rnewson.couchdb.lucene;
 
+import org.apache.log4j.Logger;
+
 /**
  * Copyright 2009 Robert Newson
  * 
@@ -18,25 +20,16 @@ package com.github.rnewson.couchdb.lucene;
 
 public final class Log {
 
-    public static void outlog(final String fmt, final Object... args) {
-        System.out.print("{\"log\":\"");
-        System.out.printf(fmt, args);
-        System.out.println("\"}");
+    private static final Logger LOG = Logger.getLogger("couchdb-lucene");
+
+    public static void log(final String fmt, final Object... args) {
+        if (LOG.isInfoEnabled()) {
+            LOG.info(String.format(fmt, args));
+        }
     }
 
-    public static void errlog(final String fmt, final Object... args) {
-        System.err.printf(fmt, args);
-        System.err.println();
-    }
-
-    public static void outlog(final Exception e) {
-        outlog("%s", e.getMessage());
-        e.printStackTrace(System.out);
-    }
-
-    public static void errlog(final Exception e) {
-        errlog("%s", e.getMessage());
-        e.printStackTrace();
+    public static void log(final Exception e) {
+        LOG.warn(e.getMessage(), e);
     }
 
 }

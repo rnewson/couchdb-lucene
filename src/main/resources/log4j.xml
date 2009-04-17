@@ -7,14 +7,8 @@
       <param name="ConversionPattern" value="%p %m%n"/>
     </layout>
   </appender>
-  <category name="org.apache.commons.httpclient">
-  	<priority value="WARN"/>
-  </category>
-  <category name="httpclient">
-  	<priority value="WARN"/>
-  </category>
   <root>
-    <priority value="DEBUG"/>
+    <priority value="INFO"/>
     <appender-ref ref="ConsoleAppender"/>
   </root>
 </log4j:configuration>
