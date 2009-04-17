@@ -4,7 +4,7 @@
 	<appender name="file" class="org.apache.log4j.RollingFileAppender">
 		<param name="File" value="${couchdb.log.dir}/couchdb-lucene.log" />
 		<param name="MaxBackupIndex" value="3" />
-		<param name="MaxFileSize" value="5M" />
+		<param name="MaxFileSize" value="5MB" />
 		<param name="Append" value="true" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%c] %p %m%n" />
