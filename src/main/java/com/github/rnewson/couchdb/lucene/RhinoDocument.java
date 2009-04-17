@@ -37,7 +37,7 @@ import org.mozilla.javascript.ScriptableObject;
 public final class RhinoDocument extends ScriptableObject {
 
     private static final long serialVersionUID = 1L;
-
+    
     public final Document doc;
 
     private static final Database DB = new Database(Config.DB_URL);
@@ -116,12 +116,12 @@ public final class RhinoDocument extends ScriptableObject {
             tv = Field.TermVector.NO;
 
         if (args[0] == null) {
-            Log.log("null key passed to field().");
+            Utils.LOG.warn("null key passed to field().");
             return;
         }
         
         if (args[1] == null) {
-            Log.log("null value passed to field().");
+            Utils.LOG.warn("null value passed to field().");
             return;
         }
         
