@@ -24,11 +24,15 @@ final class Config {
 
     static final Analyzer ANALYZER = new StandardAnalyzer();
 
-    static final QueryParser QP = new QueryParser("", ANALYZER);
+    static final String DEFAULT_FIELD = "default";
+
+    static final QueryParser QP = new QueryParser(DEFAULT_FIELD, ANALYZER);
 
     static final String DB = "_db";
 
     static final String ID = "_id";
+
+    static final String VIEW = "_view";
 
     static final String SEQ = "_seq";
 
@@ -37,7 +41,7 @@ final class Config {
     static final String AUTHOR = "_author";
 
     static final String INDEX_DIR = System.getProperty("couchdb.lucene.dir", "lucene");
-        
+
     static final int RAM_BUF = Integer.getInteger("couchdb.lucene.ram", 256);
 
     static final int BATCH_SIZE = Integer.getInteger("couchdb.lucene.batch", 1000);
@@ -53,5 +57,5 @@ final class Config {
     static final int COMMIT_MIN = Integer.getInteger("couchdb.lucene.commit.min", 10 * 1000);
 
     static final int COMMIT_MAX = Integer.getInteger("couchdb.lucene.commit.max", 5 * 60 * 1000);
-    
+
 }

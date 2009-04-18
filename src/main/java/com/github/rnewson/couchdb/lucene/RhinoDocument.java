@@ -31,14 +31,13 @@ import org.apache.lucene.document.Field;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 public final class RhinoDocument extends ScriptableObject {
 
     private static final long serialVersionUID = 1L;
-    
-    public final Document doc;
 
     private static final Database DB = new Database(Config.DB_URL);
 
@@ -52,24 +51,18 @@ public final class RhinoDocument extends ScriptableObject {
 
     private static final Map<String, Field.Store> Store = new HashMap<String, Field.Store>();
 
-    private static final Map<String, Field.TermVector> TermVector = new HashMap<String, Field.TermVector>();
-
     static {
-        Store.put("NO", Field.Store.NO);
-        Store.put("YES", Field.Store.YES);
+        Store.put("no", Field.Store.NO);
+        Store.put("yes", Field.Store.YES);
 
-        Index.put("ANALYZED", Field.Index.ANALYZED);
-        Index.put("ANALYZED_NO_NORMS", Field.Index.ANALYZED_NO_NORMS);
-        Index.put("NO", Field.Index.NO);
-        Index.put("NOT_ANALYZED", Field.Index.NOT_ANALYZED);
-        Index.put("NOT_ANALYZED_NO_NORMS", Field.Index.NOT_ANALYZED_NO_NORMS);
-
-        TermVector.put("NO", Field.TermVector.NO);
-        TermVector.put("WITH_OFFSETS", Field.TermVector.WITH_OFFSETS);
-        TermVector.put("WITH_POSITIONS", Field.TermVector.WITH_POSITIONS);
-        TermVector.put("WITH_POSITIONS_OFFSETS", Field.TermVector.WITH_POSITIONS_OFFSETS);
-        TermVector.put("YES", Field.TermVector.YES);
+        Index.put("analyzed", Field.Index.ANALYZED);
+        Index.put("analyzed_no_norms", Field.Index.ANALYZED_NO_NORMS);
+        Index.put("no", Field.Index.NO);
+        Index.put("not_analyzed", Field.Index.NOT_ANALYZED);
+        Index.put("not_analyzed_no_norms", Field.Index.NOT_ANALYZED_NO_NORMS);
     }
+
+    final Document doc;
 
     public RhinoDocument() {
         doc = new Document();
@@ -79,53 +72,60 @@ public final class RhinoDocument extends ScriptableObject {
         return "Document";
     }
 
+    public void add(final Field field) {
+        doc.add(field);
+    }
+
     public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
         RhinoDocument doc = new RhinoDocument();
         if (args.length >= 2)
-            jsFunction_field(cx, doc, args, ctorObj);
+            jsFunction_add(cx, doc, args, ctorObj);
         return doc;
     }
 
-    public static void jsFunction_field(final Context cx, final Scriptable thisObj, final Object[] args,
+    public static void jsFunction_add(final Context cx, final Scriptable thisObj, final Object[] args,
             final Function funObj) {
         final RhinoDocument doc = checkInstance(thisObj);
-        if (args.length < 2) {
+
+        if (args.length < 1 || args.length > 2) {
             throw Context.reportRuntimeError("Invalid number of arguments.");
         }
 
-        Field.Store str = null;
-        Field.Index idx = null;
-        Field.TermVector tv = null;
-
-        if (args.length >= 3) {
-            str = (Field.Store) Store.get(args[2].toString().toUpperCase());
-        }
-        if (str == null)
-            str = Field.Store.NO;
-
-        if (args.length >= 4) {
-            idx = (Field.Index) Index.get(args[3].toString().toUpperCase());
-        }
-        if (idx == null)
-            idx = Field.Index.ANALYZED;
-
-        if (args.length >= 5) {
-            tv = (Field.TermVector) TermVector.get(args[4].toString().toUpperCase());
-        }
-        if (tv == null)
-            tv = Field.TermVector.NO;
-
         if (args[0] == null) {
-            Utils.LOG.warn("null key passed to field().");
-            return;
+            throw Context.reportRuntimeError("first argument must be non-null.");
         }
-        
-        if (args[1] == null) {
-            Utils.LOG.warn("null value passed to field().");
-            return;
+
+        if (args.length == 2 && (args[1] == null || args[1] instanceof NativeObject == false)) {
+            throw Context.reportRuntimeError("second argument must be an object.");
         }
-        
-        doc.doc.add(new Field(args[0].toString(), args[1].toString(), str, idx, tv));
+
+        // defaults.
+        String field = Config.DEFAULT_FIELD;
+        Field.Store store = Field.Store.NO;
+        Field.Index index = Field.Index.ANALYZED;
+        Field.TermVector tv = Field.TermVector.NO;
+
+        // Check for overrides.
+        if (args.length == 2) {
+            final NativeObject obj = (NativeObject) args[1];
+
+            // Change the field name.
+            if (obj.has("field", null)) {
+                field = (String) obj.get("field", null);
+            }
+
+            // Change the stored flag.
+            if (obj.has("store", null)) {
+                store = Store.get(obj.get("store", null));
+            }
+
+            // Change the indexed flag.
+            if (obj.has("index", null)) {
+                index = Index.get(obj.get("index", null));
+            }
+        }
+
+        doc.add(new Field(field, args[0].toString(), store, index, tv));
     }
 
     public static void jsFunction_attachment(final Context cx, final Scriptable thisObj, final Object[] args,
@@ -176,7 +176,7 @@ public final class RhinoDocument extends ScriptableObject {
         } else {
             str = Field.Store.NO;
         }
-        
+
         // Is it a native date?
         try {
             final Date date = (Date) Context.jsToJava(args[1], Date.class);
@@ -185,9 +185,9 @@ public final class RhinoDocument extends ScriptableObject {
         } catch (final EvaluatorException e) {
             // Ignore.
         }
-        
+
         // Try to parse it as a string.
-        final String value= Context.toString(args[1]);
+        final String value = Context.toString(args[1]);
 
         final DateFormat[] formats;
         if (args.length > 3) {
