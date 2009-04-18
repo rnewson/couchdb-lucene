@@ -34,8 +34,10 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
-public class RhinoDocument extends ScriptableObject {
+public final class RhinoDocument extends ScriptableObject {
 
+    private static final long serialVersionUID = 1L;
+    
     public final Document doc;
 
     private static final Database DB = new Database(Config.DB_URL);
@@ -113,6 +115,16 @@ public class RhinoDocument extends ScriptableObject {
         if (tv == null)
             tv = Field.TermVector.NO;
 
+        if (args[0] == null) {
+            Utils.LOG.warn("null key passed to field().");
+            return;
+        }
+        
+        if (args[1] == null) {
+            Utils.LOG.warn("null value passed to field().");
+            return;
+        }
+        
         doc.doc.add(new Field(args[0].toString(), args[1].toString(), str, idx, tv));
     }
 

@@ -23,6 +23,7 @@ import net.sf.json.JSONObject;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.Term;
@@ -33,11 +34,8 @@ import org.apache.lucene.search.BooleanClause.Occur;
 
 class Utils {
 
-    public static void log(final String fmt, final Object... args) {
-        final String msg = String.format(fmt, args);
-        System.out.printf("{\"log\":\"%s\"}\n", msg);
-    }
-
+    public static final Logger LOG = Logger.getLogger("couchdb-lucene");
+    
     public static String throwableToJSON(final Throwable t) {
         return error(t.getMessage() == null ? "Unknown error" : String.format("%s: %s", t.getClass(), t.getMessage()));
     }
@@ -53,10 +51,12 @@ class Utils {
     public static String error(final int code, final Throwable t) {
         final StringWriter writer = new StringWriter();
         final PrintWriter printWriter = new PrintWriter(writer);
-        if (t.getMessage() != null)
+        if (t.getMessage() != null) {
             printWriter.append(t.getMessage());
+            printWriter.append("\n");            
+        }
         t.printStackTrace(printWriter);
-        return new JSONObject().element("code", code).element("body", writer.toString()).toString();
+        return new JSONObject().element("code", code).element("body", "<pre>"+ writer + "</pre>").toString();
     }
 
     public static String error(final int code, final String txt) {

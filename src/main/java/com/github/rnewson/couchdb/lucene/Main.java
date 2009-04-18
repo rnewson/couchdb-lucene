@@ -25,6 +25,9 @@ package com.github.rnewson.couchdb.lucene;
 public final class Main {
 
     public static void main(final String[] args) throws Exception {
+        if (System.getProperty("couchdb.log.dir") == null) {
+            System.setProperty("couchdb.log.dir", System.getProperty("java.io.tmpdir"));
+        }
         if (args.length >= 1 && args[0].equals("-index")) {
             Index.main(args);
             return;

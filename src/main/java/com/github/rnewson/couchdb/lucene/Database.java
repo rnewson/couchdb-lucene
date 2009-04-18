@@ -55,7 +55,7 @@ public final class Database {
             CLIENT.getParams().setAuthenticationPreemptive(true);
             final Credentials creds = new UsernamePasswordCredentials(Config.DB_USER, Config.DB_PASSWORD);
             CLIENT.getState().setCredentials(AuthScope.ANY, creds);
-            Log.errlog("Authenticating to couchdb as '%s'.", Config.DB_USER);
+            Utils.LOG.debug("Authenticating to couchdb as " + Config.DB_USER);
         }
     }
 

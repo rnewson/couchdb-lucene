@@ -89,7 +89,7 @@ public final class Index {
                     try {
                         updateIndex();
                     } catch (final IOException e) {
-                        Log.errlog(e);
+                        Utils.LOG.warn("Exception while updating index.", e);
                     }
                 }
             }
@@ -99,7 +99,7 @@ public final class Index {
             try {
                 Thread.sleep(Config.COMMIT_MIN);
             } catch (final InterruptedException e) {
-                Log.errlog("Interrupted while sleeping, indexer is exiting.");
+                Utils.LOG.fatal("Interrupted while sleeping, indexer is exiting.", e);
             }
         }
 
@@ -121,7 +121,7 @@ public final class Index {
 
         private synchronized void updateIndex() throws IOException {
             if (IndexWriter.isLocked(dir)) {
-                Log.errlog("Forcibly unlocking locked index at startup.");
+                Utils.LOG.warn("Forcibly unlocking locked index at startup.");
                 IndexWriter.unlock(dir);
             }
 
@@ -146,8 +146,8 @@ public final class Index {
                             if (term == null || Config.DB.equals(term.field()) == false)
                                 break;
                             if (Arrays.binarySearch(dbnames, term.text()) < 0) {
-                                Log.errlog("Database '%s' has been deleted," + " removing all documents from index.",
-                                        term.text());
+                                Utils.LOG.info("Database '" + term.text()
+                                        + "' has been deleted, removing all documents from index.");
                                 delete(term.text(), progress, writer);
                                 commit = true;
                                 expunge = true;
@@ -185,7 +185,7 @@ public final class Index {
                     }
                 }
             } catch (final Exception e) {
-                Log.errlog(e);
+                Utils.LOG.error("Error updating index.", e);
                 commit = false;
             } finally {
                 if (commit) {
@@ -197,8 +197,8 @@ public final class Index {
 
                     final IndexReader reader = IndexReader.open(dir);
                     try {
-                        Log.errlog("Committed changes to index (%,d documents in index, %,d deletes).", reader
-                                .numDocs(), reader.numDeletedDocs());
+                        Utils.LOG.info("Committed changes to index (" + reader.numDocs() + " documents in index, "
+                                + reader.numDeletedDocs() + " deletes).");
                     } finally {
                         reader.close();
                     }
@@ -221,7 +221,7 @@ public final class Index {
 
             // Reindex the database if sequence is 0 or signature changed.
             if (progress.getSeq(dbname) == 0 || cur_sig.equals(new_sig) == false) {
-                Log.errlog("Indexing '%s' from scratch.", dbname);
+                Utils.LOG.info("Indexing " + dbname + " from scratch.");
                 delete(dbname, progress, writer);
                 progress.update(dbname, new_sig, 0);
                 result = true;
@@ -232,7 +232,7 @@ public final class Index {
                 final JSONObject obj = DB.getAllDocsBySeq(dbname, update_seq, Config.BATCH_SIZE);
 
                 if (!obj.has("rows")) {
-                    Log.errlog("no rows found (%s).", obj);
+                    Utils.LOG.warn("no rows found (" + obj + ").");
                     return false;
                 }
 
@@ -270,7 +270,7 @@ public final class Index {
 
             if (result) {
                 progress.update(dbname, new_sig, update_seq);
-                Log.errlog("%s: index caught up to %,d.", dbname, update_seq);
+                Utils.LOG.info(dbname + ": index caught up to " + update_seq);
             }
 
             return result;
@@ -283,6 +283,7 @@ public final class Index {
     }
 
     public static void main(String[] args) throws Exception {
+        Utils.LOG.info("indexer started.");
         final Indexer indexer = new Indexer(FSDirectory.getDirectory(Config.INDEX_DIR));
         final Thread thread = new Thread(indexer, "index");
         thread.setDaemon(true);
@@ -296,6 +297,7 @@ public final class Index {
                 indexer.setStale(true);
             }
         }
+        Utils.LOG.info("indexer stopped.");
     }
 
 }

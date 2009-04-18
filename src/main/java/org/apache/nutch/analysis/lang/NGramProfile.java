@@ -34,10 +34,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Token;
-
-import com.github.rnewson.couchdb.lucene.Log;
 
 /**
  * This class runs a ngram analysis over submitted text, results might be used
@@ -51,6 +49,8 @@ import com.github.rnewson.couchdb.lucene.Log;
  * @author Jerome Charron - http://frutch.free.fr/
  */
 public class NGramProfile {
+
+    private static final Logger LOGGER = Logger.getLogger(NGramProfile.class);
 
     /** The minimum length allowed for a ngram. */
     final static int ABSOLUTE_MIN_NGRAM_LENGTH = 1;
@@ -314,8 +314,8 @@ public class NGramProfile {
                     sum += other.frequency;
                 }
             }
-        } catch (Exception e) {
-            Log.errlog(e);
+        } catch (final Exception e) {
+            LOGGER.warn(e);
         }
         return sum;
     }
@@ -374,8 +374,8 @@ public class NGramProfile {
             while ((len = bis.read(buffer)) != -1) {
                 text.append(new String(buffer, 0, len, encoding));
             }
-        } catch (IOException e) {
-            Log.errlog(e);
+        } catch (final IOException e) {
+            LOGGER.warn("Exception raised while creating profile.", e);
         }
 
         newProfile.analyze(text);
@@ -430,7 +430,7 @@ public class NGramProfile {
      * 
      * @param args
      */
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
 
         String usage = "Usage: NGramProfile " + "[-create profilename filename encoding] "
                 + "[-similarity file1 file2] " + "[-score profile-name filename encoding]";
@@ -473,52 +473,46 @@ public class NGramProfile {
             }
         }
 
-        try {
+        switch (command) {
 
-            switch (command) {
+        case CREATE:
 
-            case CREATE:
+            File f = new File(filename);
+            FileInputStream fis = new FileInputStream(f);
+            NGramProfile newProfile = NGramProfile.create(profilename, fis, encoding);
+            fis.close();
+            f = new File(profilename + "." + FILE_EXTENSION);
+            FileOutputStream fos = new FileOutputStream(f);
+            newProfile.save(fos);
+            System.out.println("new profile " + profilename + "." + FILE_EXTENSION + " was created.");
+            break;
 
-                File f = new File(filename);
-                FileInputStream fis = new FileInputStream(f);
-                NGramProfile newProfile = NGramProfile.create(profilename, fis, encoding);
-                fis.close();
-                f = new File(profilename + "." + FILE_EXTENSION);
-                FileOutputStream fos = new FileOutputStream(f);
-                newProfile.save(fos);
-                System.out.println("new profile " + profilename + "." + FILE_EXTENSION + " was created.");
-                break;
+        case SIMILARITY:
 
-            case SIMILARITY:
+            f = new File(filename);
+            fis = new FileInputStream(f);
+            newProfile = NGramProfile.create(filename, fis, encoding);
+            newProfile.normalize();
 
-                f = new File(filename);
-                fis = new FileInputStream(f);
-                newProfile = NGramProfile.create(filename, fis, encoding);
-                newProfile.normalize();
+            f = new File(filename2);
+            fis = new FileInputStream(f);
+            NGramProfile newProfile2 = NGramProfile.create(filename2, fis, encoding);
+            newProfile2.normalize();
+            System.out.println("Similarity is " + newProfile.getSimilarity(newProfile2));
+            break;
 
-                f = new File(filename2);
-                fis = new FileInputStream(f);
-                NGramProfile newProfile2 = NGramProfile.create(filename2, fis, encoding);
-                newProfile2.normalize();
-                System.out.println("Similarity is " + newProfile.getSimilarity(newProfile2));
-                break;
+        case SCORE:
+            f = new File(filename);
+            fis = new FileInputStream(f);
+            newProfile = NGramProfile.create(filename, fis, encoding);
 
-            case SCORE:
-                f = new File(filename);
-                fis = new FileInputStream(f);
-                newProfile = NGramProfile.create(filename, fis, encoding);
+            f = new File(profilename + "." + FILE_EXTENSION);
+            fis = new FileInputStream(f);
+            NGramProfile compare = new NGramProfile(profilename, DEFAULT_MIN_NGRAM_LENGTH, DEFAULT_MAX_NGRAM_LENGTH);
+            compare.load(fis);
+            System.out.println("Score is " + compare.getSimilarity(newProfile));
+            break;
 
-                f = new File(profilename + "." + FILE_EXTENSION);
-                fis = new FileInputStream(f);
-                NGramProfile compare = new NGramProfile(profilename, DEFAULT_MIN_NGRAM_LENGTH, DEFAULT_MAX_NGRAM_LENGTH);
-                compare.load(fis);
-                System.out.println("Score is " + compare.getSimilarity(newProfile));
-                break;
-
-            }
-
-        } catch (Exception e) {
-            Log.errlog(e);
         }
     }
 
