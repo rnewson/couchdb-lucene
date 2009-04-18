@@ -51,10 +51,12 @@ class Utils {
     public static String error(final int code, final Throwable t) {
         final StringWriter writer = new StringWriter();
         final PrintWriter printWriter = new PrintWriter(writer);
-        if (t.getMessage() != null)
+        if (t.getMessage() != null) {
             printWriter.append(t.getMessage());
+            printWriter.append("\n");            
+        }
         t.printStackTrace(printWriter);
-        return new JSONObject().element("code", code).element("body", writer.toString()).toString();
+        return new JSONObject().element("code", code).element("body", "<pre>"+ writer + "</pre>").toString();
     }
 
     public static String error(final int code, final String txt) {
