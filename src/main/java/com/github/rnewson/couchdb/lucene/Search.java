@@ -35,6 +35,7 @@ import org.apache.lucene.store.NIOFSDirectory;
 public final class Search {
 
     public static void main(final String[] args) {
+        Utils.LOG.info("searcher started.");
         try {
             IndexReader reader = null;
             IndexSearcher searcher = null;
@@ -132,6 +133,7 @@ public final class Search {
         } catch (final Exception e) {
             System.out.println(Utils.error(500, e.getMessage()));
         }
+        Utils.LOG.info("searcher stopped.");
     }
 
     private static long size(final Directory dir) throws IOException {

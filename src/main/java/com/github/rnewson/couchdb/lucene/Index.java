@@ -280,6 +280,7 @@ public final class Index {
     }
 
     public static void main(String[] args) throws Exception {
+        Utils.LOG.info("indexer started.");
         final Indexer indexer = new Indexer(FSDirectory.getDirectory(Config.INDEX_DIR));
         final Thread thread = new Thread(indexer, "index");
         thread.setDaemon(true);
@@ -293,6 +294,7 @@ public final class Index {
                 indexer.setStale(true);
             }
         }
+        Utils.LOG.info("indexer stopped.");
     }
 
 }
