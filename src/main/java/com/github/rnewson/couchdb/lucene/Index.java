@@ -162,6 +162,9 @@ public final class Index {
 
                 // Update all extant databases.
                 for (final String dbname : dbnames) {
+                    final JSONObject designDocs = DB.getAllDocs(dbname, "_design", "_design0");
+                    System.err.println(designDocs);
+                    
                     // get all of them.
                     // http://127.0.0.1:5984/enron-0/_all_docs?startkey="_design"&endkey="_design0"
                     
