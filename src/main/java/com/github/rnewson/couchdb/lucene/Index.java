@@ -162,29 +162,43 @@ public final class Index {
 
                 // Update all extant databases.
                 for (final String dbname : dbnames) {
+                    // Iterate through all views in all design documents.
                     final JSONObject designDocs = DB.getAllDocs(dbname, "_design", "_design0");
-                    System.err.println(designDocs);
-                    
-                    // get all of them.
-                    // http://127.0.0.1:5984/enron-0/_all_docs?startkey="_design"&endkey="_design0"
-                    
-                    final JSONObject designDoc = DB.getDoc(dbname, "_design/lucene");
 
-                    // Database must supply a transformation function to be
-                    // indexed.
-                    if (designDoc == null || !designDoc.containsKey("transform")) {
-                        delete(dbname, progress, writer);
-                    } else {
-                        String transform = designDoc.getString("transform");
-                        // Strip start and end double quotes.
-                        transform = transform.replaceAll("^\"*", "");
-                        transform = transform.replaceAll("\"*$", "");
-                        final Rhino rhino = new Rhino(dbname, transform);
-                        try {
-                            commit |= updateDatabase(writer, dbname, progress, rhino);
-                        } finally {
-                            rhino.close();
+                    // Get rows.
+                    final JSONArray arr = designDocs.getJSONArray("rows");
+
+                    boolean delete_all = true;
+                    // For each row, extract all fulltext view functions.
+                    for (int i = 0; i < arr.size(); i++) {
+                        final JSONObject doc = arr.getJSONObject(i).getJSONObject("doc");
+                        final JSONObject fulltext = doc.getJSONObject("fulltext");
+                        if (fulltext != null) {
+                            delete_all = false;
+                            for (final Object key : fulltext.keySet()) {
+                                final String viewname = (String) key;
+                                String fun = fulltext.getJSONObject(viewname).getString("index");
+                                fun = fun.replaceAll("^\"*", "");
+                                fun = fun.replaceAll("\"*$", "");
+                                
+                                // TODO must include design doc and view name as tags to allow updates.
+                                final Rhino rhino = new Rhino(dbname, fun);
+                                try {
+                                    commit |= updateDatabase(writer, dbname, progress, rhino);
+                                } finally {
+                                    rhino.close();
+                                }
+                            }
                         }
+                    }
+
+                    /*
+                     * If there are no fulltext attributes in any design
+                     * document, ensure that nothing is indexed for this
+                     * database.
+                     */
+                    if (delete_all) {
+                        delete(dbname, progress, writer);
                     }
                 }
             } catch (final Exception e) {

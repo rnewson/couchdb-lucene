@@ -90,6 +90,8 @@ public final class Search {
                 try {
                     // A query.
                     if (query.has("q")) {
+                        // TODO must use path to constrain to design document and view.
+                        
                         final SearchRequest request = new SearchRequest(obj);
                         final String result = request.execute(searcher);
                         System.out.println(result);
