@@ -80,6 +80,12 @@ The following indexing options can be defaulted;
     <th>default</th>
   </tr>
   <tr>
+    <th>field</th>
+    <td>the field name to index under</td>
+    <td>user-defined</td>
+    <td>default</td>
+  </tr>	
+  <tr>
     <th>store</th>
     <td>whether the data is stored</td>
     <td>yes, no</td>
@@ -113,27 +119,30 @@ You may construct a new Document instance with;
 var doc = new Document();
 </pre>
 
-Several functions are available that populate a Document.
+Data may be added to this document with the add method which takes an optional second object argument that can override any of the above default values.
 
 <pre>
-// Indexed, analyzed but not stored.
-doc.field("name", "value"); 
+// Add with all the defaults.
+doc.add("value");
 
-// Indexed, analyzed and stored.
-doc.field("name", "value", "yes"); 
+// Add a subject field.
+doc.add("this is the subject line.", {"field":"subject"});
 
-// Indexed, stored but not analyzed.
-doc.field("name", "value", "yes", "not_analyzed");
+// Add but ensure it's stored.
+doc.add("value", {"store":"yes"});
+
+// Add but don't analyze.
+doc.add("don't analyze me", {"index":"not_analyzed"});
 
 // Extract text from the named attachment and index it (but not store it).
-doc.attachment("name", "attachment name"); 
+doc.attachment("attachment name", {"field":"attachments"});
 
 // Interpret "value" as a date using the default date formats.
-doc.date("name", "value"); 
+doc.add("2009-01-01T00:00:00Z", {"type":"date"});
 
 // intrepret "value" as a date using the supplied format string
 // (see Java's SimpleDateFormat class for the syntax).
-doc.date("name", "value", "format"); 
+doc.add("2009-01-01", {"type":"date", "date_format":"YYYY-MM-dd"});
 </pre>
 
 <h3>Example Transforms</h3>
