@@ -94,7 +94,7 @@ The following indexing options can be defaulted;
   <tr>
     <th>index</th>
     <td>whether (and how) the data is indexed</td>
-    <td>analyzed, analyzed_no_norms, no, not_analyzer, not_analyzer_no_norms</td>
+    <td>analyzed, analyzed_no_norms, no, not_analyzed, not_analyzed_no_norms</td>
     <td>analyzed</td>
   </tr>	
   <tr>
