@@ -47,8 +47,9 @@ Declare your functions as follows;
 
 <pre>
 {
-  "map": <i>conventional view code goes here</i>",
-
+  "views": {
+    <i>conventional view code goes here</i>
+  },
   "fulltext": {
     "by_subject": {
       "defaults": { "store":"yes" },
@@ -142,7 +143,10 @@ doc.add("2009-01-01T00:00:00Z", {"type":"date"});
 
 // intrepret "value" as a date using the supplied format string
 // (see Java's SimpleDateFormat class for the syntax).
-doc.add("2009-01-01", {"type":"date", "date_format":"YYYY-MM-dd"});
+doc.add("2009-01-01", {"type":"date", "format":"YYYY-MM-dd"});
+
+// intrepret "value" as a number.
+doc.add("100", {"type":"number"});
 </pre>
 
 <h3>Example Transforms</h3>
