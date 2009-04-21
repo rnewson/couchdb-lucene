@@ -87,6 +87,12 @@ The following indexing options can be defaulted;
     <td>default</td>
   </tr>	
   <tr>
+    <th>type</th>
+    <td>the type of data, which may affect analysis</td>
+    <td>date, number, text</td>
+    <td>text</td>
+  </tr>	
+  <tr>
     <th>store</th>
     <td>whether the data is stored</td>
     <td>yes, no</td>
