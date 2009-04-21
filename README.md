@@ -39,13 +39,71 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h2>Document Indexing</h2>
 
-You must supply a transform function in order to enable couchdb-lucene .
+You must supply a index function in order to enable couchdb-lucene as by default, nothing will be indexed.
 
-Add a design document called _design/lucene in your database with an attribute called "transform". The value of this attribute is a Javascript function.
+You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by those view functions.
 
-The transform function can return null, to prevent indexing, and either a single Document or an array of Documents.
+Declare your functions as follows;
 
-The transform function is called for each document in the database. To pass information to Lucene, you must populate Document instances with data from the original CouchDB document.
+<pre>
+{
+  "map": <i>conventional view code goes here</i>",
+
+  "fulltext": {
+    "by_subject": {
+      "defaults": { "store":"yes" },
+      "index":"function(doc) { var ret=new Document(); ret.add(doc.subject); return ret }"
+    },
+    "french_documents": {
+      "defaults": { "language":"fr" },
+      "index":"function(doc) { if (doc.language != "fr") { return null;} var ret=new Document(); <i>etc</i> return ret;  }"
+    }
+  }
+}
+</pre>
+
+A fulltext object contains multiple index view declarations. An index view consists of;
+
+<dl>
+<dt>defaults</dt><dd>The default for numerous indexing options can be overridden here. A full list of options follows.</dd>
+<dt>index</dt><dd>The indexing function itself, documented below.</dd>
+
+<h3>The Defaults Object</h3>
+
+The following indexing options can be defaulted;
+
+<table>
+  <tr>
+    <th>name</th>
+    <th>description</th>
+    <th>available options</th>
+    <th>default</th>
+  </tr>
+  <tr>
+    <th>store</th>
+    <td>whether the data is stored</td>
+    <td>yes, no</td>
+    <td>no</td>
+  </tr>	
+  <tr>
+    <th>index</th>
+    <td>whether (and how) the data is indexed</td>
+    <td>analyzed, analyzed_no_norms, no, not_analyzer, not_analyzer_no_norms</td>
+    <td>analyzed</td>
+  </tr>	
+  <tr>
+    <th>analyzer</th>
+    <td>how the data is analyzed</td>
+    <td>simple, standard</td>
+    <td>standard</td>
+  </tr>	
+  <tr>
+    <th>language</th>
+    <td>which language the data is in</td>
+    <td>br, cjk, cn, cz, de, el, en, fr, nl, ru, th</td>
+    <td>en</td>
+  </tr>	
+</table>
 
 <h3>The Document class</h3>
 

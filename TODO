@@ -34,3 +34,4 @@ Features
 * clustering (carrot2).
 * JSONQuery? (http://docs.persvr.org/documentation/jsonquery)
 * geospatial (need TrieRangeQuery from 2.9)
+
