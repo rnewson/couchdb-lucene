@@ -70,6 +70,8 @@ public final class Search {
                     System.out.println(Utils.error(400, "No query found in request."));
                     continue;
                 }
+                
+                //"path":["enron","_fti","lucene","view1"]
 
                 final JSONObject query = obj.getJSONObject("query");
 

@@ -29,6 +29,11 @@
       <version>2.4.1</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-analyzers</artifactId>
+      <version>2.4.1</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika</artifactId>
       <version>0.3</version>

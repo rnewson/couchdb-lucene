@@ -41,13 +41,13 @@ public final class Progress {
     public Progress() {
     }
 
-    public long getSeq(final String dbname) {
-        final Field field = progress.getField(seqField(dbname));
+    public long getSeq(final String view_name) {
+        final Field field = progress.getField(seqField(view_name));
         return field == null ? 0 : Long.parseLong(field.stringValue());
     }
 
-    public String getSignature(final String dbname) {
-        final Field field = progress.getField(sigField(dbname));
+    public String getSignature(final String view_name) {
+        final Field field = progress.getField(sigField(view_name));
         return field == null ? NO_SIGNATURE : field.stringValue();
     }
 
@@ -71,19 +71,19 @@ public final class Progress {
         writer.updateDocument(PROGRESS_TERM, progress);
     }
 
-    public void remove(final String dbname) {
-        progress.removeFields(seqField(dbname));
-        progress.removeFields(sigField(dbname));
+    public void remove(final String view_name) {
+        progress.removeFields(seqField(view_name));
+        progress.removeFields(sigField(view_name));
     }
 
-    public void update(final String dbname, final String sig, final long seq) {
+    public void update(final String view_name, final String sig, final long seq) {
         // Update seq.
-        progress.removeFields(seqField(dbname));
-        progress.add(new Field(seqField(dbname), Long.toString(seq), Store.YES, Field.Index.NO));
+        progress.removeFields(seqField(view_name));
+        progress.add(new Field(seqField(view_name), Long.toString(seq), Store.YES, Field.Index.NO));
 
         // Update sig.
-        progress.removeFields(sigField(dbname));
-        progress.add(new Field(sigField(dbname), sig, Store.YES, Field.Index.NO));
+        progress.removeFields(sigField(view_name));
+        progress.add(new Field(sigField(view_name), sig, Store.YES, Field.Index.NO));
     }
 
     private Document newDocument() {
@@ -93,12 +93,12 @@ public final class Progress {
         return result;
     }
 
-    private String seqField(final String dbname) {
-        return dbname + "-seq";
+    private String seqField(final String view_name) {
+        return view_name + "-seq";
     }
 
-    private String sigField(final String dbname) {
-        return dbname + "-sig";
+    private String sigField(final String view_name) {
+        return view_name + "-sig";
     }
 
 }

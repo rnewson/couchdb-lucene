@@ -101,6 +101,7 @@ public final class RhinoDocument extends ScriptableObject {
 
         // defaults.
         String field = Config.DEFAULT_FIELD;
+        String language = "en";
         Field.Store store = Field.Store.NO;
         Field.Index index = Field.Index.ANALYZED;
         Field.TermVector tv = Field.TermVector.NO;
@@ -113,7 +114,7 @@ public final class RhinoDocument extends ScriptableObject {
             if (obj.has("field", null)) {
                 field = (String) obj.get("field", null);
             }
-
+            
             // Change the stored flag.
             if (obj.has("store", null)) {
                 store = Store.get(obj.get("store", null));
@@ -123,6 +124,12 @@ public final class RhinoDocument extends ScriptableObject {
             if (obj.has("index", null)) {
                 index = Index.get(obj.get("index", null));
             }
+
+            // Change the language.
+            if (obj.has("language", null)) {
+                language = (String) obj.get("language", null);
+            }
+
         }
 
         doc.add(new Field(field, args[0].toString(), store, index, tv));

@@ -148,7 +148,7 @@ public final class Index {
                             if (Arrays.binarySearch(dbnames, term.text()) < 0) {
                                 Utils.LOG.info("Database '" + term.text()
                                         + "' has been deleted, removing all documents from index.");
-                                delete(term.text(), progress, writer);
+                                deleteDatabase(term.text(), progress, writer);
                                 commit = true;
                                 expunge = true;
                             }
@@ -176,15 +176,16 @@ public final class Index {
                         if (fulltext != null) {
                             delete_all = false;
                             for (final Object key : fulltext.keySet()) {
-                                final String viewname = (String) key;
-                                String fun = fulltext.getJSONObject(viewname).getString("index");
+                                String fun = fulltext.getJSONObject((String) key).getString("index");
                                 fun = fun.replaceAll("^\"*", "");
                                 fun = fun.replaceAll("\"*$", "");
-                                
-                                // TODO must include design doc and view name as tags to allow updates.
+
+                                final String viewname = String
+                                        .format("%s/%s/%s", dbname, doc.getString(Config.ID), key);
+
                                 final Rhino rhino = new Rhino(dbname, fun);
                                 try {
-                                    commit |= updateDatabase(writer, dbname, progress, rhino);
+                                    commit |= updateDatabase(writer, dbname, viewname, progress, rhino);
                                 } finally {
                                     rhino.close();
                                 }
@@ -198,7 +199,7 @@ public final class Index {
                      * database.
                      */
                     if (delete_all) {
-                        delete(dbname, progress, writer);
+                        deleteView(dbname, progress, writer);
                     }
                 }
             } catch (final Exception e) {
@@ -225,26 +226,26 @@ public final class Index {
             }
         }
 
-        private boolean updateDatabase(final IndexWriter writer, final String dbname, final Progress progress,
-                final Rhino rhino) throws HttpException, IOException {
+        private boolean updateDatabase(final IndexWriter writer, final String dbname, final String viewname,
+                final Progress progress, final Rhino rhino) throws HttpException, IOException {
             assert rhino != null;
 
             final long target_seq = DB.getInfo(dbname).getLong("update_seq");
 
-            final String cur_sig = progress.getSignature(dbname);
+            final String cur_sig = progress.getSignature(viewname);
             final String new_sig = rhino.getSignature();
 
             boolean result = false;
 
             // Reindex the database if sequence is 0 or signature changed.
-            if (progress.getSeq(dbname) == 0 || cur_sig.equals(new_sig) == false) {
-                Utils.LOG.info("Indexing " + dbname + " from scratch.");
-                delete(dbname, progress, writer);
-                progress.update(dbname, new_sig, 0);
+            if (progress.getSeq(viewname) == 0 || cur_sig.equals(new_sig) == false) {
+                Utils.LOG.info("Indexing " + viewname + " from scratch.");
+                deleteView(viewname, progress, writer);
+                progress.update(viewname, new_sig, 0);
                 result = true;
             }
 
-            long update_seq = progress.getSeq(dbname);
+            long update_seq = progress.getSeq(viewname);
             while (update_seq < target_seq) {
                 final JSONObject obj = DB.getAllDocsBySeq(dbname, update_seq, Config.BATCH_SIZE);
 
@@ -263,11 +264,12 @@ public final class Index {
 
                     // New or updated document.
                     if (doc != null && !docid.startsWith("_design")) {
-                        writer.deleteDocuments(docQuery(dbname, row.getString("id")));
+                        writer.deleteDocuments(docQuery(viewname, row.getString("id")));
                         final Document[] docs = rhino.map(docid, doc.toString());
 
                         for (int j = 0; j < docs.length; j++) {
                             docs[j].add(token(Config.DB, dbname, false));
+                            docs[j].add(token(Config.VIEW, viewname, false));
                             docs[j].add(token(Config.ID, docid, true));
                             writer.addDocument(docs[j]);
                         }
@@ -277,7 +279,7 @@ public final class Index {
 
                     // Deleted document.
                     if (value != null && value.optBoolean("deleted")) {
-                        writer.deleteDocuments(docQuery(dbname, row.getString("id")));
+                        writer.deleteDocuments(docQuery(viewname, row.getString("id")));
                         result = true;
                     }
 
@@ -286,17 +288,25 @@ public final class Index {
             }
 
             if (result) {
-                progress.update(dbname, new_sig, update_seq);
-                Utils.LOG.info(dbname + ": index caught up to " + update_seq);
+                progress.update(viewname, new_sig, update_seq);
+                Utils.LOG.info(viewname + ": index caught up to " + update_seq);
             }
 
             return result;
         }
 
-        private void delete(final String dbname, final Progress progress, final IndexWriter writer) throws IOException {
-            writer.deleteDocuments(new Term(Config.DB, dbname));
-            progress.remove(dbname);
+        private void deleteView(final String viewname, final Progress progress, final IndexWriter writer)
+                throws IOException {
+            writer.deleteDocuments(new Term(Config.VIEW, viewname));
+            progress.remove(viewname);
         }
+
+        private void deleteDatabase(final String dbname, final Progress progress, final IndexWriter writer)
+                throws IOException {
+            writer.deleteDocuments(new Term(Config.DB, dbname));
+            // TODO remove all entries prefixed with dbname/
+        }
+
     }
 
     public static void main(String[] args) throws Exception {
