@@ -180,8 +180,8 @@ public final class Index {
                                 fun = fun.replaceAll("^\"*", "");
                                 fun = fun.replaceAll("\"*$", "");
 
-                                final String viewname = String
-                                        .format("%s/%s/%s", dbname, doc.getString(Config.ID), key);
+                                final String viewname = String.format("%s/%s/%s", dbname, doc.getString(Config.ID)
+                                        .replaceFirst("_design/", ""), key);
 
                                 final Rhino rhino = new Rhino(dbname, fun);
                                 try {

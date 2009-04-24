@@ -48,6 +48,8 @@ public final class SearchRequest {
 
     private final String dbname;
 
+    private final String viewname;
+
     private final Query q;
 
     private final int skip;
@@ -66,11 +68,12 @@ public final class SearchRequest {
 
     public SearchRequest(final JSONObject obj) throws ParseException {
         final JSONObject headers = obj.getJSONObject("headers");
-        final JSONObject info = obj.getJSONObject("info");
         final JSONObject query = obj.getJSONObject("query");
+        final JSONArray path = obj.getJSONArray("path");
 
         this.ifNoneMatch = headers.optString("If-None-Match");
-        this.dbname = info.getString("db_name");
+        this.dbname = path.getString(0);
+        this.viewname = String.format("%s/%s/%s", dbname, path.getString(2), path.getString(3));
         this.skip = query.optInt("skip", 0);
         this.limit = query.optInt("limit", 25);
         this.debug = query.optBoolean("debug", false);
@@ -79,7 +82,7 @@ public final class SearchRequest {
 
         // Parse query.
         final BooleanQuery q = new BooleanQuery();
-        q.add(new TermQuery(new Term(Config.DB, this.dbname)), Occur.MUST);
+        q.add(new TermQuery(new Term(Config.VIEW, this.viewname)), Occur.MUST);
         q.add(Config.QP.parse(query.getString("q")), Occur.MUST);
         this.q = q;
 

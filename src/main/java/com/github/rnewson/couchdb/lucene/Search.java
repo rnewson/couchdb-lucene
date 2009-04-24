@@ -70,8 +70,6 @@ public final class Search {
                     System.out.println(Utils.error(400, "No query found in request."));
                     continue;
                 }
-                
-                //"path":["enron","_fti","lucene","view1"]
 
                 final JSONObject query = obj.getJSONObject("query");
 
@@ -92,8 +90,22 @@ public final class Search {
                 try {
                     // A query.
                     if (query.has("q")) {
-                        // TODO must use path to constrain to design document and view.
-                        
+                        final JSONArray path = obj.getJSONArray("path");
+
+                        if (path.size() < 3) {
+                            System.out.println(Utils.error(400, "No design document in path."));
+                            continue;
+                        }
+
+                        if (path.size() < 4) {
+                            System.out.println(Utils.error(400, "No view name in path."));
+                        }
+
+                        if (path.size() > 4) {
+                            System.out.println(Utils.error(400, "Extra path info in request."));
+                        }
+
+                        assert path.size() == 4;
                         final SearchRequest request = new SearchRequest(obj);
                         final String result = request.execute(searcher);
                         System.out.println(result);
