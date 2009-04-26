@@ -18,14 +18,12 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.mozilla.javascript.Context;
@@ -42,10 +40,6 @@ public final class RhinoDocument extends ScriptableObject {
     private static final Database DB = new Database(Config.DB_URL);
 
     private static final Tika TIKA = new Tika();
-
-    private static final DateFormat[] DATE_FORMATS = new DateFormat[] {
-            new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT'Z '('z')'"),
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") };
 
     private static final Map<String, Field.Index> Index = new HashMap<String, Field.Index>();
 
@@ -114,7 +108,7 @@ public final class RhinoDocument extends ScriptableObject {
             if (obj.has("field", null)) {
                 field = (String) obj.get("field", null);
             }
-            
+
             // Change the stored flag.
             if (obj.has("store", null)) {
                 store = Store.get(obj.get("store", null));
@@ -132,7 +126,26 @@ public final class RhinoDocument extends ScriptableObject {
 
         }
 
-        doc.add(new Field(field, args[0].toString(), store, index, tv));
+        if (args[0] instanceof String) {
+            doc.add(new Field(field, (String) args[0], store, index, tv));
+        } else {
+            // Is it a date?
+            try {
+                final Date date = (Date) Context.jsToJava(args[0], Date.class);
+                
+                // Special indexed form.
+                doc.add(new Field(field, Long.toString(date.getTime()), Field.Store.NO,
+                        Field.Index.NOT_ANALYZED_NO_NORMS));
+                
+                // Store in ISO8601 format, if requested.
+                if (Field.Store.YES == store) {
+                    final String asString = DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format(date);
+                    doc.add(new Field(field, asString, Field.Store.YES, Field.Index.NO));
+                }
+            } catch (final EvaluatorException e) {
+                throw Context.reportRuntimeError(args[0].getClass() + " not supported.");
+            }
+        }
     }
 
     public static void jsFunction_attachment(final Context cx, final Scriptable thisObj, final Object[] args,
@@ -165,61 +178,6 @@ public final class RhinoDocument extends ScriptableObject {
         } finally {
             get.releaseConnection();
         }
-    }
-
-    public static void jsFunction_date(final Context cx, final Scriptable thisObj, final Object[] args,
-            final Function funObj) throws IOException {
-        final RhinoDocument doc = checkInstance(thisObj);
-        if (args.length < 2) {
-            throw Context.reportRuntimeError("field name and value required.");
-        }
-
-        final String field = args[0].toString();
-
-        final Field.Store str;
-        if (args.length > 2) {
-            final String strtype = args[2].toString().toUpperCase();
-            str = Store.get(strtype) == null ? Field.Store.NO : (Field.Store) Store.get(strtype);
-        } else {
-            str = Field.Store.NO;
-        }
-
-        // Is it a native date?
-        try {
-            final Date date = (Date) Context.jsToJava(args[1], Date.class);
-            doc.doc.add(new Field(field, Long.toString(date.getTime()), str, Field.Index.NOT_ANALYZED_NO_NORMS));
-            return;
-        } catch (final EvaluatorException e) {
-            // Ignore.
-        }
-
-        // Try to parse it as a string.
-        final String value = Context.toString(args[1]);
-
-        final DateFormat[] formats;
-        if (args.length > 3) {
-            formats = new DateFormat[] { new SimpleDateFormat(args[3].toString()) };
-        } else {
-            formats = DATE_FORMATS;
-        }
-
-        final Date parsed = parse_date(formats, value);
-        if (parsed == null) {
-            throw Context.reportRuntimeError("failed to parse date value: " + value);
-        }
-
-        doc.doc.add(new Field(field, Long.toString(parsed.getTime()), str, Field.Index.NOT_ANALYZED_NO_NORMS));
-    }
-
-    private static Date parse_date(final DateFormat[] formats, final String value) {
-        for (final DateFormat fmt : formats) {
-            try {
-                return fmt.parse(value);
-            } catch (final ParseException e) {
-                continue;
-            }
-        }
-        return null;
     }
 
     private static RhinoDocument checkInstance(Scriptable obj) {

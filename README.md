@@ -88,12 +88,6 @@ The following indexing options can be defaulted;
     <td>default</td>
   </tr>	
   <tr>
-    <th>type</th>
-    <td>the type of data, which may affect analysis</td>
-    <td>date, number, text</td>
-    <td>text</td>
-  </tr>        
-  <tr>
     <th>store</th>
     <td>whether the data is stored. The value will be returned in the search result.</td>
     <td>yes, no</td>
@@ -129,6 +123,8 @@ var doc = new Document();
 
 Data may be added to this document with the add method which takes an optional second object argument that can override any of the above default values.
 
+The data is usually interpreted as a String but couchdb-lucene provides special handling if a Javascript Date object is passed. Specifically, the date is indexed as a numeric value, which allows correct sorting, and stored (if requested) in ISO 8601 format (with a timezone marker).
+
 <pre>
 // Add with all the defaults.
 doc.add("value");
@@ -144,16 +140,6 @@ doc.add("don't analyze me", {"index":"not_analyzed"});
 
 // Extract text from the named attachment and index it (but not store it).
 doc.attachment("attachment name", {"field":"attachments"});
-
-// Interpret "value" as a date using the default date formats.
-doc.add("2009-01-01T00:00:00Z", {"type":"date"});
-
-// intrepret "value" as a date using the supplied format string
-// (see Java's SimpleDateFormat class for the syntax).
-doc.add("2009-01-01", {"type":"date", "format":"YYYY-MM-dd"});
-
-// intrepret "value" as a number.
-doc.add("100", {"type":"number"});
 </pre>
 
 <h3>Example Transforms</h3>
