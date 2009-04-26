@@ -106,8 +106,8 @@ The following indexing options can be defaulted;
   <tr>
     <th>analyzer</th>
     <td>how the data is analyzed</td>
-    <td>simple, standard</td>
-    <td>standard</td>
+    <td>auto, simple, standard</td>
+    <td>auto</td>
   </tr>	
   <tr>
     <th>language</th>
@@ -338,10 +338,12 @@ The search result contains a number of fields at the top level, in addition to y
 <dt>total_rows</dt><dd>The total number of matches for this query.</dd>
 <dt>search_duration</dt><dd>The number of milliseconds spent performing the search.</dd>
 <dt>fetch_duration</dt><dd>The number of milliseconds spent retrieving the documents.</dd>
-<dt>rows</dt><dd>The search results object, described below.</dd>
+<dt>rows</dt><dd>The search results array, described below.</dd>
 </dl>
 
-<h2>The search results object</h2>
+<h2>The search results array</h2>
+
+The search results arrays consists of zero, one or more objects with the following fields;
 
 <dl>
 <dt>id</dt><dd>The unique identifier for this match.</dd>
