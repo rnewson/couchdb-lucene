@@ -163,8 +163,10 @@ public final class SearchRequest {
             final String[] fetch_ids = new String[max];
             for (int i = skip; i < skip + max; i++) {
                 final Document doc = searcher.doc(td.scoreDocs[i].doc);
-                final JSONObject obj = new JSONObject();
-                // Include basic details.
+                final JSONObject row = new JSONObject();
+                final JSONObject fields = new JSONObject();
+
+                // Include stored fields.
                 for (Object f : doc.getFields()) {
                     Field fld = (Field) f;
 
@@ -173,20 +175,26 @@ public final class SearchRequest {
                     String name = fld.name();
                     String value = fld.stringValue();
                     if (value != null) {
-                        obj.put(name, value);
+                        if (Config.ID.equals(name))
+                            row.put("id", value);
+                        else
+                            fields.put(name, value);
                     }
                 }
-                obj.put("score", td.scoreDocs[i].score);
+                row.put("score", td.scoreDocs[i].score);
                 // Include sort order (if any).
                 if (td instanceof TopFieldDocs) {
                     final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
-                    obj.put("sort_order", fd.fields);
+                    row.put("sort_order", fd.fields);
                 }
                 // Fetch document (if requested).
                 if (include_docs) {
                     fetch_ids[i - skip] = doc.get(Config.ID);
                 }
-                rows.add(obj);
+                if (fields.size() > 0) {
+                    row.put("fields", fields);
+                }
+                rows.add(row);
             }
             // Fetch documents (if requested).
             if (include_docs) {
