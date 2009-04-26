@@ -31,16 +31,15 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
+import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
-import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TermsFilter;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
-import org.apache.lucene.search.BooleanClause.Occur;
 
 public final class SearchRequest {
 
@@ -51,6 +50,8 @@ public final class SearchRequest {
     private final String viewname;
 
     private final Query q;
+
+    private Filter filter;
 
     private final int skip;
 
@@ -81,10 +82,12 @@ public final class SearchRequest {
         this.rewrite_query = query.optBoolean("rewrite", false);
 
         // Parse query.
-        final BooleanQuery q = new BooleanQuery();
-        q.add(new TermQuery(new Term(Config.VIEW, this.viewname)), Occur.MUST);
-        q.add(Config.QP.parse(query.getString("q")), Occur.MUST);
-        this.q = q;
+        this.q = Config.QP.parse(query.getString("q"));
+
+        // Filter out items from other views.
+        final TermsFilter filter = new TermsFilter();
+        filter.addTerm(new Term(Config.VIEW, this.viewname));
+        this.filter = filter;
 
         // Parse sort order.
         final String sort = query.optString("sort", null);
@@ -148,9 +151,9 @@ public final class SearchRequest {
             final TopDocs td;
             final StopWatch stopWatch = new StopWatch();
             if (sort == null) {
-                td = searcher.search(q, null, skip + limit);
+                td = searcher.search(q, filter, skip + limit);
             } else {
-                td = searcher.search(q, null, skip + limit, sort);
+                td = searcher.search(q, filter, skip + limit, sort);
             }
             stopWatch.lap("search");
             // Fetch matches (if any).
