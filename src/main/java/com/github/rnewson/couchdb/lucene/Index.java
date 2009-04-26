@@ -199,7 +199,7 @@ public final class Index {
                      * database.
                      */
                     if (delete_all) {
-                        deleteView(dbname, progress, writer);
+                        deleteDatabase(dbname, progress, writer);
                     }
                 }
             } catch (final Exception e) {
@@ -298,13 +298,13 @@ public final class Index {
         private void deleteView(final String viewname, final Progress progress, final IndexWriter writer)
                 throws IOException {
             writer.deleteDocuments(new Term(Config.VIEW, viewname));
-            progress.remove(viewname);
+            progress.removeView(viewname);
         }
 
         private void deleteDatabase(final String dbname, final Progress progress, final IndexWriter writer)
                 throws IOException {
             writer.deleteDocuments(new Term(Config.DB, dbname));
-            // TODO remove all entries prefixed with dbname/
+            progress.removeDatabase(dbname);
         }
 
     }

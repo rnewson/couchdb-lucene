@@ -17,6 +17,7 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -71,9 +72,19 @@ public final class Progress {
         writer.updateDocument(PROGRESS_TERM, progress);
     }
 
-    public void remove(final String view_name) {
+    public void removeView(final String view_name) {
         progress.removeFields(seqField(view_name));
         progress.removeFields(sigField(view_name));
+    }
+
+    public void removeDatabase(final String dbname) {
+        final String prefix = dbname + "/";
+        for (final Object obj : new ArrayList(progress.getFields())) {
+            final Field field = (Field) obj;
+            if (field.name().startsWith(prefix)) {
+                progress.removeField(field.name());
+            }
+        }
     }
 
     public void update(final String view_name, final String sig, final long seq) {
