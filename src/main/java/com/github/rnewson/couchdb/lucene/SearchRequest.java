@@ -126,7 +126,7 @@ public final class SearchRequest {
         }
         // Return "304 - Not Modified" if etag matches.
         final String etag = getETag(searcher);
-        if (etag.equals(this.ifNoneMatch)) {
+        if (!debug && etag.equals(this.ifNoneMatch)) {
             return "{\"code\":304}";
         }
 
