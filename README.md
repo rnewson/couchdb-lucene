@@ -1,9 +1,8 @@
 <h1>News</h1>
 
-The indexing API in 0.3 will change once again to allow multiple design documents and "views" into Lucene. It will also move much of the Lucene-specific stuff into an options object. Please read the TODO for details.
+The indexing API in 0.3 has changed since 0.2 to  allow multiple design documents and "views" into Lucene. It will moves the Lucene-specific stuff into an options object.
 
-The indexing API in 0.2 has completely changed, please re-read this document and report any surprises/bugs to the bug tracker;
-
+<h1>Issue Tracking</h1>
 Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.
 
 <h1>System Requirements</h1>
@@ -91,7 +90,7 @@ The following indexing options can be defaulted;
     <td>the type of data, which may affect analysis</td>
     <td>date, number, text</td>
     <td>text</td>
-  </tr>	
+  </tr>        
   <tr>
     <th>store</th>
     <td>whether the data is stored</td>
@@ -113,7 +112,7 @@ The following indexing options can be defaulted;
   <tr>
     <th>language</th>
     <td>which language the data is in</td>
-    <td>br, cjk, cn, cz, de, el, en, fr, nl, ru, th</td>
+    <td>auto, br, cjk, cn, cz, de, el, en, fr, nl, ru, th</td>
     <td>en</td>
   </tr>	
 </table>
@@ -172,11 +171,12 @@ function(doc) {
         case 'function':
           break;
         default:
-          ret.field(key, obj[key]);
-	  /* Uncomment next line to include
-	   * all attributes into a single field.
+          ret.add(obj[key], {"field", key});
+	  /*
+           * Uncomment next line to include
+	   * all attributes into the default field.
            */
-	  // ret.field("all", obj[key]);
+	  // ret.add(obj[key]);
           break;
       }
     }
@@ -187,7 +187,7 @@ function(doc) {
 
   // Index all attachments
   for(var a in doc._attachments) {
-    ret.attachment("attachment", a);
+    ret.add_attachment(a, {"field", "attachments"});
   }
 
   return ret;
@@ -207,9 +207,9 @@ function(doc) {
 <pre>
 function(doc) {
   var result = new Document();
-  result.field("subject", doc.subject, "yes");
-  result.field("content", doc.content);
-  result.date("indexed_at", new Date());
+  result.add(doc.subject, {"field":"subject", "store":"yes"});
+  result.add(doc.content, {"field":"subject"});
+  result.add({"field":"indexed_at"});
   return result;
 }
 </pre>
@@ -220,7 +220,7 @@ function(doc) {
 function(doc) {
   var result = new Document();
   for(var a in doc._attachments) {
-    result.attachment("attachment", a);
+    result.add_attachment(a, {"field":"attachment"});
   }
   return result;
 }
@@ -231,16 +231,17 @@ function(doc) {
 <pre>
 function(doc) {
     var mk = function(name, value, group) {
-        var ret = new Document(name, value, "yes");
-        ret.field("group", group, "yes");
+        var ret = new Document();
+	ret.add(value, {"field":group, "store":"yes"}); // ERROR
+        ret.add(group, {"field":"group", "store":"yes"});
         return ret;
     };
     var ret = [];
     if(doc.type != "reference") return null;
     for(var g in doc.groups) {
-        ret.push(mk("library", doc.groups[g].library, g));
-        ret.push(mk("method", doc.groups[g].method, g));
-        ret.push(mk("target", doc.groups[g].target, g));
+        ret.add(mk("library", doc.groups[g].library, g));
+        ret.add(mk("method", doc.groups[g].method, g));
+        ret.add(mk("target", doc.groups[g].target, g));
     }
     return ret;
 }
@@ -275,7 +276,7 @@ Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to 
 You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>. The _body field is searched by default which will include the extracted text from all attachments. The following parameters can be passed for more sophisticated searches;
 
 <dl>
-<dt>q</dt><dd>the query to run (e.g, subject:hello)</dd>
+<dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>
 <dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
@@ -331,7 +332,7 @@ Here's an example of a JSON response without sorting;
 
 <pre>
 {
-  "q": "+_db:enron +content:enron",
+  "q": "+content:enron",
   "skip": 0,
   "limit": 2,
   "total_rows": 176852,
