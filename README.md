@@ -93,7 +93,7 @@ The following indexing options can be defaulted;
   </tr>        
   <tr>
     <th>store</th>
-    <td>whether the data is stored</td>
+    <td>whether the data is stored. The value will be returned in the search result.</td>
     <td>yes, no</td>
     <td>no</td>
   </tr>	
