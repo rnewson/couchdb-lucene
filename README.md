@@ -427,7 +427,7 @@ And the same with sorting;
 
 <h1>Fetching information about the index</h1>
 
-Calling couchdb-lucene without arguments returns a JSON object with information about the index.
+Calling couchdb-lucene without arguments returns a JSON object with information about the <i>whole</i> index.
 
 <pre>
 http://127.0.0.1:5984/enron/_fti
