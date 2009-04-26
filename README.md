@@ -328,6 +328,28 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
 
 <h2>Search Results Format</h2>
 
+The search result contains a number of fields at the top level, in addition to your search results.
+
+<dl>
+<dt>q</dt><dd>The query that was executed.</dd>
+<dt>etag</dt><dd>An opaque token that reflects the current version of the index. This value is also returned in an ETag header to facilitate HTTP caching.</dd>
+<dt>skip</dt><dd>The number of initial matches that was skipped.</dd>
+<dt>limit</dt><dd>The maximum number of results that can appear.</dd>
+<dt>total_rows</dt><dd>The total number of matches for this query.</dd>
+<dt>search_duration</dt><dd>The number of milliseconds spent performing the search.</dd>
+<dt>fetch_duration</dt><dd>The number of milliseconds spent retrieving the documents.</dd>
+<dt>rows</dt><dd>The search results object, described below.</dd>
+</dl>
+
+<h2>The search results object</h2>
+
+<dl>
+<dt>id</dt><dd>The unique identifier for this match.</dd>
+<dt>score</dt><dd>The normalized score (0.0-1.0, inclusive) for this match</dd>
+<dt>fields</dt><dd>All the fields that were stored with this match</dd>
+<dt>doc</dt><dd>The original document from couch, if requested with include_docs=true</dd>
+</dl>
+
 Here's an example of a JSON response without sorting;
 
 <pre>
@@ -340,11 +362,11 @@ Here's an example of a JSON response without sorting;
   "fetch_duration": 4,
   "rows":   [
         {
-      "_id": "hain-m-all_documents-257.",
+      "id": "hain-m-all_documents-257.",
       "score": 1.601625680923462
     },
         {
-      "_id": "hain-m-notes_inbox-257.",
+      "id": "hain-m-notes_inbox-257.",
       "score": 1.601625680923462
     }
   ]
@@ -355,7 +377,7 @@ And the same with sorting;
 
 <pre>
 {
-  "q": "+_db:enron +content:enron",
+  "q": "+content:enron",
   "skip": 0,
   "limit": 3,
   "total_rows": 176852,
@@ -374,7 +396,7 @@ And the same with sorting;
   ],
   "rows":   [
         {
-      "_id": "shankman-j-inbox-105.",
+      "id": "shankman-j-inbox-105.",
       "score": 0.6131107211112976,
       "sort_order":       [
         "enron",
@@ -382,7 +404,7 @@ And the same with sorting;
       ]
     },
         {
-      "_id": "shankman-j-inbox-8.",
+      "id": "shankman-j-inbox-8.",
       "score": 0.7492915391921997,
       "sort_order":       [
         "enron",
@@ -390,7 +412,7 @@ And the same with sorting;
       ]
     },
         {
-      "_id": "shankman-j-inbox-30.",
+      "id": "shankman-j-inbox-30.",
       "score": 0.507369875907898,
       "sort_order":       [
         "enron",
