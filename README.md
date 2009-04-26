@@ -2,6 +2,8 @@
 
 The indexing API in 0.3 has changed since 0.2 to  allow multiple design documents and "views" into Lucene. It will moves the Lucene-specific stuff into an options object.
 
+Note: This documentation is slightly ahead of the code. In particular, the "defaults" field and the "language" and "analyzer" options are not yet available. I wanted to expose the new API now that I've had time to verify that it's working.
+
 <h1>Issue Tracking</h1>
 Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.
 
