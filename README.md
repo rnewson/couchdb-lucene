@@ -265,6 +265,7 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 
 <dl>
 <dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>
+<dt>lang</dt><dd>The language that the query parameter is in. Available options, and the default if not specified, are identical to the language option specified above.</dd>
 <dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
