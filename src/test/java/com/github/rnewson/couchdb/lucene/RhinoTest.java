@@ -38,7 +38,7 @@ public class RhinoTest {
     @Test
     public void testRhino() throws Exception {
         rhino = new Rhino("db,", "function(doc) { var ret = new Document(); "
-                + "ret.field(\"foo\", doc.size); return ret }");
+                + "ret.add(doc.size, {\"field\":\"foo\"}); return ret; }");
         final String doc = "{\"deleteme\":\"true\", \"size\":13}";
         Document[] ret = rhino.map("doc", doc);
         assertThat(ret.length, CoreMatchers.equalTo(1));
@@ -76,7 +76,7 @@ public class RhinoTest {
 
     @Test
     public void testCtor() throws Exception {
-        rhino = new Rhino("db", "function(doc) { return new Document(\"foo\", 1); }");
+        rhino = new Rhino("db", "function(doc) { return new Document(1, {\"field\":\"foo\"}); }");
         Document[] ret = rhino.map("doc", "{}");
         assertThat(ret.length, CoreMatchers.equalTo(1));
         assertThat(ret[0].getField("foo"), CoreMatchers.notNullValue());
@@ -85,7 +85,7 @@ public class RhinoTest {
     @Test
     public void testMultipleReturn() throws Exception {
         rhino = new Rhino("db", "function(doc) { " + "var ret = []; "
-                + "for(var v in doc) {var d = new Document(); d.field(v, doc[v]); ret.push(d)} " + "return ret; " + "}");
+                + "for(var v in doc) {var d = new Document(); d.add(doc[v], {\"field\": v}); ret.push(d)} " + "return ret; " + "}");
         Document[] ret = rhino.map("doc", "{\"foo\": 1, \"bar\": 2}");
         assertThat(ret.length, CoreMatchers.equalTo(2));
     }
@@ -93,7 +93,7 @@ public class RhinoTest {
     @Test
     public void testDate() throws Exception {
         rhino = new Rhino("db", "function(doc) { var ret = new Document(); "
-                + "ret.date(\"bar\", \"2009-01-0T00:00:00Z\"); return ret;}");
+                + "ret.add(new Date(), {\"field\":\"bar\"}); return ret;}");
         Document[] ret = rhino.map("doc", "{\"foo\": 1, \"bar\": 2}");
         assertThat(ret.length, CoreMatchers.equalTo(1));
         assertThat(ret[0].getField("bar"), CoreMatchers.notNullValue());
