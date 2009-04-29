@@ -310,9 +310,9 @@ All Dublin Core attributes are indexed and stored if detected in the attachment.
 <h2>Examples</h2>
 
 <pre>
-http://localhost:5984/dbname/_fti?q=field_name:value
-http://localhost:5984/dbname/_fti?q=field_name:value&sort=other_field
-http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
+http://localhost:5984/dbname/_fti/design_doc/view_name?q=field_name:value
+http://localhost:5984/dbname/_fti/design_doc/view_name?q=field_name:value&sort=other_field
+http://localhost:5984/dbname/_fti/design_doc/view_name?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
 </pre>
 
 <h2>Search Results Format</h2>
