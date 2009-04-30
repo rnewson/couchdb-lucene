@@ -148,37 +148,32 @@ doc.attachment("attachment name", {"field":"attachments"});
 
 <pre>
 function(doc) {
-  var ret = new Document();
+    var ret = new Document();
 
-  function idx(obj) {
-    for (var key in obj) {
-      switch (typeof obj[key]) {
-        case 'object':
-          idx(obj[key]);
-          break;
-        case 'function':
-          break;
-        default:
-          ret.add(obj[key], {"field", key});
-	  /*
-           * Uncomment next line to include
-	   * all attributes into the default field.
-           */
-	  // ret.add(obj[key]);
-          break;
-      }
+    function idx(obj) {
+	for (var key in obj) {
+	    switch (typeof obj[key]) {
+	    case 'object':
+		idx(obj[key]);
+		break;
+	    case 'function':
+		break;
+	    default:
+		ret.add(obj[key]);
+		break;
+	    }
+	}
+    };
+
+    idx(doc);
+
+    if (doc._attachments) {
+	for (var i in doc._attachments) {
+	    ret.attachment("attachment", i);
+	}
     }
-  }
-  
-  // Index all attributes
-  idx(doc);
-
-  // Index all attachments
-  for(var a in doc._attachments) {
-    ret.add_attachment(a, {"field", "attachments"});
-  }
-
-  return ret;
+    
+    return ret;
 }
 </pre>
 
