@@ -56,6 +56,14 @@
       get the source code on GitHub : <a href="http://github.com/rnewson/couchdb-lucene">rnewson/couchdb-lucene</a>
     </div>
 
+<h1>Issue Tracking</h1>
+
+<p>Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.</p>
+
+<h1>System Requirements</h1>
+
+<p>Sun JDK 5 or higher is necessary. Couchdb-lucene is known to be incompatible with OpenJDK as it includes an earlier, and incompatible, version of the Rhino Javascript library.</p>
+
 <h1>Build couchdb-lucene</h1>
 
 <ol>
@@ -85,21 +93,145 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h2>Document Indexing</h2>
 
-<p>By default all attributes are indexed. You can customize this process by adding a design document at _design/lucene. You must supply an attribute called "transform" which takes and returns a document. </p>
+<p>You must supply a index function in order to enable couchdb-lucene as by default, nothing will be indexed.</p>
+
+<p>You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by those view functions.</p>
+
+<p>Declare your functions as follows;</p>
 
 <pre>
 {
-  "transform":"function(doc) { return doc; }"
+  "views": {
+    <i>conventional view code goes here</i>
+  },
+  "fulltext": {
+    "by_subject": {
+      "defaults": { "store":"yes" },
+      "index":"function(doc) { var ret=new Document(); ret.add(doc.subject); return ret }"
+    },
+    "french_documents": {
+      "defaults": { "language":"fr" },
+      "index":"function(doc) { if (doc.language != "fr") { return null;} var ret=new Document(); <i>etc</i> return ret;  }"
+    }
+  }
 }
+</pre>
+
+<p>A fulltext object contains multiple index view declarations. An index view consists of;</p>
+
+<dl>
+<dt>defaults</dt><dd>The default for numerous indexing options can be overridden here. A full list of options follows.</dd>
+<dt>index</dt><dd>The indexing function itself, documented below.</dd>
+
+<h3>The Defaults Object</h3>
+
+The following indexing options can be defaulted;
+
+<table>
+  <tr>
+    <th>name</th>
+    <th>description</th>
+    <th>available options</th>
+    <th>default</th>
+  </tr>
+  <tr>
+    <th>field</th>
+    <td>the field name to index under</td>
+    <td>user-defined</td>
+    <td>default</td>
+  </tr> 
+  <tr>
+    <th>store</th>
+    <td>whether the data is stored. The value will be returned in the search result.</td>
+    <td>yes, no</td>
+    <td>no</td>
+  </tr> 
+  <tr>
+    <th>index</th>
+    <td>whether (and how) the data is indexed</td>
+    <td>analyzed, analyzed_no_norms, no, not_analyzed, not_analyzed_no_norms</td>
+    <td>analyzed</td>
+  </tr> 
+  <tr>
+    <th>analyzer</th>
+    <td>how the data is analyzed</td>
+    <td>auto, simple, standard</td>
+    <td>auto</td>
+  </tr> 
+  <tr>
+    <th>language</th>
+    <td>which language the data is in</td>
+    <td>auto, br, cjk, cn, cz, de, el, en, fr, nl, ru, th</td>
+    <td>en</td>
+  </tr> 
+</table>
+
+<h3>The Document class</h3>
+
+You may construct a new Document instance with;
+
+<pre>
+var doc = new Document();
+</pre>
+
+Data may be added to this document with the add method which takes an optional second object argument that can override any of the above default values.
+
+The data is usually interpreted as a String but couchdb-lucene provides special handling if a Javascript Date object is passed. Specifically, the date is indexed as a numeric value, which allows correct sorting, and stored (if requested) in ISO 8601 format (with a timezone marker).
+
+<pre>
+// Add with all the defaults.
+doc.add("value");
+
+// Add a subject field.
+doc.add("this is the subject line.", {"field":"subject"});
+
+// Add but ensure it's stored.
+doc.add("value", {"store":"yes"});
+
+// Add but don't analyze.
+doc.add("don't analyze me", {"index":"not_analyzed"});
+
+// Extract text from the named attachment and index it (but not store it).
+doc.attachment("attachment name", {"field":"attachments"});
 </pre>
 
 <h3>Example Transforms</h3>
 
-<h4>Index Everything (supplying no _design/lucene is equivalent and faster)</h4>
+<h4>Index Everything</h4>
 
 <pre>
 function(doc) {
-  return doc;
+  var ret = new Document();
+
+  function idx(obj) {
+    for (var key in obj) {
+      switch (typeof obj[key]) {
+        case 'object':
+          idx(obj[key]);
+          break;
+        case 'function':
+          break;
+        default:
+          ret.add(obj[key], {"field", key});
+      /*
+           * Uncomment next line to include
+       * all attributes into the default field.
+           */
+      // ret.add(obj[key]);
+          break;
+      }
+    }
+  }
+
+  // Index all attributes
+  idx(doc);
+
+  // Index all attachments
+  for(var a in doc._attachments) {
+    ret.add_attachment(a, {"field", "attachments"});
+  }
+
+  return ret;
 }
 </pre>
 
@@ -111,43 +243,54 @@ function(doc) {
 }
 </pre>
 
-<h4>Don't Index Confidential Fields</h4>
+<h4>Index Select Fields</h4>
 
 <pre>
 function(doc) {
-  delete doc.social_security_number;
-  delete doc.date_of_birth;
-  return doc;
+  var result = new Document();
+  result.add(doc.subject, {"field":"subject", "store":"yes"});
+  result.add(doc.content, {"field":"subject"});
+  result.add({"field":"indexed_at"});
+  return result;
 }
 </pre>
 
-<h4>Search Across All Properties</h4>
+<h4>Index Attachments</h4>
 
 <pre>
 function(doc) {
-  function DumpObject(obj)  {
-    var result = "";
-    for (var property in obj) {
-      var value=obj[property];
-      if (typeof value == 'object') {
-        result += DumpObject(value) + " "; 
-      } else {
-        result += value + " ";
-      }
-    } 
-    return result;
+  var result = new Document();
+  for(var a in doc._attachments) {
+    result.add_attachment(a, {"field":"attachment"});
   }
-
-  doc.all=DumpObject(doc); 
-  return doc;
+  return result;
 }
 </pre>
 
-<p>The function is evaluated by <a href="http://www.mozilla.org/rhino/">Rhino</a>. You may add, modify and remove any attributes. Additionally, returning null will exclude the document from indexing entirely.</p>
+<h4>A More Complex Example</h4>
+
+<pre>
+function(doc) {
+    var mk = function(name, value, group) {
+        var ret = new Document();
+    ret.add(value, {"field":group, "store":"yes"}); // ERROR
+        ret.add(group, {"field":"group", "store":"yes"});
+        return ret;
+    };
+    var ret = [];
+    if(doc.type != "reference") return null;
+    for(var g in doc.groups) {
+        ret.add(mk("library", doc.groups[g].library, g));
+        ret.add(mk("method", doc.groups[g].method, g));
+        ret.add(mk("target", doc.groups[g].target, g));
+    }
+    return ret;
+}
+</pre>
 
 <h2>Attachment Indexing</h2>
 
-<p>Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to index attachments of the following types, assuming the correct content_type is set in couchdb;</p>
+Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to index attachments of the following types, assuming the correct content_type is set in couchdb;
 
 <h3>Supported Formats</h3>
 
@@ -171,10 +314,11 @@ function(doc) {
 
 <h1>Searching with couchdb-lucene</h1>
 
-<p>You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>. The following parameters can be passed for more sophisticated searches;</p>
+You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>. The _body field is searched by default which will include the extracted text from all attachments. The following parameters can be passed for more sophisticated searches;
 
 <dl>
-<dt>q</dt><dd>the query to run (e.g, subject:hello)</dd>
+<dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>
+<dt>lang</dt><dd>The language that the query parameter is in. Available options, and the default if not specified, are identical to the language option specified above.</dd>
 <dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
@@ -189,9 +333,8 @@ function(doc) {
 <h2>Special Fields</h2>
 
 <dl>
-<dt>_id</dt><dd>The _id of the document.</dd>
 <dt>_db</dt><dd>The source database of the document.</dd>
-<dt>_body</dt><dd>Any text extracted from any attachment.</dd>
+<dt>_id</dt><dd>The _id of the document.</dd>
 </dl>
 
 <h2>Dublin Core</h2>
@@ -220,18 +363,42 @@ function(doc) {
 <h2>Examples</h2>
 
 <pre>
-http://localhost:5984/dbname/_fti?q=field_name:value
-http://localhost:5984/dbname/_fti?q=field_name:value&sort=other_field
-http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
+http://localhost:5984/dbname/_fti/design_doc/view_name?q=field_name:value
+http://localhost:5984/dbname/_fti/design_doc/view_name?q=field_name:value&sort=other_field
+http://localhost:5984/dbname/_fti/design_doc/view_name?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
 </pre>
 
 <h2>Search Results Format</h2>
+
+<p>The search result contains a number of fields at the top level, in addition to your search results.</p>
+
+<dl>
+<dt>q</dt><dd>The query that was executed.</dd>
+<dt>etag</dt><dd>An opaque token that reflects the current version of the index. This value is also returned in an ETag header to facilitate HTTP caching.</dd>
+<dt>skip</dt><dd>The number of initial matches that was skipped.</dd>
+<dt>limit</dt><dd>The maximum number of results that can appear.</dd>
+<dt>total_rows</dt><dd>The total number of matches for this query.</dd>
+<dt>search_duration</dt><dd>The number of milliseconds spent performing the search.</dd>
+<dt>fetch_duration</dt><dd>The number of milliseconds spent retrieving the documents.</dd>
+<dt>rows</dt><dd>The search results array, described below.</dd>
+</dl>
+
+<h2>The search results array</h2>
+
+<p>The search results arrays consists of zero, one or more objects with the following fields;</p>
+
+<dl>
+<dt>id</dt><dd>The unique identifier for this match.</dd>
+<dt>score</dt><dd>The normalized score (0.0-1.0, inclusive) for this match</dd>
+<dt>fields</dt><dd>All the fields that were stored with this match</dd>
+<dt>doc</dt><dd>The original document from couch, if requested with include_docs=true</dd>
+</dl>
 
 <p>Here's an example of a JSON response without sorting;</p>
 
 <pre>
 {
-  "q": "+_db:enron +content:enron",
+  "q": "+content:enron",
   "skip": 0,
   "limit": 2,
   "total_rows": 176852,
@@ -239,11 +406,11 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
   "fetch_duration": 4,
   "rows":   [
         {
-      "_id": "hain-m-all_documents-257.",
+      "id": "hain-m-all_documents-257.",
       "score": 1.601625680923462
     },
         {
-      "_id": "hain-m-notes_inbox-257.",
+      "id": "hain-m-notes_inbox-257.",
       "score": 1.601625680923462
     }
   ]
@@ -254,7 +421,7 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
 
 <pre>
 {
-  "q": "+_db:enron +content:enron",
+  "q": "+content:enron",
   "skip": 0,
   "limit": 3,
   "total_rows": 176852,
@@ -273,7 +440,7 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
   ],
   "rows":   [
         {
-      "_id": "shankman-j-inbox-105.",
+      "id": "shankman-j-inbox-105.",
       "score": 0.6131107211112976,
       "sort_order":       [
         "enron",
@@ -281,7 +448,7 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
       ]
     },
         {
-      "_id": "shankman-j-inbox-8.",
+      "id": "shankman-j-inbox-8.",
       "score": 0.7492915391921997,
       "sort_order":       [
         "enron",
@@ -289,7 +456,7 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
       ]
     },
         {
-      "_id": "shankman-j-inbox-30.",
+      "id": "shankman-j-inbox-30.",
       "score": 0.507369875907898,
       "sort_order":       [
         "enron",
@@ -302,7 +469,7 @@ http://localhost:5984/dbname/_fti?debug=true&sort=billing_size&q=body:document A
 
 <h1>Fetching information about the index</h1>
 
-<p>Calling couchdb-lucene without arguments returns a JSON object with information about the index.</p>
+<p>Calling couchdb-lucene without arguments returns a JSON object with information about the <i>whole</i> index.</p>
 
 <pre>
 http://127.0.0.1:5984/enron/_fti
@@ -332,12 +499,13 @@ fti=/usr/bin/java -cp /path/to/couchdb-lucene/target/classes:\
 <dl>
 <dt>couchdb.url</dt><dd>the url to contact CouchDB with (default is "http://localhost:5984")</dd>
 <dt>couchdb.lucene.dir</dt><dd>specify the path to the lucene indexes (the default is to make a directory called 'lucene' relative to couchdb's current working directory.</dd>
+<dt>couchdb.log.dir</dt><dd>specify the directory of the log file (which is called couchdb-lucene.log), defaults to the platform-specific temp directory.</dd>
 </dl>
 
 <p>You can override these properties like this;</p>
 
 <pre>
-fti=/usr/bin/java -D couchdb.lucene.dir=/tmp \
+fti=/usr/bin/java -Dcouchdb.lucene.dir=/tmp \
 -cp /home/rnewson/Source/couchdb-lucene/target/classes:\
 /home/rnewson/Source/couchdb-lucene/target/dependency\
 com.github.rnewson.couchdb.lucene.Main
@@ -351,9 +519,10 @@ com.github.rnewson.couchdb.lucene.Main
 <dt>couchdb.user</dt><dd>the user to authenticate as.</dd>
 <dt>couchdb.password</dt><dd>the password to authenticate with.</dd>
 </dl>
-   
-  </div>
 
+<h2>IPv6</h2>
+
+<p>The default for couchdb.url is problematic on an IPv6 system. Specify -Dcouchdb.url=http://[::1]:5984 to resolve it.</p>
   
 </body>
 </html>
