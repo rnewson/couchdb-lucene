@@ -175,12 +175,27 @@ public final class SearchRequest {
                     String name = fld.name();
                     String value = fld.stringValue();
                     if (value != null) {
-                        if (Config.ID.equals(name))
+                        if (Config.ID.equals(name)) {
                             row.put("id", value);
-                        else
-                            fields.put(name, value);
+                        } else {
+                            if (!fields.has(name)) {
+                                fields.put(name, value);
+                            } else {
+                                final Object obj = fields.get(name);
+                                if (obj instanceof String) {
+                                    final JSONArray arr = new JSONArray();
+                                    arr.add((String) obj);
+                                    arr.add(value);
+                                    fields.put(name, arr);
+                                } else {
+                                    assert obj instanceof JSONArray;
+                                    ((JSONArray) obj).add(value);
+                                }
+                            }
+                        }
                     }
                 }
+
                 row.put("score", td.scoreDocs[i].score);
                 // Include sort order (if any).
                 if (td instanceof TopFieldDocs) {
