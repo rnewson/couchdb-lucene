@@ -176,8 +176,9 @@ public final class Index {
                         if (fulltext != null) {
                             delete_all = false;
                             for (final Object key : fulltext.keySet()) {
-                                final String defaults = fulltext.getJSONObject((String) key).optString("defaults", "{}");
-                                
+                                final String defaults = fulltext.getJSONObject((String) key)
+                                        .optString("defaults", "{}");
+
                                 String fun = fulltext.getJSONObject((String) key).getString("index");
                                 fun = fun.replaceAll("^\"*", "");
                                 fun = fun.replaceAll("\"*$", "");
@@ -291,7 +292,7 @@ public final class Index {
 
             if (result) {
                 progress.update(viewname, new_sig, update_seq);
-                Utils.LOG.info(viewname + ": index caught up to " + update_seq);
+                Utils.LOG.info(viewname + ": index caught up to " + update_seq + ".");
             }
 
             return result;

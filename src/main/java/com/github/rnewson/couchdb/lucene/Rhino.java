@@ -117,7 +117,7 @@ public final class Rhino {
     }
 
     public String getSignature() {
-        return Utils.digest(fun);
+        return Utils.digest(this.context.getThreadLocal("defaults") + fun);
     }
 
     public void close() {
