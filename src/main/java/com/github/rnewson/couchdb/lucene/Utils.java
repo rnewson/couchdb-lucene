@@ -71,9 +71,9 @@ class Utils {
         return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
     }
 
-    public static Query docQuery(final String dbname, final String id) {
+    public static Query docQuery(final String viewname, final String id) {
         BooleanQuery q = new BooleanQuery();
-        q.add(new TermQuery(new Term(Config.DB, dbname)), Occur.MUST);
+        q.add(new TermQuery(new Term(Config.VIEW, viewname)), Occur.MUST);
         q.add(new TermQuery(new Term(Config.ID, id)), Occur.MUST);
         return q;
     }
