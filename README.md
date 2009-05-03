@@ -48,9 +48,6 @@ Declare your functions as follows;
 
 <pre>
 {
-  "views": {
-    <i>conventional view code goes here</i>
-  },
   "fulltext": {
     "by_subject": {
       "defaults": { "store":"yes" },
