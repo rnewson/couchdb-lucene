@@ -22,6 +22,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.sf.json.JSONObject;
+
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.lucene.document.Document;
@@ -93,42 +95,25 @@ public final class RhinoDocument extends ScriptableObject {
             throw Context.reportRuntimeError("second argument must be an object.");
         }
 
-        // defaults.
-        String field = Config.DEFAULT_FIELD;
-        String language = "en";
-        Field.Store store = Field.Store.NO;
-        Field.Index index = Field.Index.ANALYZED;
-        Field.TermVector tv = Field.TermVector.NO;
+        final JSONObject defaults = JSONObject.fromObject((String) cx.getThreadLocal("defaults"));
 
-        // Check for overrides.
+        String language = defaults.optString("language", "en");
+        String field = defaults.optString("field", Config.DEFAULT_FIELD);
+        String store = defaults.optString("store", "no");
+        String index = defaults.optString("index", "analyzed");
+
+        // Check for local override.
         if (args.length == 2) {
             final NativeObject obj = (NativeObject) args[1];
-
-            // Change the field name.
-            if (obj.has("field", null)) {
-                field = (String) obj.get("field", null);
-            }
-
-            // Change the stored flag.
-            if (obj.has("store", null)) {
-                store = Store.get(obj.get("store", null));
-            }
-
-            // Change the indexed flag.
-            if (obj.has("index", null)) {
-                index = Index.get(obj.get("index", null));
-            }
-
-            // Change the language.
-            if (obj.has("language", null)) {
-                language = (String) obj.get("language", null);
-            }
-
+            language = optString(obj, "language", language);
+            field = optString(obj, "field", field);
+            store = optString(obj, "store", store);
+            index = optString(obj, "index", index);
         }
 
         if (args[0] instanceof String || args[0] instanceof Integer || args[0] instanceof Double
                 || args[0] instanceof Boolean) {
-            doc.add(new Field(field, args[0].toString(), store, index, tv));
+            doc.add(new Field(field, args[0].toString(), Store.get(store), Index.get(index)));
         } else {
             // Is it a date?
             try {
@@ -139,15 +124,24 @@ public final class RhinoDocument extends ScriptableObject {
                         Field.Index.NOT_ANALYZED_NO_NORMS));
 
                 // Store in ISO8601 format, if requested.
-                if (Field.Store.YES == store) {
+                if ("yes".equals(store)) {
                     final String asString = DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format(date);
                     doc.add(new Field(field, asString, Field.Store.YES, Field.Index.NO));
                 }
             } catch (final EvaluatorException e) {
                 Utils.LOG.warn(args[0].getClass().getCanonicalName() + " seen, treating as String.");
-                doc.add(new Field(field, args[0].toString(), store, index, tv));
+                doc.add(new Field(field, args[0].toString(), Store.get(store), Index.get(index)));
             }
         }
+    }
+
+    /**
+     * Foreign method for NativeObject.
+     */
+    private static String optString(final NativeObject obj, final String key, final String defaultValue) {
+        if (obj.has(key, null))
+            return (String) obj.get("key", null);
+        return defaultValue;
     }
 
     public static void jsFunction_attachment(final Context cx, final Scriptable thisObj, final Object[] args,

@@ -52,15 +52,22 @@ public final class Rhino {
 
     private final String fun;
 
-    public Rhino(final String dbname, final String fun) throws Exception {
+    public Rhino(final String dbname, final String defaults, final String fun) throws Exception {
+        assert defaults != null;
+
         this.fun = fun;
         this.context = contextFactory.enterContext();
         try {
             this.context.setClassShutter(SHUTTER);
         } catch (final SecurityException e) {
-            // Thrown if already set and Rhino reassociates a previous context with this thread.
+            // Thrown if already set and Rhino reassociates a previous context
+            // with this thread.
         }
+
+        // Stash some context.
         this.context.putThreadLocal("dbname", dbname);
+        this.context.putThreadLocal("defaults", defaults);
+
         context.setOptimizationLevel(9);
         scope = context.initStandardObjects();
 
@@ -74,11 +81,11 @@ public final class Rhino {
         ScriptableObject.defineClass(scope, RhinoDocument.class);
 
         // add JSON parser.
-        context.evaluateString(scope, loadJSONParser(), "json2", 0, null);
+        context.evaluateString(scope, loadResource("json2.js"), "json2", 0, null);
     }
 
-    private String loadJSONParser() throws IOException {
-        final InputStream in = Rhino.class.getClassLoader().getResourceAsStream("json2.js");
+    private static String loadResource(final String name) throws IOException {
+        final InputStream in = Rhino.class.getClassLoader().getResourceAsStream(name);
         try {
             return IOUtils.toString(in, "UTF-8");
         } finally {

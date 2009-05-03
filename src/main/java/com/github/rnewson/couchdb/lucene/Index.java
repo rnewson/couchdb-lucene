@@ -176,6 +176,8 @@ public final class Index {
                         if (fulltext != null) {
                             delete_all = false;
                             for (final Object key : fulltext.keySet()) {
+                                final String defaults = fulltext.getJSONObject((String) key).optString("defaults", "{}");
+                                
                                 String fun = fulltext.getJSONObject((String) key).getString("index");
                                 fun = fun.replaceAll("^\"*", "");
                                 fun = fun.replaceAll("\"*$", "");
@@ -183,7 +185,7 @@ public final class Index {
                                 final String viewname = String.format("%s/%s/%s", dbname, doc.getString(Config.ID)
                                         .replaceFirst("_design/", ""), key);
 
-                                final Rhino rhino = new Rhino(dbname, fun);
+                                final Rhino rhino = new Rhino(dbname, defaults, fun);
                                 try {
                                     commit |= updateDatabase(writer, dbname, viewname, progress, rhino);
                                 } finally {
