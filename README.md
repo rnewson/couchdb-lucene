@@ -42,7 +42,7 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 You must supply a index function in order to enable couchdb-lucene as by default, nothing will be indexed.
 
-You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by those view functions.
+You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by the index functions.
 
 Declare your functions as follows;
 
