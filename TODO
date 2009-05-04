@@ -1,8 +1,8 @@
 Indexing API.
 
 * handle "language" option
-* handle "defaults" option.
 * test some more.
+* allow indexing of views.
 
 Performance
 
