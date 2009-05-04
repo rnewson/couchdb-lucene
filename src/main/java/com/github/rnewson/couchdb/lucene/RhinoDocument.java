@@ -34,6 +34,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.UniqueTag;
 
 public final class RhinoDocument extends ScriptableObject {
 
@@ -139,8 +140,10 @@ public final class RhinoDocument extends ScriptableObject {
      * Foreign method for NativeObject.
      */
     private static String optString(final NativeObject obj, final String key, final String defaultValue) {
-        if (obj.has(key, null))
-            return (String) obj.get("key", null);
+        if (obj.has(key, null)) {
+            final Object value = obj.get(key, null);
+            return value instanceof String ? (String) value : defaultValue;
+        }
         return defaultValue;
     }
 

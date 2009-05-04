@@ -52,6 +52,10 @@ public final class Rhino {
 
     private final String fun;
 
+    public Rhino(final String dbname, final String fun) throws Exception {
+        this(dbname, "{}", fun);
+    }
+
     public Rhino(final String dbname, final String defaults, final String fun) throws Exception {
         assert defaults != null;
 
