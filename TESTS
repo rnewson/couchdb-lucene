@@ -1,0 +1,13 @@
+Tests that need to be automated. This are required for 0.3 release.
+
+All tests require couchdb to be running and all tests delete and create a database called test_lucene at startup.
+
+1) add a normal document - verify no index is built.
+2) add a design document with simple fulltext function, add a normal document, verify it's searchable.
+3) same as 2 but for 1000 documents.
+4) same as 3 but verify sort= parameter.
+5) include_docs=true
+6) rewrite=true
+7) defaults { "store":"yes" }, verify stored value is retrieved.
+8) verify noargs gives index info.
+9) add attachment, verify text extraction.
