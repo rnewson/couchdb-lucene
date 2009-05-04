@@ -283,22 +283,22 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 All Dublin Core attributes are indexed and stored if detected in the attachment. Descriptions of the fields come from the Tika javadocs.
 
 <dl>
-<dt>dc.contributor</dt><dd> An entity responsible for making contributions to the content of the resource.</dd>
-<dt>dc.coverage</dt><dd>The extent or scope of the content of the resource.</dd>
-<dt>dc.creator</dt><dd>An entity primarily responsible for making the content of the resource.</dd>
-<dt>dc.date</dt><dd>A date associated with an event in the life cycle of the resource.</dd>
-<dt>dc.description</dt><dd>An account of the content of the resource.</dd>
-<dt>dc.format</dt><dd>Typically, Format may include the media-type or dimensions of the resource.</dd>
-<dt>dc.identifier</dt><dd>Recommended best practice is to identify the resource by means of a string or number conforming to a formal identification system.</dd>
-<dt>dc.language</dt><dd>A language of the intellectual content of the resource.</dd>
-<dt>dc.modified</dt><dd>Date on which the resource was changed.</dd>
-<dt>dc.publisher</dt><dd>An entity responsible for making the resource available.</dd>
-<dt>dc.relation</dt><dd>A reference to a related resource.</dd>
-<dt>dc.rights</dt><dd>Information about rights held in and over the resource.</dd>
-<dt>dc.source</dt><dd>A reference to a resource from which the present resource is derived.</dd>
-<dt>dc.subject</dt><dd>The topic of the content of the resource.</dd>
-<dt>dc.title</dt><dd>A name given to the resource.</dd>
-<dt>dc.type</dt><dd>The nature or genre of the content of the resource.</dd>
+<dt>_dc.contributor</dt><dd> An entity responsible for making contributions to the content of the resource.</dd>
+<dt>_dc.coverage</dt><dd>The extent or scope of the content of the resource.</dd>
+<dt>_dc.creator</dt><dd>An entity primarily responsible for making the content of the resource.</dd>
+<dt>_dc.date</dt><dd>A date associated with an event in the life cycle of the resource.</dd>
+<dt>_dc.description</dt><dd>An account of the content of the resource.</dd>
+<dt>_dc.format</dt><dd>Typically, Format may include the media-type or dimensions of the resource.</dd>
+<dt>_dc.identifier</dt><dd>Recommended best practice is to identify the resource by means of a string or number conforming to a formal identification system.</dd>
+<dt>_dc.language</dt><dd>A language of the intellectual content of the resource.</dd>
+<dt>_dc.modified</dt><dd>Date on which the resource was changed.</dd>
+<dt>_dc.publisher</dt><dd>An entity responsible for making the resource available.</dd>
+<dt>_dc.relation</dt><dd>A reference to a related resource.</dd>
+<dt>_dc.rights</dt><dd>Information about rights held in and over the resource.</dd>
+<dt>_dc.source</dt><dd>A reference to a resource from which the present resource is derived.</dd>
+<dt>_dc.subject</dt><dd>The topic of the content of the resource.</dd>
+<dt>_dc.title</dt><dd>A name given to the resource.</dd>
+<dt>_dc.type</dt><dd>The nature or genre of the content of the resource.</dd>
 </dl>
 
 <h2>Examples</h2>
