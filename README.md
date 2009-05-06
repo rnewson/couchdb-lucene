@@ -214,7 +214,7 @@ function(doc) {
 function(doc) {
     var mk = function(name, value, group) {
         var ret = new Document();
-	ret.add(value, {"field":group, "store":"yes"}); // ERROR
+        ret.add(value, {"field": group, "store":"yes"});
         ret.add(group, {"field":"group", "store":"yes"});
         return ret;
     };
