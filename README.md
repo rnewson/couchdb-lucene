@@ -7,7 +7,8 @@ This documentation is slightly ahead of the code; the "language" and "analyzer" 
 The indexing API in 0.3 has changed since 0.2 to  allow multiple design documents and "views" into Lucene. It will moves the Lucene-specific stuff into an options object.
 
 <h1>Issue Tracking</h1>
-Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.
+
+Issue tracking at http://github.com/rnewson/couchdb-lucene/issues
 
 <h1>System Requirements</h1>
 
