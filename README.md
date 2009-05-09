@@ -8,7 +8,7 @@ The indexing API in 0.3 has changed since 0.2 to  allow multiple design document
 
 <h1>Issue Tracking</h1>
 
-Issue tracking at http://github.com/rnewson/couchdb-lucene/issues
+Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">github</a>.
 
 <h1>System Requirements</h1>
 
