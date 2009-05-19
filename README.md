@@ -12,7 +12,9 @@ Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">gith
 
 <h1>System Requirements</h1>
 
-Sun JDK 5 or higher is necessary. Couchdb-lucene is known to be incompatible with OpenJDK as it includes an earlier, and incompatible, version of the Rhino Javascript library.
+Sun JDK 5 or higher is recommended. 
+
+Couchdb-lucene is known to be incompatible with some versions of OpenJDK as it includes an earlier, and incompatible, version of the Rhino Javascript library. The version in Ubuntu 8.10 (6b12-0ubuntu6.4) is known to work and it uses Rhino 1.7R1.
 
 <h1>Build couchdb-lucene</h1>
 
