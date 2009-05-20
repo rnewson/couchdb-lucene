@@ -87,7 +87,8 @@ public final class SearchRequest {
         // Filter out items from other views.
         final TermsFilter filter = new TermsFilter();
         filter.addTerm(new Term(Config.VIEW, this.viewname));
-        this.filter = filter;
+        
+        this.filter = FilterCache.get(this.viewname, filter);
 
         // Parse sort order.
         final String sort = query.optString("sort", null);
@@ -150,6 +151,7 @@ public final class SearchRequest {
             // Perform search.
             final TopDocs td;
             final StopWatch stopWatch = new StopWatch();
+            
             if (sort == null) {
                 td = searcher.search(q, filter, skip + limit);
             } else {
