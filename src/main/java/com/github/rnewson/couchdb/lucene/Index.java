@@ -116,6 +116,10 @@ public final class Index {
             // Customize other settings.
             result.setRAMBufferSizeMB(Config.RAM_BUF);
 
+            if (Config.LUCENE_DEBUG) {
+                result.setInfoStream(System.err);
+            }
+
             return result;
         }
 
