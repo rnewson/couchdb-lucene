@@ -88,8 +88,8 @@ public final class Index {
                      */
                     try {
                         updateIndex();
-                    } catch (final IOException e) {
-                        Utils.LOG.warn("Exception while updating index.", e);
+                    } catch (final Throwable t) {
+                        Utils.LOG.warn("Exception while updating index.", t);
                     }
                 }
             }
