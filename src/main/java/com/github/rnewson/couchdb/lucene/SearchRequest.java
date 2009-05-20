@@ -74,7 +74,7 @@ public final class SearchRequest {
 
         this.ifNoneMatch = headers.optString("If-None-Match");
         this.dbname = path.getString(0);
-        this.viewname = String.format("%s/%s/%s", dbname, path.getString(2), path.getString(3));
+        this.viewname = Utils.viewname(path);
         this.skip = query.optInt("skip", 0);
         this.limit = query.optInt("limit", 25);
         this.debug = query.optBoolean("debug", false);

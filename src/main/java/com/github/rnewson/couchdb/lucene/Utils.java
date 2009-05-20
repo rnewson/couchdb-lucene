@@ -19,6 +19,7 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -35,7 +36,7 @@ import org.apache.lucene.search.BooleanClause.Occur;
 class Utils {
 
     public static final Logger LOG = Logger.getLogger("couchdb-lucene");
-    
+
     public static String throwableToJSON(final Throwable t) {
         return error(t.getMessage() == null ? "Unknown error" : String.format("%s: %s", t.getClass(), t.getMessage()));
     }
@@ -53,10 +54,10 @@ class Utils {
         final PrintWriter printWriter = new PrintWriter(writer);
         if (t.getMessage() != null) {
             printWriter.append(t.getMessage());
-            printWriter.append("\n");            
+            printWriter.append("\n");
         }
         t.printStackTrace(printWriter);
-        return new JSONObject().element("code", code).element("body", "<pre>"+ writer + "</pre>").toString();
+        return new JSONObject().element("code", code).element("body", "<pre>" + writer + "</pre>").toString();
     }
 
     public static String error(final int code, final String txt) {
@@ -77,4 +78,9 @@ class Utils {
         q.add(new TermQuery(new Term(Config.ID, id)), Occur.MUST);
         return q;
     }
+
+    public static String viewname(final JSONArray path) {
+        return String.format("%s/%s/%s", path.getString(0), path.getString(2), path.getString(3));
+    }
+
 }

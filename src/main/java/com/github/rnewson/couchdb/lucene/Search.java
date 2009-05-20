@@ -17,13 +17,17 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
@@ -39,6 +43,7 @@ public final class Search {
         try {
             IndexReader reader = null;
             IndexSearcher searcher = null;
+            final Set<String> validViews = new HashSet<String>();
 
             final Scanner scanner = new Scanner(System.in);
             while (scanner.hasNextLine()) {
@@ -46,6 +51,7 @@ public final class Search {
                     // Open a reader and searcher if index exists.
                     if (IndexReader.indexExists(Config.INDEX_DIR)) {
                         reader = IndexReader.open(NIOFSDirectory.getDirectory(Config.INDEX_DIR), true);
+                        getValidViews(reader, validViews);
                         searcher = new IndexSearcher(reader);
                     }
                 }
@@ -82,6 +88,7 @@ public final class Search {
                         Utils.LOG.info("Lucene index was updated, reopening searcher.");
                         final IndexReader oldReader = reader;
                         reader = newReader;
+                        getValidViews(reader, validViews);
                         searcher = new IndexSearcher(reader);
                         oldReader.close();
                     }
@@ -103,6 +110,12 @@ public final class Search {
 
                         if (path.size() > 4) {
                             System.out.println(Utils.error(400, "Extra path info in request."));
+                        }
+
+                        final String viewname = Utils.viewname(path);
+
+                        if (!validViews.contains(viewname)) {
+                            System.out.println(Utils.error(400, viewname + " is not a valid view."));
                         }
 
                         assert path.size() == 4;
@@ -158,6 +171,22 @@ public final class Search {
             result += dir.fileLength(name);
         }
         return result;
+    }
+
+    private static void getValidViews(final IndexReader reader, final Set<String> out) throws IOException {
+        out.clear();
+        final TermEnum terms = reader.terms(new Term(Config.VIEW));
+        try {
+            do {
+                final Term term = terms.term();
+                if (term == null || !Config.VIEW.equals(term.field())) {
+                    break;
+                }
+                out.add(term.text());
+            } while (terms.next());
+        } finally {
+            terms.close();
+        }
     }
 
 }
