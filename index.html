@@ -56,13 +56,23 @@
       get the source code on GitHub : <a href="http://github.com/rnewson/couchdb-lucene">rnewson/couchdb-lucene</a>
     </div>
 
+<h1>NOTES</h1>
+
+<p>This documentation is slightly ahead of the code; the "language" and "analyzer" options are not yet available.</p>
+
+<h1>News</h1>
+
+<p>The indexing API in 0.3 has changed since 0.2 to  allow multiple design documents and "views" into Lucene. It will moves the Lucene-specific stuff into an options object.</p>
+
 <h1>Issue Tracking</h1>
 
-<p>Issue tracking now available at <a href="http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene"/>lighthouseapp</a>.</p>
+<p>Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">github</a>.</p>
 
 <h1>System Requirements</h1>
 
-<p>Sun JDK 5 or higher is necessary. Couchdb-lucene is known to be incompatible with OpenJDK as it includes an earlier, and incompatible, version of the Rhino Javascript library.</p>
+<p>Sun JDK 5 or higher is recommended. </p>
+
+<p>Couchdb-lucene is known to be incompatible with some versions of OpenJDK as it includes an earlier, and incompatible, version of the Rhino Javascript library. The version in Ubuntu 8.10 (6b12-0ubuntu6.4) is known to work and it uses Rhino 1.7R1.</p>
 
 <h1>Build couchdb-lucene</h1>
 
@@ -95,15 +105,12 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <p>You must supply a index function in order to enable couchdb-lucene as by default, nothing will be indexed.</p>
 
-<p>You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by those view functions.</p>
+<p>You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by the index functions.</p>
 
 <p>Declare your functions as follows;</p>
 
 <pre>
 {
-  "views": {
-    <i>conventional view code goes here</i>
-  },
   "fulltext": {
     "by_subject": {
       "defaults": { "store":"yes" },
@@ -201,37 +208,32 @@ doc.attachment("attachment name", {"field":"attachments"});
 
 <pre>
 function(doc) {
-  var ret = new Document();
+    var ret = new Document();
 
-  function idx(obj) {
+    function idx(obj) {
     for (var key in obj) {
-      switch (typeof obj[key]) {
+        switch (typeof obj[key]) {
         case 'object':
-          idx(obj[key]);
-          break;
+        idx(obj[key]);
+        break;
         case 'function':
-          break;
+        break;
         default:
-          ret.add(obj[key], {"field", key});
-      /*
-           * Uncomment next line to include
-       * all attributes into the default field.
-           */
-      // ret.add(obj[key]);
-          break;
-      }
+        ret.add(obj[key]);
+        break;
+        }
     }
-  }
+    };
 
-  // Index all attributes
-  idx(doc);
+    idx(doc);
 
-  // Index all attachments
-  for(var a in doc._attachments) {
-    ret.add_attachment(a, {"field", "attachments"});
-  }
+    if (doc._attachments) {
+    for (var i in doc._attachments) {
+        ret.attachment("attachment", i);
+    }
+    }
 
-  return ret;
+    return ret;
 }
 </pre>
 
@@ -273,7 +275,7 @@ function(doc) {
 function(doc) {
     var mk = function(name, value, group) {
         var ret = new Document();
-    ret.add(value, {"field":group, "store":"yes"}); // ERROR
+        ret.add(value, {"field": group, "store":"yes"});
         ret.add(group, {"field":"group", "store":"yes"});
         return ret;
     };
@@ -342,22 +344,22 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 <p>All Dublin Core attributes are indexed and stored if detected in the attachment. Descriptions of the fields come from the Tika javadocs.</p>
 
 <dl>
-<dt>dc.contributor</dt><dd> An entity responsible for making contributions to the content of the resource.</dd>
-<dt>dc.coverage</dt><dd>The extent or scope of the content of the resource.</dd>
-<dt>dc.creator</dt><dd>An entity primarily responsible for making the content of the resource.</dd>
-<dt>dc.date</dt><dd>A date associated with an event in the life cycle of the resource.</dd>
-<dt>dc.description</dt><dd>An account of the content of the resource.</dd>
-<dt>dc.format</dt><dd>Typically, Format may include the media-type or dimensions of the resource.</dd>
-<dt>dc.identifier</dt><dd>Recommended best practice is to identify the resource by means of a string or number conforming to a formal identification system.</dd>
-<dt>dc.language</dt><dd>A language of the intellectual content of the resource.</dd>
-<dt>dc.modified</dt><dd>Date on which the resource was changed.</dd>
-<dt>dc.publisher</dt><dd>An entity responsible for making the resource available.</dd>
-<dt>dc.relation</dt><dd>A reference to a related resource.</dd>
-<dt>dc.rights</dt><dd>Information about rights held in and over the resource.</dd>
-<dt>dc.source</dt><dd>A reference to a resource from which the present resource is derived.</dd>
-<dt>dc.subject</dt><dd>The topic of the content of the resource.</dd>
-<dt>dc.title</dt><dd>A name given to the resource.</dd>
-<dt>dc.type</dt><dd>The nature or genre of the content of the resource.</dd>
+<dt>_dc.contributor</dt><dd> An entity responsible for making contributions to the content of the resource.</dd>
+<dt>_dc.coverage</dt><dd>The extent or scope of the content of the resource.</dd>
+<dt>_dc.creator</dt><dd>An entity primarily responsible for making the content of the resource.</dd>
+<dt>_dc.date</dt><dd>A date associated with an event in the life cycle of the resource.</dd>
+<dt>_dc.description</dt><dd>An account of the content of the resource.</dd>
+<dt>_dc.format</dt><dd>Typically, Format may include the media-type or dimensions of the resource.</dd>
+<dt>_dc.identifier</dt><dd>Recommended best practice is to identify the resource by means of a string or number conforming to a formal identification system.</dd>
+<dt>_dc.language</dt><dd>A language of the intellectual content of the resource.</dd>
+<dt>_dc.modified</dt><dd>Date on which the resource was changed.</dd>
+<dt>_dc.publisher</dt><dd>An entity responsible for making the resource available.</dd>
+<dt>_dc.relation</dt><dd>A reference to a related resource.</dd>
+<dt>_dc.rights</dt><dd>Information about rights held in and over the resource.</dd>
+<dt>_dc.source</dt><dd>A reference to a resource from which the present resource is derived.</dd>
+<dt>_dc.subject</dt><dd>The topic of the content of the resource.</dd>
+<dt>_dc.title</dt><dd>A name given to the resource.</dd>
+<dt>_dc.type</dt><dd>The nature or genre of the content of the resource.</dd>
 </dl>
 
 <h2>Examples</h2>
