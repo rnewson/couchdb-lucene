@@ -292,7 +292,7 @@ public final class Index {
 
             if (result) {
                 progress.update(viewname, new_sig, update_seq);
-                Utils.LOG.info(viewname + ": index caught up to " + update_seq + ".");
+                Utils.LOG.info(viewname + ": index is now at update_seq " + update_seq + ".");
             }
 
             return result;
