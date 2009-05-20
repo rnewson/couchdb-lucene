@@ -1,8 +1,9 @@
-Indexing API.
+Indexing
 
 * handle "language" option
 * test some more.
 * allow indexing of views.
+* all configurable commit.every setting so that a full re-index makes progress if interrupted.
 
 Performance
 
