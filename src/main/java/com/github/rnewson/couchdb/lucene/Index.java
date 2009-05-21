@@ -20,6 +20,7 @@ import static com.github.rnewson.couchdb.lucene.Utils.docQuery;
 import static com.github.rnewson.couchdb.lucene.Utils.token;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
@@ -321,9 +322,31 @@ public final class Index {
 
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(final String[] args) throws Exception {
+        final File dir = new File(Config.INDEX_DIR);
+
+        // Create index directory if missing.
+        if (!dir.exists()) {
+            if (!dir.mkdir()) {
+                Utils.LOG.fatal("Unable to create index dir " + dir.getAbsolutePath());
+                System.exit(1);
+            }
+        }
+
+        // Verify index directory is writable.
+        final File canWrite = new File(dir, ".writable");
+        canWrite.delete(); // delete stale copy.
+        try {
+            canWrite.createNewFile();
+        } catch (final IOException e) {
+            Utils.LOG.fatal(dir.getAbsolutePath() + " is not writable.");
+            System.exit(1);
+        } finally {
+            canWrite.delete();
+        }
+
         Utils.LOG.info("indexer started.");
-        final Indexer indexer = new Indexer(FSDirectory.getDirectory(Config.INDEX_DIR));
+        final Indexer indexer = new Indexer(FSDirectory.getDirectory(dir));
         final Thread thread = new Thread(indexer, "index");
         thread.setDaemon(true);
         thread.start();
