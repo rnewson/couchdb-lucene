@@ -31,11 +31,13 @@ import net.sf.json.JSONObject;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.CheckIndex;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.LogByteSizeMergePolicy;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermEnum;
+import org.apache.lucene.index.CheckIndex.Status;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -345,8 +347,19 @@ public final class Index {
             canWrite.delete();
         }
 
+        // Check index prior to startup if it exists.
+        final Directory d = FSDirectory.getDirectory(dir);
+        if (IndexReader.indexExists(d)) {
+            final CheckIndex check = new CheckIndex(d);
+            final Status status = check.checkIndex();
+            if (status.clean)
+                Utils.LOG.info("Index is clean.");
+            else
+                Utils.LOG.warn("Index is not clean.");
+        }
+
         Utils.LOG.info("indexer started.");
-        final Indexer indexer = new Indexer(FSDirectory.getDirectory(dir));
+        final Indexer indexer = new Indexer(d);
         final Thread thread = new Thread(indexer, "index");
         thread.setDaemon(true);
         thread.start();
@@ -361,5 +374,4 @@ public final class Index {
         }
         Utils.LOG.info("indexer stopped.");
     }
-
 }
