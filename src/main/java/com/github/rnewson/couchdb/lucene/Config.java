@@ -42,7 +42,7 @@ final class Config {
 
     static final String INDEX_DIR = System.getProperty("couchdb.lucene.dir", "lucene");
 
-    static final int RAM_BUF = Integer.getInteger("couchdb.lucene.ram", 64);
+    static final int RAM_BUF = Integer.getInteger("couchdb.lucene.ram", 16);
 
     static final int BATCH_SIZE = Integer.getInteger("couchdb.lucene.batch", 250);
 

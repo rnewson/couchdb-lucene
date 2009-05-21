@@ -110,12 +110,10 @@ public final class Index {
 
             // Customize merge policy.
             final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy();
-            mp.setMergeFactor(5);
             mp.setMaxMergeMB(1000);
             mp.setUseCompoundFile(false);
             result.setMergePolicy(mp);
 
-            // Customize other settings.
             result.setRAMBufferSizeMB(Config.RAM_BUF);
 
             if (Config.LUCENE_DEBUG) {
