@@ -18,6 +18,7 @@ package com.github.rnewson.couchdb.lucene;
 
 import static com.github.rnewson.couchdb.lucene.Utils.docQuery;
 import static com.github.rnewson.couchdb.lucene.Utils.token;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -27,6 +28,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.lang.time.DurationFormatUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -237,6 +239,7 @@ public final class Index {
                 final Progress progress, final Rhino rhino) throws HttpException, IOException {
             assert rhino != null;
 
+            final long start = System.nanoTime();
             final long target_seq = DB.getInfo(dbname).getLong("update_seq");
 
             final String cur_sig = progress.getSignature(viewname);
@@ -296,7 +299,10 @@ public final class Index {
 
             if (result) {
                 progress.update(viewname, new_sig, update_seq);
-                Utils.LOG.info(viewname + ": index is now at update_seq " + update_seq + ".");
+
+                final long duration = System.nanoTime() - start;
+                Utils.LOG.info(String.format("%s: index is now at update_seq %,d (took %s).", viewname, update_seq,
+                        DurationFormatUtils.formatDurationHMS(NANOSECONDS.toMillis(duration))));
             }
 
             return result;
