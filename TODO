@@ -12,7 +12,6 @@ Performance
 Error Handling
 
 * handle unwritable lucene dir gracefully.
-* return error if design document doesn't exist when searching.
 
 Features
 
