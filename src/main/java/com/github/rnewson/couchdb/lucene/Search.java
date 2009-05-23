@@ -43,6 +43,8 @@ public final class Search {
         try {
             IndexReader reader = null;
             IndexSearcher searcher = null;
+            
+            final Progress progress = new Progress();            
             final Set<String> validViews = new HashSet<String>();
 
             final Scanner scanner = new Scanner(System.in);
@@ -52,6 +54,7 @@ public final class Search {
                     if (IndexReader.indexExists(Config.INDEX_DIR)) {
                         reader = IndexReader.open(NIOFSDirectory.getDirectory(Config.INDEX_DIR), true);
                         getValidViews(reader, validViews);
+                        progress.load(reader);
                         searcher = new IndexSearcher(reader);
                     }
                 }
@@ -89,6 +92,7 @@ public final class Search {
                         final IndexReader oldReader = reader;
                         reader = newReader;
                         getValidViews(reader, validViews);
+                        progress.load(reader);
                         searcher = new IndexSearcher(reader);
                         oldReader.close();
                     }
@@ -117,9 +121,11 @@ public final class Search {
                         if (!validViews.contains(viewname)) {
                             System.out.println(Utils.error(400, viewname + " is not a valid view."));
                         }
+                        
+                        final String viewsig = progress.getSignature(viewname);
 
                         assert path.size() == 4;
-                        final SearchRequest request = new SearchRequest(obj);
+                        final SearchRequest request = new SearchRequest(obj, viewsig);
                         final String result = request.execute(searcher);
                         System.out.println(result);
                         continue;

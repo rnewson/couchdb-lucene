@@ -48,6 +48,8 @@ public final class SearchRequest {
     private final String dbname;
 
     private final String viewname;
+    
+    private final String viewsig;
 
     private final Query q;
 
@@ -67,7 +69,7 @@ public final class SearchRequest {
 
     private final String ifNoneMatch;
 
-    public SearchRequest(final JSONObject obj) throws ParseException {
+    public SearchRequest(final JSONObject obj, final String viewsig) throws ParseException {
         final JSONObject headers = obj.getJSONObject("headers");
         final JSONObject query = obj.getJSONObject("query");
         final JSONArray path = obj.getJSONArray("path");
@@ -75,6 +77,7 @@ public final class SearchRequest {
         this.ifNoneMatch = headers.optString("If-None-Match");
         this.dbname = path.getString(0);
         this.viewname = Utils.viewname(path);
+        this.viewsig = viewsig;
         this.skip = query.optInt("skip", 0);
         this.limit = query.optInt("limit", 25);
         this.debug = query.optBoolean("debug", false);
@@ -138,12 +141,7 @@ public final class SearchRequest {
         if (rewrite_query) {
             final Query rewritten_q = q.rewrite(searcher.getIndexReader());
             json.put("rewritten_q", rewritten_q.toString());
-
-            final Progress progress = new Progress();
-            // TODO Expensive to do every time? cache it?
-            progress.load(searcher.getIndexReader());
-
-            json.put("view_sig", progress.getSignature(viewname));
+            json.put("view_sig", viewsig);
             
             final JSONObject freqs = new JSONObject();
 
