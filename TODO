@@ -8,6 +8,7 @@ Indexing
 Performance
 
 * Allow customization of mf/mmb/optimize.
+* configurable prewarming (especially for sorting).
 
 Error Handling
 
