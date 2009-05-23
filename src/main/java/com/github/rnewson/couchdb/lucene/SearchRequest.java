@@ -138,6 +138,13 @@ public final class SearchRequest {
         if (rewrite_query) {
             final Query rewritten_q = q.rewrite(searcher.getIndexReader());
             json.put("rewritten_q", rewritten_q.toString());
+
+            final Progress progress = new Progress();
+            // TODO Expensive to do every time? cache it?
+            progress.load(searcher.getIndexReader());
+
+            json.put("view_sig", progress.getSignature(viewname));
+            
             final JSONObject freqs = new JSONObject();
 
             final Set terms = new HashSet();
