@@ -138,11 +138,11 @@ public final class SearchRequest {
         final JSONObject json = new JSONObject();
         json.put("q", q.toString());
         json.put("etag", etag);
+        json.put("view_sig", viewsig);
 
         if (rewrite_query) {
             final Query rewritten_q = q.rewrite(searcher.getIndexReader());
             json.put("rewritten_q", rewritten_q.toString());
-            json.put("view_sig", viewsig);
 
             final JSONObject freqs = new JSONObject();
 
