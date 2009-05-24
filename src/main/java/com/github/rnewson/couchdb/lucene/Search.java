@@ -38,23 +38,21 @@ import org.apache.lucene.store.NIOFSDirectory;
  */
 public final class Search {
 
+    private static final Progress progress = new Progress();
+    private static final Set<String> validViews = new HashSet<String>();
+
     public static void main(final String[] args) {
         Utils.LOG.info("searcher started.");
         try {
             IndexReader reader = null;
             IndexSearcher searcher = null;
-            
-            final Progress progress = new Progress();            
-            final Set<String> validViews = new HashSet<String>();
-
             final Scanner scanner = new Scanner(System.in);
             while (scanner.hasNextLine()) {
                 if (reader == null) {
                     // Open a reader and searcher if index exists.
                     if (IndexReader.indexExists(Config.INDEX_DIR)) {
                         reader = IndexReader.open(NIOFSDirectory.getDirectory(Config.INDEX_DIR), true);
-                        getValidViews(reader, validViews);
-                        progress.load(reader);
+                        onNewReader(reader);
                         searcher = new IndexSearcher(reader);
                     }
                 }
@@ -91,8 +89,7 @@ public final class Search {
                         Utils.LOG.info("Lucene index was updated, reopening searcher.");
                         final IndexReader oldReader = reader;
                         reader = newReader;
-                        getValidViews(reader, validViews);
-                        progress.load(reader);
+                        onNewReader(reader);
                         searcher = new IndexSearcher(reader);
                         oldReader.close();
                     }
@@ -121,7 +118,7 @@ public final class Search {
                         if (!validViews.contains(viewname)) {
                             System.out.println(Utils.error(400, viewname + " is not a valid view."));
                         }
-                        
+
                         final String viewsig = progress.getSignature(viewname);
 
                         assert path.size() == 4;
@@ -193,6 +190,14 @@ public final class Search {
         } finally {
             terms.close();
         }
+    }
+
+    private static void onNewReader(final IndexReader reader) throws IOException {
+        // Remember list of valid views.
+        getValidViews(reader, validViews);
+        
+        // Remember signatures of views.
+        progress.load(reader);
     }
 
 }
