@@ -26,7 +26,6 @@ import java.util.Set;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
@@ -45,10 +44,12 @@ public final class SearchRequest {
 
     private static final Database DB = new Database(Config.DB_URL);
 
+    private static final char DOUBLE_QUOTE = '"';
+
     private final String dbname;
 
     private final String viewname;
-    
+
     private final String viewsig;
 
     private final Query q;
@@ -90,7 +91,7 @@ public final class SearchRequest {
         // Filter out items from other views.
         final TermsFilter filter = new TermsFilter();
         filter.addTerm(new Term(Config.VIEW, this.viewname));
-        
+
         this.filter = FilterCache.get(this.viewname, filter);
 
         // Parse sort order.
@@ -142,7 +143,7 @@ public final class SearchRequest {
             final Query rewritten_q = q.rewrite(searcher.getIndexReader());
             json.put("rewritten_q", rewritten_q.toString());
             json.put("view_sig", viewsig);
-            
+
             final JSONObject freqs = new JSONObject();
 
             final Set terms = new HashSet();
@@ -156,7 +157,7 @@ public final class SearchRequest {
             // Perform search.
             final TopDocs td;
             final StopWatch stopWatch = new StopWatch();
-            
+
             if (sort == null) {
                 td = searcher.search(q, filter, skip + limit);
             } else {
@@ -246,15 +247,32 @@ public final class SearchRequest {
         headers.put("Cache-Control", "max-age=" + Config.COMMIT_MAX / 1000);
         // Results can't change unless the IndexReader does.
         headers.put("ETag", etag);
-        result.put("headers", headers);
 
         if (debug) {
-            result.put("body", String.format("<pre>%s</pre>", StringEscapeUtils.escapeHtml(json.toString(2))));
+            headers.put("Content-Type", "text/plain");
+            result.put("body", escape(json.toString(2)));
         } else {
             result.put("json", json);
         }
 
+        // Include headers.
+        result.put("headers", headers);
+
         return result.toString();
+    }
+
+    private String escape(final String str) {
+        final StringBuilder builder = new StringBuilder(str.length() + 10);
+        builder.append(DOUBLE_QUOTE);
+        for (int i = 0; i < str.length(); i++) {
+            final char c = str.charAt(i);
+            if (c == DOUBLE_QUOTE)
+                builder.append("\"");
+            else
+                builder.append(c);
+        }
+        builder.append(DOUBLE_QUOTE);
+        return builder.toString();
     }
 
     private String getETag(final IndexSearcher searcher) {
