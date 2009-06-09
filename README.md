@@ -1,10 +1,6 @@
-<h1>NOTES</h1>
-
-This documentation is slightly ahead of the code; the "language" and "analyzer" options are not yet available.
-
 <h1>News</h1>
 
-The indexing API in 0.3 has changed since 0.2 to  allow multiple design documents and "views" into Lucene. It will moves the Lucene-specific stuff into an options object.
+The indexing API in 0.3 has changed since 0.2 to allow multiple design documents and "views" into Lucene. It also moves the Lucene-specific stuff into an options object.
 
 <h1>Issue Tracking</h1>
 
@@ -58,9 +54,9 @@ Declare your functions as follows;
       "defaults": { "store":"yes" },
       "index":"function(doc) { var ret=new Document(); ret.add(doc.subject); return ret }"
     },
-    "french_documents": {
-      "defaults": { "language":"fr" },
-      "index":"function(doc) { if (doc.language != "fr") { return null;} var ret=new Document(); <i>etc</i> return ret;  }"
+    "by_content": {
+      "defaults": { "store":"no" },
+      "index":"function(doc) { var ret=new Document(); ret.add(doc.content); return ret }"
     }
   }
 }
@@ -100,18 +96,6 @@ The following indexing options can be defaulted;
     <td>whether (and how) the data is indexed</td>
     <td>analyzed, analyzed_no_norms, no, not_analyzed, not_analyzed_no_norms</td>
     <td>analyzed</td>
-  </tr>	
-  <tr>
-    <th>analyzer</th>
-    <td>how the data is analyzed</td>
-    <td>auto, simple, standard</td>
-    <td>auto</td>
-  </tr>	
-  <tr>
-    <th>language</th>
-    <td>which language the data is in</td>
-    <td>auto, br, cjk, cn, cz, de, el, en, fr, nl, ru, th</td>
-    <td>en</td>
   </tr>	
 </table>
 
@@ -262,7 +246,6 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 
 <dl>
 <dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>
-<dt>lang</dt><dd>The language that the query parameter is in. Available options, and the default if not specified, are identical to the language option specified above.</dd>
 <dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
