@@ -45,7 +45,7 @@ You must supply a index function in order to enable couchdb-lucene as by default
 
 You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by the index functions.
 
-Declare your functions as follows;
+Declare your design document as follows;
 
 <pre>
 {
