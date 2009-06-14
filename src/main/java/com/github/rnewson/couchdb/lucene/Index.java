@@ -30,6 +30,7 @@ import net.sf.json.JSONObject;
 
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.lang.time.DurationFormatUtils;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CheckIndex;
 import org.apache.lucene.index.IndexReader;
@@ -183,9 +184,12 @@ public final class Index {
                         final JSONObject fulltext = doc.getJSONObject("fulltext");
                         if (fulltext != null) {
                             delete_all = false;
-                            for (final Object key : fulltext.keySet()) {
-                                final String defaults = fulltext.getJSONObject((String) key)
-                                        .optString("defaults", "{}");
+                            for (final Object obj : fulltext.keySet()) {
+                                final String key = (String) obj;
+                                final String sig = Utils.digest(fulltext.getString(key));
+                                final String defaults = fulltext.getJSONObject(key).optString("defaults", "{}");
+                                final Analyzer analyzer = AnalyzerCache.getAnalyzer(fulltext.getJSONObject(key)
+                                        .optString("analyzer", "standard"));
 
                                 String fun = fulltext.getJSONObject((String) key).getString("index");
                                 fun = fun.replaceAll("^\"*", "");
@@ -196,7 +200,7 @@ public final class Index {
 
                                 final Rhino rhino = new Rhino(dbname, defaults, fun);
                                 try {
-                                    commit |= updateDatabase(writer, dbname, viewname, progress, rhino);
+                                    commit |= updateDatabase(writer, analyzer, sig, dbname, viewname, progress, rhino);
                                 } finally {
                                     rhino.close();
                                 }
@@ -237,15 +241,15 @@ public final class Index {
             }
         }
 
-        private boolean updateDatabase(final IndexWriter writer, final String dbname, final String viewname,
-                final Progress progress, final Rhino rhino) throws HttpException, IOException {
+        private boolean updateDatabase(final IndexWriter writer, final Analyzer analyzer, final String new_sig,
+                final String dbname, final String viewname, final Progress progress, final Rhino rhino)
+                throws HttpException, IOException {
             assert rhino != null;
 
             final long start = System.nanoTime();
             final long target_seq = DB.getInfo(dbname).getLong("update_seq");
 
             final String cur_sig = progress.getSignature(viewname);
-            final String new_sig = rhino.getSignature();
 
             boolean result = false;
 
@@ -283,7 +287,7 @@ public final class Index {
                             docs[j].add(token(Config.DB, dbname, false));
                             docs[j].add(token(Config.VIEW, viewname, false));
                             docs[j].add(token(Config.ID, docid, true));
-                            writer.addDocument(docs[j]);
+                            writer.addDocument(docs[j], analyzer);
                         }
 
                         result = true;

@@ -120,7 +120,7 @@ public final class Rhino {
         throw new RuntimeException("Invalid object type: " + ret.getClass().getName());
     }
 
-    public String getSignature() {
+    private String getSignature() {
         return Utils.digest(this.context.getThreadLocal("defaults") + fun);
     }
 
