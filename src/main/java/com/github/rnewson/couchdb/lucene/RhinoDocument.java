@@ -34,7 +34,6 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
-import org.mozilla.javascript.UniqueTag;
 
 public final class RhinoDocument extends ScriptableObject {
 
@@ -112,27 +111,28 @@ public final class RhinoDocument extends ScriptableObject {
             index = optString(obj, "index", index);
         }
 
+        // A standard field?
         if (args[0] instanceof String || args[0] instanceof Integer || args[0] instanceof Double
                 || args[0] instanceof Boolean) {
             doc.add(new Field(field, args[0].toString(), Store.get(store), Index.get(index)));
-        } else {
-            // Is it a date?
-            try {
-                final Date date = (Date) Context.jsToJava(args[0], Date.class);
+            return;
+        }
 
-                // Special indexed form.
-                doc.add(new Field(field, Long.toString(date.getTime()), Field.Store.NO,
-                        Field.Index.NOT_ANALYZED_NO_NORMS));
+        // Is it a date?
+        try {
+            final Date date = (Date) Context.jsToJava(args[0], Date.class);
 
-                // Store in ISO8601 format, if requested.
-                if ("yes".equals(store)) {
-                    final String asString = DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format(date);
-                    doc.add(new Field(field, asString, Field.Store.YES, Field.Index.NO));
-                }
-            } catch (final EvaluatorException e) {
-                Utils.LOG.warn(args[0].getClass().getCanonicalName() + " seen, treating as String.");
-                doc.add(new Field(field, args[0].toString(), Store.get(store), Index.get(index)));
+            // Special indexed form.
+            doc.add(new Field(field, Long.toString(date.getTime()), Field.Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
+
+            // Store in ISO8601 format, if requested.
+            if ("yes".equals(store)) {
+                final String asString = DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format(date);
+                doc.add(new Field(field, asString, Field.Store.YES, Field.Index.NO));
             }
+            return;
+        } catch (final EvaluatorException e) {
+            // Wasn't a date.
         }
     }
 

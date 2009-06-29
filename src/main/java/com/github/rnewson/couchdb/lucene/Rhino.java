@@ -26,6 +26,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
@@ -39,6 +40,8 @@ public final class Rhino {
         }
 
     };
+
+    private static final Document[] NO_DOCUMENTS = new Document[0];
 
     private static final ContextFactory contextFactory = new ContextFactory();
 
@@ -99,9 +102,15 @@ public final class Rhino {
 
     public Document[] map(final String docid, final String doc) {
         context.putThreadLocal("docid", docid);
-        Object ret = systemFun.call(context, scope, null, new Object[] { doc, userFun });
+        Object ret;
+        try {
+            ret = systemFun.call(context, scope, null, new Object[] { doc, userFun });
+        } catch (final RhinoException e) {
+            Utils.LOG.warn("function raised exception (" + e.getMessage() + ") with " + docid, e);
+            return NO_DOCUMENTS;
+        }
         if (ret == null || ret instanceof Undefined) {
-            return new Document[] {};
+            return NO_DOCUMENTS;
         } else if (ret instanceof RhinoDocument) {
             return new Document[] { ((RhinoDocument) ret).doc };
         } else if (ret instanceof NativeArray) {
