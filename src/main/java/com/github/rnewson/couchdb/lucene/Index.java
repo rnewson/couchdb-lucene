@@ -368,7 +368,7 @@ public final class Index {
         thread.setDaemon(true);
         thread.start();
 
-        final Scanner scanner = new Scanner(System.in);
+        final Scanner scanner = new Scanner(System.in, "UTF-8");
         while (scanner.hasNextLine()) {
             final String line = scanner.nextLine();
             final JSONObject obj = JSONObject.fromObject(line);

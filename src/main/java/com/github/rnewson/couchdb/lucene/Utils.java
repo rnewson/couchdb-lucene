@@ -16,8 +16,10 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -36,6 +38,28 @@ import org.apache.lucene.search.BooleanClause.Occur;
 class Utils {
 
     public static final Logger LOG = Logger.getLogger("couchdb-lucene");
+
+    private static PrintWriter OUT;
+
+    static {
+        try {
+            OUT = new PrintWriter(new OutputStreamWriter(System.out, "UTF-8"));
+        } catch (final UnsupportedEncodingException e) {
+            throw new Error("UTF-8 support is missing from your JVM.");
+        }
+    }
+
+    public static void out(final Object obj) {
+        if (OUT == null) {
+            try {
+                OUT = new PrintWriter(new OutputStreamWriter(System.out, "UTF-8"));
+            } catch (final UnsupportedEncodingException e) {
+                throw new Error("UTF-8 support is missing from your JVM.");
+            }
+        }
+        OUT.println(obj.toString());
+        OUT.flush();
+    }
 
     public static String throwableToJSON(final Throwable t) {
         return error(t.getMessage() == null ? "Unknown error" : String.format("%s: %s", t.getClass(), t.getMessage()));

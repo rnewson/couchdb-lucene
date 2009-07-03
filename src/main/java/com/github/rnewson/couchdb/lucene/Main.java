@@ -38,7 +38,7 @@ public final class Main {
             return;
         }
 
-        System.out.println(Utils.error("Invoke with -index or -search only."));
+        Utils.out(Utils.error("Invoke with -index or -search only."));
         return;
     }
 

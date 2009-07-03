@@ -43,6 +43,7 @@ public final class Search {
 
     public static void main(final String[] args) {
         Utils.LOG.info("searcher started.");
+
         try {
             IndexReader reader = null;
             IndexSearcher searcher = null;
@@ -61,7 +62,7 @@ public final class Search {
 
                 // Process search request if index exists.
                 if (searcher == null) {
-                    System.out.println(Utils.error(503, "couchdb-lucene not available."));
+                    Utils.out(Utils.error(503, "couchdb-lucene not available."));
                     continue;
                 }
 
@@ -69,12 +70,12 @@ public final class Search {
                 try {
                     obj = JSONObject.fromObject(line);
                 } catch (final JSONException e) {
-                    System.out.println(Utils.error(400, "invalid JSON."));
+                    Utils.out(Utils.error(400, "invalid JSON."));
                     continue;
                 }
 
                 if (!obj.has("query")) {
-                    System.out.println(Utils.error(400, "No query found in request."));
+                    Utils.out(Utils.error(400, "No query found in request."));
                     continue;
                 }
 
@@ -101,22 +102,22 @@ public final class Search {
                         final JSONArray path = obj.getJSONArray("path");
 
                         if (path.size() < 3) {
-                            System.out.println(Utils.error(400, "No design document in path."));
+                            Utils.out(Utils.error(400, "No design document in path."));
                             continue;
                         }
 
                         if (path.size() < 4) {
-                            System.out.println(Utils.error(400, "No view name in path."));
+                            Utils.out(Utils.error(400, "No view name in path."));
                         }
 
                         if (path.size() > 4) {
-                            System.out.println(Utils.error(400, "Extra path info in request."));
+                            Utils.out(Utils.error(400, "Extra path info in request."));
                         }
 
                         final String viewname = Utils.viewname(path);
 
                         if (!validViews.contains(viewname)) {
-                            System.out.println(Utils.error(400, viewname + " is not a valid view."));
+                            Utils.out(Utils.error(400, viewname + " is not a valid view."));
                         }
 
                         final String viewsig = progress.getSignature(viewname);
@@ -124,7 +125,7 @@ public final class Search {
                         assert path.size() == 4;
                         final SearchRequest request = new SearchRequest(obj, viewsig);
                         final String result = request.execute(searcher);
-                        System.out.println(result);
+                        Utils.out(result);
                         continue;
                     }
                     // info.
@@ -151,19 +152,19 @@ public final class Search {
                         headers.put("Content-Type", "text/plain");
                         info.put("headers", headers);
 
-                        System.out.println(info);
+                        Utils.out(info);
                     }
                 } catch (final Exception e) {
-                    System.out.println(Utils.error(400, e));
+                    Utils.out(Utils.error(400, e));
                 }
 
-                System.out.println(Utils.error(400, "Bad request."));
+                Utils.out(Utils.error(400, "Bad request."));
             }
             if (reader != null) {
                 reader.close();
             }
         } catch (final Exception e) {
-            System.out.println(Utils.error(500, e.getMessage()));
+            Utils.out(Utils.error(500, e.getMessage()));
         }
         Utils.LOG.info("searcher stopped.");
     }
