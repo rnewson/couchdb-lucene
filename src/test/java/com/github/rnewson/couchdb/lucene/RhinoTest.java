@@ -52,10 +52,11 @@ public class RhinoTest {
         assertThat(ret.length, CoreMatchers.equalTo(0));
     }
 
-    @Test(expected = EcmaError.class)
+    @Test
     public void testBadCode() throws Exception {
         rhino = new Rhino("db", "function(doc) {no_such_function(); }");
-        rhino.map("doc", "{}");
+        Document[] ret = rhino.map("doc", "{}");
+        assertThat(ret.length, CoreMatchers.equalTo(0));
     }
 
     @Test
