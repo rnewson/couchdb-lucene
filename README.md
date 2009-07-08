@@ -1,7 +1,3 @@
-<h1>News</h1>
-
-The indexing API in 0.3 has changed since 0.2 to allow multiple design documents and "views" into Lucene. It also moves the Lucene-specific stuff into an options object.
-
 <h1>Issue Tracking</h1>
 
 Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">github</a>.
