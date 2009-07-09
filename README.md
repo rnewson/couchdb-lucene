@@ -37,25 +37,38 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h2>Document Indexing</h2>
 
-You must supply a index function in order to enable couchdb-lucene as by default, nothing will be indexed.
+You must supply a index function in order to enable couchdb-lucene as, by default, nothing will be indexed.
 
 You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by the index functions.
 
-Declare your design document as follows;
+Here's an complete example of a design document with couchdb-lucene features:
 
 <pre>
 {
-  "fulltext": {
-    "by_subject": {
-      "defaults": { "store":"yes" },
-      "index":"function(doc) { var ret=new Document(); ret.add(doc.subject); return ret }"
+    "_id":"lucene",
+    "views": {
+        "normal_couch_view": {
+            "map": "function(){}"
+        }
     },
-    "by_content": {
-      "defaults": { "store":"no" },
-      "index":"function(doc) { var ret=new Document(); ret.add(doc.content); return ret }"
+    "fulltext": {
+        "by_subject": {
+            "defaults": { "store":"yes" },
+            "index":"function(doc) { var ret=new Document(); ret.add(doc.subject); return ret }"
+        },
+        "by_content": {
+            "defaults": { "store":"no" },
+            "index":"function(doc) { var ret=new Document(); ret.add(doc.content); return ret }"
+        }
     }
-  }
 }
+</pre>
+
+Here are some example URL's for the given design document;
+
+<pre>
+http://localhost:5984/database/_fti/lucene/by_subject?q=hello
+http://localhost:5984/database/_fti/lucene/by_content?q=hello
 </pre>
 
 A fulltext object contains multiple index view declarations. An index view consists of;
