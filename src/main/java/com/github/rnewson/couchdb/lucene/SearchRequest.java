@@ -68,7 +68,7 @@ public final class SearchRequest {
 
     private final boolean rewrite_query;
 
-    private final String callback;
+    private final String jsonp;
 
     private final String ifNoneMatch;
 
@@ -86,7 +86,7 @@ public final class SearchRequest {
         this.debug = query.optBoolean("debug", false);
         this.include_docs = query.optBoolean("include_docs", false);
         this.rewrite_query = query.optBoolean("rewrite", false);
-        this.callback = query.optString("callback");
+        this.jsonp = query.optString("jsonp");
 
         // Parse query.
         this.q = Config.QP.parse(query.getString("q"));
@@ -255,8 +255,8 @@ public final class SearchRequest {
             headers.put("Content-Type", "text/plain");
             result.put("body", escape(json.toString(2)));
         } else {
-            if (callback != null)
-                result.put("json", String.format("%s(%s)", callback, json));
+            if (jsonp != null)
+                result.put("json", String.format("%s(%s)", jsonp, json));
             else
                 result.put("json", json);
         }
