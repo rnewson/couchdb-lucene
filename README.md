@@ -262,7 +262,7 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 <dt>stale=ok</dt><dd>If you set the <i>stale</i> option to <i>ok</i>, couchdb-lucene may not perform any refreshing on the index. Searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will use the latest data committed to the index.</dd>
 <dt>debug</dt><dd>if false, a normal application/json response with results appears. if true, an pretty-printed HTML blob is returned instead.</dd>
 <dt>rewrite</dt><dd>(EXPERT) if true, returns a json response with a rewritten query and term frequencies. This allows correct distributed scoring when combining the results from multiple nodes.</dd>
-<dt>jsonp</dt><dd>Specify a JSONP wrapper. The full JSON result will be prepended with this parameter and also placed with parentheses."
+<dt>callback</dt><dd>Specify a JSONP callback wrapper. The full JSON result will be prepended with this parameter and also placed with parentheses."
 </dl>
 
 <i>All parameters except 'q' are optional.</i>
