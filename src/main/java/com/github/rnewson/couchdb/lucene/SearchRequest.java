@@ -68,6 +68,8 @@ public final class SearchRequest {
 
     private final boolean rewrite_query;
 
+    private final String jsonp;
+
     private final String ifNoneMatch;
 
     public SearchRequest(final JSONObject obj, final String viewsig) throws ParseException {
@@ -84,6 +86,7 @@ public final class SearchRequest {
         this.debug = query.optBoolean("debug", false);
         this.include_docs = query.optBoolean("include_docs", false);
         this.rewrite_query = query.optBoolean("rewrite", false);
+        this.jsonp = query.optString("jsonp");
 
         // Parse query.
         this.q = Config.QP.parse(query.getString("q"));
@@ -252,7 +255,10 @@ public final class SearchRequest {
             headers.put("Content-Type", "text/plain");
             result.put("body", escape(json.toString(2)));
         } else {
-            result.put("json", json);
+            if (jsonp != null)
+                result.put("json", String.format("%s(%s)", jsonp, json));
+            else
+                result.put("json", json);
         }
 
         // Include headers.
