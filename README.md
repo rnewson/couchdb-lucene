@@ -37,7 +37,7 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h2>Document Indexing</h2>
 
-You must supply a index function in order to enable couchdb-lucene as, by default, nothing will be indexed.
+You must supply a index function in order to enable couchdb-lucene as, by default, nothing will be indexed. To suppress a document from the index, return null. It's more typical to return a single Document object which contains everything you'd like to query and retrieve. You may also return an array of Document objects if you wish.
 
 You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by the index functions.
 
