@@ -252,7 +252,7 @@ public final class SearchRequest {
         headers.put("ETag", etag);
 
         if (debug) {
-            headers.put("Content-Type", "text/plain");
+            headers.put("Content-Type", "text/plain;charset=utf-8");
             result.put("body", escape(json.toString(2)));
         } else {
             if (callback != null)
