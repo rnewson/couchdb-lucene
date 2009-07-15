@@ -86,7 +86,7 @@ public final class SearchRequest {
         this.debug = query.optBoolean("debug", false);
         this.include_docs = query.optBoolean("include_docs", false);
         this.rewrite_query = query.optBoolean("rewrite", false);
-        this.callback = query.optString("callback");
+        this.callback = query.optString("callback", null);
 
         // Parse query.
         this.q = Config.QP.parse(query.getString("q"));
