@@ -287,6 +287,10 @@ public final class Index {
                             docs[j].add(token(Config.DB, dbname, false));
                             docs[j].add(token(Config.VIEW, viewname, false));
                             docs[j].add(token(Config.ID, docid, true));
+                            
+                            if (Utils.LOG.isTraceEnabled()) {
+                                Utils.LOG.trace("Adding " + docs[j]);
+                            }
                             writer.addDocument(docs[j], analyzer);
                         }
 
