@@ -1,20 +1,15 @@
-Indexing
+0.4 
+--------------
 
-* handle "language" option
-* test some more.
-* allow indexing of views.
-* all configurable commit.every setting so that a full re-index makes progress if interrupted.
+* add "analyzer":simple|standard|french|etc to index object and allow as query parameter.
+* JSONP support.
 
-Performance
 
-* Allow customization of mf/mmb/optimize.
-* configurable prewarming (especially for sorting).
+0.5 WORK
 
-Error Handling
+* NumericField, NumericRangeQuery with Lucene 2.9.
 
-* 
-
-Features
+UNSCHEDULED
 
 * LuceneDictionary/spellcheck/suggestions mode.
 * _show and _list-like support for search results.
