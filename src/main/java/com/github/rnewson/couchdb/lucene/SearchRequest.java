@@ -247,6 +247,9 @@ public final class SearchRequest {
         result.put("code", 200);
 
         final JSONObject headers = new JSONObject();
+        // Allow viewing in browser.
+		headers.put("Content-Type", "text/plain;charset=utf-8");
+		// Allow short-term caching.
         headers.put("Cache-Control", "max-age=" + Config.COMMIT_MAX / 1000);
         // Results can't change unless the IndexReader does.
         headers.put("ETag", etag);
@@ -254,12 +257,10 @@ public final class SearchRequest {
         if (debug) {
             headers.put("Content-Type", "text/plain;charset=utf-8");
             result.put("body", escape(json.toString(2)));
-        } else {
-            if (callback != null)
-                result.put("json", String.format("%s(%s)", callback, json));
-            else
-                result.put("json", json);
-        }
+        } else if (callback != null)
+        	result.put("body", String.format("%s(%s)", callback, json));
+        else	
+        	result.put("json", json);        
 
         // Include headers.
         result.put("headers", headers);
