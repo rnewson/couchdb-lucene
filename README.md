@@ -281,7 +281,7 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 <dl>
 <dt>analyzer</dt><dd>The analyzer used to convert the query string into a query object.
 <dt>callback</dt><dd>Specify a JSONP callback wrapper. The full JSON result will be prepended with this parameter and also placed with parentheses."
-<dt>debug</dt><dd>if false, a normal response with results appears. if true, an pretty-printed HTML blob is returned instead.</dd>
+<dt>debug</dt><dd>Setting this to true disables response caching (the query is executed every time) and indents the JSON response for readability.</dd>
 <dt>include_docs</dt><dd>whether to include the source docs</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>
 <dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>
