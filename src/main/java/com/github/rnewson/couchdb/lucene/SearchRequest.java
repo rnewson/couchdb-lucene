@@ -72,6 +72,8 @@ public final class SearchRequest {
 
     private final String ifNoneMatch;
 
+	private final String contentType;
+
     public SearchRequest(final JSONObject obj, final String viewsig) throws ParseException {
         final JSONObject headers = obj.getJSONObject("headers");
         final JSONObject query = obj.getJSONObject("query");
@@ -87,6 +89,13 @@ public final class SearchRequest {
         this.include_docs = query.optBoolean("include_docs", false);
         this.rewrite_query = query.optBoolean("rewrite", false);
         this.callback = query.optString("callback", null);
+
+        // Negotiate Content-Type of response.
+        if (headers.optString("Accept").indexOf("application/json") != -1) {
+        	this.contentType = "application/json";
+        } else {
+        	this.contentType = "text/plain;charset=utf-8";
+        }
 
         // Parse query.
         this.q = Config.QP.parse(query.getString("q"));
@@ -247,8 +256,7 @@ public final class SearchRequest {
         result.put("code", 200);
 
         final JSONObject headers = new JSONObject();
-        // Allow viewing in browser.
-		headers.put("Content-Type", "text/plain;charset=utf-8");
+		headers.put("Content-Type", contentType);
 		// Allow short-term caching.
         headers.put("Cache-Control", "max-age=" + Config.COMMIT_MAX / 1000);
         // Results can't change unless the IndexReader does.
