@@ -26,10 +26,13 @@ import java.util.Set;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryParser.QueryParser.Operator;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
@@ -98,7 +101,12 @@ public final class SearchRequest {
         }
 
         // Parse query.
-        this.q = Config.QP.parse(query.getString("q"));
+        final Analyzer analyzer = AnalyzerCache.getAnalyzer(query.optString("analyzer", "standard"));
+        final QueryParser parser = new QueryParser(Config.DEFAULT_FIELD, analyzer);
+        if ("AND".equalsIgnoreCase(Config.DEFAULT_OPERATOR)) {
+        	parser.setDefaultOperator(Operator.AND);
+        }
+        this.q = parser.parse(query.getString("q"));
 
         // Filter out items from other views.
         final TermsFilter filter = new TermsFilter();

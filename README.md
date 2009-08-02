@@ -74,8 +74,10 @@ http://localhost:5984/database/_fti/lucene/by_content?q=hello
 A fulltext object contains multiple index view declarations. An index view consists of;
 
 <dl>
-<dt>defaults</dt><dd>The default for numerous indexing options can be overridden here. A full list of options follows.</dd>
+<dt>analyzer</dt><dd>(optional) The analyzer to use</dd>
+<dt>defaults</dt><dd>(optional) The default for numerous indexing options can be overridden here. A full list of options follows.</dd>
 <dt>index</dt><dd>The indexing function itself, documented below.</dd>
+</dl>
 
 <h3>The Defaults Object</h3>
 
@@ -107,6 +109,29 @@ The following indexing options can be defaulted;
     <td>analyzed</td>
   </tr>	
 </table>
+
+<h3>The Analyzer Option</h3>
+
+Lucene has numerous ways of converting free-form text into tokens, these classes are called Analyzer's. By default, the StandardAnalyzer is used which lower-cases all text, drops common English words ("the", "and", and so on), among other things. This processing might not always suit you, so you can choose from several others by setting the "analyzer" field to one of the following values;
+
+<ul>
+<li>brazilian</li>
+<li>chinese</li>
+<li>cjk</li>
+<li>czech</li>
+<li>dutch</li>
+<li>english</li>
+<li>french</li>
+<li>german</li>
+<li>keyword</li>
+<li>porter</li>
+<li>russian</li>
+<li>simple</li>
+<li>standard</li>
+<li>thai</li>
+</ul>
+
+Note: You must also supply analyzer=<analyzer_name> as a query parameter to ensure that queries are processed correctly.
 
 <h3>The Document class</h3>
 
@@ -233,20 +258,20 @@ Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to 
 
 <ul>
 <li>Excel spreadsheets (application/vnd.ms-excel)
-<li>Word documents (application/msword)
-<li>Powerpoint presentations (application/vnd.ms-powerpoint)
-<li>Visio (application/vnd.visio)
-<li>Outlook (application/vnd.ms-outlook)
-<li>XML (application/xml)
 <li>HTML (text/html)
 <li>Images (image/*)
 <li>Java class files
 <li>Java jar archives
 <li>MP3 (audio/mp3)
 <li>OpenDocument (application/vnd.oasis.opendocument.*)
-<li>Plain text (text/plain)
+<li>Outlook (application/vnd.ms-outlook)
 <li>PDF (application/pdf)
+<li>Plain text (text/plain)
+<li>Powerpoint presentations (application/vnd.ms-powerpoint)
 <li>RTF (application/rtf)
+<li>Visio (application/vnd.visio)
+<li>Word documents (application/msword)
+<li>XML (application/xml)
 </ul>
 
 <h1>Searching with couchdb-lucene</h1>
@@ -254,15 +279,16 @@ Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to 
 You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>. The _body field is searched by default which will include the extracted text from all attachments. The following parameters can be passed for more sophisticated searches;
 
 <dl>
-<dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>
-<dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).</dd>
-<dt>limit</dt><dd>the maximum number of results to return</dd>
-<dt>skip</dt><dd>the number of results to skip</dd>
-<dt>include_docs</dt><dd>whether to include the source docs</dd>
-<dt>stale=ok</dt><dd>If you set the <i>stale</i> option to <i>ok</i>, couchdb-lucene may not perform any refreshing on the index. Searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will use the latest data committed to the index.</dd>
-<dt>debug</dt><dd>if false, a normal response with results appears. if true, an pretty-printed HTML blob is returned instead.</dd>
-<dt>rewrite</dt><dd>(EXPERT) if true, returns a json response with a rewritten query and term frequencies. This allows correct distributed scoring when combining the results from multiple nodes.</dd>
+<dt>analyzer</dt><dd>The analyzer used to convert the query string into a query object.
 <dt>callback</dt><dd>Specify a JSONP callback wrapper. The full JSON result will be prepended with this parameter and also placed with parentheses."
+<dt>debug</dt><dd>if false, a normal response with results appears. if true, an pretty-printed HTML blob is returned instead.</dd>
+<dt>include_docs</dt><dd>whether to include the source docs</dd>
+<dt>limit</dt><dd>the maximum number of results to return</dd>
+<dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>
+<dt>rewrite</dt><dd>(EXPERT) if true, returns a json response with a rewritten query and term frequencies. This allows correct distributed scoring when combining the results from multiple nodes.</dd>
+<dt>skip</dt><dd>the number of results to skip</dd>
+<dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).</dd>
+<dt>stale=ok</dt><dd>If you set the <i>stale</i> option to <i>ok</i>, couchdb-lucene may not perform any refreshing on the index. Searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will use the latest data committed to the index.</dd>
 </dl>
 
 <i>All parameters except 'q' are optional.</i>
@@ -310,14 +336,14 @@ http://localhost:5984/dbname/_fti/design_doc/view_name?debug=true&sort=billing_s
 The search result contains a number of fields at the top level, in addition to your search results.
 
 <dl>
-<dt>q</dt><dd>The query that was executed.</dd>
 <dt>etag</dt><dd>An opaque token that reflects the current version of the index. This value is also returned in an ETag header to facilitate HTTP caching.</dd>
-<dt>skip</dt><dd>The number of initial matches that was skipped.</dd>
-<dt>limit</dt><dd>The maximum number of results that can appear.</dd>
-<dt>total_rows</dt><dd>The total number of matches for this query.</dd>
-<dt>search_duration</dt><dd>The number of milliseconds spent performing the search.</dd>
 <dt>fetch_duration</dt><dd>The number of milliseconds spent retrieving the documents.</dd>
+<dt>limit</dt><dd>The maximum number of results that can appear.</dd>
+<dt>q</dt><dd>The query that was executed.</dd>
 <dt>rows</dt><dd>The search results array, described below.</dd>
+<dt>search_duration</dt><dd>The number of milliseconds spent performing the search.</dd>
+<dt>skip</dt><dd>The number of initial matches that was skipped.</dd>
+<dt>total_rows</dt><dd>The total number of matches for this query.</dd>
 </dl>
 
 <h2>The search results array</h2>
@@ -325,10 +351,10 @@ The search result contains a number of fields at the top level, in addition to y
 The search results arrays consists of zero, one or more objects with the following fields;
 
 <dl>
+<dt>doc</dt><dd>The original document from couch, if requested with include_docs=true</dd>
+<dt>fields</dt><dd>All the fields that were stored with this match</dd>
 <dt>id</dt><dd>The unique identifier for this match.</dd>
 <dt>score</dt><dd>The normalized score (0.0-1.0, inclusive) for this match</dd>
-<dt>fields</dt><dd>All the fields that were stored with this match</dd>
-<dt>doc</dt><dd>The original document from couch, if requested with include_docs=true</dd>
 </dl>
 
 Here's an example of a JSON response without sorting;
@@ -438,10 +464,10 @@ You will need to restart CouchDB if you change couchdb-lucene source code but th
 couchdb-lucene respects several system properties;
 
 <dl>
-<dt>couchdb.url</dt><dd>the url to contact CouchDB with (default is "http://localhost:5984")</dd>
-<dt>couchdb.lucene.dir</dt><dd>specify the path to the lucene indexes (the default is to make a directory called 'lucene' relative to couchdb's current working directory.</dd>
 <dt>couchdb.log.dir</dt><dd>specify the directory of the log file (which is called couchdb-lucene.log), defaults to the platform-specific temp directory.</dd>
+<dt>couchdb.lucene.dir</dt><dd>specify the path to the lucene indexes (the default is to make a directory called 'lucene' relative to couchdb's current working directory.</dd>
 <dt>couchdb.lucene.operator<dt><dd>specify the default boolean operator for queries. If not specified, the default is "OR". You can specify either "OR" or "AND".</dd>
+<dt>couchdb.url</dt><dd>the url to contact CouchDB with (default is "http://localhost:5984")</dd>
 </dl>
 
 You can override these properties like this;
@@ -458,8 +484,8 @@ com.github.rnewson.couchdb.lucene.Main
 If you put couchdb behind an authenticating proxy you can still configure couchdb-lucene to pull from it by specifying additional system properties. Currently only Basic authentication is supported.
 
 <dl>
-<dt>couchdb.user</dt><dd>the user to authenticate as.</dd>
 <dt>couchdb.password</dt><dd>the password to authenticate with.</dd>
+<dt>couchdb.user</dt><dd>the user to authenticate as.</dd>
 </dl>
 
 <h2>IPv6</h2>

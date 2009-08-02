@@ -55,7 +55,7 @@ public final class AnalyzerCache {
                 return new DutchAnalyzer();
             }
         },
-        EN {
+        ENGLISH {
             @Override
             public Analyzer newAnalyzer() {
                 return new StandardAnalyzer();

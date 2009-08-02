@@ -18,8 +18,6 @@ package com.github.rnewson.couchdb.lucene;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.queryParser.QueryParser.Operator;
 
 final class Config {
 
@@ -28,19 +26,6 @@ final class Config {
     static final String DEFAULT_FIELD = "default";
 
     static final String DEFAULT_OPERATOR = System.getProperty("couchdb.lucene.operator", "OR");
-
-    static final QueryParser QP = new QueryParser(DEFAULT_FIELD, ANALYZER);
-
-    static {
-        if ("OR".equalsIgnoreCase(DEFAULT_OPERATOR)) {
-            QP.setDefaultOperator(Operator.OR);
-        } else if ("AND".equalsIgnoreCase(DEFAULT_OPERATOR)) {
-            QP.setDefaultOperator(Operator.AND);
-        } else {
-            Utils.LOG.warn("Unrecognized value '" + DEFAULT_OPERATOR
-                    + "' for couchdb.lucene.operator, ignoring setting.");
-        }
-    }
 
     static final String DB = "_db";
 
