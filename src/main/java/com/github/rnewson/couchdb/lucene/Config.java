@@ -51,8 +51,6 @@ final class Config {
 
     static final String DB_PASSWORD = System.getProperty("couchdb.password");
 
-    static final int MAX_LIMIT = Integer.getInteger("couchdb.lucene.max_fetch", 250);
-
     static final int COMMIT_MIN = Integer.getInteger("couchdb.lucene.commit.min", 5 * 1000);
 
     static final int COMMIT_MAX = Integer.getInteger("couchdb.lucene.commit.max", 5 * 60 * 1000);

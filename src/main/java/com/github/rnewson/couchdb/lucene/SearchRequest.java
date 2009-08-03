@@ -92,7 +92,7 @@ public final class SearchRequest {
         this.include_docs = query.optBoolean("include_docs", false);
         this.rewrite_query = query.optBoolean("rewrite", false);
         this.callback = query.optString("callback", null);
-
+        
         // Negotiate Content-Type of response.
         if (headers.optString("Accept").indexOf("application/json") != -1) {
         	this.contentType = "application/json";
@@ -145,10 +145,6 @@ public final class SearchRequest {
     }
 
     public String execute(final IndexSearcher searcher) throws IOException {
-        // Decline requests over MAX_LIMIT.
-        if (limit > Config.MAX_LIMIT) {
-            return "{\"code\":400,\"body\":\"max limit was exceeded.\"}";
-        }
         // Return "304 - Not Modified" if etag matches.
         final String etag = getETag(searcher);
         if (!debug && etag.equals(this.ifNoneMatch)) {
