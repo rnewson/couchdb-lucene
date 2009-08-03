@@ -39,7 +39,6 @@ import org.apache.lucene.store.NIOFSDirectory;
 public final class Search {
 
     private static final Progress progress = new Progress();
-    private static final Set<String> validViews = new HashSet<String>();
 
     public static void main(final String[] args) {
         Utils.LOG.info("searcher started.");
@@ -116,7 +115,7 @@ public final class Search {
 
                         final String viewname = Utils.viewname(path);
 
-                        if (!validViews.contains(viewname)) {
+                        if (progress.getSeq(viewname) == 0) {
                             Utils.out(Utils.error(400, viewname + " is not a valid view."));
                         }
 
@@ -177,27 +176,7 @@ public final class Search {
         return result;
     }
 
-    private static void getValidViews(final IndexReader reader, final Set<String> out) throws IOException {
-        out.clear();
-        final TermEnum terms = reader.terms(new Term(Config.VIEW));
-        try {
-            do {
-                final Term term = terms.term();
-                if (term == null || !Config.VIEW.equals(term.field())) {
-                    break;
-                }
-                out.add(term.text());
-            } while (terms.next());
-        } finally {
-            terms.close();
-        }
-    }
-
     private static void onNewReader(final IndexReader reader) throws IOException {
-        // Remember list of valid views.
-        getValidViews(reader, validViews);
-        
-        // Remember signatures of views.
         progress.load(reader);
     }
 
