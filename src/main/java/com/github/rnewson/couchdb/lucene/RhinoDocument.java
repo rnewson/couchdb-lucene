@@ -29,7 +29,6 @@ import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
@@ -111,28 +110,20 @@ public final class RhinoDocument extends ScriptableObject {
             index = optString(obj, "index", index);
         }
 
-        // A standard field?
-        if (args[0] instanceof String || args[0] instanceof Integer || args[0] instanceof Double
-                || args[0] instanceof Boolean) {
-            doc.add(new Field(field, args[0].toString(), Store.get(store), Index.get(index)));
-            return;
-        }
+        final Object obj = Conversion.convert(args[0]);
 
-        // Is it a date?
-        try {
-            final Date date = (Date) Context.jsToJava(args[0], Date.class);
-
+        if (obj instanceof Date) {
             // Special indexed form.
-            doc.add(new Field(field, Long.toString(date.getTime()), Field.Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
+            doc.add(new Field(field, Long.toString(((Date) obj).getTime()), Field.Store.NO,
+                    Field.Index.NOT_ANALYZED_NO_NORMS));
 
             // Store in ISO8601 format, if requested.
             if ("yes".equals(store)) {
-                final String asString = DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format(date);
+                final String asString = DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format(obj);
                 doc.add(new Field(field, asString, Field.Store.YES, Field.Index.NO));
             }
-            return;
-        } catch (final EvaluatorException e) {
-            // Wasn't a date.
+        } else {
+            doc.add(new Field(field, obj.toString(), Store.get(store), Index.get(index)));
         }
     }
 
