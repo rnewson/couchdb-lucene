@@ -282,6 +282,7 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 <dt>analyzer</dt><dd>The analyzer used to convert the query string into a query object.
 <dt>callback</dt><dd>Specify a JSONP callback wrapper. The full JSON result will be prepended with this parameter and also placed with parentheses."
 <dt>debug</dt><dd>Setting this to true disables response caching (the query is executed every time) and indents the JSON response for readability.</dd>
+<dt>force_json<dt><dd>Usually couchdb-lucene determines the Content-Type of its response based on the presence of the Accept header. If Accept contains "application/json", you get "application/json" in the response, otherwise you get "text/plain;charset=utf8". Some tools, like JSONView for FireFox, do not send the Accept header but do render "application/json" responses if received. Setting force_json=true forces all response to "application/json" regardless of the Accept header.</dd>
 <dt>include_docs</dt><dd>whether to include the source docs</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>
 <dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>

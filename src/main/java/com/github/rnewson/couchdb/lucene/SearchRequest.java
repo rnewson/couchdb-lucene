@@ -75,7 +75,7 @@ public final class SearchRequest {
 
     private final String ifNoneMatch;
 
-	private final String contentType;
+    private final String contentType;
 
     public SearchRequest(final JSONObject obj, final String viewsig) throws ParseException {
         final JSONObject headers = obj.getJSONObject("headers");
@@ -92,19 +92,19 @@ public final class SearchRequest {
         this.include_docs = query.optBoolean("include_docs", false);
         this.rewrite_query = query.optBoolean("rewrite", false);
         this.callback = query.optString("callback", null);
-        
+
         // Negotiate Content-Type of response.
-        if (headers.optString("Accept").indexOf("application/json") != -1) {
-        	this.contentType = "application/json";
+        if (query.optBoolean("force_json", false) || headers.optString("Accept").indexOf("application/json") != -1) {
+            this.contentType = "application/json";
         } else {
-        	this.contentType = "text/plain;charset=utf-8";
+            this.contentType = "text/plain;charset=utf-8";
         }
 
         // Parse query.
         final Analyzer analyzer = AnalyzerCache.getAnalyzer(query.optString("analyzer", "standard"));
         final QueryParser parser = new QueryParser(Config.DEFAULT_FIELD, analyzer);
         if ("AND".equalsIgnoreCase(Config.DEFAULT_OPERATOR)) {
-        	parser.setDefaultOperator(Operator.AND);
+            parser.setDefaultOperator(Operator.AND);
         }
         this.q = parser.parse(query.getString("q"));
 
@@ -260,8 +260,8 @@ public final class SearchRequest {
         result.put("code", 200);
 
         final JSONObject headers = new JSONObject();
-		headers.put("Content-Type", contentType);
-		// Allow short-term caching.
+        headers.put("Content-Type", contentType);
+        // Allow short-term caching.
         headers.put("Cache-Control", "max-age=" + Config.COMMIT_MAX / 1000);
         // Results can't change unless the IndexReader does.
         headers.put("ETag", etag);
@@ -270,9 +270,9 @@ public final class SearchRequest {
             headers.put("Content-Type", "text/plain;charset=utf-8");
             result.put("body", escape(json.toString(2)));
         } else if (callback != null)
-        	result.put("body", String.format("%s(%s)", callback, json));
-        else	
-        	result.put("json", json);        
+            result.put("body", String.format("%s(%s)", callback, json));
+        else
+            result.put("json", json);
 
         // Include headers.
         result.put("headers", headers);
