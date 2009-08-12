@@ -1,8 +1,8 @@
-0.4 
+0.4
 --------------
 
-* add "analyzer":simple|standard|french|etc to index object and allow as query parameter.
-* JSONP support.
+* add "analyzer":simple|standard|french|etc to index object and allow as query parameter - done
+* JSONP support - done
 
 
 0.5 WORK
