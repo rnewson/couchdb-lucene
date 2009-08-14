@@ -262,7 +262,7 @@ public final class SearchRequest {
         final JSONObject headers = new JSONObject();
         headers.put("Content-Type", contentType);
         // Allow short-term caching.
-        headers.put("Cache-Control", "max-age=" + Config.COMMIT_MAX / 1000);
+        headers.put("Cache-Control", "max-age=" + Config.COMMIT_MIN / 1000);
         // Results can't change unless the IndexReader does.
         headers.put("ETag", etag);
 
