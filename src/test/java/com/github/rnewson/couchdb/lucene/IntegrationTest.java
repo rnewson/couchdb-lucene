@@ -5,12 +5,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assume.assumeTrue;
 
-import java.io.File;
 import java.io.IOException;
 
 import net.sf.json.JSONObject;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,9 +28,6 @@ public class IntegrationTest {
 
     @Before
     public void setup() throws IOException, InterruptedException {
-        final File dir = new File("target/output");
-        FileUtils.cleanDirectory(dir);
-        System.setProperty("couchdb.lucene.dir", dir.getAbsolutePath());
         db = new Database(base);
         try {
             db.deleteDatabase(dbname);
@@ -44,7 +39,7 @@ public class IntegrationTest {
 
     @After
     public void teardown() throws IOException {
-        // db.deleteDatabase(dbname);
+        db.deleteDatabase(dbname);
     }
 
     @Test
@@ -54,10 +49,14 @@ public class IntegrationTest {
         for (int i = 0; i < 50; i++) {
             assertThat(db.saveDocument(dbname, "doc-" + i, "{\"content\":\"hello\"}"), is(true));
         }
-        SECONDS.sleep(5);
+
+        SECONDS.sleep(6);
 
         final JSONObject indexState = db.getDoc(dbname, "_fti");
         assertThat(indexState.getInt("doc_count"), is(51));
+
+        final JSONObject queryResult = db.getDoc(dbname, "/_fti/lucene/idx?q=hello");
+        assertThat(queryResult.getInt("total_rows"), is(50));
     }
 
 }
