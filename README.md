@@ -4,7 +4,7 @@ Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">gith
 
 <h1>System Requirements</h1>
 
-Sun JDK 5 or higher is recommended. 
+Sun JDK 5 or higher is recommended.
 
 Couchdb-lucene is known to be incompatible with some versions of OpenJDK as it includes an earlier, and incompatible, version of the Rhino Javascript library. The version in Ubuntu 8.10 (6b12-0ubuntu6.4) is known to work and it uses Rhino 1.7R1.
 
@@ -24,10 +24,10 @@ Couchdb-lucene is known to be incompatible with some versions of OpenJDK as it i
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
 
 [external]
-fti=/usr/bin/java -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -search
+fti=/usr/bin/java -server -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -search
 
 [update_notification]
-indexer=/usr/bin/java -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -index
+indexer=/usr/bin/java -server -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -index
 
 [httpd_db_handlers]
 _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
@@ -454,7 +454,7 @@ returns;
 To develop "live", type "mvn dependency:unpack-dependencies" and change the external line to something like this;
 
 <pre>
-fti=/usr/bin/java -cp /path/to/couchdb-lucene/target/classes:\
+fti=/usr/bin/java -server -cp /path/to/couchdb-lucene/target/classes:\
 /path/to/couchdb-lucene/target/dependency com.github.rnewson.couchdb.lucene.Main
 </pre>
 
