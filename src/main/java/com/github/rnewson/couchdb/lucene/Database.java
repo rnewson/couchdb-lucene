@@ -169,7 +169,7 @@ public final class Database {
         try {
             final int sc = CLIENT.executeMethod(method);
             if (sc < 200 || sc > 299) {
-                throw new HttpException("Unexpected status code: " + sc);
+                throw new HttpException("Unexpected status code: " + sc + ": " + method.getStatusText());
             }
             final InputStream in = method.getResponseBodyAsStream();
             try {
