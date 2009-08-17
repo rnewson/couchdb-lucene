@@ -32,8 +32,10 @@ import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.io.IOUtils;
 
@@ -72,27 +74,39 @@ public final class Database {
         return (String[]) JSONArray.fromObject(get("_all_dbs")).toArray(EMPTY_ARR);
     }
 
-    public JSONObject getAllDocsBySeq(final String dbname, final long startkey) throws HttpException, IOException {
+    public JSONObject getAllDocsBySeq(final String dbname, final long startkey) throws IOException {
         return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%s&include_docs=true",
                 encode(dbname), startkey)));
     }
 
-    public JSONObject getAllDocs(final String dbname, final String startkey, final String endkey) throws HttpException, IOException {
-        return JSONObject.fromObject(get(String.format("%s/_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true",
-                encode(dbname), encode(startkey), encode(endkey))));
+    public boolean createDatabase(final String dbname) throws IOException {
+        return put(encode(dbname), null) == 201;
     }
 
-    public JSONObject getAllDocsBySeq(final String dbname, final long startkey, final int limit) throws HttpException,
-            IOException {
+    public boolean deleteDatabase(final String dbname) throws IOException {
+        return delete(encode(dbname)) == 201;
+    }
+
+    public boolean saveDocument(final String dbname, final String id, final String body) throws IOException {
+        return put(String.format("%s/%s", encode(dbname), id), body) == 201;
+    }
+
+    public JSONObject getAllDocs(final String dbname, final String startkey, final String endkey) throws IOException {
+        return JSONObject.fromObject(get(String.format(
+                "%s/_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true", encode(dbname),
+                encode(startkey), encode(endkey))));
+    }
+
+    public JSONObject getAllDocsBySeq(final String dbname, final long startkey, final int limit) throws IOException {
         return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%d&limit=%d&include_docs=true",
                 encode(dbname), startkey, limit)));
     }
 
-    public JSONObject getDoc(final String dbname, final String id) throws HttpException, IOException {
+    public JSONObject getDoc(final String dbname, final String id) throws IOException {
         return JSONObject.fromObject(get(String.format("%s/%s", encode(dbname), id)));
     }
 
-    public JSONObject getDocs(final String dbname, final String... ids) throws HttpException, IOException {
+    public JSONObject getDocs(final String dbname, final String... ids) throws IOException {
         final JSONArray keys = new JSONArray();
         for (final String id : ids) {
             keys.add(id);
@@ -104,11 +118,11 @@ public final class Database {
                 .toString()));
     }
 
-    public JSONObject getInfo(final String dbname) throws HttpException, IOException {
+    public JSONObject getInfo(final String dbname) throws IOException {
         return JSONObject.fromObject(get(encode(dbname)));
     }
 
-    private String get(final String path) throws HttpException, IOException {
+    private String get(final String path) throws IOException {
         return execute(new GetMethod(url(path)));
     }
 
@@ -124,18 +138,38 @@ public final class Database {
         }
     }
 
-    private String post(final String path, final String body) throws HttpException, IOException {
+    private String post(final String path, final String body) throws IOException {
         final PostMethod post = new PostMethod(url(path));
         post.setRequestEntity(new StringRequestEntity(body, "application/json", "UTF-8"));
         return execute(post);
     }
 
-    private synchronized String execute(final HttpMethodBase method) throws HttpException, IOException {
+    private int put(final String path, final String body) throws IOException {
+        final PutMethod method = new PutMethod(url(path));
+        if (body != null) {
+            method.setRequestEntity(new StringRequestEntity(body, "application/json", "UTF-8"));
+        }
         try {
+            return CLIENT.executeMethod(method);
+        } finally {
+            method.releaseConnection();
+        }
+    }
 
+    private int delete(final String path) throws IOException {
+        final DeleteMethod method = new DeleteMethod(url(path));
+        try {
+            return CLIENT.executeMethod(method);
+        } finally {
+            method.releaseConnection();
+        }
+    }
+
+    private String execute(final HttpMethodBase method) throws IOException {
+        try {
             final int sc = CLIENT.executeMethod(method);
-            if (sc == 401) {
-                throw new HttpException("Unauthorized.");
+            if (sc < 200 || sc > 299) {
+                throw new HttpException("Unexpected status code: " + sc);
             }
             final InputStream in = method.getResponseBodyAsStream();
             try {

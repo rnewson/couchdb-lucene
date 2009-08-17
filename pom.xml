@@ -67,8 +67,8 @@
     </dependency>
   </dependencies>
   <issueManagement>
-    <system>lighthouseapp</system>
-    <url>http://rnewson.lighthouseapp.com/projects/27420-couchdb-lucene/tickets</url>
+    <system>github</system>
+    <url>http://github.com/rnewson/couchdb-lucene/issues</url>
   </issueManagement>
   <scm>
     <connection>scm:git:git://github.com/rnewson/couchdb-lucene.git</connection>
