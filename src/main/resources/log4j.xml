@@ -16,8 +16,11 @@
 			<param name="ConversionPattern" value="%d [%c] %p %m%n" />
 		</layout>
 	</appender>
+	<category name="com.github.rnewson">
+    	<priority value="INFO"/>
+    </category>
 	<root>
-		<priority value="INFO" />
+		<priority value="WARN" />
 		<appender-ref ref="console" />
 		<appender-ref ref="file" />
 	</root>
