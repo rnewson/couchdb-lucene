@@ -1,13 +1,13 @@
-0.4
---------------
+0.5
+----------------------
 
-* add "analyzer":simple|standard|french|etc to index object and allow as query parameter - done
-* JSONP support - done
-
-
-0.5 WORK
-
-* NumericField, NumericRangeQuery with Lucene 2.9.
+* Lucene 2.9.
+** numeric range suppport.
+* use _local/lucene for recording progress.
+* use _changes for tracking updates.
+* provide start/stop scripts for indexing.
+* allow separate indexes per db (to avoid inter-db pollution)?
+* A general refactoring of the codebase.
 
 UNSCHEDULED
 
