@@ -4,7 +4,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
 
@@ -22,22 +21,30 @@ import org.junit.Test;
  */
 public class IntegrationTest {
 
-    private final String base = "http://localhost:5984/";
-    private final String dbname = "lucenetestdb";
+    private static final String base = "http://localhost:5984/";
+    private static final String dbname = "lucenetestdb";
 
-    private Database db;
+    private static final Database db = new Database(base);
+
+    private static boolean enabled = false;
+
+    static {
+        try {
+            db.deleteDatabase(dbname);
+            enabled = true;
+        } catch (final IOException e) {
+            // Ignored.
+            System.out.println("couchdb is not running, integration testing was skipped.");
+        }
+    }
 
     @Before
     public void setup() throws IOException, InterruptedException {
-        db = new Database(base);
-        try {
-            db.deleteDatabase(dbname);
-            SECONDS.sleep(6);
-            db.createDatabase(dbname);
-        } catch (final IOException e) {
-            // Bail here if couch isn't running.
-            assumeTrue(false);
-        }
+        if (!enabled)
+            return;
+
+        SECONDS.sleep(6);
+        db.createDatabase(dbname);
 
         final String ddoc = "{\"fulltext\": {\"idx\": {\"index\":\"function(doc) {var ret=new Document(); ret.add(doc.content); return ret;}\"}}}";
         assertThat(db.saveDocument(dbname, "_design/lucene", ddoc), is(true));
@@ -45,16 +52,21 @@ public class IntegrationTest {
 
     @After
     public void teardown() throws IOException {
+        if (!enabled)
+            return;
         db.deleteDatabase(dbname);
     }
 
     @Test
     public void index() throws IOException, InterruptedException {
+        if (!enabled)
+            return;
+
         for (int i = 0; i < 50; i++) {
             assertThat(db.saveDocument(dbname, "doc-" + i, "{\"content\":\"hello\"}"), is(true));
         }
 
-        SECONDS.sleep(6);
+        SECONDS.sleep(10);
 
         final JSONObject indexState = db.getDoc(dbname, "_fti");
         assertThat(indexState.getInt("doc_count"), is(51));
@@ -65,6 +77,9 @@ public class IntegrationTest {
 
     @Test
     public void longIndex() throws IOException, InterruptedException {
+        if (!enabled)
+            return;
+
         for (int i = 0; i < 20; i++) {
             assertThat(db.saveDocument(dbname, "doc-" + i, "{\"content\":\"hello\"}"), is(true));
             MILLISECONDS.sleep(500);
