@@ -45,7 +45,7 @@ Here's an complete example of a design document with couchdb-lucene features:
 
 <pre>
 {
-    "_id":"lucene",
+    "_id":"_design/a_design_document_with_any_name_you_like",
     "fulltext": {
         "by_subject": {
             "defaults": { "store":"yes" },
