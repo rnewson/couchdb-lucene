@@ -30,11 +30,14 @@ public class IntegrationTest {
 
     static {
         try {
+            // Is couchdb running?
             db.deleteDatabase(dbname);
+            // Is couchdb-lucene hooked up?
+            db.getDoc(dbname, "_fti");
             enabled = true;
         } catch (final IOException e) {
             // Ignored.
-            System.out.println("couchdb is not running, integration testing was skipped.");
+            System.out.println("couchdb is not running or couchdb-lucene is not configured, integration testing was skipped.");
         }
     }
 
