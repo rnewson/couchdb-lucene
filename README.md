@@ -46,11 +46,6 @@ Here's an complete example of a design document with couchdb-lucene features:
 <pre>
 {
     "_id":"lucene",
-    "views": {
-        "normal_couch_view": {
-            "map": "function(){}"
-        }
-    },
     "fulltext": {
         "by_subject": {
             "defaults": { "store":"yes" },
