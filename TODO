@@ -8,6 +8,7 @@
 * provide start/stop scripts for indexing.
 * allow separate indexes per db (to avoid inter-db pollution)?
 * A general refactoring of the codebase.
+* make attachment call support "store":"yes|no"
 
 UNSCHEDULED
 
