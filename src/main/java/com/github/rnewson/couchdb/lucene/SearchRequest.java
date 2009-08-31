@@ -122,25 +122,37 @@ public final class SearchRequest {
             final String[] split = sort.split(",");
             final SortField[] sort_fields = new SortField[split.length];
             for (int i = 0; i < split.length; i++) {
-                switch (split[i].charAt(0)) {
-                case '/':
-                    sort_fields[i] = new SortField(split[i].substring(1));
-                    break;
-                case '\\':
-                    sort_fields[i] = new SortField(split[i].substring(1), true);
-                    break;
-                default:
-                    sort_fields[i] = new SortField(split[i]);
-                    break;
+                String tmp = split[i];
+                final boolean reverse = tmp.charAt(0) == '\\';
+                // Strip sort order character.
+                if (tmp.charAt(0) == '\\' || tmp.charAt(0) == '/') {
+                    tmp = tmp.substring(1);
+                }
+                final boolean has_type = tmp.indexOf(':') != -1;
+                if (!has_type) {
+                    sort_fields[i] = new SortField(tmp, SortField.STRING, reverse);
+                } else {
+                    final String field = tmp.substring(0, tmp.indexOf(':'));
+                    final String type = tmp.substring(tmp.indexOf(':') + 1);
+                    int type_int = SortField.STRING;
+                    if ("int".equals(type)) {
+                        type_int = SortField.INT;
+                    } else if ("float".equals(type)) {
+                        type_int = SortField.FLOAT;
+                    } else if ("double".equals(type)) {
+                        type_int = SortField.DOUBLE;
+                    } else if ("long".equals(type)) {
+                        type_int = SortField.LONG;
+                    } else if ("date".equals(type)) {
+                        type_int = SortField.LONG;
+                    } else if ("string".equals(type)) {
+                        type_int = SortField.STRING;
+                    }
+                    sort_fields[i] = new SortField(field, type_int, reverse);
                 }
             }
-
-            if (sort_fields.length == 1) {
-                // Let Lucene add doc as secondary sort order.
-                this.sort = new Sort(sort_fields[0].getField(), sort_fields[0].getReverse());
-            } else {
-                this.sort = new Sort(sort_fields);
-            }
+            this.sort = new Sort(sort_fields);
+            System.err.println(this.sort);
         }
     }
 
@@ -220,7 +232,9 @@ public final class SearchRequest {
                     }
                 }
 
-                row.put("score", td.scoreDocs[i].score);
+                if (!Float.isNaN(td.scoreDocs[i].score)) {
+                    row.put("score", td.scoreDocs[i].score);
+                }
                 // Include sort order (if any).
                 if (td instanceof TopFieldDocs) {
                     final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];

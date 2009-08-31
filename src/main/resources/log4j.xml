@@ -16,7 +16,7 @@
 			<param name="ConversionPattern" value="%d [%c] %p %m%n" />
 		</layout>
 	</appender>
-	<category name="com.github.rnewson">
+	<category name="couchdb-lucene">
     	<priority value="INFO"/>
     </category>
 	<root>

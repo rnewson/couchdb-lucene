@@ -115,7 +115,7 @@ public final class RhinoDocument extends ScriptableObject {
 
         final Field.Store storeObj = Store.get(store);
         Fieldable fieldObj = null;
-        if ("integer".equals(type)) {
+        if ("int".equals(type)) {
             fieldObj = new NumericField(field, storeObj, true).setIntValue(Conversion.convert(args[0], Integer.class));
         } else if ("float".equals(type)) {
             fieldObj = new NumericField(field, storeObj, true).setFloatValue(Conversion.convert(args[0], Float.class));
