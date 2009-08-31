@@ -26,22 +26,22 @@
     <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-core</artifactId>
-      <version>2.4.1</version>
+      <version>${lucene-version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-analyzers</artifactId>
-      <version>2.4.1</version>
+      <version>${lucene-version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-queries</artifactId>
-      <version>2.4.1</version>
+      <version>${lucene-version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika</artifactId>
-      <version>0.3</version>
+      <version>${tika-version}</version>
     </dependency>
     <dependency>
       <groupId>rhino</groupId>
@@ -66,6 +66,22 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <properties>
+    <lucene-version>2.4.1</lucene-version>
+    <tika-version>0.3</tika-version>
+  </properties>
+  <repositories>
+    <repository>
+      <id>lucene</id>
+      <url>http://people.apache.org/maven-snapshot-repository</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+    </repository>
+  </repositories>
   <issueManagement>
     <system>github</system>
     <url>http://github.com/rnewson/couchdb-lucene/issues</url>
