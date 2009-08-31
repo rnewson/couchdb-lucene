@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Forward to couchdb-lucene.
+
+while read line
+do		
+  # echo `curl -X POST -d $line $1`
+  echo '{"body":"hello"}'
+done
