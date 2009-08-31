@@ -1,6 +1,6 @@
-<h1>Releases</h1>
+<h1>WARNING</h1>
 
-I strongly recommend using the 0.4 release (available at <a href="http://cloud.github.com/downloads/rnewson/couchdb-lucene/couchdb-lucene-0.4-jar-with-dependencies.jar.gz">GitHub</a>) as the 0.5 work will occur on trunk and will definitely have periods of instability and broken-ness.
+<b>I strongly recommend using the 0.4 release</b> (available at <a href="http://cloud.github.com/downloads/rnewson/couchdb-lucene/couchdb-lucene-0.4-jar-with-dependencies.jar.gz">GitHub</a>) as the 0.5 work will occur on trunk and will definitely have extended periods of instability and broken-ness.
 
 <h1>Issue Tracking</h1>
 
