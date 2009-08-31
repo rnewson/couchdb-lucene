@@ -40,7 +40,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika</artifactId>
+      <artifactId>tika-core</artifactId>
+      <version>${tika-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers</artifactId>
       <version>${tika-version}</version>
     </dependency>
     <dependency>
@@ -68,7 +73,7 @@
   </dependencies>
   <properties>
     <lucene-version>2.4.1</lucene-version>
-    <tika-version>0.3</tika-version>
+    <tika-version>0.4</tika-version>
   </properties>
   <repositories>
     <repository>
