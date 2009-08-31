@@ -106,7 +106,7 @@ public final class Index {
             final IndexWriter result = new IndexWriter(Config.INDEX_DIR, Config.ANALYZER, MaxFieldLength.UNLIMITED);
 
             // Customize merge policy.
-            final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy();
+            final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy(result);
             mp.setMergeFactor(5);
             mp.setMaxMergeMB(1000);
             mp.setUseCompoundFile(false);
