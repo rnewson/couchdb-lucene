@@ -94,19 +94,25 @@ The following indexing options can be defaulted;
     <td>the field name to index under</td>
     <td>user-defined</td>
     <td>default</td>
-  </tr>	
+  </tr>
+  <tr>
+    <th>type</th>
+    <td>the type of the field</td>
+    <td>date, double, float, integer, long, string</td>
+    <td>string</td>
+  </tr>
   <tr>
     <th>store</th>
     <td>whether the data is stored. The value will be returned in the search result.</td>
     <td>yes, no</td>
     <td>no</td>
-  </tr>	
+  </tr>
   <tr>
     <th>index</th>
     <td>whether (and how) the data is indexed</td>
     <td>analyzed, analyzed_no_norms, no, not_analyzed, not_analyzed_no_norms</td>
     <td>analyzed</td>
-  </tr>	
+  </tr>
 </table>
 
 <h3>The Analyzer Option</h3>
@@ -142,11 +148,16 @@ var doc = new Document();
 
 Data may be added to this document with the add method which takes an optional second object argument that can override any of the above default values.
 
-The data is usually interpreted as a String but couchdb-lucene provides special handling if a Javascript Date object is passed. Specifically, the date is indexed as a numeric value, which allows correct sorting, and stored (if requested) in ISO 8601 format (with a timezone marker).
+If the value is a Date object, then the type of the field is treated as 'date', regardless of the type setting.
 
 <pre>
 // Add with all the defaults.
 doc.add("value");
+
+// Add a numeric field.
+doc.add(35, {"type":"integer"});
+
+// Add a date field (object must be a Date object
 
 // Add a subject field.
 doc.add("this is the subject line.", {"field":"subject"});
@@ -191,7 +202,7 @@ function(doc) {
 	    ret.attachment("attachment", i);
 	}
     }
-    
+
     return ret;
 }
 </pre>
@@ -432,7 +443,7 @@ And the same with sorting;
 
 <h3>Content-Type of response</h3>
 
-The Content-Type of the response is negotiated via the Accept request header like CouchDB itself. If the Accept header includes "application/json" then that is also the Content-Type of the response. If not, "text/plain;charset=utf-8" is used. 
+The Content-Type of the response is negotiated via the Accept request header like CouchDB itself. If the Accept header includes "application/json" then that is also the Content-Type of the response. If not, "text/plain;charset=utf-8" is used.
 
 <h1>Fetching information about the index</h1>
 

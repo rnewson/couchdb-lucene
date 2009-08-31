@@ -111,7 +111,7 @@ public final class RhinoDocument extends ScriptableObject {
         }
 
         final Object obj = Conversion.convert(args[0]);
-
+        System.err.println(obj.getClass());
         if (obj instanceof Date) {
             // Special indexed form.
             doc.add(new Field(field, Long.toString(((Date) obj).getTime()), Field.Store.NO,
