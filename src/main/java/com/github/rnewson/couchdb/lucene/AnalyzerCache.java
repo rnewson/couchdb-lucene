@@ -20,6 +20,7 @@ import org.apache.lucene.analysis.nl.DutchAnalyzer;
 import org.apache.lucene.analysis.ru.RussianAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
+import org.apache.lucene.util.Version;
 
 public final class AnalyzerCache {
 
@@ -58,7 +59,7 @@ public final class AnalyzerCache {
         ENGLISH {
             @Override
             public Analyzer newAnalyzer() {
-                return new StandardAnalyzer();
+                return new StandardAnalyzer(Version.LUCENE_CURRENT);
             }
         },
         FRENCH {
@@ -100,7 +101,7 @@ public final class AnalyzerCache {
         STANDARD {
             @Override
             public Analyzer newAnalyzer() {
-                return new StandardAnalyzer();
+                return new StandardAnalyzer(Version.LUCENE_CURRENT);
             }
         },
         THAI {

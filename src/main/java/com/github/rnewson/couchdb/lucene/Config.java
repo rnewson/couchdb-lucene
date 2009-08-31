@@ -18,10 +18,11 @@ package com.github.rnewson.couchdb.lucene;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.util.Version;
 
 final class Config {
 
-    static final Analyzer ANALYZER = new StandardAnalyzer();
+    static final Analyzer ANALYZER = new StandardAnalyzer(Version.LUCENE_CURRENT);
 
     static final String DEFAULT_FIELD = "default";
 
