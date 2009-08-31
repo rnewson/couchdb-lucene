@@ -1,21 +1,18 @@
 package com.github.rnewson.couchdb.lucene;
 
-import java.util.Date;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 
 /**
  * Because Rhino, inexplicably, can't convert Javascript objects to a readable
  * string.
- *
+ * 
  * @author rnewson
- *
+ * 
  */
 final class Conversion {
 
@@ -28,14 +25,11 @@ final class Conversion {
             return convertObject((NativeObject) obj);
         else if (obj instanceof NativeArray)
             return convertArray((NativeArray) obj);
-
-        try {
-            return Context.jsToJava(obj, Date.class);
-        } catch (final EvaluatorException e) {
-            // not a date (this sucks).
-        }
-
         return obj;
+    }
+
+    static <T> T convert(final Object obj, final Class<T> clazz) {
+        return (T) Context.jsToJava(obj, clazz);
     }
 
     private static Object convertObject(final NativeObject obj) {

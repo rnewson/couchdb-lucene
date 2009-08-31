@@ -25,9 +25,10 @@ import java.util.Map;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.document.NumericField;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
@@ -67,7 +68,7 @@ public final class RhinoDocument extends ScriptableObject {
         return "Document";
     }
 
-    public void add(final Field field) {
+    public void add(final Fieldable field) {
         doc.add(field);
     }
 
@@ -100,6 +101,7 @@ public final class RhinoDocument extends ScriptableObject {
         String field = defaults.optString("field", Config.DEFAULT_FIELD);
         String store = defaults.optString("store", "no");
         String index = defaults.optString("index", "analyzed");
+        String type = defaults.optString("type", "string");
 
         // Check for local override.
         if (args.length == 2) {
@@ -108,23 +110,30 @@ public final class RhinoDocument extends ScriptableObject {
             field = optString(obj, "field", field);
             store = optString(obj, "store", store);
             index = optString(obj, "index", index);
+            type = optString(obj, "type", type);
         }
 
-        final Object obj = Conversion.convert(args[0]);
-        System.err.println(obj.getClass());
-        if (obj instanceof Date) {
-            // Special indexed form.
-            doc.add(new Field(field, Long.toString(((Date) obj).getTime()), Field.Store.NO,
-                    Field.Index.NOT_ANALYZED_NO_NORMS));
-
-            // Store in ISO8601 format, if requested.
-            if ("yes".equals(store)) {
-                final String asString = DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format(obj);
-                doc.add(new Field(field, asString, Field.Store.YES, Field.Index.NO));
-            }
+        final Field.Store storeObj = Store.get(store);
+        Fieldable fieldObj = null;
+        if ("integer".equals(type)) {
+            fieldObj = new NumericField(field, storeObj, true).setIntValue(Conversion.convert(args[0], Integer.class));
+        } else if ("float".equals(type)) {
+            fieldObj = new NumericField(field, storeObj, true).setFloatValue(Conversion.convert(args[0], Float.class));
+        } else if ("double".equals(type)) {
+            fieldObj = new NumericField(field, storeObj, true)
+                    .setDoubleValue(Conversion.convert(args[0], Double.class));
+        } else if ("long".equals(type)) {
+            fieldObj = new NumericField(field, storeObj, true).setLongValue(Conversion.convert(args[0], Long.class));
+        } else if ("date".equals(type)) {
+            fieldObj = new NumericField(field, storeObj, true).setLongValue(Conversion.convert(args[0], Date.class)
+                    .getTime());
+        } else if ("string".equals(type)) {
+            fieldObj = new Field(field, Conversion.convert(args[0]).toString(), storeObj, Index.get(index));
         } else {
-            doc.add(new Field(field, obj.toString(), Store.get(store), Index.get(index)));
+            // Ignore.
         }
+        if (fieldObj != null)
+            doc.add(fieldObj);
     }
 
     /**

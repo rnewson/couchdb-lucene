@@ -148,14 +148,15 @@ var doc = new Document();
 
 Data may be added to this document with the add method which takes an optional second object argument that can override any of the above default values.
 
-If the value is a Date object, then the type of the field is treated as 'date', regardless of the type setting.
-
 <pre>
 // Add with all the defaults.
 doc.add("value");
 
 // Add a numeric field.
 doc.add(35, {"type":"integer"});
+
+// Add a date field.
+doc.add(new Date("2009-01-01"), {"type":"date"});
 
 // Add a date field (object must be a Date object
 
