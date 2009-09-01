@@ -5,4 +5,8 @@
 
 <bean id="httpClient" class="org.apache.http.impl.client.DefaultHttpClient"/>
 
+<bean id="database" class="com.github.rnewson.couchdb.lucene.Database">
+  <property key="httpClient" ref="httpClient"/>
+</bean>
+
 </beans>
