@@ -1,16 +1,12 @@
-<h1>WARNING</h1>
-
-<b>I strongly recommend using the 0.4 release</b> (available at <a href="http://cloud.github.com/downloads/rnewson/couchdb-lucene/couchdb-lucene-0.4-jar-with-dependencies.jar.gz">GitHub</a>) as the 0.5 work will occur on trunk and will definitely have extended periods of instability and broken-ness.
-
 <h1>Issue Tracking</h1>
 
 Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">github</a>.
 
-<h1>System Requirements</h1>
+<h1>Minimum System Requirements</h1>
 
-Sun JDK 5 or higher is recommended.
+JDK6 is required; the Sun version is recommended as it's regularly tested against.
 
-Couchdb-lucene is known to be incompatible with some versions of OpenJDK as it includes an earlier, and incompatible, version of the Rhino Javascript library. The version in Ubuntu 8.10 (6b12-0ubuntu6.4) is known to work and it uses Rhino 1.7R1.
+10.5 is the minimum version of OSX for the above reason.
 
 <h1>Build couchdb-lucene</h1>
 
@@ -28,10 +24,7 @@ Couchdb-lucene is known to be incompatible with some versions of OpenJDK as it i
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
 
 [external]
-fti=/usr/bin/java -server -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -search
-
-[update_notification]
-indexer=/usr/bin/java -server -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -index
+fti=/usr/bin/java -server -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar
 
 [httpd_db_handlers]
 _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
@@ -473,22 +466,21 @@ You will need to restart CouchDB if you change couchdb-lucene source code but th
 
 <h1>Configuration</h1>
 
-couchdb-lucene respects several system properties;
-
-<dl>
-<dt>couchdb.log.dir</dt><dd>specify the directory of the log file (which is called couchdb-lucene.log), defaults to the platform-specific temp directory.</dd>
-<dt>couchdb.lucene.dir</dt><dd>specify the path to the lucene indexes (the default is to make a directory called 'lucene' relative to couchdb's current working directory.</dd>
-<dt>couchdb.lucene.operator<dt><dd>specify the default boolean operator for queries. If not specified, the default is "OR". You can specify either "OR" or "AND".</dd>
-<dt>couchdb.url</dt><dd>the url to contact CouchDB with (default is "http://localhost:5984")</dd>
-</dl>
-
-You can override these properties like this;
+couchdb-lucene is configured from the couchdb ini files
 
 <pre>
-fti=/usr/bin/java -Dcouchdb.lucene.dir=/tmp \
--cp /home/rnewson/Source/couchdb-lucene/target/classes:\
-/home/rnewson/Source/couchdb-lucene/target/dependency\
-com.github.rnewson.couchdb.lucene.Main
+[lucene]
+; Send lucene indexes elsewhere, defaults to hidden subdir under database_dir
+;lucene_dir=
+
+; Send logs elsewhere, defaults to same dir as couchdb log file.
+;log_dir=
+
+; alter (soft) maximum ram for indexing.
+;max_ram=16
+
+; Specify the default operator for boolean queries. If not specified, or if the setting is not recognized, the defaul is "OR". The other choice is "AND".
+; default_boolean_operator="OR"
 </pre>
 
 <h2>Basic Authentication</h2>
@@ -499,7 +491,3 @@ If you put couchdb behind an authenticating proxy you can still configure couchd
 <dt>couchdb.password</dt><dd>the password to authenticate with.</dd>
 <dt>couchdb.user</dt><dd>the user to authenticate as.</dd>
 </dl>
-
-<h2>IPv6</h2>
-
-The default for couchdb.url is problematic on an IPv6 system. Specify -Dcouchdb.url=http://[::1]:5984 to resolve it.
