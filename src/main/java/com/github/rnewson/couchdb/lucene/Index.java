@@ -29,8 +29,8 @@ import java.util.Scanner;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.lang.time.DurationFormatUtils;
+import org.apache.http.HttpException;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CheckIndex;
@@ -43,6 +43,8 @@ import org.apache.lucene.index.CheckIndex.Status;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+
+import com.github.rnewson.couchdb.lucene.util.Analyzers;
 
 public final class Index {
 
@@ -179,7 +181,7 @@ public final class Index {
                                 final String key = (String) obj;
                                 final String sig = Utils.digest(fulltext.getString(key));
                                 final String defaults = fulltext.getJSONObject(key).optString("defaults", "{}");
-                                final Analyzer analyzer = AnalyzerCache.getAnalyzer(fulltext.getJSONObject(key)
+                                final Analyzer analyzer = Analyzers.getAnalyzer(fulltext.getJSONObject(key)
                                         .optString("analyzer", "standard"));
 
                                 String fun = fulltext.getJSONObject((String) key).getString("index");

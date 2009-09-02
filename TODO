@@ -1,6 +1,8 @@
 0.5
 ----------------------
 
+* RESTORE USER/PASS auth to CouchDB.
+
 * Lucene 2.9.
 ** numeric range suppport.
 * use _local/lucene for recording progress.

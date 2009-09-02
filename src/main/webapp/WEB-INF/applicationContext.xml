@@ -6,7 +6,25 @@
 <bean id="httpClient" class="org.apache.http.impl.client.DefaultHttpClient"/>
 
 <bean id="database" class="com.github.rnewson.couchdb.lucene.Database">
-  <property key="httpClient" ref="httpClient"/>
+  <property name="httpClient" ref="httpClient"/>
+</bean>
+
+<bean id="indexingTask" class="com.github.rnewson.couchdb.lucene.IndexingTask">
+  <property name="database" ref="database"/>
+</bean>
+
+<bean id="scheduledTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
+    <!-- run every 30 seconds -->
+    <property name="period" value="30000" />
+    <property name="timerTask" ref="indexingTask" />
+</bean>
+
+<bean id="timerFactory" class="org.springframework.scheduling.timer.TimerFactoryBean">
+    <property name="scheduledTimerTasks">
+        <list>
+            <ref bean="scheduledTask" />
+        </list>
+    </property>
 </bean>
 
 </beans>

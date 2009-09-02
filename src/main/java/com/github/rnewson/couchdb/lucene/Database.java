@@ -17,27 +17,24 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpException;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
 
 /**
  * Communication with couchdb.
@@ -47,23 +44,29 @@ import org.apache.commons.io.IOUtils;
  */
 public final class Database {
 
-    static final HttpClient CLIENT = new HttpClient();
-
     private static final String[] EMPTY_ARR = new String[0];
 
-    static {
-        CLIENT.getParams().setCookiePolicy(CookiePolicy.IGNORE_COOKIES);
-        if (Config.DB_USER != null && Config.DB_PASSWORD != null) {
-            CLIENT.getParams().setAuthenticationPreemptive(true);
-            final Credentials creds = new UsernamePasswordCredentials(Config.DB_USER, Config.DB_PASSWORD);
-            CLIENT.getState().setCredentials(AuthScope.ANY, creds);
-            Utils.LOG.debug("Authenticating to couchdb as " + Config.DB_USER);
+    private static final ResponseHandler<String> RESPONSE_BODY_HANDLER = new BasicResponseHandler();
+
+    private static final ResponseHandler<Integer> STATUS_CODE_HANDLER = new ResponseHandler<Integer>() {
+        @Override
+        public Integer handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
+            return response.getStatusLine().getStatusCode();
         }
+    };
+
+    private String url;
+
+    private HttpClient httpClient;
+
+    public Database() {
     }
 
-    private final String url;
+    public void setHttpClient(final HttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
 
-    public Database(final String url) {
+    public void setUrl(final String url) {
         if (url.endsWith("/"))
             this.url = url.substring(0, url.length() - 1);
         else
@@ -123,7 +126,7 @@ public final class Database {
     }
 
     private String get(final String path) throws IOException {
-        return execute(new GetMethod(url(path)));
+        return execute(new HttpGet(url(path)));
     }
 
     String url(final String path) {
@@ -139,49 +142,27 @@ public final class Database {
     }
 
     private String post(final String path, final String body) throws IOException {
-        final PostMethod post = new PostMethod(url(path));
-        post.setRequestEntity(new StringRequestEntity(body, "application/json", "UTF-8"));
+        final HttpPost post = new HttpPost(url(path));
+        post.setEntity(new StringEntity(body));
         return execute(post);
     }
 
     private int put(final String path, final String body) throws IOException {
-        final PutMethod method = new PutMethod(url(path));
+        final HttpPut put = new HttpPut(url(path));
         if (body != null) {
-            method.setRequestEntity(new StringRequestEntity(body, "application/json", "UTF-8"));
+            put.setHeader("Content-Type", "application/json");
+            put.setEntity(new StringEntity(body));
         }
-        try {
-            return CLIENT.executeMethod(method);
-        } finally {
-            method.releaseConnection();
-        }
+        return httpClient.execute(put, STATUS_CODE_HANDLER);
     }
 
     private int delete(final String path) throws IOException {
-        final DeleteMethod method = new DeleteMethod(url(path));
-        try {
-            return CLIENT.executeMethod(method);
-        } finally {
-            method.releaseConnection();
-        }
+        final HttpDelete delete = new HttpDelete(url(path));
+        return httpClient.execute(delete, STATUS_CODE_HANDLER);
     }
 
-    private String execute(final HttpMethodBase method) throws IOException {
-        try {
-            final int sc = CLIENT.executeMethod(method);
-            if (sc < 200 || sc > 299) {
-                throw new HttpException("Unexpected status code: " + sc + ": " + method.getStatusText());
-            }
-            final InputStream in = method.getResponseBodyAsStream();
-            try {
-                final StringWriter writer = new StringWriter(2048);
-                IOUtils.copy(in, writer, method.getResponseCharSet());
-                return writer.toString();
-            } finally {
-                in.close();
-            }
-        } finally {
-            method.releaseConnection();
-        }
+    private String execute(final HttpUriRequest request) throws IOException {
+        return httpClient.execute(request, RESPONSE_BODY_HANDLER);
     }
 
 }

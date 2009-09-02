@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene.util;
 
 /**
  * Copyright 2009 Robert Newson
@@ -19,7 +19,7 @@ package com.github.rnewson.couchdb.lucene;
 import java.util.HashMap;
 import java.util.Map;
 
-final class StopWatch {
+public final class StopWatch {
 
     private Map<String, Long> elapsed = new HashMap<String, Long>();
 

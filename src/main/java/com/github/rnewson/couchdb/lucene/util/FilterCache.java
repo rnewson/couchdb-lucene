@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene.util;
 
 /**
  * Copyright 2009 Robert Newson
@@ -21,9 +21,9 @@ import org.apache.commons.collections.map.ReferenceMap;
 import org.apache.lucene.search.CachingWrapperFilter;
 import org.apache.lucene.search.Filter;
 
-final class FilterCache {
+public final class FilterCache {
 
-    private static final Map CACHE = new ReferenceMap(ReferenceMap.HARD, ReferenceMap.SOFT);
+    private static final Map<Object, Object> CACHE = new ReferenceMap(ReferenceMap.HARD, ReferenceMap.SOFT);
 
     public static Filter get(final Object key, final Filter value) {
         CachingWrapperFilter filter;

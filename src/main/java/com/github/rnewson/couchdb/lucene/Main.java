@@ -25,22 +25,9 @@ package com.github.rnewson.couchdb.lucene;
 public final class Main {
 
     public static void main(final String[] args) throws Exception {
-        if (System.getProperty("couchdb.log.dir") == null) {
-            System.setProperty("couchdb.log.dir", System.getProperty("java.io.tmpdir"));
-        }
-        
-        if (args.length >= 1 && args[0].equals("-index")) {
-            Index.main(args);
-            return;
-        }
-
-        if (args.length >= 1 && args[0].equals("-search")) {
-            Search.main(args);
-            return;
-        }
-
-        Utils.out(Utils.error("Invoke with -index or -search only."));
-        return;
+        System.err.println("This entrypoint is deprecated. Please read the 0.4 to 0.5 upgrade notes.");
+        while (System.in.read() != -1)
+            ;
     }
 
 }

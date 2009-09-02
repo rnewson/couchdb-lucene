@@ -43,6 +43,10 @@ import org.apache.lucene.search.TermsFilter;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 
+import com.github.rnewson.couchdb.lucene.util.Analyzers;
+import com.github.rnewson.couchdb.lucene.util.FilterCache;
+import com.github.rnewson.couchdb.lucene.util.StopWatch;
+
 public final class SearchRequest {
 
     private static final Database DB = new Database(Config.DB_URL);
@@ -101,7 +105,7 @@ public final class SearchRequest {
         }
 
         // Parse query.
-        final Analyzer analyzer = AnalyzerCache.getAnalyzer(query.optString("analyzer", "standard"));
+        final Analyzer analyzer = Analyzers.getAnalyzer(query.optString("analyzer", "standard"));
         final QueryParser parser = new QueryParser(Config.DEFAULT_FIELD, analyzer);
         if ("AND".equalsIgnoreCase(Config.DEFAULT_OPERATOR)) {
             parser.setDefaultOperator(Operator.AND);

@@ -35,6 +35,8 @@ import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
+import com.github.rnewson.couchdb.lucene.util.Conversion;
+
 public final class RhinoDocument extends ScriptableObject {
 
     private static final long serialVersionUID = 1L;
