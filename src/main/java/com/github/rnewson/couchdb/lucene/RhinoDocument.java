@@ -41,7 +41,7 @@ public final class RhinoDocument extends ScriptableObject {
 
     private static final long serialVersionUID = 1L;
 
-    private static final Database DB = new Database(Config.DB_URL);
+    private static final Database DB = new Database(OldConfig.DB_URL);
 
     private static final Tika TIKA = new Tika();
 

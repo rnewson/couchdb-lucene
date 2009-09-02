@@ -48,7 +48,7 @@ import com.github.rnewson.couchdb.lucene.util.Analyzers;
 
 public final class Index {
 
-    private static final Database DB = new Database(Config.DB_URL);
+    private static final Database DB = new Database(OldConfig.DB_URL);
 
     static class Indexer implements Runnable {
 
@@ -75,7 +75,7 @@ public final class Index {
         }
 
         private long leniency() {
-            return MILLISECONDS.toNanos(Config.COMMIT_MIN);
+            return MILLISECONDS.toNanos(OldConfig.COMMIT_MIN);
         }
 
         private long now() {
@@ -98,14 +98,14 @@ public final class Index {
 
         private void sleep() {
             try {
-                Thread.sleep(Config.COMMIT_MIN);
+                Thread.sleep(OldConfig.COMMIT_MIN);
             } catch (final InterruptedException e) {
                 Utils.LOG.fatal("Interrupted while sleeping, indexer is exiting.", e);
             }
         }
 
         private IndexWriter newWriter() throws IOException {
-            final IndexWriter result = new IndexWriter(Config.INDEX_DIR, Config.ANALYZER, MaxFieldLength.UNLIMITED);
+            final IndexWriter result = new IndexWriter(OldConfig.INDEX_DIR, OldConfig.ANALYZER, MaxFieldLength.UNLIMITED);
 
             // Customize merge policy.
             final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy(result);
@@ -114,9 +114,9 @@ public final class Index {
             mp.setUseCompoundFile(false);
             result.setMergePolicy(mp);
 
-            result.setRAMBufferSizeMB(Config.RAM_BUF);
+            result.setRAMBufferSizeMB(OldConfig.RAM_BUF);
 
-            if (Config.LUCENE_DEBUG) {
+            if (OldConfig.LUCENE_DEBUG) {
                 result.setInfoStream(System.err);
             }
 
@@ -249,7 +249,7 @@ public final class Index {
 
             long update_seq = progress.getSeq(viewname);
             while (update_seq < target_seq) {
-                final JSONObject obj = DB.getAllDocsBySeq(dbname, update_seq, Config.BATCH_SIZE);
+                final JSONObject obj = DB.getAllDocsBySeq(dbname, update_seq, OldConfig.BATCH_SIZE);
 
                 if (!obj.has("rows")) {
                     Utils.LOG.warn("no rows found (" + obj + ").");
@@ -311,7 +311,7 @@ public final class Index {
     }
 
     public static void main(final String[] args) throws Exception {
-        final File dir = new File(Config.INDEX_DIR);
+        final File dir = new File(OldConfig.INDEX_DIR);
 
         // Create index directory if missing.
         if (!dir.exists()) {

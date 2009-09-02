@@ -24,10 +24,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.http.HttpException;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -35,6 +32,8 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
+
+import com.github.rnewson.couchdb.lucene.util.StatusCodeResponseHandler;
 
 /**
  * Communication with couchdb.
@@ -45,15 +44,6 @@ import org.apache.http.impl.client.BasicResponseHandler;
 public final class Database {
 
     private static final String[] EMPTY_ARR = new String[0];
-
-    private static final ResponseHandler<String> RESPONSE_BODY_HANDLER = new BasicResponseHandler();
-
-    private static final ResponseHandler<Integer> STATUS_CODE_HANDLER = new ResponseHandler<Integer>() {
-        @Override
-        public Integer handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
-            return response.getStatusLine().getStatusCode();
-        }
-    };
 
     private String url;
 
@@ -67,10 +57,7 @@ public final class Database {
     }
 
     public void setUrl(final String url) {
-        if (url.endsWith("/"))
-            this.url = url.substring(0, url.length() - 1);
-        else
-            this.url = url;
+        this.url = url;
     }
 
     public String[] getAllDatabases() throws HttpException, IOException {
@@ -153,16 +140,16 @@ public final class Database {
             put.setHeader("Content-Type", "application/json");
             put.setEntity(new StringEntity(body));
         }
-        return httpClient.execute(put, STATUS_CODE_HANDLER);
+        return httpClient.execute(put, new StatusCodeResponseHandler());
     }
 
     private int delete(final String path) throws IOException {
         final HttpDelete delete = new HttpDelete(url(path));
-        return httpClient.execute(delete, STATUS_CODE_HANDLER);
+        return httpClient.execute(delete, new StatusCodeResponseHandler());
     }
 
     private String execute(final HttpUriRequest request) throws IOException {
-        return httpClient.execute(request, RESPONSE_BODY_HANDLER);
+        return httpClient.execute(request, new BasicResponseHandler());
     }
 
 }

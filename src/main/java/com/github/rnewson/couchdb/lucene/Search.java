@@ -46,8 +46,8 @@ public final class Search {
             while (scanner.hasNextLine()) {
                 if (reader == null) {
                     // Open a reader and searcher if index exists.
-                    if (IndexReader.indexExists(Config.INDEX_DIR)) {
-                        reader = IndexReader.open(NIOFSDirectory.getDirectory(Config.INDEX_DIR), true);
+                    if (IndexReader.indexExists(OldConfig.INDEX_DIR)) {
+                        reader = IndexReader.open(NIOFSDirectory.getDirectory(OldConfig.INDEX_DIR), true);
                         onNewReader(reader);
                         searcher = new IndexSearcher(reader);
                     }
@@ -137,7 +137,7 @@ public final class Search {
                             fields.add(field);
                         }
                         json.put("fields", fields);
-                        json.put("last_modified", IndexReader.lastModified(Config.INDEX_DIR));
+                        json.put("last_modified", IndexReader.lastModified(OldConfig.INDEX_DIR));
                         json.put("optimized", reader.isOptimized());
 
                         final JSONObject info = new JSONObject();

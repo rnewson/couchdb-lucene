@@ -3,32 +3,38 @@
     "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
 
-<bean id="httpClient" class="org.apache.http.impl.client.DefaultHttpClient"/>
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="location" value="couchdb-lucene.properties" />
+  </bean>
 
-<bean id="database" class="com.github.rnewson.couchdb.lucene.Database">
-  <property name="httpClient" ref="httpClient"/>
-</bean>
+  <bean id="httpClient" class="org.apache.http.impl.client.DefaultHttpClient"/>
 
-<bean id="config" class="com.github.rnewson.couchdb.lucene.spring.CouchDBConfigBean">
-  <property name="database" ref="database"/>
-</bean>
+  <bean id="database" class="com.github.rnewson.couchdb.lucene.Database">
+    <property name="httpClient" ref="httpClient"/>
+    <property name="url" value="${url}"/>
+  </bean>
 
-<bean id="indexingTask" class="com.github.rnewson.couchdb.lucene.IndexingTask">
-  <property name="config" ref="config"/>
-  <property name="database" ref="database"/>
-</bean>
+  <bean id="config" class="com.github.rnewson.couchdb.lucene.Config">
+    <property name="httpClient" ref="httpClient"/>
+    <property name="url" value="${url}"/>
+  </bean>
 
-<bean id="scheduledTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
+  <bean id="indexingTask" class="com.github.rnewson.couchdb.lucene.IndexingTask">
+    <property name="config" ref="config"/>
+    <property name="database" ref="database"/>
+  </bean>
+
+  <bean id="scheduledTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
     <property name="period" value="30000" />
     <property name="timerTask" ref="indexingTask" />
-</bean>
+  </bean>
 
-<bean id="timerFactory" class="org.springframework.scheduling.timer.TimerFactoryBean">
+  <bean id="timerFactory" class="org.springframework.scheduling.timer.TimerFactoryBean">
     <property name="scheduledTimerTasks">
-        <list>
-            <ref bean="scheduledTask" />
-        </list>
+      <list>
+        <ref bean="scheduledTask" />
+      </list>
     </property>
-</bean>
+  </bean>
 
 </beans>

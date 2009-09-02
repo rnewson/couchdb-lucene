@@ -1,45 +1,56 @@
 package com.github.rnewson.couchdb.lucene;
 
-/**
- * Copyright 2009 Robert Newson
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0 
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+import java.io.IOException;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.util.Version;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
 
-final class Config {
+import com.github.rnewson.couchdb.lucene.util.StatusCodeResponseHandler;
 
-    static final Analyzer ANALYZER = new StandardAnalyzer(Version.LUCENE_CURRENT);
+public final class Config {
 
-    static final String DEFAULT_OPERATOR = System.getProperty("couchdb.lucene.operator", "OR");
+    private static final String PREFIX = "lucene/";
 
-    static final String INDEX_DIR = System.getProperty("couchdb.lucene.dir", "lucene");
+    private HttpClient httpClient;
 
-    static final int RAM_BUF = Integer.getInteger("couchdb.lucene.ram", 16);
+    private String url;
 
-    static final int BATCH_SIZE = Integer.getInteger("couchdb.lucene.batch", 250);
+    public void setHttpClient(final HttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
 
-    static final String DB_URL = System.getProperty("couchdb.url", "http://localhost:5984");
+    public void setUrl(final String url) {
+        this.url = url;
+    }
 
-    static final String DB_USER = System.getProperty("couchdb.user");
+    public String getStringProperty(final String name) throws IOException {
+        return get(name);
+    }
 
-    static final String DB_PASSWORD = System.getProperty("couchdb.password");
+    public int setStringProperty(final String name, final String value) throws IOException {
+        return put(name, value);
+    }
 
-    static final int COMMIT_MIN = Integer.getInteger("couchdb.lucene.commit.min", 5000);
+    public int getIntProperty(final String name) throws IOException {
+        return Integer.parseInt(get(name));
+    }
 
-    static final boolean LUCENE_DEBUG = Boolean.getBoolean("couchdb.lucene.debug");
+    public int setIntProperty(final String name, final int value) throws IOException {
+        return put(name, Integer.toString(value));
+    }
+
+    private String get(final String name) throws IOException {
+        final HttpGet get = new HttpGet(url + PREFIX + name);
+        return httpClient.execute(get, new BasicResponseHandler());
+    }
+
+    private int put(final String name, final String value) throws IOException {
+        final HttpPut put = new HttpPut(url + PREFIX + name);
+        put.setEntity(new StringEntity(value));
+        return httpClient.execute(put, new StatusCodeResponseHandler());
+    }
 
 }

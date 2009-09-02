@@ -49,7 +49,7 @@ import com.github.rnewson.couchdb.lucene.util.StopWatch;
 
 public final class SearchRequest {
 
-    private static final Database DB = new Database(Config.DB_URL);
+    private static final Database DB = new Database(OldConfig.DB_URL);
 
     private static final char DOUBLE_QUOTE = '"';
 
@@ -107,7 +107,7 @@ public final class SearchRequest {
         // Parse query.
         final Analyzer analyzer = Analyzers.getAnalyzer(query.optString("analyzer", "standard"));
         final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
-        if ("AND".equalsIgnoreCase(Config.DEFAULT_OPERATOR)) {
+        if ("AND".equalsIgnoreCase(OldConfig.DEFAULT_OPERATOR)) {
             parser.setDefaultOperator(Operator.AND);
         }
         this.q = parser.parse(query.getString("q"));
@@ -280,7 +280,7 @@ public final class SearchRequest {
         final JSONObject headers = new JSONObject();
         headers.put("Content-Type", contentType);
         // Allow short-term caching.
-        headers.put("Cache-Control", "max-age=" + Config.COMMIT_MIN / 1000);
+        headers.put("Cache-Control", "max-age=" + OldConfig.COMMIT_MIN / 1000);
         // Results can't change unless the IndexReader does.
         headers.put("ETag", etag);
 
