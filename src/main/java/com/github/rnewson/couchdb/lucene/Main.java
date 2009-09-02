@@ -17,11 +17,9 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 /**
- * Entry point for indexing and searching.
- * 
  * @author rnewson
- * 
  */
+@Deprecated
 public final class Main {
 
     public static void main(final String[] args) throws Exception {

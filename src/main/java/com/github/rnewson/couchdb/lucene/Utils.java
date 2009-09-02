@@ -98,8 +98,8 @@ class Utils {
 
     public static Query docQuery(final String viewname, final String id) {
         BooleanQuery q = new BooleanQuery();
-        q.add(new TermQuery(new Term(Config.VIEW, viewname)), Occur.MUST);
-        q.add(new TermQuery(new Term(Config.ID, id)), Occur.MUST);
+        q.add(new TermQuery(new Term(Constants.VIEW, viewname)), Occur.MUST);
+        q.add(new TermQuery(new Term(Constants.ID, id)), Occur.MUST);
         return q;
     }
 

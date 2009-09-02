@@ -21,6 +21,12 @@ import org.apache.commons.collections.map.ReferenceMap;
 import org.apache.lucene.search.CachingWrapperFilter;
 import org.apache.lucene.search.Filter;
 
+/**
+ * Keep filters around subject to memory pressure.
+ * 
+ * @author rnewson
+ *
+ */
 public final class FilterCache {
 
     private static final Map<Object, Object> CACHE = new ReferenceMap(ReferenceMap.HARD, ReferenceMap.SOFT);

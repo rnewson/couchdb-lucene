@@ -106,7 +106,7 @@ public final class SearchRequest {
 
         // Parse query.
         final Analyzer analyzer = Analyzers.getAnalyzer(query.optString("analyzer", "standard"));
-        final QueryParser parser = new QueryParser(Config.DEFAULT_FIELD, analyzer);
+        final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
         if ("AND".equalsIgnoreCase(Config.DEFAULT_OPERATOR)) {
             parser.setDefaultOperator(Operator.AND);
         }
@@ -114,7 +114,7 @@ public final class SearchRequest {
 
         // Filter out items from other views.
         final TermsFilter filter = new TermsFilter();
-        filter.addTerm(new Term(Config.VIEW, this.viewname));
+        filter.addTerm(new Term(Constants.VIEW, this.viewname));
 
         this.filter = FilterCache.get(this.viewname, filter);
 
@@ -215,7 +215,7 @@ public final class SearchRequest {
                     String name = fld.name();
                     String value = fld.stringValue();
                     if (value != null) {
-                        if (Config.ID.equals(name)) {
+                        if (Constants.ID.equals(name)) {
                             row.put("id", value);
                         } else {
                             if (!fields.has(name)) {
@@ -246,7 +246,7 @@ public final class SearchRequest {
                 }
                 // Fetch document (if requested).
                 if (include_docs) {
-                    fetch_ids[i - skip] = doc.get(Config.ID);
+                    fetch_ids[i - skip] = doc.get(Constants.ID);
                 }
                 if (fields.size() > 0) {
                     row.put("fields", fields);

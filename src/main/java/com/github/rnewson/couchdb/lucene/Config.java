@@ -24,21 +24,7 @@ final class Config {
 
     static final Analyzer ANALYZER = new StandardAnalyzer(Version.LUCENE_CURRENT);
 
-    static final String DEFAULT_FIELD = "default";
-
     static final String DEFAULT_OPERATOR = System.getProperty("couchdb.lucene.operator", "OR");
-
-    static final String DB = "_db";
-
-    static final String ID = "_id";
-
-    static final String VIEW = "_view";
-
-    static final String SEQ = "_seq";
-
-    static final String TITLE = "_title";
-
-    static final String AUTHOR = "_author";
 
     static final String INDEX_DIR = System.getProperty("couchdb.lucene.dir", "lucene");
 

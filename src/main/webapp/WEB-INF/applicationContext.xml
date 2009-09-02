@@ -9,12 +9,16 @@
   <property name="httpClient" ref="httpClient"/>
 </bean>
 
+<bean id="config" class="com.github.rnewson.couchdb.lucene.spring.CouchDBConfigBean">
+  <property name="database" ref="database"/>
+</bean>
+
 <bean id="indexingTask" class="com.github.rnewson.couchdb.lucene.IndexingTask">
+  <property name="config" ref="config"/>
   <property name="database" ref="database"/>
 </bean>
 
 <bean id="scheduledTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
-    <!-- run every 30 seconds -->
     <property name="period" value="30000" />
     <property name="timerTask" ref="indexingTask" />
 </bean>

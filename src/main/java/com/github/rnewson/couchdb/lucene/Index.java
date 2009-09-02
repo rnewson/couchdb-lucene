@@ -142,11 +142,11 @@ public final class Index {
                     progress.load(reader);
 
                     // Remove documents from deleted databases.
-                    final TermEnum terms = reader.terms(new Term(Config.DB, ""));
+                    final TermEnum terms = reader.terms(new Term(Constants.DB, ""));
                     try {
                         do {
                             final Term term = terms.term();
-                            if (term == null || Config.DB.equals(term.field()) == false)
+                            if (term == null || Constants.DB.equals(term.field()) == false)
                                 break;
                             if (Arrays.binarySearch(dbnames, term.text()) < 0) {
                                 Utils.LOG.info("Database '" + term.text()
@@ -188,7 +188,7 @@ public final class Index {
                                 fun = fun.replaceAll("^\"*", "");
                                 fun = fun.replaceAll("\"*$", "");
 
-                                final String viewname = String.format("%s/%s/%s", dbname, doc.getString(Config.ID)
+                                final String viewname = String.format("%s/%s/%s", dbname, doc.getString(Constants.ID)
                                         .replaceFirst("_design/", ""), key);
 
                                 final Rhino rhino = new Rhino(dbname, defaults, fun);
@@ -269,9 +269,9 @@ public final class Index {
                         final Document[] docs = rhino.map(docid, doc.toString());
 
                         for (int j = 0; j < docs.length; j++) {
-                            docs[j].add(token(Config.DB, dbname, false));
-                            docs[j].add(token(Config.VIEW, viewname, false));
-                            docs[j].add(token(Config.ID, docid, true));
+                            docs[j].add(token(Constants.DB, dbname, false));
+                            docs[j].add(token(Constants.VIEW, viewname, false));
+                            docs[j].add(token(Constants.ID, docid, true));
 
                             if (Utils.LOG.isTraceEnabled()) {
                                 Utils.LOG.trace("Adding " + docs[j]);
@@ -298,13 +298,13 @@ public final class Index {
 
         private void deleteView(final String viewname, final Progress progress, final IndexWriter writer)
                 throws IOException {
-            writer.deleteDocuments(new Term(Config.VIEW, viewname));
+            writer.deleteDocuments(new Term(Constants.VIEW, viewname));
             progress.removeView(viewname);
         }
 
         private void deleteDatabase(final String dbname, final Progress progress, final IndexWriter writer)
                 throws IOException {
-            writer.deleteDocuments(new Term(Config.DB, dbname));
+            writer.deleteDocuments(new Term(Constants.DB, dbname));
             progress.removeDatabase(dbname);
         }
 

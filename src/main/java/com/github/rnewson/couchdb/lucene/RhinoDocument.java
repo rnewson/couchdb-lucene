@@ -100,7 +100,7 @@ public final class RhinoDocument extends ScriptableObject {
         final JSONObject defaults = JSONObject.fromObject((String) cx.getThreadLocal("defaults"));
 
         String language = defaults.optString("language", "en");
-        String field = defaults.optString("field", Config.DEFAULT_FIELD);
+        String field = defaults.optString("field", Constants.DEFAULT_FIELD);
         String store = defaults.optString("store", "no");
         String index = defaults.optString("index", "analyzed");
         String type = defaults.optString("type", "string");
