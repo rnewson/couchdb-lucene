@@ -15,9 +15,29 @@
     <servlet-class>com.github.rnewson.couchdb.lucene.servlet.SearchServlet</servlet-class>
   </servlet>
 
+  <servlet>
+    <servlet-name>index</servlet-name>
+    <servlet-class>com.github.rnewson.couchdb.lucene.servlet.IndexingServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <servlet-name>admin</servlet-name>
+    <servlet-class>com.github.rnewson.couchdb.lucene.servlet.AdminServlet</servlet-class>
+  </servlet>
+
   <servlet-mapping>
     <servlet-name>search</servlet-name>
-    <url-pattern>/search/*</url-pattern>
+    <url-pattern>/search</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>index</servlet-name>
+    <url-pattern>/index</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>admin</servlet-name>
+    <url-pattern>/admin</url-pattern>
   </servlet-mapping>
 
 </web-app>
