@@ -2,6 +2,7 @@
 ----------------------
 
 * RESTORE USER/PASS auth to CouchDB.
+* pause/resume control over indexer.
 
 * Lucene 2.9.
 ** numeric range suppport.
