@@ -196,7 +196,7 @@ public final class SearchServlet extends HttpServlet {
                     rows.add(row);
                 }
                 // Fetch documents (if requested).
-                if (include_docs) {
+                if (include_docs && fetch_ids.length > 0) {
                     final JSONArray fetched_docs = database.getDocs(req.getParameter("db"), fetch_ids).getJSONArray(
                             "rows");
                     for (int i = 0; i < max; i++) {
@@ -221,8 +221,10 @@ public final class SearchServlet extends HttpServlet {
             if (getBooleanParameter(req, "force_json") || req.getHeader("Accept").contains("application/json")) {
                 resp.setContentType("application/json");
             } else {
-                resp.setContentType("text/plain;charset=utf-8");
+                resp.setContentType("text/plain");
             }
+            
+            resp.setCharacterEncoding("utf-8");
 
             // Cache-related headers.
             resp.setHeader("ETag", etag);

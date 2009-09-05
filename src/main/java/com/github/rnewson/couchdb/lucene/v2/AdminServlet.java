@@ -24,10 +24,28 @@ public final class AdminServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    private LuceneHolder holder;
+
+    AdminServlet(final LuceneHolder holder) {
+        this.holder = holder;
+    }
+
     @Override
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
             IOException {
-        super.doPost(req, resp);
+        if ("/_expunge".equals(req.getPathInfo())) {
+            holder.getIndexWriter().expungeDeletes(false);
+            resp.setStatus(202);
+            return;
+        }
+
+        if ("/_optimize".equals(req.getPathInfo())) {
+            holder.getIndexWriter().optimize(false);
+            resp.setStatus(202);
+            return;
+        }
+        
+        resp.sendError(400);
     }
 
 }
