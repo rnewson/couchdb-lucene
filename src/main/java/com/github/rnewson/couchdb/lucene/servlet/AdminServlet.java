@@ -10,6 +10,13 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Allows purge and optimize calls.
  * 
+ * <ul>
+ * <li>_expunge
+ * <li>_optimize
+ * <li>_pause
+ * <li>_resume
+ * </ul>
+ * 
  * @author rnewson
  * 
  */

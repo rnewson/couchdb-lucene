@@ -2,6 +2,8 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.util.TimerTask;
 
+import net.sf.json.JSONObject;
+
 /**
  * A task that periodically scans all couchdb databases and makes matching
  * updates to Lucene.
@@ -9,7 +11,7 @@ import java.util.TimerTask;
  * @author rnewson
  * 
  */
-public final class IndexingTask extends TimerTask {
+public final class Indexer extends TimerTask {
 
     private Database database;
 
@@ -19,7 +21,11 @@ public final class IndexingTask extends TimerTask {
 
     @Override
     public void run() {
+        try {
+            final JSONObject state = database.getDoc("_local", "lucene");
+            
+        } catch (final Exception e) {
 
+        }
     }
-
 }
