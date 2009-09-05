@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.LogByteSizeMergePolicy;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
@@ -12,61 +13,50 @@ final class LuceneHolder {
 
     private final Directory dir;
 
-    private IndexWriter writer;
-
     private IndexReader reader;
-
-    private IndexSearcher searcher;
 
     private final boolean realtime;
 
-    LuceneHolder(final Directory dir, final boolean realtime) {
+    private final IndexWriter writer;
+
+    LuceneHolder(final Directory dir, final boolean realtime) throws IOException {
         this.dir = dir;
         this.realtime = realtime;
+        this.writer = newWriter();
+        this.reader = newReader();
+        this.reader.incRef();
     }
 
-    synchronized IndexWriter getIndexWriter() throws IOException {
-        if (writer == null) {
-            writer = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
+    private IndexReader newReader() throws IOException {
+        if (realtime) {
+            return getIndexWriter().getReader();
         }
-        return writer;
+        return IndexReader.open(dir, true);
     }
 
-    void createIndex() throws Exception {
-        getIndexWriter();
+    private IndexWriter newWriter() throws IOException {
+        final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
+        final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy(result);
+        mp.setMergeFactor(5);
+        mp.setMaxMergeMB(1000);
+        mp.setUseCompoundFile(false);
+        result.setMergePolicy(mp);
+        result.setRAMBufferSizeMB(16);
+        return result;
     }
 
     synchronized IndexReader borrowReader() throws IOException {
-        if (reader == null) {
-            if (realtime)
-                reader = getIndexWriter().getReader();
-            else
-                reader = IndexReader.open(dir, true);
-            // Prevent closure.
-            reader.incRef();
-        }
         reader.incRef();
         return reader;
     }
 
-    Directory getDirectory() {
-        return dir;
-    }
-
-    synchronized void returnReader(final IndexReader reader) throws IOException {
-        reader.decRef();
-    }
-
     synchronized IndexSearcher borrowSearcher() throws IOException {
-        if (searcher == null) {
-            searcher = new IndexSearcher(reader);
-        }
-        searcher.getIndexReader().incRef();
-        return searcher;
+        final IndexReader reader = borrowReader();
+        return new IndexSearcher(reader);
     }
 
-    synchronized void returnSearcher(final IndexSearcher searcher) throws IOException {
-        searcher.getIndexReader().decRef();
+    IndexWriter getIndexWriter() throws IOException {
+        return writer;
     }
 
     void reopenReader() throws IOException {
@@ -80,10 +70,17 @@ final class LuceneHolder {
         if (reader != newReader) {
             synchronized (this) {
                 reader = newReader;
-                searcher = new IndexSearcher(reader);
                 oldReader.decRef();
             }
         }
+    }
+
+    synchronized void returnReader(final IndexReader reader) throws IOException {
+        reader.decRef();
+    }
+
+    synchronized void returnSearcher(final IndexSearcher searcher) throws IOException {
+        returnReader(searcher.getIndexReader());
     }
 
 }

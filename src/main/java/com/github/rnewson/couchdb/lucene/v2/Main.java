@@ -31,10 +31,8 @@ public final class Main {
         }
 
         final LuceneHolder holder = new LuceneHolder(dir, false);
-        holder.createIndex();
         
         final Server server = new Server(Integer.getInteger("port", 5985));
-
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
         server.setHandler(contexts);
 
@@ -46,7 +44,7 @@ public final class Main {
 
         final Context info = new Context(contexts, "/info", Context.NO_SESSIONS);
         info.addServlet(new ServletHolder(new InfoServlet(holder)), "/*");
-
+        
         server.start();
         server.join();
     }
