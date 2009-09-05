@@ -19,13 +19,12 @@ package com.github.rnewson.couchdb.lucene;
 /**
  * @author rnewson
  */
-@Deprecated
 public final class Main {
 
     public static void main(final String[] args) throws Exception {
-        System.err.println("This entrypoint is deprecated. Please read the 0.4 to 0.5 upgrade notes.");
-        while (System.in.read() != -1)
-            ;
+        
+        
+        
     }
 
 }
