@@ -10,6 +10,15 @@ import org.mortbay.component.AbstractLifeCycle;
  */
 final class Indexer extends AbstractLifeCycle {
 
+    private final Database database;
+
+    private final LuceneHolders holders;
+
+    Indexer(final Database database, final LuceneHolders holders) {
+        this.database = database;
+        this.holders = holders;
+    }
+
     @Override
     protected void doStart() throws Exception {
         // TODO Auto-generated method stub

@@ -9,8 +9,6 @@ import javax.servlet.Filter;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.ContextHandlerCollection;
@@ -49,16 +47,14 @@ public final class Main {
             System.exit(1);            
         }
 
-        final Directory dir = FSDirectory.open(new File(luceneDir));
         final HttpClient httpClient = new DefaultHttpClient();
         final Database database = new Database(httpClient, couchUrl);            
 
-        final LuceneHolder holder = new LuceneHolder(dir, false);
+        final LuceneHolders holders = new LuceneHolders(new File(luceneDir), false);
         
         // Configure Indexer.
-        final Indexer indexer = new Indexer();
-        
-        
+        final Indexer indexer = new Indexer(database, holders);
+                
         // Configure Jetty.
         final Server server = new Server(Integer.getInteger("port", lucenePort));
         server.setStopAtShutdown(true);
@@ -72,13 +68,13 @@ public final class Main {
 
         final Context search = new Context(contexts, "/search", Context.NO_SESSIONS);
         search.addFilter(new FilterHolder(gzipFilter), "/*", Handler.DEFAULT);
-        search.addServlet(new ServletHolder(new SearchServlet(holder, database)), "/*");
+        search.addServlet(new ServletHolder(new SearchServlet(holders, database)), "/*");
 
         final Context info = new Context(contexts, "/info", Context.NO_SESSIONS);
-        info.addServlet(new ServletHolder(new InfoServlet(holder)), "/*");
+        info.addServlet(new ServletHolder(new InfoServlet(holders)), "/*");
 
         final Context admin = new Context(contexts, "/admin", Context.NO_SESSIONS);
-        admin.addServlet(new ServletHolder(new AdminServlet(holder)), "/*");
+        admin.addServlet(new ServletHolder(new AdminServlet(holders)), "/*");
         
         server.start();
         server.join();

@@ -7,6 +7,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.lucene.index.IndexWriter;
+
+import com.github.rnewson.couchdb.lucene.v2.LuceneHolders.WriterCallback;
+
 /**
  * Allows purge and optimize calls.
  * 
@@ -24,27 +28,45 @@ public final class AdminServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private LuceneHolder holder;
+    private LuceneHolders holders;
 
-    AdminServlet(final LuceneHolder holder) {
-        this.holder = holder;
+    AdminServlet(final LuceneHolders holders) {
+        this.holders = holders;
     }
 
     @Override
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
             IOException {
+        if (req.getParameter("index") == null) {
+            resp.sendError(400, "Missing index attribute.");
+            return;
+        }
+        final String indexName = req.getParameter("index");
+
         if ("/_expunge".equals(req.getPathInfo())) {
-            holder.getIndexWriter().expungeDeletes(false);
+            holders.withWriter(indexName, new WriterCallback<Void>() {
+                @Override
+                public Void callback(final IndexWriter writer) throws IOException {
+                    writer.expungeDeletes(false);
+                    return null;
+                }
+            });
             resp.setStatus(202);
             return;
         }
 
         if ("/_optimize".equals(req.getPathInfo())) {
-            holder.getIndexWriter().optimize(false);
+            holders.withWriter(indexName, new WriterCallback<Void>() {
+                @Override
+                public Void callback(final IndexWriter writer) throws IOException {
+                    writer.optimize(false);
+                    return null;
+                }
+            });
             resp.setStatus(202);
             return;
         }
-        
+
         resp.sendError(400);
     }
 

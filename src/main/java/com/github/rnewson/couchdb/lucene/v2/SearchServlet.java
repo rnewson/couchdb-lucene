@@ -26,29 +26,27 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.FieldDoc;
-import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
-import org.apache.lucene.search.TermsFilter;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
-import com.github.rnewson.couchdb.lucene.util.FilterCache;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
+import com.github.rnewson.couchdb.lucene.v2.LuceneHolders.SearcherCallback;
 
 public final class SearchServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final LuceneHolder holder;
+    private final LuceneHolders holders;
 
     private final Database database;
 
-    SearchServlet(final LuceneHolder holder, final Database database) throws IOException {
-        this.holder = holder;
+    SearchServlet(final LuceneHolders holders, final Database database) throws IOException {
+        this.holders = holders;
         this.database = database;
     }
 
@@ -59,193 +57,187 @@ public final class SearchServlet extends HttpServlet {
             resp.sendError(400, "Missing q attribute.");
             return;
         }
-        if (req.getParameter("db") == null) {
-            resp.sendError(400, "Missing db attribute.");
+        if (req.getParameter("index") == null) {
+            resp.sendError(400, "Missing index attribute.");
             return;
         }
-        if (req.getParameter("view") == null) {
-            resp.sendError(400, "Missing view attribute.");
-            return;
-        }
+        final String indexName = req.getParameter("index");
 
         // Refresh reader and searcher unless stale=ok.
         if (!"ok".equals(req.getParameter("stale"))) {
-            holder.reopenReader();
+            holders.reopenReader(indexName);
         }
 
         final boolean debug = getBooleanParameter(req, "debug");
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
 
-        final IndexSearcher searcher = holder.borrowSearcher();
-        try {
-            // Check for 304 - Not Modified.
-            req.getHeader("If-None-Match");
-            final String etag = getETag(searcher);
-            if (!debug && etag.equals(req.getHeader("If-None-Match"))) {
-                resp.setStatus(304);
-                return;
-            }
-
-            // Parse query.
-            final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
-            final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
-
-            final Query q;
-            try {
-                q = parser.parse(req.getParameter("q"));
-            } catch (final ParseException e) {
-                resp.sendError(400, "Bad query syntax.");
-                return;
-            }
-
-            final JSONObject json = new JSONObject();
-            json.put("q", q.toString());
-            json.put("etag", etag);
-
-            if (rewrite_query) {
-                final Query rewritten_q = q.rewrite(searcher.getIndexReader());
-                json.put("rewritten_q", rewritten_q.toString());
-
-                final JSONObject freqs = new JSONObject();
-
-                final Set<Term> terms = new HashSet<Term>();
-                rewritten_q.extractTerms(terms);
-                for (final Object term : terms) {
-                    final int freq = searcher.docFreq((Term) term);
-                    freqs.put(term, freq);
+        final String body = holders.withSearcher(indexName, new SearcherCallback<String>() {
+            @Override
+            public String callback(final IndexSearcher searcher) throws IOException {
+                // Check for 304 - Not Modified.
+                req.getHeader("If-None-Match");
+                final String etag = getETag(searcher);
+                if (!debug && etag.equals(req.getHeader("If-None-Match"))) {
+                    resp.setStatus(304);
+                    return null;
                 }
-                json.put("freqs", freqs);
-            } else {
-                // Perform the search.
-                final TopDocs td;
-                final StopWatch stopWatch = new StopWatch();
 
-                final boolean include_docs = getBooleanParameter(req, "include_docs");
-                final int limit = getIntParameter(req, "limit", 25);
-                final Sort sort = toSort(req.getParameter("sort"));
-                final int skip = getIntParameter(req, "skip", 0);
-                final String view = req.getParameter("view");
+                // Parse query.
+                final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
+                final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
 
-                // Filter out items from other views.
+                final Query q;
+                try {
+                    q = parser.parse(req.getParameter("q"));
+                } catch (final ParseException e) {
+                    resp.sendError(400, "Bad query syntax.");
+                    return null;
+                }
 
-                Filter filter = new TermsFilter();
-                ((TermsFilter) filter).addTerm(new Term(Constants.VIEW, view));
-                filter = FilterCache.get(view, filter);
+                final JSONObject json = new JSONObject();
+                json.put("q", q.toString());
+                json.put("etag", etag);
 
-                if (sort == null) {
-                    td = searcher.search(q, filter, skip + limit);
+                if (rewrite_query) {
+                    final Query rewritten_q = q.rewrite(searcher.getIndexReader());
+                    json.put("rewritten_q", rewritten_q.toString());
+
+                    final JSONObject freqs = new JSONObject();
+
+                    final Set<Term> terms = new HashSet<Term>();
+                    rewritten_q.extractTerms(terms);
+                    for (final Object term : terms) {
+                        final int freq = searcher.docFreq((Term) term);
+                        freqs.put(term, freq);
+                    }
+                    json.put("freqs", freqs);
                 } else {
-                    td = searcher.search(q, filter, skip + limit, sort);
-                }
-                stopWatch.lap("search");
+                    // Perform the search.
+                    final TopDocs td;
+                    final StopWatch stopWatch = new StopWatch();
 
-                // Fetch matches (if any).
-                final int max = max(0, min(td.totalHits - skip, limit));
-                final JSONArray rows = new JSONArray();
-                final String[] fetch_ids = new String[max];
-                for (int i = skip; i < skip + max; i++) {
-                    final Document doc = searcher.doc(td.scoreDocs[i].doc);
-                    final JSONObject row = new JSONObject();
-                    final JSONObject fields = new JSONObject();
+                    final boolean include_docs = getBooleanParameter(req, "include_docs");
+                    final int limit = getIntParameter(req, "limit", 25);
+                    final Sort sort = toSort(req.getParameter("sort"));
+                    final int skip = getIntParameter(req, "skip", 0);
 
-                    // Include stored fields.
-                    for (Object f : doc.getFields()) {
-                        Field fld = (Field) f;
+                    if (sort == null) {
+                        td = searcher.search(q, null, skip + limit);
+                    } else {
+                        td = searcher.search(q, null, skip + limit, sort);
+                    }
+                    stopWatch.lap("search");
 
-                        if (!fld.isStored())
-                            continue;
-                        String name = fld.name();
-                        String value = fld.stringValue();
-                        if (value != null) {
-                            if (Constants.ID.equals(name)) {
-                                row.put("id", value);
-                            } else {
-                                if (!fields.has(name)) {
-                                    fields.put(name, value);
+                    // Fetch matches (if any).
+                    final int max = max(0, min(td.totalHits - skip, limit));
+                    final JSONArray rows = new JSONArray();
+                    final String[] fetch_ids = new String[max];
+                    for (int i = skip; i < skip + max; i++) {
+                        final Document doc = searcher.doc(td.scoreDocs[i].doc);
+                        final JSONObject row = new JSONObject();
+                        final JSONObject fields = new JSONObject();
+
+                        // Include stored fields.
+                        for (Object f : doc.getFields()) {
+                            Field fld = (Field) f;
+
+                            if (!fld.isStored())
+                                continue;
+                            String name = fld.name();
+                            String value = fld.stringValue();
+                            if (value != null) {
+                                if (Constants.ID.equals(name)) {
+                                    row.put("id", value);
                                 } else {
-                                    final Object obj = fields.get(name);
-                                    if (obj instanceof String) {
-                                        final JSONArray arr = new JSONArray();
-                                        arr.add((String) obj);
-                                        arr.add(value);
-                                        fields.put(name, arr);
+                                    if (!fields.has(name)) {
+                                        fields.put(name, value);
                                     } else {
-                                        assert obj instanceof JSONArray;
-                                        ((JSONArray) obj).add(value);
+                                        final Object obj = fields.get(name);
+                                        if (obj instanceof String) {
+                                            final JSONArray arr = new JSONArray();
+                                            arr.add((String) obj);
+                                            arr.add(value);
+                                            fields.put(name, arr);
+                                        } else {
+                                            assert obj instanceof JSONArray;
+                                            ((JSONArray) obj).add(value);
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    if (!Float.isNaN(td.scoreDocs[i].score)) {
-                        row.put("score", td.scoreDocs[i].score);
+                        if (!Float.isNaN(td.scoreDocs[i].score)) {
+                            row.put("score", td.scoreDocs[i].score);
+                        }
+                        // Include sort order (if any).
+                        if (td instanceof TopFieldDocs) {
+                            final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
+                            row.put("sort_order", fd.fields);
+                        }
+                        // Fetch document (if requested).
+                        if (include_docs) {
+                            fetch_ids[i - skip] = doc.get(Constants.ID);
+                        }
+                        if (fields.size() > 0) {
+                            row.put("fields", fields);
+                        }
+                        rows.add(row);
                     }
-                    // Include sort order (if any).
+                    // Fetch documents (if requested).
+                    if (include_docs && fetch_ids.length > 0) {
+                        final JSONArray fetched_docs = database.getDocs(req.getParameter("db"), fetch_ids)
+                                .getJSONArray("rows");
+                        for (int i = 0; i < max; i++) {
+                            rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
+                        }
+                    }
+                    stopWatch.lap("fetch");
+
+                    json.put("skip", skip);
+                    json.put("limit", limit);
+                    json.put("total_rows", td.totalHits);
+                    json.put("search_duration", stopWatch.getElapsed("search"));
+                    json.put("fetch_duration", stopWatch.getElapsed("fetch"));
+                    // Include sort info (if requested).
                     if (td instanceof TopFieldDocs) {
-                        final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
-                        row.put("sort_order", fd.fields);
+                        json.put("sort_order", SearchServlet.toString(((TopFieldDocs) td).fields));
                     }
-                    // Fetch document (if requested).
-                    if (include_docs) {
-                        fetch_ids[i - skip] = doc.get(Constants.ID);
-                    }
-                    if (fields.size() > 0) {
-                        row.put("fields", fields);
-                    }
-                    rows.add(row);
+                    json.put("rows", rows);
                 }
-                // Fetch documents (if requested).
-                if (include_docs && fetch_ids.length > 0) {
-                    final JSONArray fetched_docs = database.getDocs(req.getParameter("db"), fetch_ids).getJSONArray(
-                            "rows");
-                    for (int i = 0; i < max; i++) {
-                        rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
-                    }
+
+                // Determine content type of response.
+                if (getBooleanParameter(req, "force_json") || req.getHeader("Accept").contains("application/json")) {
+                    resp.setContentType("application/json");
+                } else {
+                    resp.setContentType("text/plain");
                 }
-                stopWatch.lap("fetch");
 
-                json.put("skip", skip);
-                json.put("limit", limit);
-                json.put("total_rows", td.totalHits);
-                json.put("search_duration", stopWatch.getElapsed("search"));
-                json.put("fetch_duration", stopWatch.getElapsed("fetch"));
-                // Include sort info (if requested).
-                if (td instanceof TopFieldDocs) {
-                    json.put("sort_order", toString(((TopFieldDocs) td).fields));
-                }
-                json.put("rows", rows);
-            }
+                resp.setCharacterEncoding("utf-8");
 
-            // Determine content type of response.
-            if (getBooleanParameter(req, "force_json") || req.getHeader("Accept").contains("application/json")) {
-                resp.setContentType("application/json");
-            } else {
-                resp.setContentType("text/plain");
-            }
-            
-            resp.setCharacterEncoding("utf-8");
+                // Cache-related headers.
+                resp.setHeader("ETag", etag);
+                resp.setHeader("Cache-Control", "must-revalidate");
 
-            // Cache-related headers.
-            resp.setHeader("ETag", etag);
-            resp.setHeader("Cache-Control", "must-revalidate");
-
-            // Write response.
-            final Writer writer = resp.getWriter();
-            try {
+                // Format response body.
                 final String callback = req.getParameter("callback");
                 final String body;
                 if (callback != null) {
-                    body = String.format("%s(%s)", callback, json);
+                    return String.format("%s(%s)", callback, json);
                 } else {
-                    body = json.toString(debug ? 2 : 0);
+                    return json.toString(debug ? 2 : 0);
                 }
+            }
+        });
+
+        // Write response if we have one.
+        if (body != null) {
+            final Writer writer = resp.getWriter();
+            try {
                 writer.write(body);
             } finally {
                 writer.close();
             }
-        } finally {
-            holder.returnSearcher(searcher);
         }
     }
 
@@ -253,7 +245,7 @@ public final class SearchServlet extends HttpServlet {
         return Long.toHexString(searcher.getIndexReader().getVersion());
     }
 
-    private Sort toSort(final String sort) {
+    private static Sort toSort(final String sort) {
         if (sort == null) {
             return null;
         } else {
@@ -293,7 +285,7 @@ public final class SearchServlet extends HttpServlet {
         }
     }
 
-    private String toString(final SortField[] sortFields) {
+    private static String toString(final SortField[] sortFields) {
         final JSONArray result = new JSONArray();
         for (final SortField field : sortFields) {
             final JSONObject col = new JSONObject();
