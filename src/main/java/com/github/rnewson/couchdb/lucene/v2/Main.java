@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -21,14 +23,24 @@ public final class Main {
         final InputStream in = Main.class.getClassLoader().getResourceAsStream("couchdb-lucene.properties");
         properties.load(in);
         in.close();
-
-        Directory dir = null;
-        if (!properties.containsKey("dir")) {
-            LOG.error("No dir property found in configuration file.");
-            System.exit(1);
-        } else {
-            dir = FSDirectory.open(new File(properties.getProperty("dir")));
+        
+        final String luceneDir = properties.getProperty("lucene.dir");
+        final int lucenePort = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
+        final String couchUrl = properties.getProperty("couchdb.url");
+        
+        if (luceneDir == null) {
+            LOG.error("lucene.dir not set.");
+            System.exit(1);            
         }
+
+        if (couchUrl== null) {
+            LOG.error("couchdb.url not set.");
+            System.exit(1);            
+        }
+
+        final Directory dir = FSDirectory.open(new File(luceneDir));
+        final HttpClient httpClient = new DefaultHttpClient();
+        final Database database = new Database(httpClient, couchUrl);            
 
         final LuceneHolder holder = new LuceneHolder(dir, false);
         
@@ -40,7 +52,7 @@ public final class Main {
         index.addServlet(new ServletHolder(new IndexingServlet(holder)), "/");
 
         final Context search = new Context(contexts, "/search", Context.NO_SESSIONS);
-        search.addServlet(new ServletHolder(new SearchServlet(holder)), "/*");
+        search.addServlet(new ServletHolder(new SearchServlet(holder, database)), "/*");
 
         final Context info = new Context(contexts, "/info", Context.NO_SESSIONS);
         info.addServlet(new ServletHolder(new InfoServlet(holder)), "/*");

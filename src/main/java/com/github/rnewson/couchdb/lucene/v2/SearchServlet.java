@@ -31,10 +31,12 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.TermsFilter;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
+import com.github.rnewson.couchdb.lucene.util.FilterCache;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
 
 public final class SearchServlet extends HttpServlet {
@@ -43,8 +45,11 @@ public final class SearchServlet extends HttpServlet {
 
     private final LuceneHolder holder;
 
-    SearchServlet(final LuceneHolder holder) throws IOException {
+    private final Database database;
+
+    SearchServlet(final LuceneHolder holder, final Database database) throws IOException {
         this.holder = holder;
+        this.database = database;
     }
 
     @Override
@@ -52,6 +57,14 @@ public final class SearchServlet extends HttpServlet {
             IOException {
         if (req.getParameter("q") == null) {
             resp.sendError(400, "Missing q attribute.");
+            return;
+        }
+        if (req.getParameter("db") == null) {
+            resp.sendError(400, "Missing db attribute.");
+            return;
+        }
+        if (req.getParameter("view") == null) {
+            resp.sendError(400, "Missing view attribute.");
             return;
         }
 
@@ -111,14 +124,13 @@ public final class SearchServlet extends HttpServlet {
                 final int limit = getIntParameter(req, "limit", 25);
                 final Sort sort = toSort(req.getParameter("sort"));
                 final int skip = getIntParameter(req, "skip", 0);
+                final String view = req.getParameter("view");
 
-                // RESTORE THIS FEATURE Filter out items from other views.
-                /*
-                 * Filter filter = new TermsFilter(); ((TermsFilter)
-                 * filter).addTerm(new Term(Constants.VIEW, this.viewname));
-                 * filter = FilterCache.get(this.viewname, filter);
-                 */
-                Filter filter = null;
+                // Filter out items from other views.
+
+                Filter filter = new TermsFilter();
+                ((TermsFilter) filter).addTerm(new Term(Constants.VIEW, view));
+                filter = FilterCache.get(view, filter);
 
                 if (sort == null) {
                     td = searcher.search(q, filter, skip + limit);
@@ -185,13 +197,11 @@ public final class SearchServlet extends HttpServlet {
                 }
                 // Fetch documents (if requested).
                 if (include_docs) {
-                    /*
-                     * TODO RESTORE THIS FEATURE! final JSONArray fetched_docs =
-                     * DB.getDocs(dbname, fetch_ids).getJSONArray("rows"); for
-                     * (int i = 0; i < max; i++) {
-                     * rows.getJSONObject(i).put("doc",
-                     * fetched_docs.getJSONObject(i).getJSONObject("doc")); }
-                     */
+                    final JSONArray fetched_docs = database.getDocs(req.getParameter("db"), fetch_ids).getJSONArray(
+                            "rows");
+                    for (int i = 0; i < max; i++) {
+                        rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
+                    }
                 }
                 stopWatch.lap("fetch");
 
