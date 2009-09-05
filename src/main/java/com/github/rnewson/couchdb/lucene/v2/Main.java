@@ -19,6 +19,12 @@ import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.servlet.GzipFilter;
 
+/**
+ * Configure and start embedded Jetty server.
+ * 
+ * @author rnewson
+ *
+ */
 public final class Main {
 
     private static final Logger LOG = Logger.getLogger(Main.class);
@@ -49,9 +55,15 @@ public final class Main {
 
         final LuceneHolder holder = new LuceneHolder(dir, false);
         
+        // Configure Indexer.
+        final Indexer indexer = new Indexer();
+        
+        
+        // Configure Jetty.
         final Server server = new Server(Integer.getInteger("port", lucenePort));
         server.setStopAtShutdown(true);
         server.setSendServerVersion(false);
+        server.addLifeCycle(indexer);
 
         final Filter gzipFilter = new GzipFilter();
                 
