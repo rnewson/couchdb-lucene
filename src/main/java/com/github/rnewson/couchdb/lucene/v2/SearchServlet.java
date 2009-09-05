@@ -37,6 +37,12 @@ import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
 import com.github.rnewson.couchdb.lucene.v2.LuceneHolders.SearcherCallback;
 
+/**
+ * Perform queries against local indexes.
+ * 
+ * @author rnewson
+ * 
+ */
 public final class SearchServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -221,7 +227,6 @@ public final class SearchServlet extends HttpServlet {
 
                 // Format response body.
                 final String callback = req.getParameter("callback");
-                final String body;
                 if (callback != null) {
                     return String.format("%s(%s)", callback, json);
                 } else {

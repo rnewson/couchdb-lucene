@@ -1,5 +1,10 @@
 package com.github.rnewson.couchdb.lucene.v2;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.mortbay.component.AbstractLifeCycle;
 
 /**
@@ -14,6 +19,8 @@ final class Indexer extends AbstractLifeCycle {
 
     private final LuceneHolders holders;
 
+    private ScheduledExecutorService scheduler;
+
     Indexer(final Database database, final LuceneHolders holders) {
         this.database = database;
         this.holders = holders;
@@ -21,14 +28,22 @@ final class Indexer extends AbstractLifeCycle {
 
     @Override
     protected void doStart() throws Exception {
-        // TODO Auto-generated method stub
-        super.doStart();
+        scheduler = Executors.newScheduledThreadPool(1);
     }
 
     @Override
     protected void doStop() throws Exception {
-        // TODO Auto-generated method stub
-        super.doStop();
+        scheduler.shutdown();
+        scheduler.awaitTermination(30, SECONDS);
+    }
+
+    private class IndexerRunnable implements Runnable {
+
+        @Override
+        public void run() {
+
+        }
+
     }
 
 }

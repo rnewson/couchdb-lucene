@@ -6,8 +6,17 @@ import java.util.Properties;
 
 import javax.servlet.Filter;
 
+import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
 import org.apache.log4j.Logger;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
@@ -21,7 +30,7 @@ import org.mortbay.servlet.GzipFilter;
  * Configure and start embedded Jetty server.
  * 
  * @author rnewson
- *
+ * 
  */
 public final class Main {
 
@@ -32,42 +41,50 @@ public final class Main {
         final InputStream in = Main.class.getClassLoader().getResourceAsStream("couchdb-lucene.properties");
         properties.load(in);
         in.close();
-        
+
         final String luceneDir = properties.getProperty("lucene.dir");
         final int lucenePort = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
         final String couchUrl = properties.getProperty("couchdb.url");
-        
+
         if (luceneDir == null) {
             LOG.error("lucene.dir not set.");
-            System.exit(1);            
+            System.exit(1);
         }
 
-        if (couchUrl== null) {
+        if (couchUrl == null) {
             LOG.error("couchdb.url not set.");
-            System.exit(1);            
+            System.exit(1);
         }
 
-        final HttpClient httpClient = new DefaultHttpClient();
-        final Database database = new Database(httpClient, couchUrl);            
+        // Configure httpClient.
+        final HttpParams params = new BasicHttpParams();
+        // NECESSARY? ConnManagerParams.setMaxTotalConnections(params, 1000);
+        HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
+        HttpProtocolParams.setUserAgent(params, HttpProtocolParams.getUserAgent(params) + " couchdb-lucene/0.5");
 
+        final SchemeRegistry schemeRegistry = new SchemeRegistry();
+        schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 5984));
+
+        final ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
+        final HttpClient httpClient = new DefaultHttpClient(cm, params);
+        final Database database = new Database(httpClient, couchUrl);
         final LuceneHolders holders = new LuceneHolders(new File(luceneDir), false);
-        
+
         // Configure Indexer.
         final Indexer indexer = new Indexer(database, holders);
-                
+
         // Configure Jetty.
         final Server server = new Server(Integer.getInteger("port", lucenePort));
         server.setStopAtShutdown(true);
         server.setSendServerVersion(false);
+        // Register with server.
         server.addLifeCycle(indexer);
 
-        final Filter gzipFilter = new GzipFilter();
-                
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
         server.setHandler(contexts);
 
         final Context search = new Context(contexts, "/search", Context.NO_SESSIONS);
-        search.addFilter(new FilterHolder(gzipFilter), "/*", Handler.DEFAULT);
+        search.addFilter(new FilterHolder(new GzipFilter()), "/*", Handler.DEFAULT);
         search.addServlet(new ServletHolder(new SearchServlet(holders, database)), "/*");
 
         final Context info = new Context(contexts, "/info", Context.NO_SESSIONS);
@@ -75,7 +92,10 @@ public final class Main {
 
         final Context admin = new Context(contexts, "/admin", Context.NO_SESSIONS);
         admin.addServlet(new ServletHolder(new AdminServlet(holders)), "/*");
-        
+
+        // Lockdown
+        // System.setSecurityManager(securityManager);
+
         server.start();
         server.join();
     }

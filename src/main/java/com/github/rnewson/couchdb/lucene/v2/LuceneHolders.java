@@ -22,10 +22,6 @@ import org.apache.lucene.store.FSDirectory;
  */
 final class LuceneHolders {
 
-    private static abstract class IndexMappingStrategy {
-        abstract Directory map(final String indexName) throws IOException;
-    }
-
     private static class LuceneHolder {
 
         private final Directory dir;
@@ -58,7 +54,6 @@ final class LuceneHolders {
             mp.setMaxMergeMB(1000);
             mp.setUseCompoundFile(false);
             result.setMergePolicy(mp);
-            result.setRAMBufferSizeMB(16);
             return result;
         }
 
@@ -101,36 +96,6 @@ final class LuceneHolders {
         }
     }
 
-    private static class MultiIndexStrategy extends IndexMappingStrategy {
-
-        private final File baseDir;
-
-        private MultiIndexStrategy(final File baseDir) {
-            this.baseDir = baseDir;
-        }
-
-        @Override
-        public Directory map(final String indexName) throws IOException {
-            return FSDirectory.open(new File(baseDir, indexName));
-        }
-
-    }
-
-    private static class SingleIndexStrategy extends IndexMappingStrategy {
-
-        private final File baseDir;
-
-        private SingleIndexStrategy(final File baseDir) {
-            this.baseDir = baseDir;
-        }
-
-        @Override
-        public Directory map(final String indexName) throws IOException {
-            return FSDirectory.open(baseDir);
-        }
-
-    }
-
     interface ReaderCallback<T> {
         public T callback(final IndexReader reader) throws IOException;
     }
@@ -145,19 +110,19 @@ final class LuceneHolders {
 
     private final Map<String, LuceneHolder> holders = new LinkedHashMap<String, LuceneHolder>();
 
+    private final File baseDir;
+
     private final boolean realtime;
 
-    private final IndexMappingStrategy strategy;
-
     LuceneHolders(final File baseDir, final boolean realtime) {
+        this.baseDir = baseDir;
         this.realtime = realtime;
-        this.strategy = new MultiIndexStrategy(baseDir);
     }
 
     private synchronized LuceneHolder getHolder(final String indexName) throws IOException {
         LuceneHolder result = holders.get(indexName);
         if (result == null) {
-            result = new LuceneHolder(strategy.map(indexName), realtime);
+            result = new LuceneHolder(FSDirectory.open(new File(baseDir, indexName)), realtime);
             holders.put(indexName, result);
         }
         return result;
@@ -186,7 +151,12 @@ final class LuceneHolders {
     <T> T withWriter(final String indexName, final WriterCallback<T> callback) throws IOException {
         final LuceneHolder holder = getHolder(indexName);
         final IndexWriter writer = holder.getIndexWriter();
-        return callback.callback(writer);
+        try {
+            return callback.callback(writer);
+        } catch (final OutOfMemoryError e) {
+            // TODO Writer is broken - ensure atomic replacement.
+            throw e;
+        }
     }
 
     void reopenReader(final String indexName) throws IOException {

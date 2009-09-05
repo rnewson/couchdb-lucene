@@ -131,7 +131,7 @@ final class Database {
     private int put(final String path, final String body) throws IOException {
         final HttpPut put = new HttpPut(url(path));
         if (body != null) {
-            put.setHeader("Content-Type", "application/json");
+            put.setHeader("Content-Type", Constants.CONTENT_TYPE);
             put.setEntity(new StringEntity(body));
         }
         return httpClient.execute(put, new StatusCodeResponseHandler());

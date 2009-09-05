@@ -34,7 +34,7 @@ public class RhinoTest {
             rhino.close();
         }
     }
-
+    
     @Test
     public void testRhino() throws Exception {
         rhino = new Rhino("db,", "function(doc) { var ret = new Document(); "
