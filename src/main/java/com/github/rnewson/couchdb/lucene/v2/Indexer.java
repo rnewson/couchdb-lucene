@@ -1,24 +1,24 @@
 package com.github.rnewson.couchdb.lucene.v2;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.HttpResponseException;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
 import org.mortbay.component.AbstractLifeCycle;
+
+import com.github.rnewson.couchdb.lucene.v2.LuceneHolders.WriterCallback;
 
 /**
  * Pull changes from couchdb into Lucene indexes.
@@ -28,11 +28,13 @@ import org.mortbay.component.AbstractLifeCycle;
  */
 final class Indexer extends AbstractLifeCycle {
 
+    private static final int BATCH_SIZE = 1000;
+
     private final Database database;
 
     private final LuceneHolders holders;
 
-    private final Map<String, Thread> activeTasks = new HashMap<String, Thread>();
+    private Timer timer;
 
     Indexer(final Database database, final LuceneHolders holders) {
         this.database = database;
@@ -41,116 +43,146 @@ final class Indexer extends AbstractLifeCycle {
 
     @Override
     protected void doStart() throws Exception {
-        startTask("databaseScanner", new DatabaseScanner());
+        timer = new Timer(true);
+        timer.schedule(new DatabaseSyncTask(), 5000, 5000);
     }
 
     @Override
     protected void doStop() throws Exception {
-        for (final Thread thread : activeTasks.values()) {
-            thread.interrupt();
-            thread.join(500);
-        }
+        timer.cancel();
     }
 
-    private void startTask(final String taskName, final Runnable runnable) {
-        Thread thread;
-        synchronized (activeTasks) {
-            thread = activeTasks.get(taskName);
-            // Is task already running?
-            if (thread != null && thread.isAlive())
-                return;
-            thread = new Thread(runnable);
-            thread.setDaemon(true);
-            activeTasks.put(taskName, thread);
-        }
-        // Start it.
-        if (!thread.isAlive())
-            thread.start();
-    }
-
-    /**
-     * Periodically queries _all_dbs looking for newly created or updated
-     * databases.
-     */
-    private class DatabaseScanner implements Runnable {
+    private class DatabaseSyncTask extends TimerTask {
 
         @Override
         public void run() {
             try {
-                while (Indexer.this.isRunning()) {
-                    final String[] all_dbs = database.getAllDatabases();
-                    // TODO Delete anything locally that doesn't exist in couch.
-
-                    // Ensure a tracking task exists for each database.
-                    for (final String db : all_dbs) {
-                        startTask(db, new DatabaseTracker(db));
-                    }
-
-                    SECONDS.sleep(15);
-                }
-            } catch (final ConnectException e) {
-                // Silently ignore couchdb being down.
-            } catch (final InterruptedException e) {
-                return;
-            } catch (final Exception e) {
-                e.printStackTrace();
-                return;
-            }
-        }
-    }
-
-    /**
-     * Track all changes to database.
-     * 
-     * @author rnewson
-     * 
-     */
-    private class DatabaseTracker implements Runnable {
-
-        private final String db;
-
-        public DatabaseTracker(final String db) {
-            this.db = db;
-        }
-
-        @Override
-        public void run() {
-            final HttpClient client = new DefaultHttpClient();
-            int since = 0;
-
-            final ResponseHandler<Integer> responseHandler = new ResponseHandler<Integer>() {
-
-                @Override
-                public Integer handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
-                    int last_seq = 0;
-                    final HttpEntity entity = response.getEntity();
-                    final BufferedReader reader = new BufferedReader(
-                            new InputStreamReader(entity.getContent(), "UTF-8"));
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        System.out.println(line);
-                        final JSONObject obj = JSONObject.fromObject(line);
-                        if (obj.has("last_seq")) {
-                            last_seq = obj.getInt("last_seq");
-                            break;
-                        }
-                       // final JSONObject doc = database.getDoc(db, obj.getString("id"));
-                       // System.out.println(doc);
-                    }
-                    return last_seq;
-                }
-            };
-
-            try {
-                while (Indexer.this.isRunning()) {
-                    final HttpGet get = new HttpGet("http://localhost:5984/" + db + "/_changes?feed=continuous&since="
-                            + since);
-                    since = client.execute(get, responseHandler);
+                for (final String databaseName : database.getAllDatabases()) {
+                    updateDatabase(databaseName);
                 }
             } catch (final Exception e) {
                 e.printStackTrace();
             }
         }
+
+        private void updateDatabase(final String databaseName) throws IOException {
+            final JSONObject designDocuments = database.getAllDocs(databaseName, "_design", "_design0");
+            final JSONArray arr = designDocuments.getJSONArray("rows");
+            // For each design document;
+            for (int i = 0; i < arr.size(); i++) {
+                final JSONObject designDocument = arr.getJSONObject(i).getJSONObject("doc");
+                final JSONObject fulltext = designDocument.getJSONObject("fulltext");
+                if (fulltext == null) {
+                    // TODO delete index if we have one.
+                    continue;
+                }
+                // For each fulltext view;
+                for (final Object obj : fulltext.keySet()) {
+                    final String viewName = Utils.viewname(databaseName, designDocument.getString("_id"), (String) obj);
+                    final Rhino rhino = new Rhino(databaseName, defaults, 
+                            fun);                    
+                    final String defaults = fulltext.getJSONObject(key).optString("defaults", "{}");
+                    final Analyzer analyzer = Analyzers.getAnalyzer(fulltext.getJSONObject(key)
+                            .optString("analyzer", "standard"));
+
+                    final long startSequence = getState(databaseName);
+                    final long newSequence = holders.withWriter(viewName, new UpdateDatabaseCallback(databaseName,
+                            startSequence));
+                    if (newSequence != startSequence) {
+                        // setState(databaseName, newSequence);
+                    }
+                }
+            }
+        }
+
+        private long getState(final String databaseName) throws IOException {
+            // TODO add view digest.
+            try {
+                final JSONObject local = database.getDoc(databaseName, "_local/lucene");
+                return local.getLong("seq");
+            } catch (final HttpResponseException e) {
+                if (404 == e.getStatusCode()) {
+                    return 0;
+                }
+                throw e;
+            }
+        }
+
+        private void setState(final String databaseName, final long newSeq) throws IOException {
+            final JSONObject obj = new JSONObject();
+            obj.put("seq", newSeq);
+            try {
+                database.saveDocument(databaseName, "_local/lucene", obj.toString());
+            } catch (final HttpResponseException e) {
+                if (409 == e.getStatusCode()) {
+                    System.out.println("Handle conflict here.");
+                }
+            }
+        }
+
+    }
+
+    private class UpdateDatabaseCallback implements WriterCallback<Long> {
+
+        private final long startSequence;
+        private final String databaseName;
+
+        public UpdateDatabaseCallback(final String databaseName, final long startSequence) {
+            this.databaseName = databaseName;
+            this.startSequence = startSequence;
+        }
+
+        @Override
+        public Long callback(final IndexWriter writer) throws IOException {
+            final JSONObject info = database.getInfo(databaseName);
+            final long endSequence = info.getLong("update_seq");
+
+            if (endSequence == startSequence) {
+                // We're up to date.
+                return startSequence;
+            }
+
+            if (endSequence < startSequence) {
+                System.out.println("REGRESSION!");
+            }
+
+            long currentSequence = startSequence;
+            while (currentSequence < endSequence) {
+                final JSONObject allDocsBySeq = database.getAllDocsBySeq(databaseName, currentSequence, BATCH_SIZE);
+                final JSONArray rows = allDocsBySeq.getJSONArray("rows");
+                for (int i = 0, max = rows.size(); i < max; i++) {
+                    final JSONObject row = rows.getJSONObject(i);
+                    final JSONObject value = row.optJSONObject("value");
+                    final JSONObject doc = row.optJSONObject("doc");
+                    final String docid = row.getString("id");
+                    currentSequence = row.getLong("key");
+
+                    // Do not index design documents.
+                    if (docid.startsWith("_design/")) {
+                        continue;
+                    }
+
+                    System.out.println(value);
+
+                    final Term docTerm = new Term(Constants.ID, docid);
+                    if (value.optBoolean("deleted")) {
+                        writer.deleteDocuments(docTerm);
+                    } else {
+                        final Document ldoc = new Document();
+                        ldoc.add(new Field(Constants.ID, docid, Store.YES, Index.ANALYZED));
+                        writer.updateDocument(docTerm, ldoc);
+                    }
+                }
+
+                // Commit batch.
+                final Map<String, String> state = new HashMap<String, String>();
+                state.put("seq", Long.toString(currentSequence));
+                writer.commit(state);
+            }
+
+            return endSequence;
+        }
+
     }
 
 }

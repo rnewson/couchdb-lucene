@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Properties;
 
-import javax.servlet.Filter;
-
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ClientConnectionManager;
@@ -77,8 +75,10 @@ public final class Main {
         final Server server = new Server(Integer.getInteger("port", lucenePort));
         server.setStopAtShutdown(true);
         server.setSendServerVersion(false);
-        // Register with server.
         server.addLifeCycle(indexer);
+
+        // Configure Rhino.
+        RhinoDocument.CLIENT = httpClient;
 
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
         server.setHandler(contexts);

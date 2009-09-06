@@ -24,76 +24,62 @@ import org.apache.lucene.document.Field.Store;
 class Utils {
 
     /*
-    public static final Logger LOG = Logger.getLogger("couchdb-lucene");
-
-    private static PrintWriter OUT;
-
-    static {
-        try {
-            OUT = new PrintWriter(new OutputStreamWriter(System.out, "UTF-8"));
-        } catch (final UnsupportedEncodingException e) {
-            throw new Error("UTF-8 support is missing from your JVM.");
-        }
-    }
-
-    public static void out(final Object obj) {
-        if (OUT == null) {
-            try {
-                OUT = new PrintWriter(new OutputStreamWriter(System.out, "UTF-8"));
-            } catch (final UnsupportedEncodingException e) {
-                throw new Error("UTF-8 support is missing from your JVM.");
-            }
-        }
-        OUT.println(obj.toString());
-        OUT.flush();
-    }
-
-    public static String throwableToJSON(final Throwable t) {
-        return error(t.getMessage() == null ? "Unknown error" : String.format("%s: %s", t.getClass(), t.getMessage()));
-    }
-
-    public static String error(final String txt) {
-        return error(500, txt);
-    }
-
-    public static String digest(final String data) {
-        return DigestUtils.md5Hex(data);
-    }
-
-    public static String error(final int code, final Throwable t) {
-        final StringWriter writer = new StringWriter();
-        final PrintWriter printWriter = new PrintWriter(writer);
-        if (t.getMessage() != null) {
-            printWriter.append(t.getMessage());
-            printWriter.append("\n");
-        }
-        t.printStackTrace(printWriter);
-        return new JSONObject().element("code", code).element("body", "<pre>" + writer + "</pre>").toString();
-    }
-
-    public static String error(final int code, final String txt) {
-        return new JSONObject().element("code", code).element("body", StringEscapeUtils.escapeHtml(txt)).toString();
-    }*/
+     * public static final Logger LOG = Logger.getLogger("couchdb-lucene");
+     * 
+     * private static PrintWriter OUT;
+     * 
+     * static { try { OUT = new PrintWriter(new OutputStreamWriter(System.out,
+     * "UTF-8")); } catch (final UnsupportedEncodingException e) { throw new
+     * Error("UTF-8 support is missing from your JVM."); } }
+     * 
+     * public static void out(final Object obj) { if (OUT == null) { try { OUT =
+     * new PrintWriter(new OutputStreamWriter(System.out, "UTF-8")); } catch
+     * (final UnsupportedEncodingException e) { throw new
+     * Error("UTF-8 support is missing from your JVM."); } }
+     * OUT.println(obj.toString()); OUT.flush(); }
+     * 
+     * public static String throwableToJSON(final Throwable t) { return
+     * error(t.getMessage() == null ? "Unknown error" : String.format("%s: %s",
+     * t.getClass(), t.getMessage())); }
+     * 
+     * public static String error(final String txt) { return error(500, txt); }
+     * 
+     * public static String digest(final String data) { return
+     * DigestUtils.md5Hex(data); }
+     * 
+     * public static String error(final int code, final Throwable t) { final
+     * StringWriter writer = new StringWriter(); final PrintWriter printWriter =
+     * new PrintWriter(writer); if (t.getMessage() != null) {
+     * printWriter.append(t.getMessage()); printWriter.append("\n"); }
+     * t.printStackTrace(printWriter); return new JSONObject().element("code",
+     * code).element("body", "<pre>" + writer + "</pre>").toString(); }
+     * 
+     * public static String error(final int code, final String txt) { return new
+     * JSONObject().element("code", code).element("body",
+     * StringEscapeUtils.escapeHtml(txt)).toString(); }
+     */
 
     public static Field text(final String name, final String value, final boolean store) {
         return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
     }
-    
-/*
-    public static Field token(final String name, final String value, final boolean store) {
-        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
-    }
 
-    public static Query docQuery(final String viewname, final String id) {
-        BooleanQuery q = new BooleanQuery();
-        q.add(new TermQuery(new Term(Constants.VIEW, viewname)), Occur.MUST);
-        q.add(new TermQuery(new Term(Constants.ID, id)), Occur.MUST);
-        return q;
+    /*
+     * public static Field token(final String name, final String value, final
+     * boolean store) { return new Field(name, value, store ? Store.YES :
+     * Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS); }
+     * 
+     * public static Query docQuery(final String viewname, final String id) {
+     * BooleanQuery q = new BooleanQuery(); q.add(new TermQuery(new
+     * Term(Constants.VIEW, viewname)), Occur.MUST); q.add(new TermQuery(new
+     * Term(Constants.ID, id)), Occur.MUST); return q; }
+     */
+
+    public static String viewname(final String databaseName, final String designDocumentName, final String viewName) {
+        return String.format("%s_%s_%s", databaseName, designDocumentName, viewName);        
     }
-    */
 
     public static String viewname(final JSONArray path) {
-        return String.format("%s/%s/%s", path.getString(0), path.getString(2), path.getString(3));
+        return viewname(path.getString(0), path.getString(2), path.getString(3));
     }
 
 }
