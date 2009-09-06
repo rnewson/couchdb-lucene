@@ -18,6 +18,9 @@ package com.github.rnewson.couchdb.lucene.v2;
 
 import net.sf.json.JSONArray;
 
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Store;
+
 class Utils {
 
     /*
@@ -70,12 +73,13 @@ class Utils {
 
     public static String error(final int code, final String txt) {
         return new JSONObject().element("code", code).element("body", StringEscapeUtils.escapeHtml(txt)).toString();
-    }
+    }*/
 
     public static Field text(final String name, final String value, final boolean store) {
         return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
     }
-
+    
+/*
     public static Field token(final String name, final String value, final boolean store) {
         return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
     }
