@@ -24,10 +24,30 @@ JDK6 is required; the Sun version is recommended as it's regularly tested agains
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
 
 [external]
-fti=/usr/bin/java -server -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar
+fti=/path/to/couchdb-lucene/couchdb-external-hook
 
 [httpd_db_handlers]
 _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
+</pre>
+
+<h1>Configure couchdb-lucene</h1>
+
+From 0.5 onwards, couchdb-lucene runs in a single, standalone JVM. As such, you can choose to locate your couchdb-lucene server on a different machine to couchdb if you wish, or keep it on the same machine, it's your call. In either case, you need to tell couchdb-lucene where couch is. Edit the couchdb-lucene.properties file and fill in the host and port details;
+
+<pre>
+couchdb.url=http://localhost:5984
+</pre>
+
+<h1>Start couchdb-lucene</h1>
+
+To start couchdb-lucene, run;
+<pre>
+couchdb-lucene start
+</pre>
+
+To stop couchdb-lucene, run;
+<pre>
+couchdb-lucene stop
 </pre>
 
 <h1>Indexing Strategy</h1>
