@@ -49,11 +49,7 @@ final class LuceneHolders {
 
         private IndexWriter newWriter() throws IOException {
             final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
-            final LogByteSizeMergePolicy mp = new LogByteSizeMergePolicy(result);
-            mp.setMergeFactor(5);
-            mp.setMaxMergeMB(1000);
-            mp.setUseCompoundFile(false);
-            result.setMergePolicy(mp);
+            result.setMergeFactor(5);
             return result;
         }
 
