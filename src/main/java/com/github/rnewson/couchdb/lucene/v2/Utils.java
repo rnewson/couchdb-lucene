@@ -16,7 +16,11 @@ package com.github.rnewson.couchdb.lucene.v2;
  * limitations under the License.
  */
 
-import net.sf.json.JSONArray;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -74,12 +78,20 @@ class Utils {
      * Term(Constants.ID, id)), Occur.MUST); return q; }
      */
 
-    public static String viewname(final String databaseName, final String designDocumentName, final String viewName) {
-        return String.format("%s_%s_%s", databaseName, designDocumentName, viewName);        
+    public static File viewdir(final File baseDir, final String databaseName, final String viewFunction) {
+        File result = new File(baseDir, databaseName);
+        return new File(result, md5(viewFunction.replaceAll("\\s+", "")));
     }
 
-    public static String viewname(final JSONArray path) {
-        return viewname(path.getString(0), path.getString(2), path.getString(3));
+    private static String md5(final String str) {
+        try {
+            final MessageDigest md = MessageDigest.getInstance("MD5");
+            return new BigInteger(1, md.digest(str.getBytes("UTF-8"))).toString(16);
+        } catch (final NoSuchAlgorithmException e) {
+            throw new Error("MD5 support missing.");
+        } catch (final UnsupportedEncodingException e) {
+            throw new Error("UTF-8 support missing.");
+        }
     }
 
 }
