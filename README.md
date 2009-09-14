@@ -52,11 +52,9 @@ Here's an complete example of a design document with couchdb-lucene features:
     "_id":"_design/a_design_document_with_any_name_you_like",
     "fulltext": {
         "by_subject": {
-            "defaults": { "store":"yes" },
             "index":"function(doc) { var ret=new Document(); ret.add(doc.subject); return ret }"
         },
         "by_content": {
-            "defaults": { "store":"no" },
             "index":"function(doc) { var ret=new Document(); ret.add(doc.content); return ret }"
         }
     }
