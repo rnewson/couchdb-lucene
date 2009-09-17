@@ -20,7 +20,7 @@ import org.apache.lucene.store.FSDirectory;
  * @author rnewson
  * 
  */
-final class LuceneHolders {
+final class LuceneGateway {
 
     private static class LuceneHolder {
 
@@ -53,13 +53,15 @@ final class LuceneHolders {
             return result;
         }
 
-        synchronized IndexReader borrowReader() throws IOException {
+        synchronized IndexReader borrowReader(final boolean staleOk) throws IOException {
+            if (!staleOk)
+                reopenReader();
             reader.incRef();
             return reader;
         }
 
-        synchronized IndexSearcher borrowSearcher() throws IOException {
-            final IndexReader reader = borrowReader();
+        synchronized IndexSearcher borrowSearcher(final boolean staleOk) throws IOException {
+            final IndexReader reader = borrowReader(staleOk);
             return new IndexSearcher(reader);
         }
 
@@ -68,18 +70,11 @@ final class LuceneHolders {
         }
 
         void reopenReader() throws IOException {
-            final IndexReader oldReader;
-            synchronized (this) {
-                oldReader = reader;
-            }
-
+            final IndexReader oldReader = reader;
             final IndexReader newReader = oldReader.reopen();
-
             if (reader != newReader) {
-                synchronized (this) {
-                    reader = newReader;
-                    oldReader.decRef();
-                }
+                reader = newReader;
+                oldReader.decRef();
             }
         }
 
@@ -104,29 +99,33 @@ final class LuceneHolders {
         public T callback(final IndexWriter writer) throws IOException;
     }
 
-    private final Map<String, LuceneHolder> holders = new LinkedHashMap<String, LuceneHolder>();
+    private final Map<ViewSignature, LuceneHolder> holders = new LinkedHashMap<ViewSignature, LuceneHolder>();
 
     private final File baseDir;
 
     private final boolean realtime;
 
-    LuceneHolders(final File baseDir, final boolean realtime) {
+    LuceneGateway(final File baseDir, final boolean realtime) {
         this.baseDir = baseDir;
         this.realtime = realtime;
     }
 
-    private synchronized LuceneHolder getHolder(final String indexName) throws IOException {
-        LuceneHolder result = holders.get(indexName);
+    private synchronized LuceneHolder getHolder(final ViewSignature viewSignature) throws IOException {
+        LuceneHolder result = holders.get(viewSignature);
         if (result == null) {
-            result = new LuceneHolder(FSDirectory.open(new File(baseDir, indexName)), realtime);
-            holders.put(indexName, result);
+            final File dir = viewSignature.toFile(baseDir);
+            if (!dir.exists() && !dir.mkdirs())
+                throw new IOException("Could not make " + dir);
+            result = new LuceneHolder(FSDirectory.open(dir), realtime);
+            holders.put(viewSignature, result);
         }
         return result;
     }
 
-    <T> T withReader(final String indexName, final ReaderCallback<T> callback) throws IOException {
-        final LuceneHolder holder = getHolder(indexName);
-        final IndexReader reader = holder.borrowReader();
+    <T> T withReader(final ViewSignature viewSignature, final boolean staleOk, final ReaderCallback<T> callback)
+            throws IOException {
+        final LuceneHolder holder = getHolder(viewSignature);
+        final IndexReader reader = holder.borrowReader(staleOk);
         try {
             return callback.callback(reader);
         } finally {
@@ -134,9 +133,9 @@ final class LuceneHolders {
         }
     }
 
-    <T> T withSearcher(final String indexName, final SearcherCallback<T> callback) throws IOException {
-        final LuceneHolder holder = getHolder(indexName);
-        final IndexSearcher searcher = holder.borrowSearcher();
+    <T> T withSearcher(final ViewSignature viewSignature, final boolean staleOk, final SearcherCallback<T> callback) throws IOException {
+        final LuceneHolder holder = getHolder(viewSignature);
+        final IndexSearcher searcher = holder.borrowSearcher(staleOk);
         try {
             return callback.callback(searcher);
         } finally {
@@ -144,8 +143,8 @@ final class LuceneHolders {
         }
     }
 
-    <T> T withWriter(final String indexName, final WriterCallback<T> callback) throws IOException {
-        final LuceneHolder holder = getHolder(indexName);
+    <T> T withWriter(final ViewSignature viewSignature, final WriterCallback<T> callback) throws IOException {
+        final LuceneHolder holder = getHolder(viewSignature);
         final IndexWriter writer = holder.getIndexWriter();
         try {
             return callback.callback(writer);
@@ -153,10 +152,6 @@ final class LuceneHolders {
             // TODO Writer is broken - ensure atomic replacement.
             throw e;
         }
-    }
-
-    void reopenReader(final String indexName) throws IOException {
-        getHolder(indexName).reopenReader();
     }
 
 }

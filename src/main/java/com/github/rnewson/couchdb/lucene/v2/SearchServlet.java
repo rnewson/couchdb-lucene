@@ -1,6 +1,6 @@
 package com.github.rnewson.couchdb.lucene.v2;
 
-import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.getBooleanParameter;
+import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.*;
 import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.getIntParameter;
 import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.getParameter;
 import static java.lang.Math.max;
@@ -35,7 +35,7 @@ import org.apache.lucene.search.TopFieldDocs;
 
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
-import com.github.rnewson.couchdb.lucene.v2.LuceneHolders.SearcherCallback;
+import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.SearcherCallback;
 
 /**
  * Perform queries against local indexes.
@@ -47,11 +47,11 @@ public final class SearchServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final LuceneHolders holders;
+    private final LuceneGateway holders;
 
     private final Database database;
 
-    SearchServlet(final LuceneHolders holders, final Database database) throws IOException {
+    SearchServlet(final LuceneGateway holders, final Database database) throws IOException {
         this.holders = holders;
         this.database = database;
     }
@@ -69,15 +69,12 @@ public final class SearchServlet extends HttpServlet {
         }
         final String indexName = req.getParameter("index");
 
-        // Refresh reader and searcher unless stale=ok.
-        if (!"ok".equals(req.getParameter("stale"))) {
-            holders.reopenReader(indexName);
-        }
-
+        final boolean staleOk = "ok".equals(req.getParameter("stale"));
         final boolean debug = getBooleanParameter(req, "debug");
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
+        final long since = getLongParameter(req, "since", 0);
 
-        final String body = holders.withSearcher(indexName, new SearcherCallback<String>() {
+        final String body = holders.withSearcher(indexName, staleOk, new SearcherCallback<String>() {
             @Override
             public String callback(final IndexSearcher searcher) throws IOException {
                 // Check for 304 - Not Modified.

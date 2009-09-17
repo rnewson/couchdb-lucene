@@ -60,34 +60,34 @@ final class Database {
 
     public JSONObject getAllDocsBySeq(final String dbname, final long startkey) throws IOException {
         return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%s&include_docs=true",
-                encode(dbname), startkey)));
+                Utils.urlEncode(dbname), startkey)));
     }
 
     public boolean createDatabase(final String dbname) throws IOException {
-        return put(encode(dbname), null) == 201;
+        return put(Utils.urlEncode(dbname), null) == 201;
     }
 
     public boolean deleteDatabase(final String dbname) throws IOException {
-        return delete(encode(dbname)) == 201;
+        return delete(Utils.urlEncode(dbname)) == 201;
     }
 
     public boolean saveDocument(final String dbname, final String id, final String body) throws IOException {
-        return put(String.format("%s/%s", encode(dbname), id), body) == 201;
+        return put(String.format("%s/%s", Utils.urlEncode(dbname), id), body) == 201;
     }
 
     public JSONObject getAllDocs(final String dbname, final String startkey, final String endkey) throws IOException {
         return JSONObject.fromObject(get(String.format(
-                "%s/_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true", encode(dbname),
-                encode(startkey), encode(endkey))));
+                "%s/_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true", Utils.urlEncode(dbname),
+                Utils.urlEncode(startkey), Utils.urlEncode(endkey))));
     }
 
     public JSONObject getAllDocsBySeq(final String dbname, final long startkey, final int limit) throws IOException {
         return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%d&limit=%d&include_docs=true",
-                encode(dbname), startkey, limit)));
+                Utils.urlEncode(dbname), startkey, limit)));
     }
 
     public JSONObject getDoc(final String dbname, final String id) throws IOException {
-        return JSONObject.fromObject(get(String.format("%s/%s", encode(dbname), id)));
+        return JSONObject.fromObject(get(String.format("%s/%s", Utils.urlEncode(dbname), id)));
     }
 
     public JSONObject getDocs(final String dbname, final String... ids) throws IOException {
@@ -98,12 +98,12 @@ final class Database {
         final JSONObject req = new JSONObject();
         req.element("keys", keys);
 
-        return JSONObject.fromObject(post(String.format("%s/_all_docs?include_docs=true", encode(dbname)), req
+        return JSONObject.fromObject(post(String.format("%s/_all_docs?include_docs=true", Utils.urlEncode(dbname)), req
                 .toString()));
     }
 
     public JSONObject getInfo(final String dbname) throws IOException {
-        return JSONObject.fromObject(get(encode(dbname)));
+        return JSONObject.fromObject(get(Utils.urlEncode(dbname)));
     }
 
     private String get(final String path) throws IOException {
@@ -112,14 +112,6 @@ final class Database {
 
     String url(final String path) {
         return String.format("%s/%s", url, path);
-    }
-
-    String encode(final String path) {
-        try {
-            return URLEncoder.encode(path, "UTF-8");
-        } catch (final UnsupportedEncodingException e) {
-            throw new Error("UTF-8 support missing!");
-        }
     }
 
     private String post(final String path, final String body) throws IOException {

@@ -66,7 +66,7 @@ public final class Main {
         final ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
         final HttpClient httpClient = new DefaultHttpClient(cm, params);
         final Database database = new Database(httpClient, couchUrl);
-        final LuceneHolders holders = new LuceneHolders(new File(luceneDir), false);
+        final LuceneGateway holders = new LuceneGateway(new File(luceneDir), false);
 
         // Configure Indexer.
         final Indexer indexer = new Indexer(database, holders);

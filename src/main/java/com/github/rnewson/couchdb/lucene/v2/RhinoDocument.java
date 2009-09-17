@@ -165,7 +165,7 @@ public final class RhinoDocument extends ScriptableObject {
         final String docid = (String) cx.getThreadLocal("docid");
         final String field = args[0].toString();
         final String attname = args[1].toString();
-        final String url = DB.url(String.format("%s/%s/%s", dbname, DB.encode(docid), DB.encode(attname)));
+        final String url = DB.url(String.format("%s/%s/%s", dbname, Utils.urlEncode(docid), Utils.urlEncode(attname)));
 
         final HttpGet get = new HttpGet(url);
 

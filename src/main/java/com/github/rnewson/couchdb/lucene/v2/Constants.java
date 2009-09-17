@@ -19,5 +19,7 @@ final class Constants {
     static final String VIEW = "_view";
 
     static final String SEQ = "_seq";
+    
+    static final int SEQ_PRECISION = 10;
 
 }

@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.lucene.index.IndexWriter;
 
-import com.github.rnewson.couchdb.lucene.v2.LuceneHolders.WriterCallback;
+import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.WriterCallback;
 
 /**
  * Allows purge and optimize calls.
@@ -28,9 +28,9 @@ public final class AdminServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private LuceneHolders holders;
+    private LuceneGateway holders;
 
-    AdminServlet(final LuceneHolders holders) {
+    AdminServlet(final LuceneGateway holders) {
         this.holders = holders;
     }
 

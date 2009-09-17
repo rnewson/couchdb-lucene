@@ -19,6 +19,7 @@ package com.github.rnewson.couchdb.lucene.v2;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -62,6 +63,14 @@ class Utils {
      * JSONObject().element("code", code).element("body",
      * StringEscapeUtils.escapeHtml(txt)).toString(); }
      */
+    
+    public static String urlEncode(final String path) {
+        try {
+            return URLEncoder.encode(path, "UTF-8");
+        } catch (final UnsupportedEncodingException e) {
+            throw new Error("UTF-8 support missing!");
+        }
+    }
 
     public static Field text(final String name, final String value, final boolean store) {
         return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
@@ -83,7 +92,7 @@ class Utils {
         return new File(result, md5(viewFunction.replaceAll("\\s+", "")));
     }
 
-    private static String md5(final String str) {
+    public static String md5(final String str) {
         try {
             final MessageDigest md = MessageDigest.getInstance("MD5");
             return new BigInteger(1, md.digest(str.getBytes("UTF-8"))).toString(16);

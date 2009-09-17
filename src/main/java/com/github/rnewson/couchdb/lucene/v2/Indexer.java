@@ -12,13 +12,14 @@ import net.sf.json.JSONObject;
 import org.apache.http.client.HttpResponseException;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.NumericField;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.mortbay.component.AbstractLifeCycle;
 
-import com.github.rnewson.couchdb.lucene.v2.LuceneHolders.WriterCallback;
+import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.WriterCallback;
 
 /**
  * Pull changes from couchdb into Lucene indexes.
@@ -32,11 +33,11 @@ final class Indexer extends AbstractLifeCycle {
 
     private final Database database;
 
-    private final LuceneHolders holders;
+    private final LuceneGateway holders;
 
     private Timer timer;
 
-    Indexer(final Database database, final LuceneHolders holders) {
+    Indexer(final Database database, final LuceneGateway holders) {
         this.database = database;
         this.holders = holders;
     }
@@ -95,31 +96,6 @@ final class Indexer extends AbstractLifeCycle {
             }
         }
 
-        private long getState(final String databaseName) throws IOException {
-            // TODO add view digest.
-            try {
-                final JSONObject local = database.getDoc(databaseName, "_local/lucene");
-                return local.getLong("seq");
-            } catch (final HttpResponseException e) {
-                if (404 == e.getStatusCode()) {
-                    return 0;
-                }
-                throw e;
-            }
-        }
-
-        private void setState(final String databaseName, final long newSeq) throws IOException {
-            final JSONObject obj = new JSONObject();
-            obj.put("seq", newSeq);
-            try {
-                database.saveDocument(databaseName, "_local/lucene", obj.toString());
-            } catch (final HttpResponseException e) {
-                if (409 == e.getStatusCode()) {
-                    System.out.println("Handle conflict here.");
-                }
-            }
-        }
-
     }
 
     private class UpdateDatabaseCallback implements WriterCallback<Long> {
@@ -168,16 +144,18 @@ final class Indexer extends AbstractLifeCycle {
                     if (value.optBoolean("deleted")) {
                         writer.deleteDocuments(docTerm);
                     } else {
+                        // TODO optimize GC by reusing Document, Field, NumericField objects.
                         final Document ldoc = new Document();
+                        
+                        // Add mandatory fields.
                         ldoc.add(new Field(Constants.ID, docid, Store.YES, Index.ANALYZED));
+                        ldoc.add(new NumericField(Constants.SEQ, Constants.SEQ_PRECISION).setLongValue(currentSequence));
+                        
                         writer.updateDocument(docTerm, ldoc);
                     }
                 }
 
-                // Commit batch.
-                final Map<String, String> state = new HashMap<String, String>();
-                state.put("seq", Long.toString(currentSequence));
-                writer.commit(state);
+                writer.commit();
             }
 
             return endSequence;

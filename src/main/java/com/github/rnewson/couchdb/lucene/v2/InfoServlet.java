@@ -15,15 +15,15 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.store.Directory;
 
-import com.github.rnewson.couchdb.lucene.v2.LuceneHolders.ReaderCallback;
+import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.ReaderCallback;
 
 public class InfoServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final LuceneHolders holders;
+    private final LuceneGateway holders;
 
-    InfoServlet(final LuceneHolders holders) {
+    InfoServlet(final LuceneGateway holders) {
         this.holders = holders;
     }
 
@@ -35,8 +35,8 @@ public class InfoServlet extends HttpServlet {
             return;
         }
         final String indexName = req.getParameter("index");
-
-        final JSONObject json = holders.withReader(indexName, new ReaderCallback<JSONObject>() {
+        final boolean staleOk = "ok".equals(req.getParameter("stale"));
+        final JSONObject json = holders.withReader(indexName, staleOk, new ReaderCallback<JSONObject>() {
 
             @Override
             public JSONObject callback(final IndexReader reader) throws IOException {
