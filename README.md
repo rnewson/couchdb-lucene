@@ -36,10 +36,10 @@ Couchdb-lucene is known to be incompatible with some versions of OpenJDK as it i
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
 
 [external]
-fti=/usr/bin/java -server -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -search
+fti=/usr/bin/java -server -Xmx1g -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -search
 
 [update_notification]
-indexer=/usr/bin/java -server -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -index
+indexer=/usr/bin/java -server -Xmx1g -jar /path/to/couchdb-lucene*-jar-with-dependencies.jar -index
 
 [httpd_db_handlers]
 _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
