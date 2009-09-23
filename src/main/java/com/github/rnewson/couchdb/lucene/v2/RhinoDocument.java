@@ -104,7 +104,6 @@ public final class RhinoDocument extends ScriptableObject {
 
         final JSONObject defaults = JSONObject.fromObject((String) cx.getThreadLocal("defaults"));
 
-        String language = defaults.optString("language", "en");
         String field = defaults.optString("field", Constants.DEFAULT_FIELD);
         String store = defaults.optString("store", "no");
         String index = defaults.optString("index", "analyzed");
@@ -113,7 +112,6 @@ public final class RhinoDocument extends ScriptableObject {
         // Check for local override.
         if (args.length == 2) {
             final NativeObject obj = (NativeObject) args[1];
-            language = optString(obj, "language", language);
             field = optString(obj, "field", field);
             store = optString(obj, "store", store);
             index = optString(obj, "index", index);

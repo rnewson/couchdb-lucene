@@ -17,6 +17,12 @@ import org.apache.lucene.store.Directory;
 
 import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.ReaderCallback;
 
+/**
+ * Provides information current indexes.
+ * 
+ * @author robertnewson
+ *
+ */
 public class InfoServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;

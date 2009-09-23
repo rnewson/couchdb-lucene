@@ -7,6 +7,7 @@ import java.util.Properties;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.params.ConnManagerParams;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
@@ -43,6 +44,7 @@ public final class Main {
         final String luceneDir = properties.getProperty("lucene.dir");
         final int lucenePort = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
         final String couchUrl = properties.getProperty("couchdb.url");
+        final boolean realtime = Boolean.parseBoolean(properties.getProperty("lucene.realtime", "false"));
 
         if (luceneDir == null) {
             LOG.error("lucene.dir not set.");
@@ -56,7 +58,7 @@ public final class Main {
 
         // Configure httpClient.
         final HttpParams params = new BasicHttpParams();
-        // NECESSARY? ConnManagerParams.setMaxTotalConnections(params, 1000);
+        ConnManagerParams.setMaxTotalConnections(params, 1000);
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
         HttpProtocolParams.setUserAgent(params, HttpProtocolParams.getUserAgent(params) + " couchdb-lucene/0.5");
 
@@ -66,7 +68,7 @@ public final class Main {
         final ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
         final HttpClient httpClient = new DefaultHttpClient(cm, params);
         final Database database = new Database(httpClient, couchUrl);
-        final LuceneGateway holders = new LuceneGateway(new File(luceneDir), false);
+        final LuceneGateway holders = new LuceneGateway(new File(luceneDir), realtime);
 
         // Configure Indexer.
         final Indexer indexer = new Indexer(database, holders);

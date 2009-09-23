@@ -7,8 +7,9 @@ import java.util.Map;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.LogByteSizeMergePolicy;
+import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.search.FieldCache;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -39,18 +40,33 @@ final class LuceneGateway {
             this.reader = newReader();
             this.reader.incRef();
         }
+        
+        private void close() throws IOException {
+        	reader.decRef();
+        	writer.rollback();
+        }
 
         private IndexReader newReader() throws IOException {
-            if (realtime) {
-                return getIndexWriter().getReader();
-            }
-            return IndexReader.open(dir, true);
+        	return realtime ? getIndexWriter().getReader() : IndexReader.open(dir, true);
         }
 
         private IndexWriter newWriter() throws IOException {
             final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
             result.setMergeFactor(5);
+            result.setMergedSegmentWarmer(newWarmer());
             return result;
+        }
+        
+        private IndexReaderWarmer newWarmer() {
+        	return new IndexReaderWarmer(){
+
+				@Override
+				public void warm(final IndexReader reader) throws IOException {
+					// Prewarm sequence (is this "insane"?)
+					FieldCache.DEFAULT.getLongs(reader, Constants.SEQ);
+
+					// TODO allow clients to specify more fields.
+				}};
         }
 
         synchronized IndexReader borrowReader(final boolean staleOk) throws IOException {
@@ -70,9 +86,12 @@ final class LuceneGateway {
         }
 
         void reopenReader() throws IOException {
-            final IndexReader oldReader = reader;
-            final IndexReader newReader = oldReader.reopen();
+        	if (realtime)
+        		return;
+        	
+            final IndexReader newReader = reader.reopen();
             if (reader != newReader) {
+                final IndexReader oldReader = reader;
                 reader = newReader;
                 oldReader.decRef();
             }
@@ -153,5 +172,13 @@ final class LuceneGateway {
             throw e;
         }
     }
+    
+    void deleteIndex(final ViewSignature viewSignature) throws IOException {
+    	
+    }
 
+    void createIndex(final ViewSignature viewSignature) throws IOException {
+    	
+    }
+    
 }

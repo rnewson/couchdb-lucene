@@ -12,7 +12,7 @@ import org.apache.lucene.index.IndexWriter;
 import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.WriterCallback;
 
 /**
- * Allows purge and optimize calls.
+ * Administrative functions.
  * 
  * <ul>
  * <li>_expunge
