@@ -7,7 +7,7 @@ import org.apache.lucene.util.Version;
 final class Constants {
 
     static final Analyzer ANALYZER = new StandardAnalyzer(Version.LUCENE_CURRENT);
-    
+
     static final String CONTENT_TYPE = "application/json";
 
     static final String DEFAULT_FIELD = "default";
@@ -19,7 +19,7 @@ final class Constants {
     static final String VIEW = "_view";
 
     static final String SEQ = "_seq";
-    
+
     static final int SEQ_PRECISION = 10;
 
 }

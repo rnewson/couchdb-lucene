@@ -21,29 +21,33 @@ import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.ReaderCallback;
  * Provides information current indexes.
  * 
  * @author robertnewson
- *
+ * 
  */
 public class InfoServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final LuceneGateway holders;
+    private final State state;
 
-    InfoServlet(final LuceneGateway holders) {
-        this.holders = holders;
+    InfoServlet(final State state) {
+        this.state = state;
     }
 
     @Override
-    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
-            IOException {
+    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
         if (req.getParameter("index") == null) {
             resp.sendError(400, "Missing index attribute.");
             return;
         }
-        final String indexName = req.getParameter("index");
-        final boolean staleOk = "ok".equals(req.getParameter("stale"));
-        final JSONObject json = holders.withReader(indexName, staleOk, new ReaderCallback<JSONObject>() {
 
+        final ViewSignature sig = state.locator.lookup(req);
+        if (sig == null) {
+            resp.sendError(400, "Invalid path.");
+            return;
+        }
+
+        final boolean staleOk = "ok".equals(req.getParameter("stale"));
+        final JSONObject json = state.gateway.withReader(sig, staleOk, new ReaderCallback<JSONObject>() {
             @Override
             public JSONObject callback(final IndexReader reader) throws IOException {
                 final JSONObject result = new JSONObject();

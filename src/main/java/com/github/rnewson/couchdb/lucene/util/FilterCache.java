@@ -25,7 +25,7 @@ import org.apache.lucene.search.Filter;
  * Keep filters around subject to memory pressure.
  * 
  * @author rnewson
- *
+ * 
  */
 public final class FilterCache {
 

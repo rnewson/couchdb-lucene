@@ -1,6 +1,6 @@
 package com.github.rnewson.couchdb.lucene.v2;
 
-import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.*;
+import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.getBooleanParameter;
 import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.getIntParameter;
 import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.getParameter;
 import static java.lang.Math.max;
@@ -47,18 +47,14 @@ public final class SearchServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final LuceneGateway holders;
+    private final State state;
 
-    private final Database database;
-
-    SearchServlet(final LuceneGateway holders, final Database database) throws IOException {
-        this.holders = holders;
-        this.database = database;
+    SearchServlet(final State state) {
+        this.state = state;
     }
 
     @Override
-    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
-            IOException {
+    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
         if (req.getParameter("q") == null) {
             resp.sendError(400, "Missing q attribute.");
             return;
@@ -67,14 +63,18 @@ public final class SearchServlet extends HttpServlet {
             resp.sendError(400, "Missing index attribute.");
             return;
         }
-        final String indexName = req.getParameter("index");
 
+        final ViewSignature sig = state.locator.lookup(req);
+        if (sig == null) {
+            resp.sendError(400, "Invalid path.");
+            return;            
+        }
+        
         final boolean staleOk = "ok".equals(req.getParameter("stale"));
         final boolean debug = getBooleanParameter(req, "debug");
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
-        final long since = getLongParameter(req, "since", 0);
 
-        final String body = holders.withSearcher(indexName, staleOk, new SearcherCallback<String>() {
+        final String body = state.gateway.withSearcher(sig, staleOk, new SearcherCallback<String>() {
             @Override
             public String callback(final IndexSearcher searcher) throws IOException {
                 // Check for 304 - Not Modified.
@@ -189,8 +189,7 @@ public final class SearchServlet extends HttpServlet {
                     }
                     // Fetch documents (if requested).
                     if (include_docs && fetch_ids.length > 0) {
-                        final JSONArray fetched_docs = database.getDocs(req.getParameter("db"), fetch_ids)
-                                .getJSONArray("rows");
+                        final JSONArray fetched_docs = state.couch.getDocs(req.getParameter("db"), fetch_ids).getJSONArray("rows");
                         for (int i = 0; i < max; i++) {
                             rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
                         }

@@ -278,8 +278,7 @@ public class NGramProfile {
 
         while (i.hasNext()) {
             NGramEntry entry = (NGramEntry) i.next();
-            s.append("[").append(entry.seq).append("/").append(entry.count).append("/").append(entry.frequency).append(
-                    "]\n");
+            s.append("[").append(entry.seq).append("/").append(entry.count).append("/").append(entry.frequency).append("]\n");
         }
         return s.toString();
     }
@@ -432,8 +431,8 @@ public class NGramProfile {
      */
     public static void main(String args[]) throws Exception {
 
-        String usage = "Usage: NGramProfile " + "[-create profilename filename encoding] "
-                + "[-similarity file1 file2] " + "[-score profile-name filename encoding]";
+        String usage = "Usage: NGramProfile " + "[-create profilename filename encoding] " + "[-similarity file1 file2] "
+                + "[-score profile-name filename encoding]";
         int command = 0;
 
         final int CREATE = 1;

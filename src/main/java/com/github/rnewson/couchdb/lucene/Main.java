@@ -22,9 +22,7 @@ package com.github.rnewson.couchdb.lucene;
 public final class Main {
 
     public static void main(final String[] args) throws Exception {
-        
-        
-        
+
     }
 
 }

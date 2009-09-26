@@ -31,13 +31,13 @@ final class Indexer extends AbstractLifeCycle {
 
     private static final int BATCH_SIZE = 1000;
 
-    private final Database database;
+    private final Couch database;
 
     private final LuceneGateway holders;
 
     private Timer timer;
 
-    Indexer(final Database database, final LuceneGateway holders) {
+    Indexer(final Couch database, final LuceneGateway holders) {
         this.database = database;
         this.holders = holders;
     }
@@ -80,15 +80,12 @@ final class Indexer extends AbstractLifeCycle {
                 // For each fulltext view;
                 for (final Object obj : fulltext.keySet()) {
                     final String viewName = Utils.viewname(databaseName, designDocument.getString("_id"), (String) obj);
-                    final Rhino rhino = new Rhino(databaseName, defaults, 
-                            fun);                    
+                    final Rhino rhino = new Rhino(databaseName, defaults, fun);
                     final String defaults = fulltext.getJSONObject(key).optString("defaults", "{}");
-                    final Analyzer analyzer = Analyzers.getAnalyzer(fulltext.getJSONObject(key)
-                            .optString("analyzer", "standard"));
+                    final Analyzer analyzer = Analyzers.getAnalyzer(fulltext.getJSONObject(key).optString("analyzer", "standard"));
 
                     final long startSequence = getState(databaseName);
-                    final long newSequence = holders.withWriter(viewName, new UpdateDatabaseCallback(databaseName,
-                            startSequence));
+                    final long newSequence = holders.withWriter(viewName, new UpdateDatabaseCallback(databaseName, startSequence));
                     if (newSequence != startSequence) {
                         // setState(databaseName, newSequence);
                     }
@@ -144,13 +141,14 @@ final class Indexer extends AbstractLifeCycle {
                     if (value.optBoolean("deleted")) {
                         writer.deleteDocuments(docTerm);
                     } else {
-                        // TODO optimize GC by reusing Document, Field, NumericField objects.
+                        // TODO optimize GC by reusing Document, Field,
+                        // NumericField objects.
                         final Document ldoc = new Document();
-                        
+
                         // Add mandatory fields.
                         ldoc.add(new Field(Constants.ID, docid, Store.YES, Index.ANALYZED));
                         ldoc.add(new NumericField(Constants.SEQ, Constants.SEQ_PRECISION).setLongValue(currentSequence));
-                        
+
                         writer.updateDocument(docTerm, ldoc);
                     }
                 }

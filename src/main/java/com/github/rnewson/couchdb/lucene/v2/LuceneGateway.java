@@ -2,6 +2,7 @@ package com.github.rnewson.couchdb.lucene.v2;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -40,14 +41,14 @@ final class LuceneGateway {
             this.reader = newReader();
             this.reader.incRef();
         }
-        
+
         private void close() throws IOException {
-        	reader.decRef();
-        	writer.rollback();
+            reader.decRef();
+            writer.rollback();
         }
 
         private IndexReader newReader() throws IOException {
-        	return realtime ? getIndexWriter().getReader() : IndexReader.open(dir, true);
+            return realtime ? getIndexWriter().getReader() : IndexReader.open(dir, true);
         }
 
         private IndexWriter newWriter() throws IOException {
@@ -56,17 +57,18 @@ final class LuceneGateway {
             result.setMergedSegmentWarmer(newWarmer());
             return result;
         }
-        
+
         private IndexReaderWarmer newWarmer() {
-        	return new IndexReaderWarmer(){
+            return new IndexReaderWarmer() {
 
-				@Override
-				public void warm(final IndexReader reader) throws IOException {
-					// Prewarm sequence (is this "insane"?)
-					FieldCache.DEFAULT.getLongs(reader, Constants.SEQ);
+                @Override
+                public void warm(final IndexReader reader) throws IOException {
+                    // Prewarm sequence (is this "insane"?)
+                    FieldCache.DEFAULT.getLongs(reader, Constants.SEQ);
 
-					// TODO allow clients to specify more fields.
-				}};
+                    // TODO allow clients to specify more fields.
+                }
+            };
         }
 
         synchronized IndexReader borrowReader(final boolean staleOk) throws IOException {
@@ -86,9 +88,6 @@ final class LuceneGateway {
         }
 
         void reopenReader() throws IOException {
-        	if (realtime)
-        		return;
-        	
             final IndexReader newReader = reader.reopen();
             if (reader != newReader) {
                 final IndexReader oldReader = reader;
@@ -141,8 +140,7 @@ final class LuceneGateway {
         return result;
     }
 
-    <T> T withReader(final ViewSignature viewSignature, final boolean staleOk, final ReaderCallback<T> callback)
-            throws IOException {
+    <T> T withReader(final ViewSignature viewSignature, final boolean staleOk, final ReaderCallback<T> callback) throws IOException {
         final LuceneHolder holder = getHolder(viewSignature);
         final IndexReader reader = holder.borrowReader(staleOk);
         try {
@@ -152,7 +150,8 @@ final class LuceneGateway {
         }
     }
 
-    <T> T withSearcher(final ViewSignature viewSignature, final boolean staleOk, final SearcherCallback<T> callback) throws IOException {
+    <T> T withSearcher(final ViewSignature viewSignature, final boolean staleOk, final SearcherCallback<T> callback)
+            throws IOException {
         final LuceneHolder holder = getHolder(viewSignature);
         final IndexSearcher searcher = holder.borrowSearcher(staleOk);
         try {
@@ -163,22 +162,33 @@ final class LuceneGateway {
     }
 
     <T> T withWriter(final ViewSignature viewSignature, final WriterCallback<T> callback) throws IOException {
-        final LuceneHolder holder = getHolder(viewSignature);
+        LuceneHolder holder = getHolder(viewSignature);
         final IndexWriter writer = holder.getIndexWriter();
         try {
             return callback.callback(writer);
         } catch (final OutOfMemoryError e) {
-            // TODO Writer is broken - ensure atomic replacement.
+            synchronized (holders) {
+                holder = holders.remove(viewSignature);
+                holder.close();
+            }
             throw e;
         }
     }
-    
+
     void deleteIndex(final ViewSignature viewSignature) throws IOException {
-    	
+
     }
 
     void createIndex(final ViewSignature viewSignature) throws IOException {
-    	
+
     }
-    
+
+    synchronized void close() throws IOException {
+        final Iterator<LuceneHolder> it = holders.values().iterator();
+        while (it.hasNext()) {
+            it.next().close();
+            it.remove();
+        }
+    }
+
 }

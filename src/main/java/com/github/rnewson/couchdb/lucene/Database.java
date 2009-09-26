@@ -65,8 +65,8 @@ public final class Database {
     }
 
     public JSONObject getAllDocsBySeq(final String dbname, final long startkey) throws IOException {
-        return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%s&include_docs=true",
-                encode(dbname), startkey)));
+        return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%s&include_docs=true", encode(dbname),
+                startkey)));
     }
 
     public boolean createDatabase(final String dbname) throws IOException {
@@ -82,9 +82,8 @@ public final class Database {
     }
 
     public JSONObject getAllDocs(final String dbname, final String startkey, final String endkey) throws IOException {
-        return JSONObject.fromObject(get(String.format(
-                "%s/_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true", encode(dbname),
-                encode(startkey), encode(endkey))));
+        return JSONObject.fromObject(get(String.format("%s/_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true",
+                encode(dbname), encode(startkey), encode(endkey))));
     }
 
     public JSONObject getAllDocsBySeq(final String dbname, final long startkey, final int limit) throws IOException {
@@ -104,8 +103,7 @@ public final class Database {
         final JSONObject req = new JSONObject();
         req.element("keys", keys);
 
-        return JSONObject.fromObject(post(String.format("%s/_all_docs?include_docs=true", encode(dbname)), req
-                .toString()));
+        return JSONObject.fromObject(post(String.format("%s/_all_docs?include_docs=true", encode(dbname)), req.toString()));
     }
 
     public JSONObject getInfo(final String dbname) throws IOException {

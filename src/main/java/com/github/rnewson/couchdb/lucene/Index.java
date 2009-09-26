@@ -181,15 +181,15 @@ public final class Index {
                                 final String key = (String) obj;
                                 final String sig = Utils.digest(fulltext.getString(key));
                                 final String defaults = fulltext.getJSONObject(key).optString("defaults", "{}");
-                                final Analyzer analyzer = Analyzers.getAnalyzer(fulltext.getJSONObject(key)
-                                        .optString("analyzer", "standard"));
+                                final Analyzer analyzer = Analyzers.getAnalyzer(fulltext.getJSONObject(key).optString("analyzer",
+                                        "standard"));
 
                                 String fun = fulltext.getJSONObject((String) key).getString("index");
                                 fun = fun.replaceAll("^\"*", "");
                                 fun = fun.replaceAll("\"*$", "");
 
-                                final String viewname = String.format("%s/%s/%s", dbname, doc.getString(Constants.ID)
-                                        .replaceFirst("_design/", ""), key);
+                                final String viewname = String.format("%s/%s/%s", dbname, doc.getString(Constants.ID).replaceFirst(
+                                        "_design/", ""), key);
 
                                 final Rhino rhino = new Rhino(dbname, defaults, fun);
                                 try {
@@ -230,9 +230,8 @@ public final class Index {
             }
         }
 
-        private void updateDatabase(final IndexWriter writer, final Analyzer analyzer, final String new_sig,
-                final String dbname, final String viewname, final Progress progress, final Rhino rhino)
-                throws HttpException, IOException {
+        private void updateDatabase(final IndexWriter writer, final Analyzer analyzer, final String new_sig, final String dbname,
+                final String viewname, final Progress progress, final Rhino rhino) throws HttpException, IOException {
             assert rhino != null;
 
             final long start = now();
@@ -296,14 +295,12 @@ public final class Index {
                     DurationFormatUtils.formatDurationHMS(NANOSECONDS.toMillis(duration))));
         }
 
-        private void deleteView(final String viewname, final Progress progress, final IndexWriter writer)
-                throws IOException {
+        private void deleteView(final String viewname, final Progress progress, final IndexWriter writer) throws IOException {
             writer.deleteDocuments(new Term(Constants.VIEW, viewname));
             progress.removeView(viewname);
         }
 
-        private void deleteDatabase(final String dbname, final Progress progress, final IndexWriter writer)
-                throws IOException {
+        private void deleteDatabase(final String dbname, final Progress progress, final IndexWriter writer) throws IOException {
             writer.deleteDocuments(new Term(Constants.DB, dbname));
             progress.removeDatabase(dbname);
         }

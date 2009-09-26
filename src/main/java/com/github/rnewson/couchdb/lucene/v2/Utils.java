@@ -16,54 +16,16 @@ package com.github.rnewson.couchdb.lucene.v2;
  * limitations under the License.
  */
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.URLEncoder;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 
 class Utils {
 
-    /*
-     * public static final Logger LOG = Logger.getLogger("couchdb-lucene");
-     * 
-     * private static PrintWriter OUT;
-     * 
-     * static { try { OUT = new PrintWriter(new OutputStreamWriter(System.out,
-     * "UTF-8")); } catch (final UnsupportedEncodingException e) { throw new
-     * Error("UTF-8 support is missing from your JVM."); } }
-     * 
-     * public static void out(final Object obj) { if (OUT == null) { try { OUT =
-     * new PrintWriter(new OutputStreamWriter(System.out, "UTF-8")); } catch
-     * (final UnsupportedEncodingException e) { throw new
-     * Error("UTF-8 support is missing from your JVM."); } }
-     * OUT.println(obj.toString()); OUT.flush(); }
-     * 
-     * public static String throwableToJSON(final Throwable t) { return
-     * error(t.getMessage() == null ? "Unknown error" : String.format("%s: %s",
-     * t.getClass(), t.getMessage())); }
-     * 
-     * public static String error(final String txt) { return error(500, txt); }
-     * 
-     * public static String digest(final String data) { return
-     * DigestUtils.md5Hex(data); }
-     * 
-     * public static String error(final int code, final Throwable t) { final
-     * StringWriter writer = new StringWriter(); final PrintWriter printWriter =
-     * new PrintWriter(writer); if (t.getMessage() != null) {
-     * printWriter.append(t.getMessage()); printWriter.append("\n"); }
-     * t.printStackTrace(printWriter); return new JSONObject().element("code",
-     * code).element("body", "<pre>" + writer + "</pre>").toString(); }
-     * 
-     * public static String error(final int code, final String txt) { return new
-     * JSONObject().element("code", code).element("body",
-     * StringEscapeUtils.escapeHtml(txt)).toString(); }
-     */
-    
     public static String urlEncode(final String path) {
         try {
             return URLEncoder.encode(path, "UTF-8");
@@ -74,33 +36,6 @@ class Utils {
 
     public static Field text(final String name, final String value, final boolean store) {
         return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
-    }
-
-    /*
-     * public static Field token(final String name, final String value, final
-     * boolean store) { return new Field(name, value, store ? Store.YES :
-     * Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS); }
-     * 
-     * public static Query docQuery(final String viewname, final String id) {
-     * BooleanQuery q = new BooleanQuery(); q.add(new TermQuery(new
-     * Term(Constants.VIEW, viewname)), Occur.MUST); q.add(new TermQuery(new
-     * Term(Constants.ID, id)), Occur.MUST); return q; }
-     */
-
-    public static File viewdir(final File baseDir, final String databaseName, final String viewFunction) {
-        File result = new File(baseDir, databaseName);
-        return new File(result, md5(viewFunction.replaceAll("\\s+", "")));
-    }
-
-    public static String md5(final String str) {
-        try {
-            final MessageDigest md = MessageDigest.getInstance("MD5");
-            return new BigInteger(1, md.digest(str.getBytes("UTF-8"))).toString(16);
-        } catch (final NoSuchAlgorithmException e) {
-            throw new Error("MD5 support missing.");
-        } catch (final UnsupportedEncodingException e) {
-            throw new Error("UTF-8 support missing.");
-        }
     }
 
 }

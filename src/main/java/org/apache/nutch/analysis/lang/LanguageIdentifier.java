@@ -105,8 +105,8 @@ public class LanguageIdentifier {
             Enumeration alllanguages = p.keys();
 
             if (LOG.isInfoEnabled()) {
-                LOG.info(new StringBuffer().append("Language identifier configuration [").append(minLength).append("-")
-                        .append(maxLength).append("/").append(analyzeLength).append("]").toString());
+                LOG.info(new StringBuffer().append("Language identifier configuration [").append(minLength).append("-").append(
+                        maxLength).append("/").append(analyzeLength).append("]").toString());
             }
 
             StringBuffer list = new StringBuffer("Language identifier plugin supports:");

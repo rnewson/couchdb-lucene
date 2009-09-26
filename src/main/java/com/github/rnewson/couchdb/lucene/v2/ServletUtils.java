@@ -12,15 +12,15 @@ final class ServletUtils {
         final String result = req.getParameter(parameterName);
         return result != null ? result : defaultValue;
     }
-    
+
     static int getIntParameter(final HttpServletRequest req, final String parameterName, final int defaultValue) {
         final String result = req.getParameter(parameterName);
-        return result != null ? Integer.parseInt(result) : defaultValue;        
+        return result != null ? Integer.parseInt(result) : defaultValue;
     }
 
     static long getLongParameter(final HttpServletRequest req, final String parameterName, final long defaultValue) {
         final String result = req.getParameter(parameterName);
-        return result != null ? Long.parseLong(result) : defaultValue;        
+        return result != null ? Long.parseLong(result) : defaultValue;
     }
-    
+
 }

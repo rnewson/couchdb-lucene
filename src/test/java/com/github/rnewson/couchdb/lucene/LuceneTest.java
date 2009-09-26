@@ -41,8 +41,8 @@ public class LuceneTest {
         final TopDocs td = searcher.search(NumericRangeQuery.newIntRange("int", 2, 10, true, true), 10);
         assertThat(td.totalHits, is(2));
 
-        final TopFieldDocs tfd = searcher.search(NumericRangeQuery.newIntRange("int", 0, 5, true, true), null, 10,
-                new Sort(new SortField("int", SortField.INT)));
+        final TopFieldDocs tfd = searcher.search(NumericRangeQuery.newIntRange("int", 0, 5, true, true), null, 10, new Sort(
+                new SortField("int", SortField.INT)));
         assertThat(tfd.totalHits, is(2));
 
         reader.close();

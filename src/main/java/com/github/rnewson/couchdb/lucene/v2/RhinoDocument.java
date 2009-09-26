@@ -46,7 +46,7 @@ public final class RhinoDocument extends ScriptableObject {
 
     private static final long serialVersionUID = 1L;
 
-    static HttpClient CLIENT;
+    static State state;
 
     private static final Tika TIKA = new Tika();
 
@@ -86,8 +86,7 @@ public final class RhinoDocument extends ScriptableObject {
         return doc;
     }
 
-    public static void jsFunction_add(final Context cx, final Scriptable thisObj, final Object[] args,
-            final Function funObj) {
+    public static void jsFunction_add(final Context cx, final Scriptable thisObj, final Object[] args, final Function funObj) {
         final RhinoDocument doc = checkInstance(thisObj);
 
         if (args.length < 1 || args.length > 2) {
@@ -125,13 +124,11 @@ public final class RhinoDocument extends ScriptableObject {
         } else if ("float".equals(type)) {
             fieldObj = new NumericField(field, storeObj, true).setFloatValue(Conversion.convert(args[0], Float.class));
         } else if ("double".equals(type)) {
-            fieldObj = new NumericField(field, storeObj, true)
-                    .setDoubleValue(Conversion.convert(args[0], Double.class));
+            fieldObj = new NumericField(field, storeObj, true).setDoubleValue(Conversion.convert(args[0], Double.class));
         } else if ("long".equals(type)) {
             fieldObj = new NumericField(field, storeObj, true).setLongValue(Conversion.convert(args[0], Long.class));
         } else if ("date".equals(type)) {
-            fieldObj = new NumericField(field, storeObj, true).setLongValue(Conversion.convert(args[0], Date.class)
-                    .getTime());
+            fieldObj = new NumericField(field, storeObj, true).setLongValue(Conversion.convert(args[0], Date.class).getTime());
         } else if ("string".equals(type)) {
             fieldObj = new Field(field, Conversion.convert(args[0]).toString(), storeObj, Index.get(index));
         } else {
@@ -152,8 +149,8 @@ public final class RhinoDocument extends ScriptableObject {
         return defaultValue;
     }
 
-    public static void jsFunction_attachment(final Context cx, final Scriptable thisObj, final Object[] args,
-            final Function funObj) throws IOException {
+    public static void jsFunction_attachment(final Context cx, final Scriptable thisObj, final Object[] args, final Function funObj)
+            throws IOException {
         final RhinoDocument doc = checkInstance(thisObj);
         if (args.length < 2) {
             throw Context.reportRuntimeError("Invalid number of arguments.");
@@ -163,7 +160,7 @@ public final class RhinoDocument extends ScriptableObject {
         final String docid = (String) cx.getThreadLocal("docid");
         final String field = args[0].toString();
         final String attname = args[1].toString();
-        final String url = DB.url(String.format("%s/%s/%s", dbname, Utils.urlEncode(docid), Utils.urlEncode(attname)));
+        final String url = state.couch.url(String.format("%s/%s/%s", dbname, Utils.urlEncode(docid), Utils.urlEncode(attname)));
 
         final HttpGet get = new HttpGet(url);
 
@@ -182,7 +179,7 @@ public final class RhinoDocument extends ScriptableObject {
             }
         };
 
-        CLIENT.execute(get, responseHandler);
+        state.httpClient.execute(get, responseHandler);
     }
 
     private static RhinoDocument checkInstance(Scriptable obj) {

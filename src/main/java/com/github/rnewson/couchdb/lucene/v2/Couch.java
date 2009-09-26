@@ -17,8 +17,6 @@ package com.github.rnewson.couchdb.lucene.v2;
  */
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -41,26 +39,17 @@ import com.github.rnewson.couchdb.lucene.util.StatusCodeResponseHandler;
  * @author rnewson
  * 
  */
-final class Database {
+final class Couch {
 
     private static final String[] EMPTY_ARR = new String[0];
 
-    private final String url;
-
     private final HttpClient httpClient;
 
-    public Database(final HttpClient httpClient, final String url) {
+    private final String url;
+
+    public Couch(final HttpClient httpClient, final String url) {
         this.httpClient = httpClient;
         this.url = url;
-    }
-
-    public String[] getAllDatabases() throws HttpException, IOException {
-        return (String[]) JSONArray.fromObject(get("_all_dbs")).toArray(EMPTY_ARR);
-    }
-
-    public JSONObject getAllDocsBySeq(final String dbname, final long startkey) throws IOException {
-        return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%s&include_docs=true",
-                Utils.urlEncode(dbname), startkey)));
     }
 
     public boolean createDatabase(final String dbname) throws IOException {
@@ -71,19 +60,28 @@ final class Database {
         return delete(Utils.urlEncode(dbname)) == 201;
     }
 
-    public boolean saveDocument(final String dbname, final String id, final String body) throws IOException {
-        return put(String.format("%s/%s", Utils.urlEncode(dbname), id), body) == 201;
+    public String[] getAllDatabases() throws HttpException, IOException {
+        return (String[]) JSONArray.fromObject(get("_all_dbs")).toArray(EMPTY_ARR);
     }
 
     public JSONObject getAllDocs(final String dbname, final String startkey, final String endkey) throws IOException {
-        return JSONObject.fromObject(get(String.format(
-                "%s/_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true", Utils.urlEncode(dbname),
-                Utils.urlEncode(startkey), Utils.urlEncode(endkey))));
+        return JSONObject.fromObject(get(String.format("%s/_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true",
+                Utils.urlEncode(dbname), Utils.urlEncode(startkey), Utils.urlEncode(endkey))));
     }
 
-    public JSONObject getAllDocsBySeq(final String dbname, final long startkey, final int limit) throws IOException {
-        return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%d&limit=%d&include_docs=true",
-                Utils.urlEncode(dbname), startkey, limit)));
+    public JSONArray getAllDesignDocuments(final String dbname) throws IOException {
+        return getAllDocs(dbname, "_design", "_design0").getJSONArray("rows");
+    }
+
+    public JSONObject getChanges(final String dbname, final long since, final boolean includeDocs) throws IOException {
+        return JSONObject.fromObject(get(String.format("%s/_changes?since=%d&include_docs=%b", Utils.urlEncode(dbname), since,
+                includeDocs)));
+    }
+
+    public JSONObject getChanges(final String dbname, final long since, final boolean includeDocs, final int limit)
+            throws IOException {
+        return JSONObject.fromObject(get(String.format("%s/_changes?since=%d&include_docs=%b&limit=%d", Utils.urlEncode(dbname),
+                since, includeDocs, limit)));
     }
 
     public JSONObject getDoc(final String dbname, final String id) throws IOException {
@@ -98,20 +96,29 @@ final class Database {
         final JSONObject req = new JSONObject();
         req.element("keys", keys);
 
-        return JSONObject.fromObject(post(String.format("%s/_all_docs?include_docs=true", Utils.urlEncode(dbname)), req
-                .toString()));
+        return JSONObject
+                .fromObject(post(String.format("%s/_all_docs?include_docs=true", Utils.urlEncode(dbname)), req.toString()));
     }
 
     public JSONObject getInfo(final String dbname) throws IOException {
         return JSONObject.fromObject(get(Utils.urlEncode(dbname)));
     }
 
-    private String get(final String path) throws IOException {
-        return execute(new HttpGet(url(path)));
+    public boolean saveDocument(final String dbname, final String id, final String body) throws IOException {
+        return put(String.format("%s/%s", Utils.urlEncode(dbname), id), body) == 201;
     }
 
-    String url(final String path) {
-        return String.format("%s/%s", url, path);
+    private int delete(final String path) throws IOException {
+        final HttpDelete delete = new HttpDelete(url(path));
+        return httpClient.execute(delete, new StatusCodeResponseHandler());
+    }
+
+    private String execute(final HttpUriRequest request) throws IOException {
+        return httpClient.execute(request, new BasicResponseHandler());
+    }
+
+    private String get(final String path) throws IOException {
+        return execute(new HttpGet(url(path)));
     }
 
     private String post(final String path, final String body) throws IOException {
@@ -129,13 +136,8 @@ final class Database {
         return httpClient.execute(put, new StatusCodeResponseHandler());
     }
 
-    private int delete(final String path) throws IOException {
-        final HttpDelete delete = new HttpDelete(url(path));
-        return httpClient.execute(delete, new StatusCodeResponseHandler());
-    }
-
-    private String execute(final HttpUriRequest request) throws IOException {
-        return httpClient.execute(request, new BasicResponseHandler());
+    String url(final String path) {
+        return String.format("%s/%s", url, path);
     }
 
 }

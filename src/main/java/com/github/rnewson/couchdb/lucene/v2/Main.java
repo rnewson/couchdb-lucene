@@ -61,17 +61,19 @@ public final class Main {
         ConnManagerParams.setMaxTotalConnections(params, 1000);
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
         HttpProtocolParams.setUserAgent(params, HttpProtocolParams.getUserAgent(params) + " couchdb-lucene/0.5");
-
         final SchemeRegistry schemeRegistry = new SchemeRegistry();
         schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 5984));
-
         final ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
         final HttpClient httpClient = new DefaultHttpClient(cm, params);
-        final Database database = new Database(httpClient, couchUrl);
-        final LuceneGateway holders = new LuceneGateway(new File(luceneDir), realtime);
+
+        // Configure other objects.
+        final Couch couch = new Couch(httpClient, couchUrl);
+        final Locator locator = new Locator();
+        final LuceneGateway gateway = new LuceneGateway(new File(luceneDir), realtime);
+        final State state = new State(couch, gateway, locator, httpClient);
 
         // Configure Indexer.
-        final Indexer indexer = new Indexer(database, holders);
+        final Indexer3 indexer = new Indexer3(state);
 
         // Configure Jetty.
         final Server server = new Server(Integer.getInteger("port", lucenePort));
@@ -80,20 +82,21 @@ public final class Main {
         server.addLifeCycle(indexer);
 
         // Configure Rhino.
-        RhinoDocument.CLIENT = httpClient;
+        // TODO deuglify this.
+        RhinoDocument.state = state;
 
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
         server.setHandler(contexts);
 
         final Context search = new Context(contexts, "/search", Context.NO_SESSIONS);
         search.addFilter(new FilterHolder(new GzipFilter()), "/*", Handler.DEFAULT);
-        search.addServlet(new ServletHolder(new SearchServlet(holders, database)), "/*");
+        search.addServlet(new ServletHolder(new SearchServlet(state)), "/*");
 
         final Context info = new Context(contexts, "/info", Context.NO_SESSIONS);
-        info.addServlet(new ServletHolder(new InfoServlet(holders)), "/*");
+        info.addServlet(new ServletHolder(new InfoServlet(state)), "/*");
 
         final Context admin = new Context(contexts, "/admin", Context.NO_SESSIONS);
-        admin.addServlet(new ServletHolder(new AdminServlet(holders)), "/*");
+        admin.addServlet(new ServletHolder(new AdminServlet(state)), "/*");
 
         // Lockdown
         // System.setSecurityManager(securityManager);

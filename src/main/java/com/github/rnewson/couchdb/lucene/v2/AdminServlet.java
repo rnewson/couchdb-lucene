@@ -28,23 +28,27 @@ public final class AdminServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private LuceneGateway holders;
+    private State state;
 
-    AdminServlet(final LuceneGateway holders) {
-        this.holders = holders;
+    AdminServlet(final State state) {
+        this.state = state;
     }
 
     @Override
-    protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
-            IOException {
+    protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
         if (req.getParameter("index") == null) {
             resp.sendError(400, "Missing index attribute.");
             return;
         }
-        final String indexName = req.getParameter("index");
+
+        final ViewSignature sig = state.locator.lookup(req);
+        if (sig == null) {
+            resp.sendError(400, "Invalid path.");
+            return;
+        }
 
         if ("/_expunge".equals(req.getPathInfo())) {
-            holders.withWriter(indexName, new WriterCallback<Void>() {
+            state.gateway.withWriter(sig, new WriterCallback<Void>() {
                 @Override
                 public Void callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
@@ -56,7 +60,7 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("/_optimize".equals(req.getPathInfo())) {
-            holders.withWriter(indexName, new WriterCallback<Void>() {
+            state.gateway.withWriter(sig, new WriterCallback<Void>() {
                 @Override
                 public Void callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);

@@ -11,5 +11,4 @@ final class Constants {
 
     static final String SEQ = "_seq";
 
-
 }

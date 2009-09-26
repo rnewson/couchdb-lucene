@@ -85,8 +85,8 @@ public final class Rhino {
         this.userFun = context.compileFunction(scope, fun, "userFun", 0, null);
 
         // compile system function.
-        this.systemFun = context.compileFunction(scope,
-                "function(json, func) { var doc=JSON.parse(json); return func(doc); }", "systemFun", 0, null);
+        this.systemFun = context.compileFunction(scope, "function(json, func) { var doc=JSON.parse(json); return func(doc); }",
+                "systemFun", 0, null);
 
         ScriptableObject.defineClass(scope, RhinoDocument.class);
 
@@ -139,4 +139,5 @@ public final class Rhino {
     public String toString() {
         return fun;
     }
+    
 }
