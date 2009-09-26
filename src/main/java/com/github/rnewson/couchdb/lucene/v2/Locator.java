@@ -5,6 +5,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.log4j.Logger;
+
 /**
  * Locate indexes by path via their signature.
  * 
@@ -12,6 +14,8 @@ import javax.servlet.http.HttpServletRequest;
  * 
  */
 public final class Locator {
+    
+    private final Logger logger = Logger.getLogger(Locator.class); 
 
     /**
      * Maps a path like ../<design document name>/<view name>?<args> to a view
@@ -37,6 +41,7 @@ public final class Locator {
         final ViewSignature viewSignature = new ViewSignature(databaseName, viewFunction);
         synchronized (map) {
             map.put(path(databaseName, designDocumentName, viewName), viewSignature);
+            logger.debug(map);
         }
     }
 

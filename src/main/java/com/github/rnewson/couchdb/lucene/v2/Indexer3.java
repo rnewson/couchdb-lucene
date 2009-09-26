@@ -5,6 +5,7 @@ import java.io.IOException;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.log4j.Logger;
 import org.mortbay.component.AbstractLifeCycle;
 
 /**
@@ -13,6 +14,8 @@ import org.mortbay.component.AbstractLifeCycle;
  * @author robertnewson
  */
 public final class Indexer3 extends AbstractLifeCycle {
+    
+    private final Logger logger = Logger.getLogger(Indexer3.class); 
 
     private State state;
 
@@ -47,7 +50,7 @@ public final class Indexer3 extends AbstractLifeCycle {
         indexerThread = new Thread() {
 
             @Override
-            public void run() {
+            public void run() {                
                 while (isRunning()) {
                     updateIndex();
                 }
@@ -64,7 +67,7 @@ public final class Indexer3 extends AbstractLifeCycle {
                 final JSONObject designDocument = designDocuments.getJSONObject(i).getJSONObject("doc");
                 final String designDocumentName = designDocument.getString(Constants.ID).substring(8); // strip
                                                                                                        // "_design/"
-                                                                                                       // prefix.
+                                                                                                       // prefix.                
                 final JSONObject fulltext = designDocument.getJSONObject("fulltext");
                 if (fulltext != null) {
                     for (final Object obj : fulltext.keySet()) {
