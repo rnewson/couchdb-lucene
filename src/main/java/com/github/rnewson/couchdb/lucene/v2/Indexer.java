@@ -29,6 +29,7 @@ import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.ScriptableObject;
 
 /**
@@ -121,6 +122,8 @@ public final class Indexer extends AbstractLifeCycle {
 
         private void enterContext() throws Exception {
             context = ContextFactory.getGlobal().enterContext();
+            // Basic compilation level.
+            context.setOptimizationLevel(0);
             // Security restrictions
             context.setClassShutter(new RestrictiveClassShutter());
             // Setup.
@@ -184,7 +187,7 @@ public final class Indexer extends AbstractLifeCycle {
         private final class RestrictiveClassShutter implements ClassShutter {
             @Override
             public boolean visibleToScripts(final String fullClassName) {
-                return false;
+                return fullClassName.startsWith("net.sf.json");
             }
         }
 
@@ -212,15 +215,19 @@ public final class Indexer extends AbstractLifeCycle {
                     } else if (json.optBoolean("deleted")) {
                         if (logger.isTraceEnabled())
                             logger.trace(id + ": document deleted.");
-                        //writer.deleteDocuments(docTerm);
+                        // writer.deleteDocuments(docTerm);
                     } else {
                         // New or updated document.
                         if (logger.isTraceEnabled())
                             logger.trace(id + ": new/updated document.");
 
                         for (final Function function : functions.values()) {
-                            final Object result = main.call(context, scope, null, new Object[] { doc, function });
-                            System.err.println(result);
+                            try {
+                                final Object result = main.call(context, scope, null, new Object[] { doc, function });
+                                System.err.println(result);
+                            } catch (final RhinoException e) {
+                                logger.warn("doc '" + id + "' caused exception.", e);
+                            }
                         }
                     }
 
