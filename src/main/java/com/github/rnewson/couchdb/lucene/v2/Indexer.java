@@ -99,7 +99,7 @@ public final class Indexer extends AbstractLifeCycle {
         public void run() {
             try {
                 enterContext();
-                mapViewsToIndexes();
+                mapAllDesignDocuments();
                 while (isRunning()) {
                     updateIndexes();
                 }
@@ -128,17 +128,20 @@ public final class Indexer extends AbstractLifeCycle {
             }
         }
 
-        private void mapViewsToIndexes() throws IOException {
+        private void mapAllDesignDocuments() throws IOException {
             final JSONArray designDocuments = state.couch.getAllDesignDocuments(databaseName);
             for (int i = 0; i < designDocuments.size(); i++) {
-                final JSONObject designDocument = designDocuments.getJSONObject(i).getJSONObject("doc");
-                final String designDocumentName = designDocument.getString(Constants.ID).substring(8);
-                final JSONObject fulltext = designDocument.getJSONObject("fulltext");
-                if (fulltext != null) {
-                    for (final Object obj : fulltext.keySet()) {
-                        final String viewName = (String) obj;
-                        state.locator.update(databaseName, designDocumentName, viewName, fulltext.getString(viewName));
-                    }
+                mapDesignDocument(designDocuments.getJSONObject(i).getJSONObject("doc"));
+            }
+        }
+
+        private void mapDesignDocument(final JSONObject designDocument) {
+            final String designDocumentName = designDocument.getString(Constants.ID).substring(8);
+            final JSONObject fulltext = designDocument.getJSONObject("fulltext");
+            if (fulltext != null) {
+                for (final Object obj : fulltext.keySet()) {
+                    final String viewName = (String) obj;
+                    state.locator.update(databaseName, designDocumentName, viewName, fulltext.getString(viewName));
                 }
             }
         }
@@ -175,13 +178,27 @@ public final class Indexer extends AbstractLifeCycle {
                 final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (line.length() == 0)
-                        break;
                     final JSONObject json = JSONObject.fromObject(line);
-                    System.err.println(json);
-                    if (json.has("seq")) {
-                        since = json.getLong("seq");
+                    // End of feed.
+                    if (json.has("last_seq"))
+                        break;
+
+                    final String id = json.getString("id");
+                    final JSONObject doc = json.getJSONObject("doc");
+                    // New, updated or deleted document.
+                    if (id.startsWith("_design")) {
+                        // TODO update locator.
+                        logger.warn(id + ": design document updated.");
+                        mapDesignDocument(doc);
+                    } else if (json.optBoolean("deleted")) {
+                        // TODO handle deletion.
+                        logger.warn(id + ": document deleted.");
+                    } else {
+                        // New or updated document.
+                        logger.warn(id + ": new/updated document.");
                     }
+                    // Remember progress.
+                    since = json.getLong("seq");
                 }
                 return null;
             }
