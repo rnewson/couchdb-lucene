@@ -2,6 +2,7 @@ package com.github.rnewson.couchdb.lucene.v2;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
@@ -20,6 +22,10 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.mortbay.component.AbstractLifeCycle;
+import org.mozilla.javascript.ClassShutter;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  * Pull data from couchdb into Lucene indexes.
@@ -81,6 +87,10 @@ public final class Indexer extends AbstractLifeCycle {
 
         private long since;
 
+        private Context context;
+
+        private ScriptableObject scope;
+
         public DatabasePuller(final String databaseName) {
             this.databaseName = databaseName;
         }
@@ -88,13 +98,33 @@ public final class Indexer extends AbstractLifeCycle {
         @Override
         public void run() {
             try {
+                enterContext();
                 mapViewsToIndexes();
-                readCurrentUpdateSequence();
-                pullChanges();
-            } catch (final IOException e) {
-                logger.warn("Tracking for database " + databaseName + " interrupted by I/O exception.");
+                while (isRunning()) {
+                    updateIndexes();
+                }
+            } catch (final Exception e) {
+                logger.warn("Tracking for database " + databaseName + " interrupted by exception.", e);
             } finally {
+                leaveContext();
                 untrack();
+            }
+        }
+
+        private void enterContext() throws Exception {
+            context = ContextFactory.getGlobal().enterContext();
+            context.setClassShutter(new RestrictiveClassShutter());
+            scope = context.initStandardObjects();
+            ScriptableObject.defineClass(scope, RhinoDocument.class);
+            context.evaluateString(scope, loadResource("json2.js"), "json2", 0, null);
+        }
+
+        private String loadResource(final String name) throws IOException {
+            final InputStream in = Rhino.class.getClassLoader().getResourceAsStream(name);
+            try {
+                return IOUtils.toString(in, "UTF-8");
+            } finally {
+                in.close();
             }
         }
 
@@ -113,12 +143,8 @@ public final class Indexer extends AbstractLifeCycle {
             }
         }
 
-        private void readCurrentUpdateSequence() throws IOException {
-            // TODO read highest seq field from each index or read _local/lucene
-            // or something.
-        }
-
-        private void pullChanges() throws IOException {
+        private void updateIndexes() throws IOException {
+            System.err.println(state.locator.lookupAll(databaseName));
             final String url = state.couch.url(String.format("%s/_changes?feed=continuous&since=%d&include_docs=true",
                     databaseName, since));
             state.httpClient.execute(new HttpGet(url), new ChangesResponseHandler());
@@ -131,17 +157,31 @@ public final class Indexer extends AbstractLifeCycle {
             logger.debug("Untracking " + databaseName);
         }
 
-        private class ChangesResponseHandler implements ResponseHandler<Void> {
+        private void leaveContext() {
+            Context.exit();
+        }
 
+        private final class RestrictiveClassShutter implements ClassShutter {
+            @Override
+            public boolean visibleToScripts(final String fullClassName) {
+                return false;
+            }
+        }
+
+        private final class ChangesResponseHandler implements ResponseHandler<Void> {
             @Override
             public Void handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
                 final HttpEntity entity = response.getEntity();
                 final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    if (line.length() == 0)
+                        break;
                     final JSONObject json = JSONObject.fromObject(line);
                     System.err.println(json);
-                    since = json.getLong("seq");
+                    if (json.has("seq")) {
+                        since = json.getLong("seq");
+                    }
                 }
                 return null;
             }

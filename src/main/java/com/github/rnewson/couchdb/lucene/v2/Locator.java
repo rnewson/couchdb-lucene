@@ -1,7 +1,10 @@
 package com.github.rnewson.couchdb.lucene.v2;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -32,9 +35,25 @@ public final class Locator {
     }
 
     public ViewSignature lookup(final String databaseName, final String designDocumentName, final String viewName) {
+        return lookup(path(databaseName, designDocumentName, viewName));
+    }
+
+    public ViewSignature lookup(final String path) {
         synchronized (map) {
-            return map.get(path(databaseName, designDocumentName, viewName));
+            return map.get(path);
         }
+    }
+
+    public Collection<String> lookupAll(final String databaseName) {
+        final Set<String> result = new HashSet<String>();
+        synchronized (map) {
+            for (final String path : map.keySet()) {
+                if (path.startsWith(databaseName + "/")) {
+                    result.add(path);
+                }
+            }
+        }
+        return result;
     }
 
     public void update(final String databaseName, final String designDocumentName, final String viewName, final String viewFunction) {
