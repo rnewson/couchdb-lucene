@@ -56,13 +56,15 @@ public final class Locator {
         return result;
     }
 
-    public void update(final String databaseName, final String designDocumentName, final String viewName, final String viewFunction) {
+    public ViewSignature update(final String databaseName, final String designDocumentName, final String viewName,
+            final String viewFunction) {
         final ViewSignature viewSignature = new ViewSignature(databaseName, viewFunction);
         synchronized (map) {
             final String path = path(databaseName, designDocumentName, viewName);
             map.put(path, viewSignature);
             logger.debug("Mapped " + path + " to " + viewSignature);
         }
+        return viewSignature;
     }
 
     private ViewSignature lookup(final String[] pathComponents) {

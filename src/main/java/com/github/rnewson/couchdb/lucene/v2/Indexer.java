@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,10 +23,12 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
+import org.apache.lucene.index.Term;
 import org.mortbay.component.AbstractLifeCycle;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ScriptableObject;
 
 /**
@@ -91,6 +95,10 @@ public final class Indexer extends AbstractLifeCycle {
 
         private ScriptableObject scope;
 
+        private Function main;
+
+        private final Map<String, Function> functions = new HashMap<String, Function>();
+
         public DatabasePuller(final String databaseName) {
             this.databaseName = databaseName;
         }
@@ -113,10 +121,16 @@ public final class Indexer extends AbstractLifeCycle {
 
         private void enterContext() throws Exception {
             context = ContextFactory.getGlobal().enterContext();
+            // Security restrictions
             context.setClassShutter(new RestrictiveClassShutter());
+            // Setup.
             scope = context.initStandardObjects();
+            // Allow custom document helper class.
             ScriptableObject.defineClass(scope, RhinoDocument.class);
+            // Load JSON parser.
             context.evaluateString(scope, loadResource("json2.js"), "json2", 0, null);
+            // Define outer function.
+            main = context.compileFunction(scope, "function(json, func){return func(JSON.parse(json));}", "main", 0, null);
         }
 
         private String loadResource(final String name) throws IOException {
@@ -141,13 +155,16 @@ public final class Indexer extends AbstractLifeCycle {
             if (fulltext != null) {
                 for (final Object obj : fulltext.keySet()) {
                     final String viewName = (String) obj;
-                    state.locator.update(databaseName, designDocumentName, viewName, fulltext.getString(viewName));
+                    final JSONObject viewValue = fulltext.getJSONObject(viewName);
+                    final String viewFunction = viewValue.getString("index");
+                    functions.put(viewName, context.compileFunction(scope, viewFunction, viewName, 0, null));
+                    state.locator.update(databaseName, designDocumentName, viewName, fulltext.toString());
                 }
             }
         }
 
         private void updateIndexes() throws IOException {
-            System.err.println(state.locator.lookupAll(databaseName));
+            // System.err.println(state.locator.lookupAll(databaseName));
             final String url = state.couch.url(String.format("%s/_changes?feed=continuous&since=%d&include_docs=true",
                     databaseName, since));
             state.httpClient.execute(new HttpGet(url), new ChangesResponseHandler());
@@ -184,25 +201,34 @@ public final class Indexer extends AbstractLifeCycle {
                         break;
 
                     final String id = json.getString("id");
+                    final Term docTerm = new Term(Constants.ID, id);
                     final JSONObject doc = json.getJSONObject("doc");
+
                     // New, updated or deleted document.
                     if (id.startsWith("_design")) {
-                        // TODO update locator.
-                        logger.warn(id + ": design document updated.");
+                        if (logger.isTraceEnabled())
+                            logger.trace(id + ": design document updated.");
                         mapDesignDocument(doc);
                     } else if (json.optBoolean("deleted")) {
-                        // TODO handle deletion.
-                        logger.warn(id + ": document deleted.");
+                        if (logger.isTraceEnabled())
+                            logger.trace(id + ": document deleted.");
+                        //writer.deleteDocuments(docTerm);
                     } else {
                         // New or updated document.
-                        logger.warn(id + ": new/updated document.");
+                        if (logger.isTraceEnabled())
+                            logger.trace(id + ": new/updated document.");
+
+                        for (final Function function : functions.values()) {
+                            final Object result = main.call(context, scope, null, new Object[] { doc, function });
+                            System.err.println(result);
+                        }
                     }
+
                     // Remember progress.
                     since = json.getLong("seq");
                 }
                 return null;
             }
-
         }
 
     }
