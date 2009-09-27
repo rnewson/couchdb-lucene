@@ -1,5 +1,7 @@
 package com.github.rnewson.couchdb.lucene.v2;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.File;
 import java.io.InputStream;
 import java.util.Properties;
@@ -73,7 +75,7 @@ public final class Main {
         final State state = new State(couch, gateway, locator, httpClient);
 
         // Configure Indexer.
-        final Indexer3 indexer = new Indexer3(state);
+        final Indexer indexer = new Indexer(state);
 
         // Configure Jetty.
         final Server server = new Server(Integer.getInteger("port", lucenePort));

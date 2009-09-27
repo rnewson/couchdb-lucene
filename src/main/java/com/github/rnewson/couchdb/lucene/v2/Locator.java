@@ -14,8 +14,8 @@ import org.apache.log4j.Logger;
  * 
  */
 public final class Locator {
-    
-    private final Logger logger = Logger.getLogger(Locator.class); 
+
+    private final Logger logger = Logger.getLogger(Locator.class);
 
     /**
      * Maps a path like ../<design document name>/<view name>?<args> to a view
@@ -40,8 +40,9 @@ public final class Locator {
     public void update(final String databaseName, final String designDocumentName, final String viewName, final String viewFunction) {
         final ViewSignature viewSignature = new ViewSignature(databaseName, viewFunction);
         synchronized (map) {
-            map.put(path(databaseName, designDocumentName, viewName), viewSignature);
-            logger.debug(map);
+            final String path = path(databaseName, designDocumentName, viewName);
+            map.put(path, viewSignature);
+            logger.debug("Mapped " + path + " to " + viewSignature);
         }
     }
 
