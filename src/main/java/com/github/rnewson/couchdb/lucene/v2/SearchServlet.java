@@ -74,7 +74,7 @@ public final class SearchServlet extends HttpServlet {
         final boolean debug = getBooleanParameter(req, "debug");
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
 
-        final String body = state.gateway.withSearcher(sig, staleOk, new SearcherCallback<String>() {
+        final String body = state.lucene.withSearcher(sig, staleOk, new SearcherCallback<String>() {
             @Override
             public String callback(final IndexSearcher searcher) throws IOException {
                 // Check for 304 - Not Modified.
@@ -149,7 +149,7 @@ public final class SearchServlet extends HttpServlet {
                             String name = fld.name();
                             String value = fld.stringValue();
                             if (value != null) {
-                                if (Constants.ID.equals(name)) {
+                                if ("_id".equals(name)) {
                                     row.put("id", value);
                                 } else {
                                     if (!fields.has(name)) {
@@ -180,7 +180,7 @@ public final class SearchServlet extends HttpServlet {
                         }
                         // Fetch document (if requested).
                         if (include_docs) {
-                            fetch_ids[i - skip] = doc.get(Constants.ID);
+                            fetch_ids[i - skip] = doc.get("_id");
                         }
                         if (fields.size() > 0) {
                             row.put("fields", fields);

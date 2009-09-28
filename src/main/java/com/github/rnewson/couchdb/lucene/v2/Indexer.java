@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,14 +24,21 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.mortbay.component.AbstractLifeCycle;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.Undefined;
+
+import com.github.rnewson.couchdb.lucene.util.Analyzers;
+import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.WriterCallback;
 
 /**
  * Pull data from couchdb into Lucene indexes.
@@ -86,6 +94,18 @@ public final class Indexer extends AbstractLifeCycle {
         }
     }
 
+    private static class ViewTuple {
+        private final String defaults;
+        private final Analyzer analyzer;
+        private final Function function;
+
+        public ViewTuple(final String defaults, final Analyzer analyzer, final Function function) {
+            this.defaults = defaults;
+            this.analyzer = analyzer;
+            this.function = function;
+        }
+    }
+
     private class DatabasePuller implements Runnable {
 
         private final String databaseName;
@@ -98,7 +118,7 @@ public final class Indexer extends AbstractLifeCycle {
 
         private Function main;
 
-        private final Map<String, Function> functions = new HashMap<String, Function>();
+        private final Map<ViewSignature, ViewTuple> functions = new HashMap<ViewSignature, ViewTuple>();
 
         public DatabasePuller(final String databaseName) {
             this.databaseName = databaseName;
@@ -150,27 +170,26 @@ public final class Indexer extends AbstractLifeCycle {
             for (int i = 0; i < designDocuments.size(); i++) {
                 mapDesignDocument(designDocuments.getJSONObject(i).getJSONObject("doc"));
             }
-            
-            // TODO use the real defaults.
-            this.context.putThreadLocal("defaults", "{}");
         }
 
         private void mapDesignDocument(final JSONObject designDocument) {
-            final String designDocumentName = designDocument.getString(Constants.ID).substring(8);
+            final String designDocumentName = designDocument.getString("_id").substring(8);
             final JSONObject fulltext = designDocument.getJSONObject("fulltext");
             if (fulltext != null) {
                 for (final Object obj : fulltext.keySet()) {
                     final String viewName = (String) obj;
                     final JSONObject viewValue = fulltext.getJSONObject(viewName);
-                    final String viewFunction = viewValue.getString("index");
-                    functions.put(viewName, context.compileFunction(scope, viewFunction, viewName, 0, null));
-                    state.locator.update(databaseName, designDocumentName, viewName, fulltext.toString());
+                    final String defaults = viewValue.optString("defaults", "{}");
+                    final Analyzer analyzer = Analyzers.getAnalyzer(viewValue.optString("analyzer", "standard"));
+                    final String function = viewValue.getString("index");
+                    final ViewSignature sig = state.locator.update(databaseName, designDocumentName, viewName, fulltext.toString());
+                    functions.put(sig, new ViewTuple(defaults, analyzer, context
+                            .compileFunction(scope, function, viewName, 0, null)));
                 }
             }
         }
 
         private void updateIndexes() throws IOException {
-            // System.err.println(state.locator.lookupAll(databaseName));
             final String url = state.couch.url(String.format("%s/_changes?feed=continuous&since=%d&include_docs=true",
                     databaseName, since));
             state.httpClient.execute(new HttpGet(url), new ChangesResponseHandler());
@@ -190,7 +209,7 @@ public final class Indexer extends AbstractLifeCycle {
         private final class RestrictiveClassShutter implements ClassShutter {
             @Override
             public boolean visibleToScripts(final String fullClassName) {
-                return fullClassName.startsWith("net.sf.json");
+                return false;
             }
         }
 
@@ -202,36 +221,30 @@ public final class Indexer extends AbstractLifeCycle {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     final JSONObject json = JSONObject.fromObject(line);
-                    // End of feed.
-                    if (json.has("last_seq"))
-                        break;
 
-                    final String id = json.getString("id");
-                    final Term docTerm = new Term(Constants.ID, id);
+                    // End of feed.
+                    if (json.has("last_seq")) {
+                        commitDocuments();
+                        break;
+                    }
+
                     final JSONObject doc = json.getJSONObject("doc");
+                    final String id = doc.getString("_id");
 
                     // New, updated or deleted document.
-                    if (id.startsWith("_design")) {
+                    if (json.getString("id").startsWith("_design")) {
                         if (logger.isTraceEnabled())
                             logger.trace(id + ": design document updated.");
                         mapDesignDocument(doc);
-                    } else if (json.optBoolean("deleted")) {
+                    } else if (doc.optBoolean("_deleted")) {
                         if (logger.isTraceEnabled())
                             logger.trace(id + ": document deleted.");
-                        // writer.deleteDocuments(docTerm);
+                        deleteDocument(doc);
                     } else {
                         // New or updated document.
                         if (logger.isTraceEnabled())
                             logger.trace(id + ": new/updated document.");
-
-                        for (final Function function : functions.values()) {
-                            try {
-                                final Object result = main.call(context, scope, null, new Object[] { doc.toString(), function });
-                                System.err.println(result);
-                            } catch (final RhinoException e) {
-                                logger.warn("doc '" + id + "' caused exception.", e);
-                            }
-                        }
+                        updateDocument(doc);
                     }
 
                     // Remember progress.
@@ -239,6 +252,72 @@ public final class Indexer extends AbstractLifeCycle {
                 }
                 return null;
             }
+
+            private void deleteDocument(final JSONObject doc) throws IOException {
+                for (final ViewSignature sig : functions.keySet()) {
+                    state.lucene.withWriter(sig, new WriterCallback<Void>() {
+                        @Override
+                        public Void callback(final IndexWriter writer) throws IOException {
+                            writer.deleteDocuments(new Term("_id", doc.getString("_id")));
+                            return null;
+                        }
+                    });
+                }
+            }
+
+            private void commitDocuments() throws IOException {
+                final Map<String, String> commitUserData = new HashMap<String, String>();
+                commitUserData.put("update_seq", Long.toString(since));
+                for (final ViewSignature sig : functions.keySet()) {
+                    state.lucene.withWriter(sig, new WriterCallback<Void>() {
+                        @Override
+                        public Void callback(final IndexWriter writer) throws IOException {
+                            writer.commit(commitUserData);
+                            return null;
+                        }
+                    });
+                }
+            }
+
+            private void updateDocument(final JSONObject doc) {
+                for (final Entry<ViewSignature, ViewTuple> entry : functions.entrySet()) {
+                    try {
+                        context.putThreadLocal("defaults", entry.getValue().defaults);
+                        final Object result = main.call(context, scope, null, new Object[] { doc.toString(),
+                                entry.getValue().function });
+                        if (result == null || result instanceof Undefined) {
+                            return;
+                        }
+                        final Term id = new Term("_id", doc.getString("_id"));
+                        if (result instanceof RhinoDocument) {
+                            addDocument(entry.getKey(), id, (RhinoDocument) result, entry.getValue().analyzer);
+                        } else if (result instanceof NativeArray) {
+                            final NativeArray array = (NativeArray) result;
+                            for (int i = 0; i < (int) array.getLength(); i++) {
+                                if (array.get(i, null) instanceof RhinoDocument) {
+                                    addDocument(entry.getKey(), id, (RhinoDocument) array.get(i, null), entry.getValue().analyzer);
+                                }
+                            }
+                        }
+                    } catch (final RhinoException e) {
+                        logger.warn("doc '" + doc.getString("id") + "' caused exception.", e);
+                    } catch (final IOException e) {
+                        logger.warn("doc '" + doc.getString("id") + "' caused exception.", e);
+                    }
+                }
+            }
+
+            private void addDocument(final ViewSignature sig, final Term id, final RhinoDocument doc, final Analyzer analyzer)
+                    throws IOException {
+                state.lucene.withWriter(sig, new WriterCallback<Void>() {
+                    @Override
+                    public Void callback(final IndexWriter writer) throws IOException {
+                        writer.updateDocument(id, doc.doc, analyzer);
+                        return null;
+                    }
+                });
+            }
+
         }
 
     }

@@ -48,7 +48,7 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("/_expunge".equals(req.getPathInfo())) {
-            state.gateway.withWriter(sig, new WriterCallback<Void>() {
+            state.lucene.withWriter(sig, new WriterCallback<Void>() {
                 @Override
                 public Void callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
@@ -60,7 +60,7 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("/_optimize".equals(req.getPathInfo())) {
-            state.gateway.withWriter(sig, new WriterCallback<Void>() {
+            state.lucene.withWriter(sig, new WriterCallback<Void>() {
                 @Override
                 public Void callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);

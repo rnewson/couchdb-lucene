@@ -60,11 +60,10 @@ final class LuceneGateway {
 
         private IndexReaderWarmer newWarmer() {
             return new IndexReaderWarmer() {
-
                 @Override
                 public void warm(final IndexReader reader) throws IOException {
                     // Prewarm sequence (is this "insane"?)
-                    FieldCache.DEFAULT.getLongs(reader, Constants.SEQ);
+                    FieldCache.DEFAULT.getLongs(reader, "_seq");
 
                     // TODO allow clients to specify more fields.
                 }

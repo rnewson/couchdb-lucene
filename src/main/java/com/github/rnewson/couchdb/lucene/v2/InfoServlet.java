@@ -47,7 +47,7 @@ public class InfoServlet extends HttpServlet {
         }
 
         final boolean staleOk = "ok".equals(req.getParameter("stale"));
-        final JSONObject json = state.gateway.withReader(sig, staleOk, new ReaderCallback<JSONObject>() {
+        final JSONObject json = state.lucene.withReader(sig, staleOk, new ReaderCallback<JSONObject>() {
             @Override
             public JSONObject callback(final IndexReader reader) throws IOException {
                 final JSONObject result = new JSONObject();
