@@ -123,7 +123,7 @@ public final class Indexer extends AbstractLifeCycle {
         private void enterContext() throws Exception {
             context = ContextFactory.getGlobal().enterContext();
             // Basic compilation level.
-            context.setOptimizationLevel(0);
+            context.setOptimizationLevel(9);
             // Security restrictions
             context.setClassShutter(new RestrictiveClassShutter());
             // Setup.
@@ -150,6 +150,9 @@ public final class Indexer extends AbstractLifeCycle {
             for (int i = 0; i < designDocuments.size(); i++) {
                 mapDesignDocument(designDocuments.getJSONObject(i).getJSONObject("doc"));
             }
+            
+            // TODO use the real defaults.
+            this.context.putThreadLocal("defaults", "{}");
         }
 
         private void mapDesignDocument(final JSONObject designDocument) {
@@ -223,7 +226,7 @@ public final class Indexer extends AbstractLifeCycle {
 
                         for (final Function function : functions.values()) {
                             try {
-                                final Object result = main.call(context, scope, null, new Object[] { doc, function });
+                                final Object result = main.call(context, scope, null, new Object[] { doc.toString(), function });
                                 System.err.println(result);
                             } catch (final RhinoException e) {
                                 logger.warn("doc '" + id + "' caused exception.", e);
