@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +54,8 @@ public final class Indexer extends AbstractLifeCycle {
 
     private final Set<String> activeTasks = new HashSet<String>();
 
+    private ExecutorService executor;
+
     private ScheduledExecutorService scheduler;
 
     public Indexer(final State state) {
@@ -61,14 +64,15 @@ public final class Indexer extends AbstractLifeCycle {
 
     @Override
     protected void doStart() throws Exception {
-        scheduler = Executors.newScheduledThreadPool(5);
+        executor = Executors.newCachedThreadPool();
+        scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleWithFixedDelay(new CouchPoller(), 0, 1, TimeUnit.MINUTES);
     }
 
     @Override
     protected void doStop() throws Exception {
-        scheduler.shutdown();
-        scheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+        scheduler.shutdownNow();
+        executor.shutdownNow();
     }
 
     private class CouchPoller implements Runnable {
@@ -82,7 +86,7 @@ public final class Indexer extends AbstractLifeCycle {
                         if (!activeTasks.contains(databaseName)) {
                             logger.debug("Tracking " + databaseName);
                             activeTasks.add(databaseName);
-                            scheduler.execute(new DatabasePuller(databaseName));
+                            executor.execute(new DatabasePuller(databaseName));
                         }
                     }
                 }
@@ -142,7 +146,7 @@ public final class Indexer extends AbstractLifeCycle {
 
         private void enterContext() throws Exception {
             context = ContextFactory.getGlobal().enterContext();
-            // Basic compilation level.
+            // Optimize as much as possible.
             context.setOptimizationLevel(9);
             // Security restrictions
             context.setClassShutter(new RestrictiveClassShutter());
@@ -157,7 +161,7 @@ public final class Indexer extends AbstractLifeCycle {
         }
 
         private String loadResource(final String name) throws IOException {
-            final InputStream in = Rhino.class.getClassLoader().getResourceAsStream(name);
+            final InputStream in = Indexer.class.getClassLoader().getResourceAsStream(name);
             try {
                 return IOUtils.toString(in, "UTF-8");
             } finally {
