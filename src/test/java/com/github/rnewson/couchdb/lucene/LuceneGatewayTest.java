@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene.v2;
+package com.github.rnewson.couchdb.lucene;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -19,8 +19,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.github.rnewson.couchdb.lucene.LuceneGateway;
-import com.github.rnewson.couchdb.lucene.ViewSignature;
 import com.github.rnewson.couchdb.lucene.LuceneGateway.SearcherCallback;
 import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
 
@@ -33,7 +31,7 @@ public class LuceneGatewayTest {
 
     @Before
     public void setup() {
-        sig = ViewSignature.getSignatureByFunction("db1", "function(doc){}");
+        sig = new ViewSignature("db1", "function(doc){}");
         doc = new Document();
         doc.add(new Field("id", "12", Store.YES, Index.ANALYZED));
 
