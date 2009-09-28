@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene.v2;
+package com.github.rnewson.couchdb.lucene;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -15,7 +15,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.store.Directory;
 
-import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.ReaderCallback;
+import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
 
 /**
  * Provides information current indexes.

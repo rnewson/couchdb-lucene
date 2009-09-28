@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene.v2;
+package com.github.rnewson.couchdb.lucene;
 
 import java.util.Collection;
 import java.util.HashMap;

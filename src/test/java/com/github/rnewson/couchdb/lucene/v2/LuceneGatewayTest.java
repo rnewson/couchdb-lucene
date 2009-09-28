@@ -19,8 +19,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.SearcherCallback;
-import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.WriterCallback;
+import com.github.rnewson.couchdb.lucene.LuceneGateway;
+import com.github.rnewson.couchdb.lucene.ViewSignature;
+import com.github.rnewson.couchdb.lucene.LuceneGateway.SearcherCallback;
+import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
 
 public class LuceneGatewayTest {
 

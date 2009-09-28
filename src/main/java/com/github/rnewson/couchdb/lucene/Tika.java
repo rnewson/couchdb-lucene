@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene.v2;
+package com.github.rnewson.couchdb.lucene;
 
 /**
  * Copyright 2009 Robert Newson
@@ -16,7 +16,7 @@ package com.github.rnewson.couchdb.lucene.v2;
  * limitations under the License.
  */
 
-import static com.github.rnewson.couchdb.lucene.v2.Utils.text;
+import static com.github.rnewson.couchdb.lucene.Utils.text;
 
 import java.io.IOException;
 import java.io.InputStream;

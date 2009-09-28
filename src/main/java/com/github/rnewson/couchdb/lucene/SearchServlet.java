@@ -1,8 +1,8 @@
-package com.github.rnewson.couchdb.lucene.v2;
+package com.github.rnewson.couchdb.lucene;
 
-import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.getBooleanParameter;
-import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.getIntParameter;
-import static com.github.rnewson.couchdb.lucene.v2.ServletUtils.getParameter;
+import static com.github.rnewson.couchdb.lucene.ServletUtils.getBooleanParameter;
+import static com.github.rnewson.couchdb.lucene.ServletUtils.getIntParameter;
+import static com.github.rnewson.couchdb.lucene.ServletUtils.getParameter;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -33,9 +33,9 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 
+import com.github.rnewson.couchdb.lucene.LuceneGateway.SearcherCallback;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
-import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.SearcherCallback;
 
 /**
  * Perform queries against local indexes.

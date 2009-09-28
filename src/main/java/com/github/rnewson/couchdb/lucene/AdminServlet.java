@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene.v2;
+package com.github.rnewson.couchdb.lucene;
 
 import java.io.IOException;
 
@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.lucene.index.IndexWriter;
 
-import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.WriterCallback;
+import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
 
 /**
  * Administrative functions.

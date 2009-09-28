@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene.v2;
+package com.github.rnewson.couchdb.lucene;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,8 +37,8 @@ import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
+import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
-import com.github.rnewson.couchdb.lucene.v2.LuceneGateway.WriterCallback;
 
 /**
  * Pull data from couchdb into Lucene indexes.
