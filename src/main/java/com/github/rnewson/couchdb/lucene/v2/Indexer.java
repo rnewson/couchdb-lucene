@@ -317,9 +317,6 @@ public final class Indexer extends AbstractLifeCycle {
                     }
                 });
             }
-
         }
-
     }
-
 }
