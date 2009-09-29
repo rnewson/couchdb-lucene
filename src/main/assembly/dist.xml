@@ -11,6 +11,12 @@
         <include>${project.basedir}/NOTICE*</include>
       </includes>
     </fileSet>
+    <fileSet>
+      <includes>
+	<include>${project.basedir}/src/main/bin/*</include>
+      </includes>
+      <outputDirectory>/bin</outputDirectory>
+    </fileSet>
   </fileSets>
   <dependencySets>
     <dependencySet>
