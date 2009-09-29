@@ -27,7 +27,7 @@ public final class Locator {
     private final Map<String, ViewSignature> map = new HashMap<String, ViewSignature>();
 
     public ViewSignature lookup(final HttpServletRequest req) {
-        final String[] path = req.getPathInfo().split("/");
+        final String[] path = req.getPathInfo().substring(1).split("/");
         if (path.length != 3) {
             return null;
         }

@@ -35,11 +35,6 @@ public class InfoServlet extends HttpServlet {
 
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        if (req.getParameter("index") == null) {
-            resp.sendError(400, "Missing index attribute.");
-            return;
-        }
-
         final ViewSignature sig = state.locator.lookup(req);
         if (sig == null) {
             resp.sendError(400, "Invalid path.");

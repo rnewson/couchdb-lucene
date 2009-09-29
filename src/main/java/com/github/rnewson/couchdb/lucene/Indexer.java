@@ -50,8 +50,6 @@ import com.github.rnewson.couchdb.lucene.util.Analyzers;
  */
 public final class Indexer extends AbstractLifeCycle {
 
-    private final Logger logger = Logger.getLogger(Indexer.class);
-
     private State state;
 
     private final Set<String> activeTasks = new HashSet<String>();
@@ -79,6 +77,8 @@ public final class Indexer extends AbstractLifeCycle {
 
     private class CouchPoller implements Runnable {
 
+        private final Logger logger = Logger.getLogger(CouchPoller.class);
+
         @Override
         public void run() {
             try {
@@ -86,7 +86,6 @@ public final class Indexer extends AbstractLifeCycle {
                 synchronized (activeTasks) {
                     for (final String databaseName : databases) {
                         if (!activeTasks.contains(databaseName)) {
-                            logger.debug("Tracking " + databaseName);
                             activeTasks.add(databaseName);
                             executor.execute(new DatabasePuller(databaseName));
                         }
@@ -114,6 +113,8 @@ public final class Indexer extends AbstractLifeCycle {
 
     private class DatabasePuller implements Runnable {
 
+        private final Logger logger;
+
         private final String databaseName;
 
         private long since = Long.MAX_VALUE;
@@ -127,11 +128,13 @@ public final class Indexer extends AbstractLifeCycle {
         private final Map<ViewSignature, ViewTuple> functions = new HashMap<ViewSignature, ViewTuple>();
 
         public DatabasePuller(final String databaseName) {
+            logger = Utils.getLogger(DatabasePuller.class, databaseName);
             this.databaseName = databaseName;
         }
 
         @Override
         public void run() {
+            logger.debug("Tracking begins");
             try {
                 enterContext();
                 mapAllDesignDocuments();
@@ -140,7 +143,7 @@ public final class Indexer extends AbstractLifeCycle {
                     updateIndexes();
                 }
             } catch (final Exception e) {
-                logger.warn("Tracking for database " + databaseName + " interrupted by exception.", e);
+                logger.warn("Tracking interrupted by exception.", e);
             } finally {
                 leaveContext();
                 untrack();
@@ -220,7 +223,7 @@ public final class Indexer extends AbstractLifeCycle {
             synchronized (activeTasks) {
                 activeTasks.remove(databaseName);
             }
-            logger.debug("Untracking " + databaseName);
+            logger.debug("Tracking ends");
         }
 
         private void leaveContext() {

@@ -59,10 +59,6 @@ public final class SearchServlet extends HttpServlet {
             resp.sendError(400, "Missing q attribute.");
             return;
         }
-        if (req.getParameter("index") == null) {
-            resp.sendError(400, "Missing index attribute.");
-            return;
-        }
 
         final ViewSignature sig = state.locator.lookup(req);
         if (sig == null) {
