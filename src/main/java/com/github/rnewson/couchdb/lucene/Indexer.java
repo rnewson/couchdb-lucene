@@ -211,8 +211,8 @@ public final class Indexer extends AbstractLifeCycle {
         }
 
         private void updateIndexes() throws IOException {
-            final String url = state.couch.url(String.format("%s/_changes?feed=continuous&since=%d&include_docs=true&timeout=10000",
-                    databaseName, since));
+            final String url = state.couch.url(String.format(
+                    "%s/_changes?feed=continuous&since=%d&include_docs=true&timeout=20000", databaseName, since));
             state.httpClient.execute(new HttpGet(url), new ChangesResponseHandler());
         }
 
@@ -245,8 +245,7 @@ public final class Indexer extends AbstractLifeCycle {
 
                     // End of feed.
                     if (json.has("last_seq")) {
-                        logger.trace("Committing documents to index.");
-                        commitDocuments();                        
+                        commitDocuments();
                         break;
                     }
 
@@ -294,7 +293,10 @@ public final class Indexer extends AbstractLifeCycle {
                     state.lucene.withWriter(sig, new WriterCallback<Void>() {
                         @Override
                         public Void callback(final IndexWriter writer) throws IOException {
-                            writer.commit(commitUserData);
+                            if (writer.numRamDocs() > 0) {
+                                logger.trace("Committing changes to " + sig);
+                                writer.commit(commitUserData);
+                            }
                             return null;
                         }
                     });
