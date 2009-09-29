@@ -125,6 +125,8 @@ public final class Indexer extends AbstractLifeCycle {
 
         private Function main;
 
+        private boolean pendingCommit;
+
         private final Map<ViewSignature, ViewTuple> functions = new HashMap<ViewSignature, ViewTuple>();
 
         public DatabasePuller(final String databaseName) {
@@ -214,8 +216,8 @@ public final class Indexer extends AbstractLifeCycle {
         }
 
         private void updateIndexes() throws IOException {
-            final String url = state.couch.url(String.format(
-                    "%s/_changes?feed=continuous&since=%d&include_docs=true&timeout=20000", databaseName, since));
+            final String url = state.couch.url(String.format("%s/_changes?" + "feed=continuous&" + "since=%d&"
+                    + "include_docs=true&" + "timeout=30000", databaseName, since));
             state.httpClient.execute(new HttpGet(url), new ChangesResponseHandler());
         }
 
@@ -283,6 +285,7 @@ public final class Indexer extends AbstractLifeCycle {
                         @Override
                         public Void callback(final IndexWriter writer) throws IOException {
                             writer.deleteDocuments(new Term("_id", doc.getString("_id")));
+                            pendingCommit = true;
                             return null;
                         }
                     });
@@ -296,7 +299,7 @@ public final class Indexer extends AbstractLifeCycle {
                     state.lucene.withWriter(sig, new WriterCallback<Void>() {
                         @Override
                         public Void callback(final IndexWriter writer) throws IOException {
-                            if (writer.numRamDocs() > 0) {
+                            if (pendingCommit) {
                                 logger.trace("Committing changes to " + sig);
                                 writer.commit(commitUserData);
                             }
@@ -304,6 +307,7 @@ public final class Indexer extends AbstractLifeCycle {
                         }
                     });
                 }
+                pendingCommit = false;
             }
 
             private void updateDocument(final JSONObject doc) {
@@ -341,6 +345,7 @@ public final class Indexer extends AbstractLifeCycle {
                     public Void callback(final IndexWriter writer) throws IOException {
                         doc.doc.add(Utils.token("_id", id.text(), true));
                         writer.updateDocument(id, doc.doc, analyzer);
+                        pendingCommit = true;
                         return null;
                     }
                 });
