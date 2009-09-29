@@ -190,7 +190,7 @@ public final class Indexer extends AbstractLifeCycle {
                     }
                 }));
             }
-            System.err.println(since);
+            logger.trace("Existing indexes at update_seq " + since);
         }
 
         private void mapDesignDocument(final JSONObject designDocument) {
@@ -211,7 +211,7 @@ public final class Indexer extends AbstractLifeCycle {
         }
 
         private void updateIndexes() throws IOException {
-            final String url = state.couch.url(String.format("%s/_changes?feed=continuous&since=%d&include_docs=true",
+            final String url = state.couch.url(String.format("%s/_changes?feed=continuous&since=%d&include_docs=true&timeout=10000",
                     databaseName, since));
             state.httpClient.execute(new HttpGet(url), new ChangesResponseHandler());
         }
@@ -246,7 +246,7 @@ public final class Indexer extends AbstractLifeCycle {
                     // End of feed.
                     if (json.has("last_seq")) {
                         logger.trace("Committing documents to index.");
-                        commitDocuments();
+                        commitDocuments();                        
                         break;
                     }
 
