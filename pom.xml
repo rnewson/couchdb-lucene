@@ -135,20 +135,9 @@
 	  <showPackage>false</showPackage>
 	  <links>
 	    <link>http://java.sun.com/javase/6/docs/api/</link>
-	    <link>http://lucene.apache.org/java/2_4_1/api/core/</link>
+	    <link>http://lucene.apache.org/java/2_9_0/api/core/</link>
 	  </links>
 	</configuration>
-      </plugin>
-       <plugin>
-        <groupId>org.mortbay.jetty</groupId>
-        <artifactId>maven-jetty-plugin</artifactId>
-        <version>${jetty-version}</version>
-        <configuration>
-          <scanIntervalSeconds>5</scanIntervalSeconds>
-          <scanTargets>
-            <scanTarget>src/main/webapp/WEB-INF/applicationContext.xml</scanTarget>
-          </scanTargets>
-        </configuration>
       </plugin>
       <plugin>
 	<artifactId>maven-compiler-plugin</artifactId>
@@ -158,16 +147,24 @@
 	</configuration>
       </plugin>
       <plugin>
-	<artifactId>maven-assembly-plugin</artifactId>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-jar-plugin</artifactId>
         <configuration>
-          <descriptorRefs>
-            <descriptorRef>jar-with-dependencies</descriptorRef>
-          </descriptorRefs>
           <archive>
             <manifest>
               <mainClass>com.github.rnewson.couchdb.lucene.Main</mainClass>
+	      <addClasspath>true</addClasspath>
             </manifest>
           </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+	    <descriptor>src/main/assembly/dist.xml</descriptor>
+	  </descriptors>
         </configuration>
       </plugin>
     </plugins>

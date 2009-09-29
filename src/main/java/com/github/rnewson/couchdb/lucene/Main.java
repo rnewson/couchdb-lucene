@@ -1,7 +1,5 @@
 package com.github.rnewson.couchdb.lucene;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-
 import java.io.File;
 import java.io.InputStream;
 import java.util.Properties;
@@ -40,6 +38,10 @@ public final class Main {
     public static void main(final String[] args) throws Exception {
         final Properties properties = new Properties();
         final InputStream in = Main.class.getClassLoader().getResourceAsStream("couchdb-lucene.properties");
+        if (in == null) {
+            System.out.println("No couchdb-lucene.properties file found.");
+            return;
+        }
         properties.load(in);
         in.close();
 

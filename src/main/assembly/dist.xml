@@ -1,0 +1,21 @@
+<assembly>
+  <id>dist</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <fileSets>
+    <fileSet>
+      <includes>
+        <include>${project.basedir}/README*</include>
+        <include>${project.basedir}/LICENSE*</include>
+        <include>${project.basedir}/NOTICE*</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+  <dependencySets>
+    <dependencySet>
+      <scope>runtime</scope>
+      <outputDirectory>/lib</outputDirectory>
+    </dependencySet>
+  </dependencySets>  
+</assembly>
