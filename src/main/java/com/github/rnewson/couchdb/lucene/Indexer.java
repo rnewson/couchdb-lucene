@@ -26,6 +26,7 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.mortbay.component.AbstractLifeCycle;
@@ -38,6 +39,7 @@ import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
+import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 
@@ -114,7 +116,7 @@ public final class Indexer extends AbstractLifeCycle {
 
         private final String databaseName;
 
-        private long since;
+        private long since = Long.MAX_VALUE;
 
         private Context context;
 
@@ -133,6 +135,7 @@ public final class Indexer extends AbstractLifeCycle {
             try {
                 enterContext();
                 mapAllDesignDocuments();
+                readCheckpoints();
                 while (isRunning()) {
                     updateIndexes();
                 }
@@ -174,6 +177,20 @@ public final class Indexer extends AbstractLifeCycle {
             for (int i = 0; i < designDocuments.size(); i++) {
                 mapDesignDocument(designDocuments.getJSONObject(i).getJSONObject("doc"));
             }
+        }
+
+        private void readCheckpoints() throws IOException {
+            for (final ViewSignature sig : functions.keySet()) {
+                since = Math.min(since, state.lucene.withReader(sig, false, new ReaderCallback<Long>() {
+                    @Override
+                    public Long callback(final IndexReader reader) throws IOException {
+                        final Map<String, String> commitUserData = reader.getCommitUserData();
+                        final String result = commitUserData.get("update_seq");
+                        return result != null ? Long.parseLong(result) : 0L;
+                    }
+                }));
+            }
+            System.err.println(since);
         }
 
         private void mapDesignDocument(final JSONObject designDocument) {
@@ -228,6 +245,7 @@ public final class Indexer extends AbstractLifeCycle {
 
                     // End of feed.
                     if (json.has("last_seq")) {
+                        logger.trace("Committing documents to index.");
                         commitDocuments();
                         break;
                     }
