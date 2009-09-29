@@ -62,7 +62,7 @@ public final class Locator {
         synchronized (map) {
             final String path = path(databaseName, designDocumentName, viewName);
             map.put(path, viewSignature);
-            logger.debug("Mapped " + path + " to " + viewSignature);
+            logger.trace("Mapped " + path + " to " + viewSignature);
         }
         return viewSignature;
     }

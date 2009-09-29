@@ -68,7 +68,7 @@ public class InfoServlet extends HttpServlet {
             }
         });
 
-        resp.setContentType(Constants.CONTENT_TYPE);
+        Utils.setResponseContentTypeAndEncoding(req, resp);
         final Writer writer = resp.getWriter();
         try {
             writer.write(json.toString());

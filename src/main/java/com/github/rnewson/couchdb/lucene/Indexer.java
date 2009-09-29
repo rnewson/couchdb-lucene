@@ -339,6 +339,7 @@ public final class Indexer extends AbstractLifeCycle {
                 state.lucene.withWriter(sig, new WriterCallback<Void>() {
                     @Override
                     public Void callback(final IndexWriter writer) throws IOException {
+                        doc.doc.add(Utils.token("_id", id.text(), true));
                         writer.updateDocument(id, doc.doc, analyzer);
                         return null;
                     }

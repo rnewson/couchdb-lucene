@@ -16,8 +16,13 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import static com.github.rnewson.couchdb.lucene.ServletUtils.getBooleanParameter;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
@@ -37,8 +42,21 @@ class Utils {
         return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
     }
 
+    public static Field token(final String name, final String value, final boolean store) {
+        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
+    }
+
     public static Logger getLogger(final Class clazz, final String suffix) {
         return Logger.getLogger(clazz.getCanonicalName() + "." + suffix);
+    }
+
+    public static void setResponseContentTypeAndEncoding(final HttpServletRequest req, final HttpServletResponse resp) {
+        if (getBooleanParameter(req, "force_json") || req.getHeader("Accept").contains("application/json")) {
+            resp.setContentType("application/json");
+        } else {
+            resp.setContentType("text/plain");
+        }
+        resp.setCharacterEncoding("utf-8");
     }
 
 }

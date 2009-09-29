@@ -204,14 +204,7 @@ public final class SearchServlet extends HttpServlet {
                     json.put("rows", rows);
                 }
 
-                // Determine content type of response.
-                if (getBooleanParameter(req, "force_json") || req.getHeader("Accept").contains("application/json")) {
-                    resp.setContentType("application/json");
-                } else {
-                    resp.setContentType("text/plain");
-                }
-
-                resp.setCharacterEncoding("utf-8");
+                Utils.setResponseContentTypeAndEncoding(req, resp);
 
                 // Cache-related headers.
                 resp.setHeader("ETag", etag);
