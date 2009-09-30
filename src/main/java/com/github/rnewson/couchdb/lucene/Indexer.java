@@ -117,7 +117,7 @@ public final class Indexer extends AbstractLifeCycle {
 
         private final String databaseName;
 
-        private long since = Long.MAX_VALUE;
+        private long since = 0L;
 
         private Context context;
 
@@ -139,7 +139,11 @@ public final class Indexer extends AbstractLifeCycle {
             logger.debug("Tracking begins");
             try {
                 enterContext();
-                mapAllDesignDocuments();
+                final boolean isLuceneEnabled = mapAllDesignDocuments();
+                if (!isLuceneEnabled) {
+                    logger.debug("No fulltext functions found.");
+                    return;
+                }
                 readCheckpoints();
                 while (isRunning()) {
                     updateIndexes();
@@ -177,14 +181,17 @@ public final class Indexer extends AbstractLifeCycle {
             }
         }
 
-        private void mapAllDesignDocuments() throws IOException {
+        private boolean mapAllDesignDocuments() throws IOException {
             final JSONArray designDocuments = state.couch.getAllDesignDocuments(databaseName);
+            boolean isLuceneEnabled = false;
             for (int i = 0; i < designDocuments.size(); i++) {
-                mapDesignDocument(designDocuments.getJSONObject(i).getJSONObject("doc"));
+                isLuceneEnabled |= mapDesignDocument(designDocuments.getJSONObject(i).getJSONObject("doc"));
             }
+            return isLuceneEnabled;
         }
 
         private void readCheckpoints() throws IOException {
+            long since = Long.MAX_VALUE;
             for (final ViewSignature sig : functions.keySet()) {
                 since = Math.min(since, state.lucene.withReader(sig, false, new ReaderCallback<Long>() {
                     @Override
@@ -198,9 +205,10 @@ public final class Indexer extends AbstractLifeCycle {
             logger.trace("Existing indexes at update_seq " + since);
         }
 
-        private void mapDesignDocument(final JSONObject designDocument) {
+        private boolean mapDesignDocument(final JSONObject designDocument) {
             final String designDocumentName = designDocument.getString("_id").substring(8);
             final JSONObject fulltext = designDocument.getJSONObject("fulltext");
+            boolean isLuceneEnabled = false;
             if (fulltext != null) {
                 for (final Object obj : fulltext.keySet()) {
                     final String viewName = (String) obj;
@@ -211,8 +219,10 @@ public final class Indexer extends AbstractLifeCycle {
                     final ViewSignature sig = state.locator.update(databaseName, designDocumentName, viewName, fulltext.toString());
                     functions.put(sig, new ViewTuple(defaults, analyzer, context
                             .compileFunction(scope, function, viewName, 0, null)));
+                    isLuceneEnabled = true;
                 }
             }
+            return isLuceneEnabled;
         }
 
         private void updateIndexes() throws IOException {
