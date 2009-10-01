@@ -107,9 +107,12 @@ final class LuceneGateway {
 
     private final boolean realtime;
 
+    private long lastUpdated;
+
     LuceneGateway(final File baseDir, final boolean realtime) {
         this.baseDir = baseDir;
         this.realtime = realtime;
+        this.lastUpdated = now();
     }
 
     private synchronized LuceneHolder getHolder(final ViewSignature viewSignature) throws IOException {
@@ -139,7 +142,8 @@ final class LuceneGateway {
         final LuceneHolder holder = getHolder(viewSignature);
         final IndexSearcher searcher = holder.borrowSearcher(staleOk);
         try {
-            final String etag = Long.toHexString(searcher.getIndexReader().getVersion());
+            long version = realtime ? lastUpdated : searcher.getIndexReader().getVersion();
+            final String etag = Long.toHexString(version);
             return callback.callback(searcher, etag);
         } finally {
             holder.returnSearcher(searcher);
@@ -150,7 +154,9 @@ final class LuceneGateway {
         LuceneHolder holder = getHolder(viewSignature);
         final IndexWriter writer = holder.getIndexWriter();
         try {
-            return callback.callback(writer);
+            final T result = callback.callback(writer);
+            lastUpdated = now();
+            return result;
         } catch (final OutOfMemoryError e) {
             synchronized (holders) {
                 holder = holders.remove(viewSignature);
@@ -166,6 +172,10 @@ final class LuceneGateway {
             it.next().close();
             it.remove();
         }
+    }
+
+    private long now() {
+        return System.nanoTime();
     }
 
 }

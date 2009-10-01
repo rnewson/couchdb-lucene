@@ -74,8 +74,6 @@ public final class SearchServlet extends HttpServlet {
             @Override
             public String callback(final IndexSearcher searcher, final String etag) throws IOException {
                 // Check for 304 - Not Modified.
-                req.getHeader("If-None-Match");
-
                 if (!debug && etag.equals(req.getHeader("If-None-Match"))) {
                     resp.setStatus(304);
                     return null;
