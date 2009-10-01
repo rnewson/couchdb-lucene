@@ -8,9 +8,7 @@ import java.util.Map;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
-import org.apache.lucene.search.FieldCache;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -54,20 +52,7 @@ final class LuceneGateway {
         private IndexWriter newWriter() throws IOException {
             final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
             result.setMergeFactor(5);
-            result.setMergedSegmentWarmer(newWarmer());
             return result;
-        }
-
-        private IndexReaderWarmer newWarmer() {
-            return new IndexReaderWarmer() {
-                @Override
-                public void warm(final IndexReader reader) throws IOException {
-                    // Prewarm sequence (is this "insane"?)
-                    FieldCache.DEFAULT.getLongs(reader, "_seq");
-
-                    // TODO allow clients to specify more fields.
-                }
-            };
         }
 
         synchronized IndexReader borrowReader(final boolean staleOk) throws IOException {
