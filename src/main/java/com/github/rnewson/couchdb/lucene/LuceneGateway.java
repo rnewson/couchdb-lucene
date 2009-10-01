@@ -159,14 +159,6 @@ final class LuceneGateway {
         }
     }
 
-    void deleteIndex(final ViewSignature viewSignature) throws IOException {
-
-    }
-
-    void createIndex(final ViewSignature viewSignature) throws IOException {
-
-    }
-
     synchronized void close() throws IOException {
         final Iterator<LuceneHolder> it = holders.values().iterator();
         while (it.hasNext()) {
