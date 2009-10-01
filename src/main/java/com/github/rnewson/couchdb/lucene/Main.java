@@ -85,7 +85,6 @@ public final class Main {
         server.setSendServerVersion(false);
         server.addLifeCycle(indexer);
 
-        // Configure Rhino.
         // TODO deuglify this.
         RhinoDocument.state = state;
 
@@ -93,20 +92,26 @@ public final class Main {
         server.setHandler(contexts);
 
         final Context search = new Context(contexts, "/search", Context.NO_SESSIONS);
-        search.addFilter(new FilterHolder(new GzipFilter()), "/*", Handler.DEFAULT);
         search.addServlet(new ServletHolder(new SearchServlet(state)), "/*");
+        setupContext(search);
 
         final Context info = new Context(contexts, "/info", Context.NO_SESSIONS);
         info.addServlet(new ServletHolder(new InfoServlet(state)), "/*");
+        setupContext(info);
 
         final Context admin = new Context(contexts, "/admin", Context.NO_SESSIONS);
         admin.addServlet(new ServletHolder(new AdminServlet(state)), "/*");
+        setupContext(admin);
 
         // Lockdown
         // System.setSecurityManager(securityManager);
 
         server.start();
         server.join();
+    }
+
+    private static void setupContext(final Context context) {
+        context.addFilter(new FilterHolder(new GzipFilter()), "/*", Handler.DEFAULT);
     }
 
 }
