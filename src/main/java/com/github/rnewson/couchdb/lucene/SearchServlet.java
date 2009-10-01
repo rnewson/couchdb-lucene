@@ -63,19 +63,19 @@ public final class SearchServlet extends HttpServlet {
         final ViewSignature sig = state.locator.lookup(req);
         if (sig == null) {
             resp.sendError(400, "Invalid path.");
-            return;            
+            return;
         }
-        
+
         final boolean staleOk = "ok".equals(req.getParameter("stale"));
         final boolean debug = getBooleanParameter(req, "debug");
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
 
         final String body = state.lucene.withSearcher(sig, staleOk, new SearcherCallback<String>() {
             @Override
-            public String callback(final IndexSearcher searcher) throws IOException {
+            public String callback(final IndexSearcher searcher, final String etag) throws IOException {
                 // Check for 304 - Not Modified.
                 req.getHeader("If-None-Match");
-                final String etag = getETag(searcher);
+
                 if (!debug && etag.equals(req.getHeader("If-None-Match"))) {
                     resp.setStatus(304);
                     return null;
@@ -229,10 +229,6 @@ public final class SearchServlet extends HttpServlet {
                 writer.close();
             }
         }
-    }
-
-    private String getETag(final IndexSearcher searcher) {
-        return Long.toHexString(searcher.getIndexReader().getVersion());
     }
 
     private static Sort toSort(final String sort) {

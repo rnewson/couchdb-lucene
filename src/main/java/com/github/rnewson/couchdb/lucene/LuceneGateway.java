@@ -94,7 +94,7 @@ final class LuceneGateway {
     }
 
     interface SearcherCallback<T> {
-        public T callback(final IndexSearcher searcher) throws IOException;
+        public T callback(final IndexSearcher searcher, final String etag) throws IOException;
     }
 
     interface WriterCallback<T> {
@@ -139,7 +139,8 @@ final class LuceneGateway {
         final LuceneHolder holder = getHolder(viewSignature);
         final IndexSearcher searcher = holder.borrowSearcher(staleOk);
         try {
-            return callback.callback(searcher);
+            final String etag = Long.toHexString(searcher.getIndexReader().getVersion());
+            return callback.callback(searcher, etag);
         } finally {
             holder.returnSearcher(searcher);
         }
