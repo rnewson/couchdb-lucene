@@ -4,14 +4,15 @@
 * RESTORE USER/PASS auth to CouchDB.
 * pause/resume control over indexer.
 * status page.
+* allow POST with a query array?
 
-* Lucene 2.9.
+* Lucene 2.9 - done
 ** numeric range suppport.
 * use _local/lucene for recording progress.
-* use _changes for tracking updates.
+* use _changes for tracking updates. - done
 * provide start/stop scripts for indexing.
-* allow separate indexes per db (to avoid inter-db pollution)?
-* A general refactoring of the codebase.
+* allow separate indexes per db (to avoid inter-db pollution)? - done
+* A general refactoring of the codebase. - done
 * make attachment call support "store":"yes|no"
 
 UNSCHEDULED
