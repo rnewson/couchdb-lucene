@@ -3,7 +3,7 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
   <appender name="ConsoleAppender" class="org.apache.log4j.ConsoleAppender">
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="[%c] %p %m%n"/>
+      <param name="ConversionPattern" value="%d{ISO8601} %p [%c{1}] %m%n"/>
     </layout>
   </appender>
   <logger name="com.github">
