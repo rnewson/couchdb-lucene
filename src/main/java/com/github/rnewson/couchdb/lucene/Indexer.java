@@ -200,7 +200,8 @@ public final class Indexer extends AbstractLifeCycle {
                     }
                 }));
             }
-            logger.trace("Existing indexes at update_seq " + since);
+            this.since = since;
+            logger.debug("Existing indexes at update_seq " + since);
         }
 
         private boolean mapDesignDocument(final JSONObject designDocument) {
@@ -313,7 +314,7 @@ public final class Indexer extends AbstractLifeCycle {
                     state.lucene.withWriter(sig, new WriterCallback<Void>() {
                         public Void callback(final IndexWriter writer) throws IOException {
                             if (pendingCommit) {
-                                logger.trace("Committing changes to " + sig);
+                                logger.debug("Committing changes to " + sig + " at update seq " + since);
                                 writer.commit(commitUserData);
                             }
                             return null;
