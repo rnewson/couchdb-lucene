@@ -71,7 +71,6 @@ public final class SearchServlet extends HttpServlet {
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
 
         final String body = state.lucene.withSearcher(sig, staleOk, new SearcherCallback<String>() {
-            @Override
             public String callback(final IndexSearcher searcher, final String etag) throws IOException {
                 // Check for 304 - Not Modified.
                 if (!debug && etag.equals(req.getHeader("If-None-Match"))) {

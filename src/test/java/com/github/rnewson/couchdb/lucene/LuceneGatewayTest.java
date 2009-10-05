@@ -58,8 +58,6 @@ public class LuceneGatewayTest {
     private void search(final boolean realtime, final int expectedCount) throws IOException {
         gateway = new LuceneGateway(dir, realtime);
         gateway.withWriter(sig, new WriterCallback<Void>() {
-
-            @Override
             public Void callback(final IndexWriter writer) throws IOException {
                 writer.addDocument(doc);
                 return null;
@@ -67,7 +65,6 @@ public class LuceneGatewayTest {
         });
 
         final int count = gateway.withSearcher(sig, !realtime, new SearcherCallback<Integer>() {
-            @Override
             public Integer callback(final IndexSearcher searcher, final String etag) throws IOException {
                 return searcher.search(new TermQuery(new Term("id", "12")), 1).totalHits;
             }

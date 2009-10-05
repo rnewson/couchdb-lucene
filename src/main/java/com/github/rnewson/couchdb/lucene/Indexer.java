@@ -79,7 +79,6 @@ public final class Indexer extends AbstractLifeCycle {
 
         private final Logger logger = Logger.getLogger(CouchPoller.class);
 
-        @Override
         public void run() {
             try {
                 final String[] databases = state.couch.getAllDatabases();
@@ -134,7 +133,6 @@ public final class Indexer extends AbstractLifeCycle {
             this.databaseName = databaseName;
         }
 
-        @Override
         public void run() {
             logger.debug("Tracking begins");
             try {
@@ -194,7 +192,6 @@ public final class Indexer extends AbstractLifeCycle {
             long since = Long.MAX_VALUE;
             for (final ViewSignature sig : functions.keySet()) {
                 since = Math.min(since, state.lucene.withReader(sig, false, new ReaderCallback<Long>() {
-                    @Override
                     public Long callback(final IndexReader reader) throws IOException {
                         final Map<String, String> commitUserData = reader.getCommitUserData();
                         final String result = commitUserData.get("update_seq");
@@ -243,14 +240,12 @@ public final class Indexer extends AbstractLifeCycle {
         }
 
         private final class RestrictiveClassShutter implements ClassShutter {
-            @Override
             public boolean visibleToScripts(final String fullClassName) {
                 return false;
             }
         }
 
         private final class ChangesResponseHandler implements ResponseHandler<Void> {
-            @Override
             public Void handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
                 final HttpEntity entity = response.getEntity();
                 final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
@@ -292,7 +287,6 @@ public final class Indexer extends AbstractLifeCycle {
             private void deleteDocument(final JSONObject doc) throws IOException {
                 for (final ViewSignature sig : functions.keySet()) {
                     state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                        @Override
                         public Void callback(final IndexWriter writer) throws IOException {
                             writer.deleteDocuments(new Term("_id", doc.getString("_id")));
                             pendingCommit = true;
@@ -307,7 +301,6 @@ public final class Indexer extends AbstractLifeCycle {
                 commitUserData.put("update_seq", Long.toString(since));
                 for (final ViewSignature sig : functions.keySet()) {
                     state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                        @Override
                         public Void callback(final IndexWriter writer) throws IOException {
                             if (pendingCommit) {
                                 logger.trace("Committing changes to " + sig);
@@ -351,7 +344,6 @@ public final class Indexer extends AbstractLifeCycle {
             private void addDocument(final ViewSignature sig, final Term id, final RhinoDocument doc, final Analyzer analyzer)
                     throws IOException {
                 state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                    @Override
                     public Void callback(final IndexWriter writer) throws IOException {
                         doc.doc.add(Utils.token("_id", id.text(), true));
                         writer.updateDocument(id, doc.doc, analyzer);

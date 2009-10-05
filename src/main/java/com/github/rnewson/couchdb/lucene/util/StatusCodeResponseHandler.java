@@ -17,7 +17,6 @@ import org.apache.http.client.ResponseHandler;
  */
 public final class StatusCodeResponseHandler implements ResponseHandler<Integer> {
 
-    @Override
     public Integer handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
         return response.getStatusLine().getStatusCode();
     }

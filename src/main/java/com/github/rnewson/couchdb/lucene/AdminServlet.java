@@ -44,7 +44,6 @@ public final class AdminServlet extends HttpServlet {
 
         if ("/_expunge".equals(req.getPathInfo())) {
             state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                @Override
                 public Void callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
                     return null;
@@ -56,7 +55,6 @@ public final class AdminServlet extends HttpServlet {
 
         if ("/_optimize".equals(req.getPathInfo())) {
             state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                @Override
                 public Void callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
                     return null;

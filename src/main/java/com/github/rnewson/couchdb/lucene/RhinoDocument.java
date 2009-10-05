@@ -165,7 +165,6 @@ public final class RhinoDocument extends ScriptableObject {
 
         final ResponseHandler<Void> responseHandler = new ResponseHandler<Void>() {
 
-            @Override
             public Void handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
                 final HttpEntity entity = response.getEntity();
                 final InputStream in = entity.getContent();
