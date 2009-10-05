@@ -66,7 +66,7 @@ public final class Indexer extends AbstractLifeCycle {
     protected void doStart() throws Exception {
         executor = Executors.newCachedThreadPool();
         scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleWithFixedDelay(new CouchPoller(), 0, 1, TimeUnit.MINUTES);
+        scheduler.scheduleWithFixedDelay(new CouchPoller(), 0, 60, TimeUnit.SECONDS);
     }
 
     @Override

@@ -16,8 +16,6 @@ import java.security.NoSuchAlgorithmException;
  */
 public final class ViewSignature {
 
-    private static final Charset UTF8 = Charset.forName("UTF-8");
-
     private final String dbname;
 
     private final String view;
@@ -32,7 +30,7 @@ public final class ViewSignature {
     public ViewSignature(final String dbname, final String viewFunction) {
         try {
             final MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(dbname.getBytes(UTF8));
+            md.update(dbname.getBytes("UTF-8"));
             md.update((byte) 0);
             md.update(viewFunction.replaceAll("\\s+", "").getBytes("UTF-8"));
             final byte[] digest = md.digest();
