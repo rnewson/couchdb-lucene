@@ -64,7 +64,7 @@ public final class RhinoDocument extends ScriptableObject {
         Index.put("not_analyzed_no_norms", Field.Index.NOT_ANALYZED_NO_NORMS);
     }
 
-    final Document doc;
+    private final Document doc;
 
     public RhinoDocument() {
         doc = new Document();
@@ -135,6 +135,10 @@ public final class RhinoDocument extends ScriptableObject {
         }
         if (fieldObj != null)
             doc.add(fieldObj);
+    }
+    
+    public Document toDocument() {
+        return doc;
     }
 
     /**

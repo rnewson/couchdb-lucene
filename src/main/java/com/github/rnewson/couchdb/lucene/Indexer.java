@@ -26,6 +26,7 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
@@ -345,8 +346,9 @@ public final class Indexer extends AbstractLifeCycle {
                     throws IOException {
                 state.lucene.withWriter(sig, new WriterCallback<Void>() {
                     public Void callback(final IndexWriter writer) throws IOException {
-                        doc.doc.add(Utils.token("_id", id.text(), true));
-                        writer.updateDocument(id, doc.doc, analyzer);
+                        final Document d = doc.toDocument();
+                        d.add(Utils.token("_id", id.text(), true));
+                        writer.updateDocument(id, d, analyzer);
                         pendingCommit = true;
                         return null;
                     }
