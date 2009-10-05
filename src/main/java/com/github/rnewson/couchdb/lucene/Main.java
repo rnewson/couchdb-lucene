@@ -64,7 +64,6 @@ public final class Main {
         final HttpParams params = new BasicHttpParams();
         ConnManagerParams.setMaxTotalConnections(params, 1000);
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
-        HttpProtocolParams.setUserAgent(params, HttpProtocolParams.getUserAgent(params) + " couchdb-lucene/0.5");
         HttpProtocolParams.setUseExpectContinue(params, false);
         final SchemeRegistry schemeRegistry = new SchemeRegistry();
         schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 5984));
