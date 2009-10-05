@@ -74,7 +74,8 @@ public final class Main {
         final Couch couch = new Couch(httpClient, couchUrl);
         final Locator locator = new Locator();
         final LuceneGateway gateway = new LuceneGateway(new File(luceneDir), realtime);
-        final State state = new State(couch, gateway, locator, httpClient);
+        final Tika tika = new Tika();
+        final State state = new State(couch, gateway, locator, httpClient, tika);
 
         // Configure Indexer.
         final Indexer indexer = new Indexer(state);
@@ -84,9 +85,6 @@ public final class Main {
         server.setStopAtShutdown(true);
         server.setSendServerVersion(false);
         server.addLifeCycle(indexer);
-
-        // TODO deuglify this.
-        RhinoDocument.state = state;
 
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
         server.setHandler(contexts);

@@ -26,7 +26,6 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
@@ -42,6 +41,7 @@ import org.mozilla.javascript.Undefined;
 
 import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
+import com.github.rnewson.couchdb.lucene.RhinoDocument.RhinoContext;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 
 /**
@@ -100,11 +100,11 @@ public final class Indexer extends AbstractLifeCycle {
     }
 
     private static class ViewTuple {
-        private final String defaults;
+        private final JSONObject defaults;
         private final Analyzer analyzer;
         private final Function function;
 
-        public ViewTuple(final String defaults, final Analyzer analyzer, final Function function) {
+        public ViewTuple(final JSONObject defaults, final Analyzer analyzer, final Function function) {
             this.defaults = defaults;
             this.analyzer = analyzer;
             this.function = function;
@@ -211,7 +211,7 @@ public final class Indexer extends AbstractLifeCycle {
                 for (final Object obj : fulltext.keySet()) {
                     final String viewName = (String) obj;
                     final JSONObject viewValue = fulltext.getJSONObject(viewName);
-                    final String defaults = viewValue.optString("defaults", "{}");
+                    final JSONObject defaults = viewValue.has("defaults") ? viewValue.getJSONObject("defaults") : defaults();
                     final Analyzer analyzer = Analyzers.getAnalyzer(viewValue.optString("analyzer", "standard"));
                     final String function = viewValue.getString("index");
                     final ViewSignature sig = state.locator.update(databaseName, designDocumentName, viewName, fulltext.toString());
@@ -221,6 +221,15 @@ public final class Indexer extends AbstractLifeCycle {
                 }
             }
             return isLuceneEnabled;
+        }
+
+        private JSONObject defaults() {
+            final JSONObject result = new JSONObject();
+            result.put("field", Constants.DEFAULT_FIELD);
+            result.put("store", "no");
+            result.put("index", "analyzed");
+            result.put("type", "string");
+            return result;
         }
 
         private void updateIndexes() throws IOException {
@@ -316,43 +325,40 @@ public final class Indexer extends AbstractLifeCycle {
 
             private void updateDocument(final JSONObject doc) {
                 for (final Entry<ViewSignature, ViewTuple> entry : functions.entrySet()) {
+                    final RhinoContext rhinoContext = new RhinoContext();
+                    rhinoContext.analyzer = entry.getValue().analyzer;
+                    rhinoContext.databaseName = databaseName;
+                    rhinoContext.defaults = entry.getValue().defaults;
+                    rhinoContext.documentId = doc.getString("_id");
+                    rhinoContext.state = state;
                     try {
-                        context.putThreadLocal("defaults", entry.getValue().defaults);
                         final Object result = main.call(context, scope, null, new Object[] { doc.toString(),
                                 entry.getValue().function });
                         if (result == null || result instanceof Undefined) {
                             return;
                         }
-                        final Term id = new Term("_id", doc.getString("_id"));
-                        if (result instanceof RhinoDocument) {
-                            addDocument(entry.getKey(), id, (RhinoDocument) result, entry.getValue().analyzer);
-                        } else if (result instanceof NativeArray) {
-                            final NativeArray array = (NativeArray) result;
-                            for (int i = 0; i < (int) array.getLength(); i++) {
-                                if (array.get(i, null) instanceof RhinoDocument) {
-                                    addDocument(entry.getKey(), id, (RhinoDocument) array.get(i, null), entry.getValue().analyzer);
+                        state.lucene.withWriter(entry.getKey(), new WriterCallback<Void>() {
+                            public Void callback(final IndexWriter writer) throws IOException {
+                                if (result instanceof RhinoDocument) {
+                                    ((RhinoDocument) result).addDocument(rhinoContext, writer);
+                                } else if (result instanceof NativeArray) {
+                                    final NativeArray array = (NativeArray) result;
+                                    for (int i = 0; i < (int) array.getLength(); i++) {
+                                        if (array.get(i, null) instanceof RhinoDocument) {
+                                            ((RhinoDocument) array.get(i, null)).addDocument(rhinoContext, writer);
+                                        }
+                                    }
                                 }
+                                return null;
                             }
-                        }
+                        });
+                        pendingCommit = true;
                     } catch (final RhinoException e) {
                         logger.warn("doc '" + doc.getString("id") + "' caused exception.", e);
                     } catch (final IOException e) {
                         logger.warn("doc '" + doc.getString("id") + "' caused exception.", e);
                     }
                 }
-            }
-
-            private void addDocument(final ViewSignature sig, final Term id, final RhinoDocument doc, final Analyzer analyzer)
-                    throws IOException {
-                state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                    public Void callback(final IndexWriter writer) throws IOException {
-                        final Document d = doc.toDocument();
-                        d.add(Utils.token("_id", id.text(), true));
-                        writer.updateDocument(id, d, analyzer);
-                        pendingCommit = true;
-                        return null;
-                    }
-                });
             }
         }
     }

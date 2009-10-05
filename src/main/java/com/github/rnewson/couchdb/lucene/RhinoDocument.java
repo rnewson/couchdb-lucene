@@ -18,8 +18,10 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.sf.json.JSONObject;
@@ -29,10 +31,12 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.document.NumericField;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
@@ -41,13 +45,15 @@ import org.mozilla.javascript.ScriptableObject;
 
 import com.github.rnewson.couchdb.lucene.util.Conversion;
 
+/**
+ * Collect data from the user.
+ * 
+ * @author robertnewson
+ * 
+ */
 public final class RhinoDocument extends ScriptableObject {
 
     private static final long serialVersionUID = 1L;
-
-    static State state;
-
-    private static final Tika TIKA = new Tika();
 
     private static final Map<String, Field.Index> Index = new HashMap<String, Field.Index>();
 
@@ -64,18 +70,32 @@ public final class RhinoDocument extends ScriptableObject {
         Index.put("not_analyzed_no_norms", Field.Index.NOT_ANALYZED_NO_NORMS);
     }
 
-    private final Document doc;
+    private static class RhinoField {
+        private Object value;
+        private NativeObject settings;
+    }
+
+    private static class RhinoAttachment {
+        private String fieldName;
+        private String attachmentName;
+    }
+
+    public static class RhinoContext {
+        public String databaseName;
+        public String documentId;
+        public JSONObject defaults;
+        public State state;
+        public Analyzer analyzer;
+    }
+
+    private final List<RhinoField> fields = new ArrayList<RhinoField>();
+    private final List<RhinoAttachment> attachments = new ArrayList<RhinoAttachment>();
 
     public RhinoDocument() {
-        doc = new Document();
     }
 
     public String getClassName() {
         return "Document";
-    }
-
-    public void add(final Fieldable field) {
-        doc.add(field);
     }
 
     public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
@@ -100,45 +120,82 @@ public final class RhinoDocument extends ScriptableObject {
             throw Context.reportRuntimeError("second argument must be an object.");
         }
 
-        final JSONObject defaults = JSONObject.fromObject((String) cx.getThreadLocal("defaults"));
-
-        String field = defaults.optString("field", Constants.DEFAULT_FIELD);
-        String store = defaults.optString("store", "no");
-        String index = defaults.optString("index", "analyzed");
-        String type = defaults.optString("type", "string");
-
-        // Check for local override.
+        final RhinoField field = new RhinoField();
+        field.value = args[0];
         if (args.length == 2) {
-            final NativeObject obj = (NativeObject) args[1];
-            field = optString(obj, "field", field);
-            store = optString(obj, "store", store);
-            index = optString(obj, "index", index);
-            type = optString(obj, "type", type);
+            field.settings = (NativeObject) args[1];
+        }
+
+        doc.fields.add(field);
+    }
+
+    public void addDocument(final RhinoContext context, final IndexWriter out) throws IOException {
+        final Document doc = new Document();
+        // Add id.
+        doc.add(Utils.token("_id", context.documentId, true));
+
+        // Add user-supplied fields.
+        for (final RhinoField field : fields) {
+            addField(field, context, doc);
+        }
+        // Parse user-requested attachments.
+        for (final RhinoAttachment attachment : attachments) {
+            addAttachment(attachment, context, doc);
+        }
+        out.updateDocument(new Term("_id", context.documentId), doc, context.analyzer);
+    }
+
+    private void addField(final RhinoField field, final RhinoContext context, final Document out) {
+        String fieldName = context.defaults.optString("field", Constants.DEFAULT_FIELD);
+        String store = context.defaults.optString("store", "no");
+        String index = context.defaults.optString("index", "analyzed");
+        String type = context.defaults.optString("type", "string");
+
+        // Check for local settings.
+        if (field.settings != null) {
+            fieldName = optString(field.settings, "field", fieldName);
+            store = optString(field.settings, "store", store);
+            index = optString(field.settings, "index", index);
+            type = optString(field.settings, "type", type);
         }
 
         final Field.Store storeObj = Store.get(store);
-        Fieldable fieldObj = null;
         if ("int".equals(type)) {
-            fieldObj = new NumericField(field, storeObj, true).setIntValue(Conversion.convert(args[0], Integer.class));
+            out.add(new NumericField(fieldName, storeObj, true).setIntValue(Conversion.convert(field.value, Integer.class)));
         } else if ("float".equals(type)) {
-            fieldObj = new NumericField(field, storeObj, true).setFloatValue(Conversion.convert(args[0], Float.class));
+            out.add(new NumericField(fieldName, storeObj, true).setFloatValue(Conversion.convert(field.value, Float.class)));
         } else if ("double".equals(type)) {
-            fieldObj = new NumericField(field, storeObj, true).setDoubleValue(Conversion.convert(args[0], Double.class));
+            out.add(new NumericField(fieldName, storeObj, true).setDoubleValue(Conversion.convert(field.value, Double.class)));
         } else if ("long".equals(type)) {
-            fieldObj = new NumericField(field, storeObj, true).setLongValue(Conversion.convert(args[0], Long.class));
+            out.add(new NumericField(fieldName, storeObj, true).setLongValue(Conversion.convert(field.value, Long.class)));
         } else if ("date".equals(type)) {
-            fieldObj = new NumericField(field, storeObj, true).setLongValue(Conversion.convert(args[0], Date.class).getTime());
+            out
+                    .add(new NumericField(fieldName, storeObj, true).setLongValue(Conversion.convert(field.value, Date.class)
+                            .getTime()));
         } else if ("string".equals(type)) {
-            fieldObj = new Field(field, Conversion.convert(args[0]).toString(), storeObj, Index.get(index));
-        } else {
-            // Ignore.
+            out.add(new Field(fieldName, Conversion.convert(field.value).toString(), storeObj, Index.get(index)));
         }
-        if (fieldObj != null)
-            doc.add(fieldObj);
     }
-    
-    public Document toDocument() {
-        return doc;
+
+    private void addAttachment(final RhinoAttachment attachment, final RhinoContext context, final Document out) throws IOException {
+        final String url = context.state.couch.url(String.format("%s/%s/%s", context.databaseName, Utils
+                .urlEncode(context.documentId), Utils.urlEncode(attachment.attachmentName)));
+        final HttpGet get = new HttpGet(url);
+
+        final ResponseHandler<Void> responseHandler = new ResponseHandler<Void>() {
+
+            public Void handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
+                final HttpEntity entity = response.getEntity();
+                final InputStream in = entity.getContent();
+                try {
+                    context.state.tika.parse(in, entity.getContentType().getValue(), attachment.fieldName, out);
+                } finally {
+                    in.close();
+                }
+                return null;
+            }
+        };
+        context.state.httpClient.execute(get, responseHandler);
     }
 
     /**
@@ -159,29 +216,10 @@ public final class RhinoDocument extends ScriptableObject {
             throw Context.reportRuntimeError("Invalid number of arguments.");
         }
 
-        final String dbname = (String) cx.getThreadLocal("dbname");
-        final String docid = (String) cx.getThreadLocal("docid");
-        final String field = args[0].toString();
-        final String attname = args[1].toString();
-        final String url = state.couch.url(String.format("%s/%s/%s", dbname, Utils.urlEncode(docid), Utils.urlEncode(attname)));
-
-        final HttpGet get = new HttpGet(url);
-
-        final ResponseHandler<Void> responseHandler = new ResponseHandler<Void>() {
-
-            public Void handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
-                final HttpEntity entity = response.getEntity();
-                final InputStream in = entity.getContent();
-                try {
-                    TIKA.parse(in, entity.getContentType().getValue(), field, doc.doc);
-                } finally {
-                    in.close();
-                }
-                return null;
-            }
-        };
-
-        state.httpClient.execute(get, responseHandler);
+        final RhinoAttachment attachment = new RhinoAttachment();
+        attachment.fieldName = args[0].toString();
+        attachment.attachmentName = args[1].toString();
+        doc.attachments.add(attachment);
     }
 
     private static RhinoDocument checkInstance(Scriptable obj) {
@@ -190,4 +228,5 @@ public final class RhinoDocument extends ScriptableObject {
         }
         return (RhinoDocument) obj;
     }
+
 }
