@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -23,6 +24,8 @@ import org.apache.lucene.store.FSDirectory;
 final class LuceneGateway {
 
     private static class LuceneHolder {
+
+        private static final Logger LOG = Logger.getLogger(LuceneHolder.class);
 
         private final Directory dir;
 

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -311,10 +312,17 @@ public final class Indexer extends AbstractLifeCycle {
                 final Map<String, String> commitUserData = new HashMap<String, String>();
                 commitUserData.put("update_seq", Long.toString(since));
                 for (final ViewSignature sig : functions.keySet()) {
+                    final String uuid = state.lucene.withReader(sig, false, new ReaderCallback<String>() {
+                        public String callback(final IndexReader reader) throws IOException {
+                            final String result = (String) reader.getCommitUserData().get("uuid");
+                            return result != null ? result : UUID.randomUUID().toString();
+                        }
+                    });
+                    commitUserData.put("uuid", uuid);
                     state.lucene.withWriter(sig, new WriterCallback<Void>() {
                         public Void callback(final IndexWriter writer) throws IOException {
                             if (pendingCommit) {
-                                logger.debug("Committing changes to " + sig + " at update seq " + since);
+                                logger.debug("Committing changes to " + sig + " with " + commitUserData);
                                 writer.commit(commitUserData);
                             }
                             return null;

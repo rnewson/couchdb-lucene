@@ -29,20 +29,20 @@ UNSCHEDULED
 
 Tracking;
 
-couchdb - store {"update_seq":<seq>} as JSON in _local/lucene
-lucene - store {"update_seq":seq} as Map in userCommitData
+couchdb - store {"uuid":<uuid>} as JSON in _local/lucene
+lucene - store {"update_seq":seq,"uuid":<uuid>} as Map in userCommitData
 
 Verify at startup;
 
-if couchdb_seq < lucene_seq then
+if couchdb_uuid != < lucene_uuid then
    // Database has been recreated.
    delete existing index;
-   lucene_seq = 0;
+   update_seq = 0;
 fi
 
-if couchdb_seq > lucene_seq then
-   // Database has been updated.
+if couchdb_uuid == lucene_uuid then
+   update_seq = <value from lucene>
 fi
 
-starting index from lucene_seq.
+starting index from update_seq.
 
