@@ -148,9 +148,7 @@ File.open(logfile, 'a') do |log|
   @@log = log
   log "Searcher started."
   
-  execute_query(STDIN.gets)  # Uncomment for testing; reloads script every time
-
-#  while (line = STDIN.gets)   #
-#    execute_query(line)       # Comment out for testing; loads script once
-#  end                         #
+  while (line = STDIN.gets)
+    execute_query(line)
+  end
 end
