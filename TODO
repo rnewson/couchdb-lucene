@@ -25,3 +25,24 @@ UNSCHEDULED
 * JSONQuery? (http://docs.persvr.org/documentation/jsonquery)
 * geospatial (need TrieRangeQuery from 2.9)
 
+
+
+Tracking;
+
+couchdb - store {"update_seq":<seq>} as JSON in _local/lucene
+lucene - store {"update_seq":seq} as Map in userCommitData
+
+Verify at startup;
+
+if couchdb_seq < lucene_seq then
+   // Database has been recreated.
+   delete existing index;
+   lucene_seq = 0;
+fi
+
+if couchdb_seq > lucene_seq then
+   // Database has been updated.
+fi
+
+starting index from lucene_seq.
+
