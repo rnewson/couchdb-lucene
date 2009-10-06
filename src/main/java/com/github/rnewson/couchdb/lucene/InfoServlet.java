@@ -56,7 +56,7 @@ public class InfoServlet extends HttpServlet {
                     fields.add(field);
                 }
                 result.put("fields", fields);
-                result.put("last_modified", IndexReader.lastModified(reader.directory()));
+                result.put("last_modified", Long.toString(IndexReader.lastModified(reader.directory())));
                 result.put("optimized", reader.isOptimized());
                 result.put("ref_count", reader.getRefCount());
 
