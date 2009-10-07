@@ -1,3 +1,17 @@
+<h1>WARNING</h1>
+
+This branch (master) contains the developmenet version of the next release (0.5). It is not yet stable or feature complete and should not be used for anything but testing.
+
+<b>I strongly recommend using the 0.4 release</b> (available at <a href="http://cloud.github.com/downloads/rnewson/couchdb-lucene/couchdb-lucene-0.4-jar-with-dependencies.jar.gz">GitHub</a>, please see the <a href="http://cloud.github.com/downloads/rnewson/couchdb-lucene/README">README</a> for unpacking details) as the 0.5 work will occur on trunk and will definitely have extended periods of instability and broken-ness. 
+
+<h1>Version Compatibility</h1>
+
+<table>
+<tr><th>CouchDB</th><th>couchdb-lucene</th></tr>
+<tr><td>0.9.1, 0.10</td><td>0.4</td></tr>
+<tr><td>0.11 (not yet released)</td><td>0.5 (not yet released)</td></tr>
+</table>
+
 <h1>Issue Tracking</h1>
 
 Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">github</a>.
