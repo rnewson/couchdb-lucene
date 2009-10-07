@@ -30,6 +30,7 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
@@ -360,6 +361,10 @@ public final class Indexer extends AbstractLifeCycle {
                             commitUserData.put("update_seq", Long.toString(since));
                             commitUserData.put("uuid", uuid);
                             logger.debug("Committing changes to " + sig + " with " + commitUserData);
+                            // commit data is not written if there are no documents.
+                            if (writer.maxDoc() ==0) {
+                                writer.addDocument(new Document());
+                            }
                             writer.commit(commitUserData);
                             return null;
                         }
