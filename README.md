@@ -1,6 +1,6 @@
 <h1>WARNING</h1>
 
-This branch (master) contains the developmenet version of the next release (0.5). It is not yet stable or feature complete and should not be used for anything but testing. The documentation in this readme is also not yet accurate for 0.5, proceed with caution!
+This branch (master) contains the development version of the next release (0.5). It is not yet stable or feature complete and should not be used for anything but testing. The documentation in this readme is also not yet accurate for 0.5, proceed with caution!
 
 <b>I strongly recommend using the 0.4 release</b> (available at <a href="http://cloud.github.com/downloads/rnewson/couchdb-lucene/couchdb-lucene-0.4-jar-with-dependencies.jar.gz">GitHub</a>, please see the <a href="http://cloud.github.com/downloads/rnewson/couchdb-lucene/README">README</a> for unpacking details) as the 0.5 work will occur on trunk and will definitely have extended periods of instability and broken-ness. 
 
