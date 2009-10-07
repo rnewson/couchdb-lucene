@@ -224,8 +224,10 @@ public final class Indexer extends AbstractLifeCycle {
                     final JSONObject viewValue = fulltext.getJSONObject(viewName);
                     final JSONObject defaults = viewValue.has("defaults") ? viewValue.getJSONObject("defaults") : defaults();
                     final Analyzer analyzer = Analyzers.getAnalyzer(viewValue.optString("analyzer", "standard"));
-                    final String function = viewValue.getString("index");
-                    final ViewSignature sig = state.locator.update(databaseName, designDocumentName, viewName, fulltext.toString());
+                    String function = viewValue.getString("index");
+                    function = function.replaceFirst("^\"", "");
+                    function = function.replaceFirst("\"$", "");
+                    final ViewSignature sig = state.locator.update(databaseName, designDocumentName, viewName, viewValue.toString());
                     functions.put(sig, new ViewTuple(defaults, analyzer, context
                             .compileFunction(scope, function, viewName, 0, null)));
                     isLuceneEnabled = true;
