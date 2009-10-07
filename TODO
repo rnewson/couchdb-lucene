@@ -1,13 +1,18 @@
 0.5
 ----------------------
 
-* Lucene 2.9.
+* RESTORE USER/PASS auth to CouchDB.
+* pause/resume control over indexer.
+* status page.
+* allow POST with a query array?
+
+* Lucene 2.9 - done
 ** numeric range suppport.
 * use _local/lucene for recording progress.
-* use _changes for tracking updates.
+* use _changes for tracking updates. - done
 * provide start/stop scripts for indexing.
-* allow separate indexes per db (to avoid inter-db pollution)?
-* A general refactoring of the codebase.
+* allow separate indexes per db (to avoid inter-db pollution)? - done
+* A general refactoring of the codebase. - done
 * make attachment call support "store":"yes|no"
 
 UNSCHEDULED
@@ -19,4 +24,25 @@ UNSCHEDULED
 * clustering (carrot2).
 * JSONQuery? (http://docs.persvr.org/documentation/jsonquery)
 * geospatial (need TrieRangeQuery from 2.9)
+
+
+
+Tracking;
+
+couchdb - store {"uuid":<uuid>} as JSON in _local/lucene
+lucene - store {"update_seq":seq,"uuid":<uuid>} as Map in userCommitData
+
+Verify at startup;
+
+if couchdb_uuid != < lucene_uuid then
+   // Database has been recreated.
+   delete existing index;
+   update_seq = 0;
+fi
+
+if couchdb_uuid == lucene_uuid then
+   update_seq = <value from lucene>
+fi
+
+starting index from update_seq.
 

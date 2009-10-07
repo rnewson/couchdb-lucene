@@ -1,0 +1,34 @@
+<assembly>
+  <id>dist</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <fileSets>
+    <fileSet>
+      <includes>
+        <include>${project.basedir}/README*</include>
+        <include>${project.basedir}/LICENSE*</include>
+        <include>${project.basedir}/NOTICE*</include>
+      </includes>
+      <outputDirectory>/</outputDirectory>
+    </fileSet>
+  </fileSets>
+  <files>
+    <file>
+      <source>${project.basedir}/src/main/bin/start.sh</source>
+      <fileMode>500</fileMode>
+      <outputDirectory>/bin</outputDirectory>
+    </file>
+    <file>
+      <source>${project.basedir}/src/main/bin/stop.sh</source>
+      <fileMode>500</fileMode>
+      <outputDirectory>/bin</outputDirectory>
+    </file>
+  </files>
+  <dependencySets>
+    <dependencySet>
+      <scope>runtime</scope>
+      <outputDirectory>/lib</outputDirectory>
+    </dependencySet>
+  </dependencySets>  
+</assembly>

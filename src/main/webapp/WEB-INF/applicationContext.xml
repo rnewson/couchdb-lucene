@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+    "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="location" value="couchdb-lucene.properties" />
+  </bean>
+
+  <bean id="httpClient" class="org.apache.http.impl.client.DefaultHttpClient"/>
+
+  <bean id="database" class="com.github.rnewson.couchdb.lucene.Database">
+    <property name="httpClient" ref="httpClient"/>
+    <property name="url" value="${url}"/>
+  </bean>
+
+  <bean id="config" class="com.github.rnewson.couchdb.lucene.Config">
+    <property name="httpClient" ref="httpClient"/>
+    <property name="url" value="${url}"/>
+  </bean>
+
+  <bean id="directory" class="org.apache.lucene.store.FSDirectory" factory-method="getDirectory">
+    <property name="
+  </bean>
+
+  <bean id="indexer" class="com.github.rnewson.couchdb.lucene.Indexer">
+    <property name="config" ref="config"/>
+    <property name="database" ref="database"/>
+  </bean>
+
+  <bean id="scheduledTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
+    <property name="period" value="30000" />
+    <property name="timerTask" ref="indexingTask" />
+  </bean>
+
+  <bean id="timerFactory" class="org.springframework.scheduling.timer.TimerFactoryBean">
+    <property name="scheduledTimerTasks">
+      <list>
+        <ref bean="scheduledTask" />
+      </list>
+    </property>
+  </bean>
+
+  <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ConcurrentTaskExecutor"/>
+
+</beans>

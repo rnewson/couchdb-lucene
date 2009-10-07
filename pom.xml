@@ -8,9 +8,21 @@
   <version>0.5-SNAPSHOT</version>
   <dependencies>
     <dependency>
-      <groupId>commons-httpclient</groupId>
-      <artifactId>commons-httpclient</artifactId>
-      <version>3.1</version>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.0</version>
+    </dependency>
+    <!-- Temporary jcip dep until httpclient 4.0.1 -->
+    <dependency>
+      <groupId>net.jcip</groupId>
+      <artifactId>jcip-annotations</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <!-- remove above -->
+    <dependency>
+      <groupId>org.mortbay.jetty</groupId>
+      <artifactId>jetty-embedded</artifactId>
+      <version>${jetty-version}</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
@@ -22,6 +34,11 @@
       <artifactId>json-lib</artifactId>
       <version>2.2.3</version>
       <classifier>jdk15</classifier>
+    </dependency>
+    <dependency>
+      <groupId>rhino</groupId>
+      <artifactId>js</artifactId>
+      <version>1.7R2</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
@@ -47,17 +64,18 @@
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>${tika-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>rhino</groupId>
-      <artifactId>js</artifactId>
-      <version>1.7R1</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-all</artifactId>
       <version>1.1</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.5.6</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
@@ -72,8 +90,9 @@
     </dependency>
   </dependencies>
   <properties>
-    <lucene-version>2.9-SNAPSHOT</lucene-version>
+    <lucene-version>2.9.0</lucene-version>
     <tika-version>0.4</tika-version>
+    <jetty-version>6.1.20</jetty-version>
   </properties>
   <repositories>
     <repository>
@@ -123,7 +142,7 @@
 	  <showPackage>false</showPackage>
 	  <links>
 	    <link>http://java.sun.com/javase/6/docs/api/</link>
-	    <link>http://lucene.apache.org/java/2_4_0/api/core/</link>
+	    <link>http://lucene.apache.org/java/2_9_0/api/core/</link>
 	  </links>
 	</configuration>
       </plugin>
@@ -135,16 +154,25 @@
 	</configuration>
       </plugin>
       <plugin>
-	<artifactId>maven-assembly-plugin</artifactId>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-jar-plugin</artifactId>
         <configuration>
-          <descriptorRefs>
-            <descriptorRef>jar-with-dependencies</descriptorRef>
-          </descriptorRefs>
           <archive>
+	    <index>true</index>
             <manifest>
               <mainClass>com.github.rnewson.couchdb.lucene.Main</mainClass>
+	      <addClasspath>true</addClasspath>	      
             </manifest>
           </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+	    <descriptor>src/main/assembly/dist.xml</descriptor>
+	  </descriptors>
         </configuration>
       </plugin>
     </plugins>

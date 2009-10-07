@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene.util;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -14,13 +14,13 @@ import org.mozilla.javascript.NativeObject;
  * @author rnewson
  * 
  */
-final class Conversion {
+public final class Conversion {
 
     /**
      * Converts any object returned by Rhino to an object with a suitable
      * toString() output.
      */
-    static Object convert(final Object obj) {
+    public static Object convert(final Object obj) {
         if (obj instanceof NativeObject)
             return convertObject((NativeObject) obj);
         else if (obj instanceof NativeArray)
@@ -28,7 +28,7 @@ final class Conversion {
         return obj;
     }
 
-    static <T> T convert(final Object obj, final Class<T> clazz) {
+    public static <T> T convert(final Object obj, final Class<T> clazz) {
         return (T) Context.jsToJava(obj, clazz);
     }
 

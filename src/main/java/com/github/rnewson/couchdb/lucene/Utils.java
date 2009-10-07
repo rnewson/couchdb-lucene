@@ -16,76 +16,26 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import static com.github.rnewson.couchdb.lucene.ServletUtils.getBooleanParameter;
+
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.BooleanClause.Occur;
 
 class Utils {
 
-    public static final Logger LOG = Logger.getLogger("couchdb-lucene");
-
-    private static PrintWriter OUT;
-
-    static {
+    public static String urlEncode(final String path) {
         try {
-            OUT = new PrintWriter(new OutputStreamWriter(System.out, "UTF-8"));
+            return URLEncoder.encode(path, "UTF-8");
         } catch (final UnsupportedEncodingException e) {
-            throw new Error("UTF-8 support is missing from your JVM.");
+            throw new Error("UTF-8 support missing!");
         }
-    }
-
-    public static void out(final Object obj) {
-        if (OUT == null) {
-            try {
-                OUT = new PrintWriter(new OutputStreamWriter(System.out, "UTF-8"));
-            } catch (final UnsupportedEncodingException e) {
-                throw new Error("UTF-8 support is missing from your JVM.");
-            }
-        }
-        OUT.println(obj.toString());
-        OUT.flush();
-    }
-
-    public static String throwableToJSON(final Throwable t) {
-        return error(t.getMessage() == null ? "Unknown error" : String.format("%s: %s", t.getClass(), t.getMessage()));
-    }
-
-    public static String error(final String txt) {
-        return error(500, txt);
-    }
-
-    public static String digest(final String data) {
-        return DigestUtils.md5Hex(data);
-    }
-
-    public static String error(final int code, final Throwable t) {
-        final StringWriter writer = new StringWriter();
-        final PrintWriter printWriter = new PrintWriter(writer);
-        if (t.getMessage() != null) {
-            printWriter.append(t.getMessage());
-            printWriter.append("\n");
-        }
-        t.printStackTrace(printWriter);
-        return new JSONObject().element("code", code).element("body", "<pre>" + writer + "</pre>").toString();
-    }
-
-    public static String error(final int code, final String txt) {
-        return new JSONObject().element("code", code).element("body", StringEscapeUtils.escapeHtml(txt)).toString();
     }
 
     public static Field text(final String name, final String value, final boolean store) {
@@ -96,15 +46,17 @@ class Utils {
         return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
     }
 
-    public static Query docQuery(final String viewname, final String id) {
-        BooleanQuery q = new BooleanQuery();
-        q.add(new TermQuery(new Term(Config.VIEW, viewname)), Occur.MUST);
-        q.add(new TermQuery(new Term(Config.ID, id)), Occur.MUST);
-        return q;
+    public static Logger getLogger(final Class clazz, final String suffix) {
+        return Logger.getLogger(clazz.getCanonicalName() + "." + suffix);
     }
 
-    public static String viewname(final JSONArray path) {
-        return String.format("%s/%s/%s", path.getString(0), path.getString(2), path.getString(3));
+    public static void setResponseContentTypeAndEncoding(final HttpServletRequest req, final HttpServletResponse resp) {
+        if (getBooleanParameter(req, "force_json") || req.getHeader("Accept").contains("application/json")) {
+            resp.setContentType("application/json");
+        } else {
+            resp.setContentType("text/plain");
+        }
+        resp.setCharacterEncoding("utf-8");
     }
 
 }
