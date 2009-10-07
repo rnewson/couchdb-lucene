@@ -8,6 +8,8 @@ import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.params.ConnManagerParams;
+import org.apache.http.conn.params.ConnPerRoute;
+import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
@@ -63,6 +65,10 @@ public final class Main {
         // Configure httpClient.
         final HttpParams params = new BasicHttpParams();
         ConnManagerParams.setMaxTotalConnections(params, 1000);
+        ConnManagerParams.setMaxConnectionsPerRoute(params, new ConnPerRoute(){
+            public int getMaxForRoute(final HttpRoute route) {
+                return 1000;
+            }});        
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
         HttpProtocolParams.setUseExpectContinue(params, false);
         final SchemeRegistry schemeRegistry = new SchemeRegistry();
