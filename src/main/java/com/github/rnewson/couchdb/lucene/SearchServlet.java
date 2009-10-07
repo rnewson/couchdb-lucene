@@ -182,7 +182,7 @@ public final class SearchServlet extends HttpServlet {
                     }
                     // Fetch documents (if requested).
                     if (include_docs && fetch_ids.length > 0) {
-                        final JSONArray fetched_docs = state.couch.getDocs(req.getParameter("db"), fetch_ids).getJSONArray("rows");
+                        final JSONArray fetched_docs = state.couch.getDocs(sig.getDatabaseName(), fetch_ids).getJSONArray("rows");
                         for (int i = 0; i < max; i++) {
                             rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
                         }

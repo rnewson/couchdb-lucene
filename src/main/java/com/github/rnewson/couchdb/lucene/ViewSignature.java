@@ -43,6 +43,10 @@ public final class ViewSignature {
         }
     }
 
+    public String getDatabaseName() {
+        return dbname;
+    }
+
     public File toFile(final File base) {
         return new File(new File(base, dbname), this + ".index");
     }
