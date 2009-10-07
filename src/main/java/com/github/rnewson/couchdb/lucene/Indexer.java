@@ -1,5 +1,7 @@
 package com.github.rnewson.couchdb.lucene;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +25,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
@@ -51,6 +54,10 @@ import com.github.rnewson.couchdb.lucene.util.Analyzers;
  * @author robertnewson
  */
 public final class Indexer extends AbstractLifeCycle {
+    
+    private static final long POLL_TIMEOUT = SECONDS.toMillis(30);
+
+    private static final long COMMIT_INTERVAL = SECONDS.toNanos(60);
 
     private State state;
 
@@ -127,6 +134,8 @@ public final class Indexer extends AbstractLifeCycle {
         private Function main;
 
         private boolean pendingCommit;
+
+        private long pendingSince;
 
         private final Map<ViewSignature, ViewTuple> functions = new HashMap<ViewSignature, ViewTuple>();
 
@@ -236,7 +245,7 @@ public final class Indexer extends AbstractLifeCycle {
 
         private void updateIndexes() throws IOException {
             final String url = state.couch.url(String.format("%s/_changes?" + "feed=continuous&" + "since=%d&"
-                    + "include_docs=true&" + "timeout=30000", databaseName, since));
+                    + "include_docs=true&" + "timeout=" + POLL_TIMEOUT, databaseName, since));
             state.httpClient.execute(new HttpGet(url), new ChangesResponseHandler());
         }
 
@@ -249,6 +258,10 @@ public final class Indexer extends AbstractLifeCycle {
 
         private void leaveContext() {
             Context.exit();
+        }
+
+        private long now() {
+            return System.nanoTime();
         }
 
         private final class RestrictiveClassShutter implements ClassShutter {
@@ -265,10 +278,28 @@ public final class Indexer extends AbstractLifeCycle {
                 while ((line = reader.readLine()) != null) {
                     final JSONObject json = JSONObject.fromObject(line);
 
+                    // Error.
+                    if (json.has("error")) {
+                        if (json.optString("reason").equals("no_db_file")) {
+                            logger.warn("Database deleted.");
+                            // TODO delete indexes.
+                        } else {
+                            logger.warn("Unexpected error: " + json);
+                        }
+                        break;
+                    }
+
                     // End of feed.
                     if (json.has("last_seq")) {
-                        commitDocuments();
+                        if (hasPendingCommit(true)) {
+                            commitDocuments();
+                        }
                         break;
+                    }
+
+                    // Time's up.
+                    if (hasPendingCommit(false)) {
+                        commitDocuments();
                     }
 
                     final JSONObject doc = json.getJSONObject("doc");
@@ -301,7 +332,7 @@ public final class Indexer extends AbstractLifeCycle {
                     state.lucene.withWriter(sig, new WriterCallback<Void>() {
                         public Void callback(final IndexWriter writer) throws IOException {
                             writer.deleteDocuments(new Term("_id", doc.getString("_id")));
-                            pendingCommit = true;
+                            setPendingCommit(true);
                             return null;
                         }
                     });
@@ -309,27 +340,43 @@ public final class Indexer extends AbstractLifeCycle {
             }
 
             private void commitDocuments() throws IOException {
-                final Map<String, String> commitUserData = new HashMap<String, String>();
-                commitUserData.put("update_seq", Long.toString(since));
+                final JSONObject tracker = fetchTrackingDocument();
+                tracker.put("update_seq", since);
                 for (final ViewSignature sig : functions.keySet()) {
-                    final String uuid = state.lucene.withReader(sig, false, new ReaderCallback<String>() {
+                    // Fetch or generate index uuid.
+                    final String uuid = state.lucene.withReader(sig, true, new ReaderCallback<String>() {
                         public String callback(final IndexReader reader) throws IOException {
                             final String result = (String) reader.getCommitUserData().get("uuid");
                             return result != null ? result : UUID.randomUUID().toString();
                         }
                     });
-                    commitUserData.put("uuid", uuid);
+                    tracker.put(sig.toString(), uuid);
+                    // Tell Lucene.
                     state.lucene.withWriter(sig, new WriterCallback<Void>() {
                         public Void callback(final IndexWriter writer) throws IOException {
-                            if (pendingCommit) {
-                                logger.debug("Committing changes to " + sig + " with " + commitUserData);
-                                writer.commit(commitUserData);
-                            }
+                            final Map<String, String> commitUserData = new HashMap<String, String>();
+                            commitUserData.put("update_seq", Long.toString(since));
+                            commitUserData.put("uuid", uuid);
+                            logger.debug("Committing changes to " + sig + " with " + commitUserData);
+                            writer.commit(commitUserData);
                             return null;
                         }
                     });
                 }
-                pendingCommit = false;
+                // Tell Couch.
+                state.couch.saveDocument(databaseName, "_local/lucene", tracker.toString());
+                setPendingCommit(false);
+            }
+
+            private JSONObject fetchTrackingDocument() throws IOException {
+                try {
+                    return state.couch.getDoc(databaseName, "_local/lucene");
+                } catch (final HttpResponseException e) {
+                    if (e.getStatusCode() == 404) {
+                        return new JSONObject();
+                    }
+                    throw e;
+                }
             }
 
             private void updateDocument(final JSONObject doc) {
@@ -361,7 +408,7 @@ public final class Indexer extends AbstractLifeCycle {
                                 return null;
                             }
                         });
-                        pendingCommit = true;
+                        setPendingCommit(true);
                     } catch (final RhinoException e) {
                         logger.warn("doc '" + doc.getString("id") + "' caused exception.", e);
                     } catch (final IOException e) {
@@ -369,6 +416,26 @@ public final class Indexer extends AbstractLifeCycle {
                     }
                 }
             }
+        }
+
+        private void setPendingCommit(final boolean pendingCommit) {
+            if (pendingCommit) {
+                if (!this.pendingCommit) {
+                    this.pendingCommit = true;
+                    this.pendingSince = now();
+                }
+            } else {
+                this.pendingCommit = false;
+                this.pendingSince = 0L;
+            }
+        }
+
+        private boolean hasPendingCommit(final boolean ignoreTimeout) {
+            if (ignoreTimeout)
+                return pendingCommit;
+            if (!pendingCommit)
+                return false;
+            return (now() - pendingSince) >= COMMIT_INTERVAL;
         }
     }
 }
