@@ -1,0 +1,2 @@
+#!/bin/sh
+java -server -Xmx1g -jar lib/couchdb-lucene-0.5-SNAPSHOT.jar

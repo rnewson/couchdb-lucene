@@ -15,14 +15,14 @@
   </fileSets>
   <files>
     <file>
-      <source>${project.basedir}/src/main/bin/start.sh</source>
+      <source>${project.basedir}/src/main/bin/run</source>
       <fileMode>500</fileMode>
       <outputDirectory>/bin</outputDirectory>
     </file>
     <file>
-      <source>${project.basedir}/src/main/bin/stop.sh</source>
-      <fileMode>500</fileMode>
-      <outputDirectory>/bin</outputDirectory>
+      <source>${project.basedir}/src/main/conf/couchdb-lucene.properties</source>
+      <fileMode>400</fileMode>
+      <outputDirectory>/conf</outputDirectory>
     </file>
   </files>
   <dependencySets>
