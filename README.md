@@ -18,9 +18,7 @@ Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">gith
 
 <h1>Minimum System Requirements</h1>
 
-JDK6 is required; the Sun version is recommended as it's regularly tested against.
-
-10.5 is the minimum version of OSX for the above reason.
+Java 1.5 (or above) is required; the Sun version is recommended as it's regularly tested against.
 
 <h1>Build couchdb-lucene</h1>
 
