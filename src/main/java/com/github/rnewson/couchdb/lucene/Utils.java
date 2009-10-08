@@ -51,7 +51,8 @@ class Utils {
     }
 
     public static void setResponseContentTypeAndEncoding(final HttpServletRequest req, final HttpServletResponse resp) {
-        if (getBooleanParameter(req, "force_json") || req.getHeader("Accept").contains("application/json")) {
+        final String accept = req.getHeader("Accept");
+        if (getBooleanParameter(req, "force_json") || (accept != null && accept.contains("application/json"))) {
             resp.setContentType("application/json");
         } else {
             resp.setContentType("text/plain");
