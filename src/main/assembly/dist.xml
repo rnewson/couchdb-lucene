@@ -24,6 +24,11 @@
       <fileMode>400</fileMode>
       <outputDirectory>/conf</outputDirectory>
     </file>
+    <file>
+      <source>${project.basedir}/src/main/conf/log4j.xml</source>
+      <fileMode>400</fileMode>
+      <outputDirectory>/conf</outputDirectory>
+    </file>
   </files>
   <dependencySets>
     <dependencySet>

@@ -1,2 +1,12 @@
 #!/bin/sh
-java -server -Xmx1g -jar lib/couchdb-lucene-0.5-SNAPSHOT.jar
+
+JAVA_OPTS="-server -Xmx1g"
+CLASS=com.github.rnewson.couchdb.lucene.Main
+
+CLASSPATH="conf"
+for JAR in `find lib -name '*.jar'`
+do
+    CLASSPATH="$CLASSPATH:$JAR"
+done
+
+java $JAVA_OPTS -cp $CLASSPATH $CLASS

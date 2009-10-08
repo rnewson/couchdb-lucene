@@ -155,19 +155,6 @@
       </plugin>
       <plugin>
 	<groupId>org.apache.maven.plugins</groupId>
-	<artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-	    <index>true</index>
-            <manifest>
-              <mainClass>com.github.rnewson.couchdb.lucene.Main</mainClass>
-	      <addClasspath>true</addClasspath>	      
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-	<groupId>org.apache.maven.plugins</groupId>
 	<artifactId>maven-assembly-plugin</artifactId>
         <configuration>
           <descriptors>
