@@ -2,7 +2,9 @@
 
 import sys
 import urllib
-import httplib
+
+host = "localhost"
+port = 5985
 
 try:
     # Python 2.6
@@ -19,25 +21,11 @@ def requests():
         line = sys.stdin.readline()
 
 def respond(req):
-    # remove '_fti' from path
-    path = req["path"]
-    del path[1]
-
-    url = "/search/%s/%s/%s?" % (path[0],path[1],path[2])
-    for key in req["query"]:
-        url += "%s=%s&" % (key, urllib.quote(req["query"][key]))
-    conn = httplib.HTTPConnection('localhost', 5985)
-    if "Accept-Encoding" in req["headers"]:
-        del req["headers"]["Accept-Encoding"]
-    conn.request(req["verb"], url, "", req["headers"])
-    resp = conn.getresponse()
-    body = resp.read()
-    conn.close()
-
-    if body.startswith("{"):
-        sys.stdout.write("%s\n" % json.dumps({"code":resp.status,"json":json.loads(body)}))
-    else:
-        sys.stdout.write("%s\n" % json.dumps({"code":resp.status,"body":body}))
+    f = urllib.urlopen("http://%s:%s/search/%s/%s/%s?%s" % (host, port,
+                                                            req["path"][0], req["path"][2], req["path"][3],
+                                                            urllib.urlencode(req["query"])))
+    body = f.read()
+    sys.stdout.write("%s\n" % json.dumps({"code":f.getcode(),"body":body}))
     sys.stdout.flush()
 
 def main():
