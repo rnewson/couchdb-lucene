@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import urllib
 import httplib
 
 try:
@@ -24,7 +25,7 @@ def respond(req):
 
     url = "/search/%s/%s/%s?" % (path[0],path[1],path[2])
     for key in req["query"]:
-        url += "%s=%s&" % (key, req["query"][key])
+        url += "%s=%s&" % (key, urllib.quote(req["query"][key]))
     conn = httplib.HTTPConnection('localhost', 5985)
     if "Accept-Encoding" in req["headers"]:
         del req["headers"]["Accept-Encoding"]
