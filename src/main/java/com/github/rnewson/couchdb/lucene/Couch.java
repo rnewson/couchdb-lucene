@@ -63,6 +63,7 @@ abstract class Couch {
             LOG.info("CouchDB 0.10 detected.");
             return new CouchV10(client, url);
         }
+        // TODO support 0.9.0 and 0.9.1
         throw new UnsupportedOperationException("No support for " + server);
     }
 
