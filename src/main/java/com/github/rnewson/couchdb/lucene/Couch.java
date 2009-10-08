@@ -22,7 +22,10 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.http.HttpException;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -30,6 +33,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.log4j.Logger;
 
 import com.github.rnewson.couchdb.lucene.util.StatusCodeResponseHandler;
 
@@ -39,7 +43,28 @@ import com.github.rnewson.couchdb.lucene.util.StatusCodeResponseHandler;
  * @author rnewson
  * 
  */
-final class Couch {
+abstract class Couch {
+    
+    private static final Logger LOG = Logger.getLogger(Couch.class);
+
+    static Couch getInstance(final HttpClient client, final String url) throws IOException {
+        final HttpGet get = new HttpGet(url);
+        final ResponseHandler<String> handler = new ResponseHandler<String>() {
+            public String handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
+                return response.getFirstHeader("Server").getValue();
+            }
+        };
+        final String server = client.execute(get, handler);
+        if (server.contains("CouchDB/0.11")) {
+            LOG.info("CouchDB 0.11 detected.");
+            return new CouchV11(client, url);
+        }
+        if (server.contains("CouchDB/0.10")) {
+            LOG.info("CouchDB 0.10 detected.");
+            return new CouchV10(client, url);
+        }
+        throw new UnsupportedOperationException("No support for " + server);
+    }
 
     private static final String[] EMPTY_ARR = new String[0];
 
@@ -47,7 +72,7 @@ final class Couch {
 
     private final String url;
 
-    public Couch(final HttpClient httpClient, final String url) {
+    protected Couch(final HttpClient httpClient, final String url) {
         this.httpClient = httpClient;
         this.url = url;
     }
@@ -73,16 +98,10 @@ final class Couch {
         return getAllDocs(dbname, "_design", "_design0").getJSONArray("rows");
     }
 
-    public JSONObject getChanges(final String dbname, final long since, final boolean includeDocs) throws IOException {
-        return JSONObject.fromObject(get(String.format("%s/_changes?since=%d&include_docs=%b", Utils.urlEncode(dbname), since,
-                includeDocs)));
-    }
+    public abstract JSONObject getChanges(final String dbname, final long since, final boolean includeDocs) throws IOException;
 
-    public JSONObject getChanges(final String dbname, final long since, final boolean includeDocs, final int limit)
-            throws IOException {
-        return JSONObject.fromObject(get(String.format("%s/_changes?since=%d&include_docs=%b&limit=%d", Utils.urlEncode(dbname),
-                since, includeDocs, limit)));
-    }
+    public abstract JSONObject getChanges(final String dbname, final long since, final boolean includeDocs, final int limit)
+            throws IOException;
 
     public JSONObject getDoc(final String dbname, final String id) throws IOException {
         return JSONObject.fromObject(get(String.format("%s/%s", Utils.urlEncode(dbname), id)));
@@ -117,7 +136,7 @@ final class Couch {
         return httpClient.execute(request, new BasicResponseHandler());
     }
 
-    private String get(final String path) throws IOException {
+    protected final String get(final String path) throws IOException {
         return execute(new HttpGet(url(path)));
     }
 
@@ -138,6 +157,44 @@ final class Couch {
 
     String url(final String path) {
         return String.format("%s/%s", url, path);
+    }
+
+}
+
+final class CouchV10 extends Couch {
+
+    public CouchV10(HttpClient httpClient, String url) {
+        super(httpClient, url);
+    }
+
+    public JSONObject getChanges(final String dbname, final long since, final boolean includeDocs) throws IOException {
+        return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%d&include_docs=%b", Utils.urlEncode(dbname),
+                since, includeDocs)));
+    }
+
+    public JSONObject getChanges(final String dbname, final long since, final boolean includeDocs, final int limit)
+            throws IOException {
+        return JSONObject.fromObject(get(String.format("%s/_all_docs_by_seq?startkey=%d&include_docs=%b&limit=%d", Utils
+                .urlEncode(dbname), since, includeDocs, limit)));
+    }
+
+}
+
+final class CouchV11 extends Couch {
+
+    public CouchV11(HttpClient httpClient, String url) {
+        super(httpClient, url);
+    }
+
+    public JSONObject getChanges(final String dbname, final long since, final boolean includeDocs) throws IOException {
+        return JSONObject.fromObject(get(String.format("%s/_changes?since=%d&include_docs=%b", Utils.urlEncode(dbname), since,
+                includeDocs)));
+    }
+
+    public JSONObject getChanges(final String dbname, final long since, final boolean includeDocs, final int limit)
+            throws IOException {
+        return JSONObject.fromObject(get(String.format("%s/_changes?since=%d&include_docs=%b&limit=%d", Utils.urlEncode(dbname),
+                since, includeDocs, limit)));
     }
 
 }

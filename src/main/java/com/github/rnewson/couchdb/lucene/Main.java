@@ -65,10 +65,11 @@ public final class Main {
         // Configure httpClient.
         final HttpParams params = new BasicHttpParams();
         ConnManagerParams.setMaxTotalConnections(params, 1000);
-        ConnManagerParams.setMaxConnectionsPerRoute(params, new ConnPerRoute(){
+        ConnManagerParams.setMaxConnectionsPerRoute(params, new ConnPerRoute() {
             public int getMaxForRoute(final HttpRoute route) {
                 return 1000;
-            }});        
+            }
+        });
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
         HttpProtocolParams.setUseExpectContinue(params, false);
         final SchemeRegistry schemeRegistry = new SchemeRegistry();
@@ -77,7 +78,7 @@ public final class Main {
         final HttpClient httpClient = new DefaultHttpClient(cm, params);
 
         // Configure other objects.
-        final Couch couch = new Couch(httpClient, couchUrl);
+        final Couch couch = Couch.getInstance(httpClient, couchUrl);
         final Locator locator = new Locator();
         final LuceneGateway gateway = new LuceneGateway(new File(luceneDir), realtime);
         final Tika tika = new Tika();
