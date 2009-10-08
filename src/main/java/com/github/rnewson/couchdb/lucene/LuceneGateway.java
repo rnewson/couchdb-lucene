@@ -33,6 +33,10 @@ final class LuceneGateway {
 
         private final boolean realtime;
 
+        private long lastOpened;
+
+        private long lastUpdated;
+
         private final IndexWriter writer;
 
         private LuceneHolder(final Directory dir, final boolean realtime) throws IOException {
@@ -41,11 +45,18 @@ final class LuceneGateway {
             this.writer = newWriter();
             this.reader = newReader();
             this.reader.incRef();
+            this.lastUpdated = now();
+            this.lastOpened = lastUpdated;
         }
 
         private void close() throws IOException {
             reader.decRef();
             writer.rollback();
+        }
+
+        private String getETag(final boolean staleOk) {
+            long version = realtime ? staleOk ? lastOpened : lastUpdated : reader.getVersion();
+            return Long.toHexString(version);
         }
 
         private IndexReader newReader() throws IOException {
@@ -59,8 +70,10 @@ final class LuceneGateway {
         }
 
         synchronized IndexReader borrowReader(final boolean staleOk) throws IOException {
-            if (!staleOk)
+            if (!staleOk) {
                 reopenReader();
+                lastOpened = now();
+            }
             reader.incRef();
             return reader;
         }
@@ -110,12 +123,9 @@ final class LuceneGateway {
 
     private final boolean realtime;
 
-    private long lastUpdated;
-
     LuceneGateway(final File baseDir, final boolean realtime) {
         this.baseDir = baseDir;
         this.realtime = realtime;
-        this.lastUpdated = now();
     }
 
     private synchronized LuceneHolder getHolder(final ViewSignature viewSignature) throws IOException {
@@ -145,9 +155,7 @@ final class LuceneGateway {
         final LuceneHolder holder = getHolder(viewSignature);
         final IndexSearcher searcher = holder.borrowSearcher(staleOk);
         try {
-            long version = realtime ? lastUpdated : searcher.getIndexReader().getVersion();
-            final String etag = Long.toHexString(version);
-            return callback.callback(searcher, etag);
+            return callback.callback(searcher, holder.getETag(staleOk));
         } finally {
             holder.returnSearcher(searcher);
         }
@@ -158,7 +166,7 @@ final class LuceneGateway {
         final IndexWriter writer = holder.getIndexWriter();
         try {
             final T result = callback.callback(writer);
-            lastUpdated = now();
+            holder.lastUpdated = now();
             return result;
         } catch (final OutOfMemoryError e) {
             synchronized (holders) {
@@ -177,7 +185,7 @@ final class LuceneGateway {
         }
     }
 
-    private long now() {
+    private static long now() {
         return System.nanoTime();
     }
 
