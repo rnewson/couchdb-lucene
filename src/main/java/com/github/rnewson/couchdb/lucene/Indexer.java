@@ -231,7 +231,7 @@ public final class Indexer extends AbstractLifeCycle {
                             .update(databaseName, designDocumentName, viewName, viewValue.toString());
                     functions.put(sig, new ViewTuple(defaults, analyzer, context
                             .compileFunction(scope, function, viewName, 0, null)));
-                    isLuceneEnabled = true;
+                    isLuceneEnabled = true;     
                 }
             }
             return isLuceneEnabled;

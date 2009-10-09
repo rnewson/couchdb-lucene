@@ -25,11 +25,14 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 
@@ -92,6 +95,9 @@ public final class SearchServlet extends HttpServlet {
 
                 final JSONObject json = new JSONObject();
                 json.put("q", q.toString());
+                if (debug) {
+                    json.put("plan", toPlan(q));
+                }
                 json.put("etag", etag);
 
                 if (rewrite_query) {
@@ -315,6 +321,34 @@ public final class SearchServlet extends HttpServlet {
             result.add(col);
         }
         return result.toString();
+    }
+
+    /**
+     * Produces a string representation of the query classes used for a query.
+     * 
+     * @param query
+     * @return
+     */
+    private String toPlan(final Query query) {
+        final StringBuilder builder = new StringBuilder(300);
+        toPlan(builder, query);
+        return builder.toString();
+    }
+
+    private void toPlan(final StringBuilder builder, final Query query) {
+        builder.append(query.getClass().getSimpleName());
+        builder.append("(");
+        if (query instanceof TermQuery) {
+            final TermQuery termQuery = (TermQuery) query;
+            builder.append(termQuery.getTerm());
+        } else if (query instanceof BooleanQuery) {
+            final BooleanQuery booleanQuery = (BooleanQuery) query;
+            for (final BooleanClause clause : booleanQuery.getClauses()) {
+                builder.append(clause.getOccur());
+                toPlan(builder, clause.getQuery());
+            }
+        }
+        builder.append(",boost=" + query.getBoost() + ")");
     }
 
 }
