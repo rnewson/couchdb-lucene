@@ -249,6 +249,7 @@ public final class Indexer extends AbstractLifeCycle {
         /**
          * @return true if the indexing loop should continue, false to make it
          *         exit.
+         * TODO move this to Couch and make a pre 0.11 variant.
          */
         private boolean updateIndexes() throws IOException {
             final String url = state.couch.url(String.format("%s/_changes?" + "feed=continuous&" + "since=%d&"

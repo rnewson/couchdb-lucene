@@ -30,6 +30,7 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
@@ -85,13 +86,8 @@ public final class SearchServlet extends HttpServlet {
                 }
 
                 // Parse query.
-                final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
-                final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
-
-                final Query q;
-                try {
-                    q = parser.parse(req.getParameter("q"));
-                } catch (final ParseException e) {
+                final Query q = toQuery(req);
+                if (q == null) {
                     resp.sendError(400, "Bad query syntax.");
                     return null;
                 }
@@ -237,6 +233,67 @@ public final class SearchServlet extends HttpServlet {
         }
     }
 
+    private static Query toQuery(final HttpServletRequest req) {
+        // Parse query.
+        final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
+        final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
+        try {
+            return fixup(parser.parse(req.getParameter("q")));
+        } catch (final ParseException e) {
+            return null;
+        }
+    }
+
+    private static Query fixup(final Query query) {
+        if (query instanceof BooleanQuery) {
+            final BooleanQuery booleanQuery = (BooleanQuery) query;
+            for (final BooleanClause clause : booleanQuery.getClauses()) {
+                clause.setQuery(fixup(clause.getQuery()));
+            }
+        } else if (query instanceof TermRangeQuery) {
+            final TermRangeQuery termRangeQuery = (TermRangeQuery) query;
+            final String field = termRangeQuery.getField();
+            final Object lower = fixup(termRangeQuery.getLowerTerm());
+            final Object upper = fixup(termRangeQuery.getUpperTerm());
+            final boolean includesLower = termRangeQuery.includesLower();
+            final boolean includesUpper = termRangeQuery.includesUpper();
+
+            // Sanity check.
+            if (lower.getClass() != upper.getClass()) {
+                return null;
+            }
+
+            if (lower instanceof String) {
+                return termRangeQuery;
+            }
+            if (lower instanceof Float) {
+                return NumericRangeQuery.newFloatRange(field, 4, (Float) lower, (Float) upper, includesLower, includesUpper);
+            }
+            if (lower instanceof Double) {
+                return NumericRangeQuery.newDoubleRange(field, 8, (Double) lower, (Double) upper, includesLower, includesUpper);
+            }
+            if (lower instanceof Long) {
+                return NumericRangeQuery.newLongRange(field, 8, (Long) lower, (Long) upper, includesLower, includesUpper);
+            }
+            if (lower instanceof Integer) {
+                return NumericRangeQuery.newIntRange(field, 4, (Integer) lower, (Integer) upper, includesLower, includesUpper);
+            }
+        }
+        return query;
+    }
+
+    private static Object fixup(final String value) {
+        if (value.matches("\\d+\\.\\d+f"))
+            return Float.parseFloat(value);
+        if (value.matches("\\d+\\.\\d+"))
+            return Double.parseDouble(value);
+        if (value.matches("\\d+[lL]"))
+            return Long.parseLong(value);
+        if (value.matches("\\d+"))
+            return Integer.parseInt(value);
+        return String.class;
+    }
+
     private static Sort toSort(final String sort) {
         if (sort == null) {
             return null;
@@ -352,9 +409,19 @@ public final class SearchServlet extends HttpServlet {
         } else if (query instanceof WildcardQuery) {
             planWildcardQuery(builder, (WildcardQuery) query);
         } else if (query instanceof FuzzyQuery) {
-            planFuzzyQuery(builder, (FuzzyQuery)query);
+            planFuzzyQuery(builder, (FuzzyQuery) query);
+        } else if (query instanceof NumericRangeQuery) {
+            planNumericRangeQuery(builder, (NumericRangeQuery) query);
         }
         builder.append(",boost=" + query.getBoost() + ")");
+    }
+
+    private void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery query) {
+        builder.append(query.getMin());
+        builder.append(" TO ");
+        builder.append(query.getMax());
+        builder.append(" AS ");
+        builder.append(query.getMin().getClass().getSimpleName());
     }
 
     private void planFuzzyQuery(final StringBuilder builder, final FuzzyQuery query) {
@@ -366,7 +433,7 @@ public final class SearchServlet extends HttpServlet {
     }
 
     private void planWildcardQuery(final StringBuilder builder, final WildcardQuery query) {
-            builder.append(query.getTerm());
+        builder.append(query.getTerm());
     }
 
     private void planPrefixQuery(final StringBuilder builder, final PrefixQuery query) {
