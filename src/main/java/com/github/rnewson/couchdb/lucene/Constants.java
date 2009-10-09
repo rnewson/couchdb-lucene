@@ -12,6 +12,4 @@ final class Constants {
 
     static final String DEFAULT_FIELD = "default";
 
-    static final int SEQ_PRECISION = 10;
-
 }

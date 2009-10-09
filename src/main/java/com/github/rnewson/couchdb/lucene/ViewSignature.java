@@ -16,6 +16,12 @@ import java.security.NoSuchAlgorithmException;
  */
 public final class ViewSignature {
 
+    /**
+     * Increment this to invalidate all existing indexes and force a rebuild.
+     * Only do this if the indexing strategy changes in an incompatible fashion!
+     */
+    private static final byte VERSION = 0;
+
     private final String dbname;
 
     private final String view;
@@ -31,7 +37,7 @@ public final class ViewSignature {
         try {
             final MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(dbname.getBytes("UTF-8"));
-            md.update((byte) 0);
+            md.update(VERSION);
             md.update(viewFunction.replaceAll("\\s+", "").getBytes("UTF-8"));
             final byte[] digest = md.digest();
             this.dbname = dbname;

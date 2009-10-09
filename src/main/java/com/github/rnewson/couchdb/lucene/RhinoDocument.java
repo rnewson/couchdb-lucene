@@ -161,17 +161,16 @@ public final class RhinoDocument extends ScriptableObject {
 
         final Field.Store storeObj = Store.get(store);
         if ("int".equals(type)) {
-            out.add(new NumericField(fieldName, storeObj, true).setIntValue(Conversion.convert(field.value, Integer.class)));
+            out.add(new NumericField(fieldName, 4, storeObj, true).setIntValue(Conversion.convert(field.value, Integer.class)));
         } else if ("float".equals(type)) {
-            out.add(new NumericField(fieldName, storeObj, true).setFloatValue(Conversion.convert(field.value, Float.class)));
+            out.add(new NumericField(fieldName, 4, storeObj, true).setFloatValue(Conversion.convert(field.value, Float.class)));
         } else if ("double".equals(type)) {
-            out.add(new NumericField(fieldName, storeObj, true).setDoubleValue(Conversion.convert(field.value, Double.class)));
+            out.add(new NumericField(fieldName, 8, storeObj, true).setDoubleValue(Conversion.convert(field.value, Double.class)));
         } else if ("long".equals(type)) {
-            out.add(new NumericField(fieldName, storeObj, true).setLongValue(Conversion.convert(field.value, Long.class)));
+            out.add(new NumericField(fieldName, 8, storeObj, true).setLongValue(Conversion.convert(field.value, Long.class)));
         } else if ("date".equals(type)) {
-            out
-                    .add(new NumericField(fieldName, storeObj, true).setLongValue(Conversion.convert(field.value, Date.class)
-                            .getTime()));
+            final Date date = Conversion.convert(field.value, Date.class);
+            out.add(new NumericField(fieldName, 8, storeObj, true).setLongValue(date.getTime()));
         } else if ("string".equals(type)) {
             out.add(new Field(fieldName, Conversion.convert(field.value).toString(), storeObj, Index.get(index)));
         }

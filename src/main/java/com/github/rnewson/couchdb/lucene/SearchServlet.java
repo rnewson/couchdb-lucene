@@ -37,6 +37,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
+import org.apache.lucene.search.WildcardQuery;
 
 import com.github.rnewson.couchdb.lucene.LuceneGateway.SearcherCallback;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
@@ -348,8 +349,14 @@ public final class SearchServlet extends HttpServlet {
             planTermRangeQuery(builder, (TermRangeQuery) query);
         } else if (query instanceof PrefixQuery) {
             planPrefixQuery(builder, (PrefixQuery) query);
+        } else if (query instanceof WildcardQuery) {
+            planWildcardQuery(builder, (WildcardQuery) query);
         }
         builder.append(",boost=" + query.getBoost() + ")");
+    }
+
+    private void planWildcardQuery(final StringBuilder builder, final WildcardQuery query) {
+            builder.append(query.getTerm());
     }
 
     private void planPrefixQuery(final StringBuilder builder, final PrefixQuery query) {
