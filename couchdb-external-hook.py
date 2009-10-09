@@ -1,12 +1,9 @@
 #!/usr/bin/python
 
-import sys
+import getopt, sys
 import urllib
 
-from urllib2 import Request, urlopen, HTTPError
-
-host = "localhost"
-port = 5985
+from urllib2 import Request, urlopen, HTTPError, URLError
 
 try:
     # Python 2.6
@@ -22,13 +19,13 @@ def requests():
         yield json.loads(line)
         line = sys.stdin.readline()
 
-def respond(req):
-    hreq = Request("http://%s:%s/search/%s/%s/%s?%s" % (host, port,
-                                                                req["path"][0], req["path"][2], req["path"][3],
-                                                                urllib.urlencode(req["query"])))
-    if "If-None-Match" in req["headers"]:
-        hreq.add_header("If-None-Match", req["headers"]["If-None-Match"])
-
+def respond(url, req):
+    hreq = Request("%s/search/%s/%s/%s?%s" % (url,
+                                              req["path"][0], req["path"][2], req["path"][3],
+                                              urllib.urlencode(req["query"])))
+    for header in ["Accept", "If-None-Match"]:
+        if header in req["headers"]:
+            hreq.add_header(header, req["headers"][header])
     try:
         f = urlopen(hreq)
         body = f.read()
@@ -36,11 +33,25 @@ def respond(req):
         sys.stdout.write("%s\n" % json.dumps({"code":f.getcode(),"headers":headers,"body":body}))
     except HTTPError, e:
         sys.stdout.write("%s\n" % json.dumps({"code":e.code}))
+    except URLError, e:
+        sys.stdout.write("%s\n" % json.dumps({"code":500, "body":"is couchdb-lucene running?\n"}))
     sys.stdout.flush()
 
 def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'u:', ['url='])
+    except getopt.GetoptError:
+        sys.exit(2)
+
+    url = 'http://localhost:5985'
+    for opt, arg in opts:
+        if opt in ('-u', '--url'):
+            url = arg
+        else:
+            assert False, "unhandled option " + opt
+
     for req in requests():
-        respond(req)
+        respond(url, req)
 
 if __name__ == "__main__":
     main()
