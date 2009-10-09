@@ -323,7 +323,7 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 <dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>
 <dt>rewrite</dt><dd>(EXPERT) if true, returns a json response with a rewritten query and term frequencies. This allows correct distributed scoring when combining the results from multiple nodes.</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
-<dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified).</dd>
+<dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified). Type-specific sorting is also available by appending a : and the sort type as normal (e.g, 'sort=amount:float').</dd>
 <dt>stale=ok</dt><dd>If you set the <i>stale</i> option to <i>ok</i>, couchdb-lucene may not perform any refreshing on the index. Searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will use the latest data committed to the index.</dd>
 </dl>
 
