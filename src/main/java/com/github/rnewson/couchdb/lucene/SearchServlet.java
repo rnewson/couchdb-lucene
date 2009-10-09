@@ -288,7 +288,7 @@ public final class SearchServlet extends HttpServlet {
         if (value.matches("\\d+\\.\\d+"))
             return Double.parseDouble(value);
         if (value.matches("\\d+[lL]"))
-            return Long.parseLong(value);
+            return Long.parseLong(value.substring(0, value.length() - 1));
         if (value.matches("\\d+"))
             return Integer.parseInt(value);
         return String.class;
