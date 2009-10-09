@@ -29,10 +29,12 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 
@@ -339,16 +341,36 @@ public final class SearchServlet extends HttpServlet {
         builder.append(query.getClass().getSimpleName());
         builder.append("(");
         if (query instanceof TermQuery) {
-            final TermQuery termQuery = (TermQuery) query;
-            builder.append(termQuery.getTerm());
+            planTermQuery(builder, (TermQuery) query);
         } else if (query instanceof BooleanQuery) {
-            final BooleanQuery booleanQuery = (BooleanQuery) query;
-            for (final BooleanClause clause : booleanQuery.getClauses()) {
-                builder.append(clause.getOccur());
-                toPlan(builder, clause.getQuery());
-            }
+            planBooleanQuery(builder, (BooleanQuery) query);
+        } else if (query instanceof TermRangeQuery) {
+            planTermRangeQuery(builder, (TermRangeQuery) query);
+        } else if (query instanceof PrefixQuery) {
+            planPrefixQuery(builder, (PrefixQuery) query);
         }
         builder.append(",boost=" + query.getBoost() + ")");
+    }
+
+    private void planPrefixQuery(final StringBuilder builder, final PrefixQuery query) {
+        builder.append(query.getPrefix());
+    }
+
+    private void planTermRangeQuery(final StringBuilder builder, final TermRangeQuery query) {
+        builder.append(query.getLowerTerm());
+        builder.append(" TO ");
+        builder.append(query.getUpperTerm());
+    }
+
+    private void planBooleanQuery(final StringBuilder builder, final BooleanQuery query) {
+        for (final BooleanClause clause : query.getClauses()) {
+            builder.append(clause.getOccur());
+            toPlan(builder, clause.getQuery());
+        }
+    }
+
+    private void planTermQuery(final StringBuilder builder, final TermQuery query) {
+        builder.append(query.getTerm());
     }
 
 }
