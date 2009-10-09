@@ -50,7 +50,6 @@ public final class Main {
         final String luceneDir = properties.getProperty("lucene.dir");
         final int lucenePort = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
         final String couchUrl = properties.getProperty("couchdb.url");
-        final boolean realtime = Boolean.parseBoolean(properties.getProperty("lucene.realtime", "false"));
 
         if (luceneDir == null) {
             LOG.error("lucene.dir not set.");
@@ -80,7 +79,7 @@ public final class Main {
         // Configure other objects.
         final Couch couch = Couch.getInstance(httpClient, couchUrl);
         final Locator locator = new Locator();
-        final LuceneGateway gateway = new LuceneGateway(new File(luceneDir), realtime);
+        final LuceneGateway gateway = new LuceneGateway(new File(luceneDir));
         final Tika tika = new Tika();
         final State state = new State(couch, gateway, locator, httpClient, tika);
 

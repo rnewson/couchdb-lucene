@@ -2,11 +2,10 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -23,88 +22,6 @@ import org.apache.lucene.store.FSDirectory;
  */
 final class LuceneGateway {
 
-    private static class LuceneHolder {
-
-        private static final Logger LOG = Logger.getLogger(LuceneHolder.class);
-
-        private final Directory dir;
-
-        private IndexReader reader;
-
-        private final boolean realtime;
-
-        private long lastOpened;
-
-        private long lastUpdated;
-
-        private final IndexWriter writer;
-
-        private LuceneHolder(final Directory dir, final boolean realtime) throws IOException {
-            this.dir = dir;
-            this.realtime = realtime;
-            this.writer = newWriter();
-            this.reader = newReader();
-            this.reader.incRef();
-            this.lastUpdated = now();
-            this.lastOpened = lastUpdated;
-        }
-
-        private void close() throws IOException {
-            reader.decRef();
-            writer.rollback();
-        }
-
-        private String getETag(final boolean staleOk) {
-            long version = realtime ? staleOk ? lastOpened : lastUpdated : reader.getVersion();
-            return Long.toHexString(version);
-        }
-
-        private IndexReader newReader() throws IOException {
-            return realtime ? getIndexWriter().getReader() : IndexReader.open(dir, true);
-        }
-
-        private IndexWriter newWriter() throws IOException {
-            final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
-            result.setMergeFactor(5);
-            return result;
-        }
-
-        synchronized IndexReader borrowReader(final boolean staleOk) throws IOException {
-            if (!staleOk) {
-                reopenReader();
-                lastOpened = now();
-            }
-            reader.incRef();
-            return reader;
-        }
-
-        synchronized IndexSearcher borrowSearcher(final boolean staleOk) throws IOException {
-            final IndexReader reader = borrowReader(staleOk);
-            return new IndexSearcher(reader);
-        }
-
-        IndexWriter getIndexWriter() throws IOException {
-            return writer;
-        }
-
-        void reopenReader() throws IOException {
-            final IndexReader newReader = reader.reopen();
-            if (reader != newReader) {
-                final IndexReader oldReader = reader;
-                reader = newReader;
-                oldReader.decRef();
-            }
-        }
-
-        synchronized void returnReader(final IndexReader reader) throws IOException {
-            reader.decRef();
-        }
-
-        synchronized void returnSearcher(final IndexSearcher searcher) throws IOException {
-            returnReader(searcher.getIndexReader());
-        }
-    }
-
     interface ReaderCallback<T> {
         public T callback(final IndexReader reader) throws IOException;
     }
@@ -117,76 +34,77 @@ final class LuceneGateway {
         public T callback(final IndexWriter writer) throws IOException;
     }
 
-    private final Map<ViewSignature, LuceneHolder> holders = new LinkedHashMap<ViewSignature, LuceneHolder>();
-
     private final File baseDir;
 
-    private final boolean realtime;
-
-    LuceneGateway(final File baseDir, final boolean realtime) {
-        this.baseDir = baseDir;
-        this.realtime = realtime;
+    private static class Holder {
+        private IndexWriter writer;
+        private String etag;
     }
 
-    private synchronized LuceneHolder getHolder(final ViewSignature viewSignature) throws IOException {
-        LuceneHolder result = holders.get(viewSignature);
+    private final Map<ViewSignature, Holder> holders = new HashMap<ViewSignature, Holder>();
+
+    LuceneGateway(final File baseDir) {
+        this.baseDir = baseDir;
+    }
+
+    private String newEtag() {
+        return Long.toHexString(System.nanoTime());
+    }
+
+    private synchronized Holder getHolder(final ViewSignature viewSignature) throws IOException {
+        Holder result = holders.get(viewSignature);
         if (result == null) {
             final File dir = viewSignature.toFile(baseDir);
-            if (!dir.exists() && !dir.mkdirs())
+            if (!dir.exists() && !dir.mkdirs()) {
                 throw new IOException("Could not make " + dir);
-            result = new LuceneHolder(FSDirectory.open(dir), realtime);
+            }
+            result = new Holder();
+            result.writer = newWriter(FSDirectory.open(dir));
+            result.etag = newEtag();
             holders.put(viewSignature, result);
         }
         return result;
     }
 
-    <T> T withReader(final ViewSignature viewSignature, final boolean staleOk, final ReaderCallback<T> callback) throws IOException {
-        final LuceneHolder holder = getHolder(viewSignature);
-        final IndexReader reader = holder.borrowReader(staleOk);
-        try {
-            return callback.callback(reader);
-        } finally {
-            holder.returnReader(reader);
-        }
-    }
-
-    <T> T withSearcher(final ViewSignature viewSignature, final boolean staleOk, final SearcherCallback<T> callback)
-            throws IOException {
-        final LuceneHolder holder = getHolder(viewSignature);
-        final IndexSearcher searcher = holder.borrowSearcher(staleOk);
-        try {
-            return callback.callback(searcher, holder.getETag(staleOk));
-        } finally {
-            holder.returnSearcher(searcher);
-        }
-    }
-
-    <T> T withWriter(final ViewSignature viewSignature, final WriterCallback<T> callback) throws IOException {
-        LuceneHolder holder = getHolder(viewSignature);
-        final IndexWriter writer = holder.getIndexWriter();
-        try {
-            final T result = callback.callback(writer);
-            holder.lastUpdated = now();
-            return result;
-        } catch (final OutOfMemoryError e) {
-            synchronized (holders) {
-                holder = holders.remove(viewSignature);
-                holder.close();
-            }
-            throw e;
-        }
+    private IndexWriter newWriter(final Directory dir) throws IOException {
+        final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
+        result.setMergeFactor(5);
+        return result;
     }
 
     synchronized void close() throws IOException {
-        final Iterator<LuceneHolder> it = holders.values().iterator();
+        final Iterator<Holder> it = holders.values().iterator();
         while (it.hasNext()) {
-            it.next().close();
+            it.next().writer.rollback();
             it.remove();
         }
     }
 
-    private static long now() {
-        return System.nanoTime();
+    <T> T withReader(final ViewSignature viewSignature, final ReaderCallback<T> callback) throws IOException {
+        return callback.callback(getHolder(viewSignature).writer.getReader());
+    }
+
+    <T> T withSearcher(final ViewSignature viewSignature, final SearcherCallback<T> callback) throws IOException {
+        final Holder holder = getHolder(viewSignature);
+        return callback.callback(new IndexSearcher(holder.writer.getReader()), holder.etag);
+    }
+
+    <T> T withWriter(final ViewSignature viewSignature, final WriterCallback<T> callback) throws IOException {
+        boolean oom = false;
+        try {
+            return callback.callback(getHolder(viewSignature).writer);
+        } catch (final OutOfMemoryError e) {
+            oom = true;
+            throw e;
+        } finally {
+            synchronized (this) {
+                if (oom) {
+                    holders.remove(viewSignature).writer.rollback();
+                } else {
+                    getHolder(viewSignature).etag = newEtag();
+                }
+            }
+        }
     }
 
 }

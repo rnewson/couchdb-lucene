@@ -202,7 +202,7 @@ public final class Indexer extends AbstractLifeCycle {
         private void readCheckpoints() throws IOException {
             long since = Long.MAX_VALUE;
             for (final ViewSignature sig : functions.keySet()) {
-                since = Math.min(since, state.lucene.withReader(sig, false, new ReaderCallback<Long>() {
+                since = Math.min(since, state.lucene.withReader(sig, new ReaderCallback<Long>() {
                     public Long callback(final IndexReader reader) throws IOException {
                         final Map<String, String> commitUserData = reader.getCommitUserData();
                         final String result = commitUserData.get("update_seq");
@@ -231,7 +231,7 @@ public final class Indexer extends AbstractLifeCycle {
                             .update(databaseName, designDocumentName, viewName, viewValue.toString());
                     functions.put(sig, new ViewTuple(defaults, analyzer, context
                             .compileFunction(scope, function, viewName, 0, null)));
-                    isLuceneEnabled = true;     
+                    isLuceneEnabled = true;
                 }
             }
             return isLuceneEnabled;
@@ -351,7 +351,7 @@ public final class Indexer extends AbstractLifeCycle {
                 tracker.put("update_seq", since);
                 for (final ViewSignature sig : functions.keySet()) {
                     // Fetch or generate index uuid.
-                    final String uuid = state.lucene.withReader(sig, true, new ReaderCallback<String>() {
+                    final String uuid = state.lucene.withReader(sig, new ReaderCallback<String>() {
                         public String callback(final IndexReader reader) throws IOException {
                             final String result = (String) reader.getCommitUserData().get("uuid");
                             return result != null ? result : UUID.randomUUID().toString();
