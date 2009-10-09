@@ -55,7 +55,7 @@ import com.github.rnewson.couchdb.lucene.util.Analyzers;
  * @author robertnewson
  */
 public final class Indexer extends AbstractLifeCycle {
-    
+
     private static final long POLL_TIMEOUT = SECONDS.toMillis(30);
 
     private static final long COMMIT_INTERVAL = SECONDS.toNanos(60);
@@ -155,9 +155,8 @@ public final class Indexer extends AbstractLifeCycle {
                     return;
                 }
                 readCheckpoints();
-                while (isRunning()) {
-                    updateIndexes();
-                }
+                while (isRunning() && updateIndexes())
+                    ;
             } catch (final Exception e) {
                 logger.warn("Tracking interrupted by exception.", e);
             } finally {
@@ -228,7 +227,8 @@ public final class Indexer extends AbstractLifeCycle {
                     String function = viewValue.getString("index");
                     function = function.replaceFirst("^\"", "");
                     function = function.replaceFirst("\"$", "");
-                    final ViewSignature sig = state.locator.update(databaseName, designDocumentName, viewName, viewValue.toString());
+                    final ViewSignature sig = state.locator
+                            .update(databaseName, designDocumentName, viewName, viewValue.toString());
                     functions.put(sig, new ViewTuple(defaults, analyzer, context
                             .compileFunction(scope, function, viewName, 0, null)));
                     isLuceneEnabled = true;
@@ -246,10 +246,14 @@ public final class Indexer extends AbstractLifeCycle {
             return result;
         }
 
-        private void updateIndexes() throws IOException {
+        /**
+         * @return true if the indexing loop should continue, false to make it
+         *         exit.
+         */
+        private boolean updateIndexes() throws IOException {
             final String url = state.couch.url(String.format("%s/_changes?" + "feed=continuous&" + "since=%d&"
                     + "include_docs=true&" + "timeout=" + POLL_TIMEOUT, databaseName, since));
-            state.httpClient.execute(new HttpGet(url), new ChangesResponseHandler());
+            return state.httpClient.execute(new HttpGet(url), new ChangesResponseHandler());
         }
 
         private void untrack() {
@@ -273,8 +277,8 @@ public final class Indexer extends AbstractLifeCycle {
             }
         }
 
-        private final class ChangesResponseHandler implements ResponseHandler<Void> {
-            public Void handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
+        private final class ChangesResponseHandler implements ResponseHandler<Boolean> {
+            public Boolean handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
                 final HttpEntity entity = response.getEntity();
                 final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
                 String line;
@@ -289,7 +293,7 @@ public final class Indexer extends AbstractLifeCycle {
                         } else {
                             logger.warn("Unexpected error: " + json);
                         }
-                        break;
+                        return false;
                     }
 
                     // End of feed.
@@ -297,7 +301,7 @@ public final class Indexer extends AbstractLifeCycle {
                         if (hasPendingCommit(true)) {
                             commitDocuments();
                         }
-                        break;
+                        return true;
                     }
 
                     // Time's up.
@@ -327,7 +331,7 @@ public final class Indexer extends AbstractLifeCycle {
                     // Remember progress.
                     since = json.getLong("seq");
                 }
-                return null;
+                return true;
             }
 
             private void deleteDocument(final JSONObject doc) throws IOException {
@@ -343,7 +347,7 @@ public final class Indexer extends AbstractLifeCycle {
             }
 
             private void commitDocuments() throws IOException {
-                final JSONObject tracker = fetchTrackingDocument();
+                final JSONObject tracker = fetchTrackingDocument(databaseName);
                 tracker.put("update_seq", since);
                 for (final ViewSignature sig : functions.keySet()) {
                     // Fetch or generate index uuid.
@@ -361,8 +365,9 @@ public final class Indexer extends AbstractLifeCycle {
                             commitUserData.put("update_seq", Long.toString(since));
                             commitUserData.put("uuid", uuid);
                             logger.debug("Committing changes to " + sig + " with " + commitUserData);
-                            // commit data is not written if there are no documents.
-                            if (writer.maxDoc() ==0) {
+                            // commit data is not written if there are no
+                            // documents.
+                            if (writer.maxDoc() == 0) {
                                 writer.addDocument(new Document());
                             }
                             writer.commit(commitUserData);
@@ -373,17 +378,6 @@ public final class Indexer extends AbstractLifeCycle {
                 // Tell Couch.
                 state.couch.saveDocument(databaseName, "_local/lucene", tracker.toString());
                 setPendingCommit(false);
-            }
-
-            private JSONObject fetchTrackingDocument() throws IOException {
-                try {
-                    return state.couch.getDoc(databaseName, "_local/lucene");
-                } catch (final HttpResponseException e) {
-                    if (e.getStatusCode() == 404) {
-                        return new JSONObject();
-                    }
-                    throw e;
-                }
             }
 
             private void updateDocument(final JSONObject doc) {
@@ -445,4 +439,16 @@ public final class Indexer extends AbstractLifeCycle {
             return (now() - pendingSince) >= COMMIT_INTERVAL;
         }
     }
+
+    private JSONObject fetchTrackingDocument(final String databaseName) throws IOException {
+        try {
+            return state.couch.getDoc(databaseName, "_local/lucene");
+        } catch (final HttpResponseException e) {
+            if (e.getStatusCode() == 404) {
+                return new JSONObject();
+            }
+            throw e;
+        }
+    }
+
 }
