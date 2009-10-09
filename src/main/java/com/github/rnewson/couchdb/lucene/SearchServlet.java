@@ -28,6 +28,7 @@ import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
+import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
@@ -351,8 +352,18 @@ public final class SearchServlet extends HttpServlet {
             planPrefixQuery(builder, (PrefixQuery) query);
         } else if (query instanceof WildcardQuery) {
             planWildcardQuery(builder, (WildcardQuery) query);
+        } else if (query instanceof FuzzyQuery) {
+            planFuzzyQuery(builder, (FuzzyQuery)query);
         }
         builder.append(",boost=" + query.getBoost() + ")");
+    }
+
+    private void planFuzzyQuery(final StringBuilder builder, final FuzzyQuery query) {
+        builder.append(query.getTerm());
+        builder.append(",prefixLength=");
+        builder.append(query.getPrefixLength());
+        builder.append(",minSimilarity=");
+        builder.append(query.getMinSimilarity());
     }
 
     private void planWildcardQuery(final StringBuilder builder, final WildcardQuery query) {
