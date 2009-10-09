@@ -28,10 +28,12 @@ def respond(req):
                                                                 urllib.urlencode(req["query"])))
     if "If-None-Match" in req["headers"]:
         hreq.add_header("If-None-Match", req["headers"]["If-None-Match"])
+
     try:
         f = urlopen(hreq)
         body = f.read()
-        headers = f.info().dict
+        headers = {"Content-Type":f.info().getheader("Content-Type"), "ETag":f.info().getheader("ETag")}
+        #headers = f.info().dict
         sys.stdout.write("%s\n" % json.dumps({"code":f.getcode(),"headers":headers,"body":body}))
     except HTTPError, e:
         sys.stdout.write("%s\n" % json.dumps({"code":e.code}))
