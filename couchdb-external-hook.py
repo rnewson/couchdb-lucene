@@ -33,7 +33,6 @@ def respond(req):
         f = urlopen(hreq)
         body = f.read()
         headers = {"Content-Type":f.info().getheader("Content-Type"), "ETag":f.info().getheader("ETag")}
-        #headers = f.info().dict
         sys.stdout.write("%s\n" % json.dumps({"code":f.getcode(),"headers":headers,"body":body}))
     except HTTPError, e:
         sys.stdout.write("%s\n" % json.dumps({"code":e.code}))
