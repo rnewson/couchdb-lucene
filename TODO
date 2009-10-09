@@ -1,19 +1,15 @@
 0.5
 ----------------------
 
-* RESTORE USER/PASS auth to CouchDB.
+* sniff user agent for _changes vs. _all_docs_by_seq, etc. (Database subclasses)(work in progress -- needs testing against 0.9.1 and 0.10)
+* support authentication against couchdb (basic/digest/etc)
 * pause/resume control over indexer.
 * status page.
 * allow POST with a query array?
-* sniff user agent for _changes vs. _all_docs_by_seq, etc. (Database subclasses)
 
 * Lucene 2.9 - done
-** numeric range suppport.
-* use _local/lucene for recording progress.
-* use _changes for tracking updates. - done
-* provide start/stop scripts for indexing.
-* allow separate indexes per db (to avoid inter-db pollution)? - done
-* A general refactoring of the codebase. - done
+** numeric range suppport. (indexing size needs testing -- query side needs post-processing or QP tweak)
+* use _local/lucene for recording progress. (recorded but not used to detect inconsistencies yet)
 * make attachment call support "store":"yes|no"
 
 UNSCHEDULED
@@ -25,8 +21,6 @@ UNSCHEDULED
 * clustering (carrot2).
 * JSONQuery? (http://docs.persvr.org/documentation/jsonquery)
 * geospatial (need TrieRangeQuery from 2.9)
-
-
 
 Tracking;
 
