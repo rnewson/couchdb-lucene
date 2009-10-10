@@ -42,7 +42,9 @@ public final class AdminServlet extends HttpServlet {
             return;
         }
 
-        if ("/_expunge".equals(req.getPathInfo())) {
+        final String command = req.getParameter("cmd");
+
+        if ("expunge".equals(command)) {
             state.lucene.withWriter(sig, new WriterCallback<Void>() {
                 public Void callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
@@ -53,7 +55,7 @@ public final class AdminServlet extends HttpServlet {
             return;
         }
 
-        if ("/_optimize".equals(req.getPathInfo())) {
+        if ("optimize".equals(command)) {
             state.lucene.withWriter(sig, new WriterCallback<Void>() {
                 public Void callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
@@ -64,7 +66,7 @@ public final class AdminServlet extends HttpServlet {
             return;
         }
 
-        resp.sendError(400);
+        resp.sendError(400, "Bad request");
     }
 
 }
