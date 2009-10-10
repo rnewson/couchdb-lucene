@@ -258,7 +258,7 @@ function(doc) {
 function(doc) {
   var result = new Document();
   for(var a in doc._attachments) {
-    result.add_attachment(a, {"field":"attachment"});
+    result.attachment(a, {"field":"attachment"});
   }
   return result;
 }

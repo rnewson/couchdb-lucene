@@ -118,6 +118,7 @@ public final class Main {
 
     private static void setupContext(final Context context) {
         context.addFilter(new FilterHolder(new GzipFilter()), "/*", Handler.DEFAULT);
+        context.setErrorHandler(new JSONErrorHandler());
     }
 
 }
