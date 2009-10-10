@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -65,7 +64,6 @@ public final class Indexer extends AbstractLifeCycle {
         public void run() {
             try {
                 final String[] databases = state.couch.getAllDatabases();
-                logger.debug("Examining " + Arrays.toString(databases));
                 synchronized (activeTasks) {
                     for (final String databaseName : databases) {
                         if (!activeTasks.contains(databaseName)) {
@@ -161,8 +159,10 @@ public final class Indexer extends AbstractLifeCycle {
                             commitUserData.put("update_seq", Long.toString(since));
                             commitUserData.put("uuid", uuid);
                             logger.debug("Committing changes to " + sig + " with " + commitUserData);
-                            // commit data is not written if there are no
-                            // documents.
+                            /*
+                             * commit data is not written if there are no
+                             * documents.
+                             */
                             if (writer.maxDoc() == 0) {
                                 writer.addDocument(new Document());
                             }
