@@ -34,14 +34,14 @@ public final class Locator {
         return lookup(path);
     }
 
-    public ViewSignature lookup(final String databaseName, final String designDocumentName, final String viewName) {
-        return lookup(path(databaseName, designDocumentName, viewName));
-    }
-
     public ViewSignature lookup(final String path) {
         synchronized (map) {
             return map.get(path);
         }
+    }
+
+    public ViewSignature lookup(final String databaseName, final String designDocumentName, final String viewName) {
+        return lookup(path(databaseName, designDocumentName, viewName));
     }
 
     public Collection<String> lookupAll(final String databaseName) {

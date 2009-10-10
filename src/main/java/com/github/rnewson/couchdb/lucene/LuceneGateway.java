@@ -13,6 +13,8 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
+import com.github.rnewson.couchdb.lucene.util.Constants;
+
 /**
  * Holds important stateful Lucene objects (Writer and Reader) and provides
  * appropriate locking.
@@ -21,6 +23,11 @@ import org.apache.lucene.store.FSDirectory;
  * 
  */
 final class LuceneGateway {
+
+    private static class Holder {
+        private String etag;
+        private IndexWriter writer;
+    }
 
     interface ReaderCallback<T> {
         public T callback(final IndexReader reader) throws IOException;
@@ -36,19 +43,10 @@ final class LuceneGateway {
 
     private final File baseDir;
 
-    private static class Holder {
-        private IndexWriter writer;
-        private String etag;
-    }
-
     private final Map<ViewSignature, Holder> holders = new HashMap<ViewSignature, Holder>();
 
     LuceneGateway(final File baseDir) {
         this.baseDir = baseDir;
-    }
-
-    private String newEtag() {
-        return Long.toHexString(System.nanoTime());
     }
 
     private synchronized Holder getHolder(final ViewSignature viewSignature) throws IOException {
@@ -64,6 +62,10 @@ final class LuceneGateway {
             holders.put(viewSignature, result);
         }
         return result;
+    }
+
+    private String newEtag() {
+        return Long.toHexString(System.nanoTime());
     }
 
     private IndexWriter newWriter(final Directory dir) throws IOException {

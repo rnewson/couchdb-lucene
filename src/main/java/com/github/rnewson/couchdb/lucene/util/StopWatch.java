@@ -21,18 +21,18 @@ import java.util.Map;
 
 public final class StopWatch {
 
-    private Map<String, Long> elapsed = new HashMap<String, Long>();
+    private final Map<String, Long> elapsed = new HashMap<String, Long>();
 
     private long start = System.nanoTime();
+
+    public long getElapsed(final String name) {
+        return elapsed.get(name) / 1000000;
+    }
 
     public void lap(final String name) {
         final long now = System.nanoTime();
         elapsed.put(name, now - start);
         start = now;
-    }
-
-    public long getElapsed(final String name) {
-        return elapsed.get(name) / 1000000;
     }
 
 }

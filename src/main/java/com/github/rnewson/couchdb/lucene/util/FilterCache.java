@@ -17,6 +17,7 @@ package com.github.rnewson.couchdb.lucene.util;
  */
 import java.util.Map;
 
+import org.apache.commons.collections.map.AbstractReferenceMap;
 import org.apache.commons.collections.map.ReferenceMap;
 import org.apache.lucene.search.CachingWrapperFilter;
 import org.apache.lucene.search.Filter;
@@ -29,7 +30,7 @@ import org.apache.lucene.search.Filter;
  */
 public final class FilterCache {
 
-    private static final Map<Object, Object> CACHE = new ReferenceMap(ReferenceMap.HARD, ReferenceMap.SOFT);
+    private static final Map<Object, Object> CACHE = new ReferenceMap(AbstractReferenceMap.HARD, AbstractReferenceMap.SOFT);
 
     public static Filter get(final Object key, final Filter value) {
         CachingWrapperFilter filter;

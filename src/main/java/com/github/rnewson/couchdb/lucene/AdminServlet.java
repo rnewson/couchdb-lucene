@@ -28,7 +28,7 @@ public final class AdminServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private State state;
+    private final State state;
 
     AdminServlet(final State state) {
         this.state = state;

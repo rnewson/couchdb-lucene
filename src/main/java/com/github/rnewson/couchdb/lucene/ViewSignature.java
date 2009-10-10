@@ -3,7 +3,6 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -49,17 +48,37 @@ public final class ViewSignature {
         }
     }
 
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ViewSignature other = (ViewSignature) obj;
+        if (dbname == null) {
+            if (other.dbname != null) {
+                return false;
+            }
+        } else if (!dbname.equals(other.dbname)) {
+            return false;
+        }
+        if (view == null) {
+            if (other.view != null) {
+                return false;
+            }
+        } else if (!view.equals(other.view)) {
+            return false;
+        }
+        return true;
+    }
+
     public String getDatabaseName() {
         return dbname;
-    }
-
-    public File toFile(final File base) {
-        return new File(new File(base, dbname), this + ".index");
-    }
-
-    @Override
-    public String toString() {
-        return view;
     }
 
     @Override
@@ -71,26 +90,13 @@ public final class ViewSignature {
         return result;
     }
 
+    public File toFile(final File base) {
+        return new File(new File(base, dbname), this + ".index");
+    }
+
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ViewSignature other = (ViewSignature) obj;
-        if (dbname == null) {
-            if (other.dbname != null)
-                return false;
-        } else if (!dbname.equals(other.dbname))
-            return false;
-        if (view == null) {
-            if (other.view != null)
-                return false;
-        } else if (!view.equals(other.view))
-            return false;
-        return true;
+    public String toString() {
+        return view;
     }
 
 }

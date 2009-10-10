@@ -21,15 +21,34 @@ public final class Conversion {
      * toString() output.
      */
     public static Object convert(final Object obj) {
-        if (obj instanceof NativeObject)
+        if (obj instanceof NativeObject) {
             return convertObject((NativeObject) obj);
-        else if (obj instanceof NativeArray)
+        } else if (obj instanceof NativeArray) {
             return convertArray((NativeArray) obj);
+        }
         return obj;
     }
 
     public static <T> T convert(final Object obj, final Class<T> clazz) {
         return (T) Context.jsToJava(obj, clazz);
+    }
+
+    private static Object convertArray(final NativeArray arr) {
+        final int len = (int) arr.getLength();
+        final JSONArray result = new JSONArray();
+
+        for (int i = 0; i < len; i++) {
+            Object value = arr.get(i, null);
+            if (value instanceof NativeObject) {
+                value = convertObject((NativeObject) value);
+            }
+            if (value instanceof NativeArray) {
+                value = convertArray((NativeArray) value);
+            }
+
+            result.add(value);
+        }
+        return result;
     }
 
     private static Object convertObject(final NativeObject obj) {
@@ -47,29 +66,15 @@ public final class Conversion {
             } else {
                 throw new IllegalArgumentException();
             }
-            if (value instanceof NativeObject)
+            if (value instanceof NativeObject) {
                 value = convertObject((NativeObject) value);
-            if (value instanceof NativeArray)
+            }
+            if (value instanceof NativeArray) {
                 value = convertArray((NativeArray) value);
+            }
             result.put(key, value);
         }
 
-        return result;
-    }
-
-    private static Object convertArray(final NativeArray arr) {
-        final int len = (int) arr.getLength();
-        final JSONArray result = new JSONArray();
-
-        for (int i = 0; i < len; i++) {
-            Object value = arr.get(i, null);
-            if (value instanceof NativeObject)
-                value = convertObject((NativeObject) value);
-            if (value instanceof NativeArray)
-                value = convertArray((NativeArray) value);
-
-            result.add(value);
-        }
         return result;
     }
 }

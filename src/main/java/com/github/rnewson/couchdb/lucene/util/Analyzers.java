@@ -114,10 +114,10 @@ public enum Analyzers {
         }
     }
 
-    public abstract Analyzer newAnalyzer();
-
     public static Analyzer getAnalyzer(final String name) {
         return Analyzers.valueOf(name.toUpperCase()).newAnalyzer();
     }
+
+    public abstract Analyzer newAnalyzer();
 
 }

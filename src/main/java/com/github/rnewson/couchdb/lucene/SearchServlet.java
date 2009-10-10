@@ -1,8 +1,8 @@
 package com.github.rnewson.couchdb.lucene;
 
-import static com.github.rnewson.couchdb.lucene.ServletUtils.getBooleanParameter;
-import static com.github.rnewson.couchdb.lucene.ServletUtils.getIntParameter;
-import static com.github.rnewson.couchdb.lucene.ServletUtils.getParameter;
+import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanParameter;
+import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getIntParameter;
+import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getParameter;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -42,8 +42,11 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.WildcardQuery;
 
 import com.github.rnewson.couchdb.lucene.LuceneGateway.SearcherCallback;
+import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
+import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
+import com.github.rnewson.couchdb.lucene.util.Utils;
 
 /**
  * Perform queries against local indexes.
@@ -54,195 +57,6 @@ import com.github.rnewson.couchdb.lucene.util.StopWatch;
 public final class SearchServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-
-    private final State state;
-
-    SearchServlet(final State state) {
-        this.state = state;
-    }
-
-    @Override
-    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        if (req.getParameter("q") == null) {
-            resp.sendError(400, "Missing q attribute.");
-            return;
-        }
-
-        final ViewSignature sig = state.locator.lookup(req);
-        if (sig == null) {
-            resp.sendError(400, "Unknown index.");
-            return;
-        }
-
-        final boolean debug = getBooleanParameter(req, "debug");
-        final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
-
-        final String body = state.lucene.withSearcher(sig, new SearcherCallback<String>() {
-            public String callback(final IndexSearcher searcher, final String etag) throws IOException {
-                // Check for 304 - Not Modified.
-                if (!debug && etag.equals(req.getHeader("If-None-Match"))) {
-                    resp.setStatus(304);
-                    return null;
-                }
-
-                // Parse query.
-                final Query q = toQuery(req);
-                if (q == null) {
-                    resp.sendError(400, "Bad query syntax.");
-                    return null;
-                }
-
-                final JSONObject json = new JSONObject();
-                json.put("q", q.toString());
-                if (debug) {
-                    json.put("plan", toPlan(q));
-                }
-                json.put("etag", etag);
-
-                if (rewrite_query) {
-                    final Query rewritten_q = q.rewrite(searcher.getIndexReader());
-                    json.put("rewritten_q", rewritten_q.toString());
-
-                    final JSONObject freqs = new JSONObject();
-
-                    final Set<Term> terms = new HashSet<Term>();
-                    rewritten_q.extractTerms(terms);
-                    for (final Object term : terms) {
-                        final int freq = searcher.docFreq((Term) term);
-                        freqs.put(term, freq);
-                    }
-                    json.put("freqs", freqs);
-                } else {
-                    // Perform the search.
-                    final TopDocs td;
-                    final StopWatch stopWatch = new StopWatch();
-
-                    final boolean include_docs = getBooleanParameter(req, "include_docs");
-                    final int limit = getIntParameter(req, "limit", 25);
-                    final Sort sort = toSort(req.getParameter("sort"));
-                    final int skip = getIntParameter(req, "skip", 0);
-
-                    if (sort == null) {
-                        td = searcher.search(q, null, skip + limit);
-                    } else {
-                        td = searcher.search(q, null, skip + limit, sort);
-                    }
-                    stopWatch.lap("search");
-
-                    // Fetch matches (if any).
-                    final int max = max(0, min(td.totalHits - skip, limit));
-                    final JSONArray rows = new JSONArray();
-                    final String[] fetch_ids = new String[max];
-                    for (int i = skip; i < skip + max; i++) {
-                        final Document doc = searcher.doc(td.scoreDocs[i].doc);
-                        final JSONObject row = new JSONObject();
-                        final JSONObject fields = new JSONObject();
-
-                        // Include stored fields.
-                        for (Object f : doc.getFields()) {
-                            Field fld = (Field) f;
-
-                            if (!fld.isStored())
-                                continue;
-                            String name = fld.name();
-                            String value = fld.stringValue();
-                            if (value != null) {
-                                if ("_id".equals(name)) {
-                                    row.put("id", value);
-                                } else {
-                                    if (!fields.has(name)) {
-                                        fields.put(name, value);
-                                    } else {
-                                        final Object obj = fields.get(name);
-                                        if (obj instanceof String) {
-                                            final JSONArray arr = new JSONArray();
-                                            arr.add((String) obj);
-                                            arr.add(value);
-                                            fields.put(name, arr);
-                                        } else {
-                                            assert obj instanceof JSONArray;
-                                            ((JSONArray) obj).add(value);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!Float.isNaN(td.scoreDocs[i].score)) {
-                            row.put("score", td.scoreDocs[i].score);
-                        }
-                        // Include sort order (if any).
-                        if (td instanceof TopFieldDocs) {
-                            final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
-                            row.put("sort_order", fd.fields);
-                        }
-                        // Fetch document (if requested).
-                        if (include_docs) {
-                            fetch_ids[i - skip] = doc.get("_id");
-                        }
-                        if (fields.size() > 0) {
-                            row.put("fields", fields);
-                        }
-                        rows.add(row);
-                    }
-                    // Fetch documents (if requested).
-                    if (include_docs && fetch_ids.length > 0) {
-                        final JSONArray fetched_docs = state.couch.getDocs(sig.getDatabaseName(), fetch_ids).getJSONArray("rows");
-                        for (int i = 0; i < max; i++) {
-                            rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
-                        }
-                    }
-                    stopWatch.lap("fetch");
-
-                    json.put("skip", skip);
-                    json.put("limit", limit);
-                    json.put("total_rows", td.totalHits);
-                    json.put("search_duration", stopWatch.getElapsed("search"));
-                    json.put("fetch_duration", stopWatch.getElapsed("fetch"));
-                    // Include sort info (if requested).
-                    if (td instanceof TopFieldDocs) {
-                        json.put("sort_order", SearchServlet.toString(((TopFieldDocs) td).fields));
-                    }
-                    json.put("rows", rows);
-                }
-
-                Utils.setResponseContentTypeAndEncoding(req, resp);
-
-                // Cache-related headers.
-                resp.setHeader("ETag", etag);
-                resp.setHeader("Cache-Control", "must-revalidate");
-
-                // Format response body.
-                final String callback = req.getParameter("callback");
-                if (callback != null) {
-                    return String.format("%s(%s)", callback, json);
-                } else {
-                    return json.toString(debug ? 2 : 0);
-                }
-            }
-        });
-
-        // Write response if we have one.
-        if (body != null) {
-            final Writer writer = resp.getWriter();
-            try {
-                writer.write(body);
-            } finally {
-                writer.close();
-            }
-        }
-    }
-
-    private static Query toQuery(final HttpServletRequest req) {
-        // Parse query.
-        final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
-        final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
-        try {
-            return fixup(parser.parse(req.getParameter("q")));
-        } catch (final ParseException e) {
-            return null;
-        }
-    }
 
     private static Query fixup(final Query query) {
         if (query instanceof BooleanQuery) {
@@ -283,15 +97,30 @@ public final class SearchServlet extends HttpServlet {
     }
 
     private static Object fixup(final String value) {
-        if (value.matches("\\d+\\.\\d+f"))
+        if (value.matches("\\d+\\.\\d+f")) {
             return Float.parseFloat(value);
-        if (value.matches("\\d+\\.\\d+"))
+        }
+        if (value.matches("\\d+\\.\\d+")) {
             return Double.parseDouble(value);
-        if (value.matches("\\d+[lL]"))
+        }
+        if (value.matches("\\d+[lL]")) {
             return Long.parseLong(value.substring(0, value.length() - 1));
-        if (value.matches("\\d+"))
+        }
+        if (value.matches("\\d+")) {
             return Integer.parseInt(value);
+        }
         return String.class;
+    }
+
+    private static Query toQuery(final HttpServletRequest req) {
+        // Parse query.
+        final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
+        final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
+        try {
+            return fixup(parser.parse(req.getParameter("q")));
+        } catch (final ParseException e) {
+            return null;
+        }
     }
 
     private static Sort toSort(final String sort) {
@@ -383,6 +212,53 @@ public final class SearchServlet extends HttpServlet {
         return result.toString();
     }
 
+    private final State state;
+
+    SearchServlet(final State state) {
+        this.state = state;
+    }
+
+    private void planBooleanQuery(final StringBuilder builder, final BooleanQuery query) {
+        for (final BooleanClause clause : query.getClauses()) {
+            builder.append(clause.getOccur());
+            toPlan(builder, clause.getQuery());
+        }
+    }
+
+    private void planFuzzyQuery(final StringBuilder builder, final FuzzyQuery query) {
+        builder.append(query.getTerm());
+        builder.append(",prefixLength=");
+        builder.append(query.getPrefixLength());
+        builder.append(",minSimilarity=");
+        builder.append(query.getMinSimilarity());
+    }
+
+    private void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery query) {
+        builder.append(query.getMin());
+        builder.append(" TO ");
+        builder.append(query.getMax());
+        builder.append(" AS ");
+        builder.append(query.getMin().getClass().getSimpleName());
+    }
+
+    private void planPrefixQuery(final StringBuilder builder, final PrefixQuery query) {
+        builder.append(query.getPrefix());
+    }
+
+    private void planTermQuery(final StringBuilder builder, final TermQuery query) {
+        builder.append(query.getTerm());
+    }
+
+    private void planTermRangeQuery(final StringBuilder builder, final TermRangeQuery query) {
+        builder.append(query.getLowerTerm());
+        builder.append(" TO ");
+        builder.append(query.getUpperTerm());
+    }
+
+    private void planWildcardQuery(final StringBuilder builder, final WildcardQuery query) {
+        builder.append(query.getTerm());
+    }
+
     /**
      * Produces a string representation of the query classes used for a query.
      * 
@@ -416,45 +292,178 @@ public final class SearchServlet extends HttpServlet {
         builder.append(",boost=" + query.getBoost() + ")");
     }
 
-    private void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery query) {
-        builder.append(query.getMin());
-        builder.append(" TO ");
-        builder.append(query.getMax());
-        builder.append(" AS ");
-        builder.append(query.getMin().getClass().getSimpleName());
-    }
-
-    private void planFuzzyQuery(final StringBuilder builder, final FuzzyQuery query) {
-        builder.append(query.getTerm());
-        builder.append(",prefixLength=");
-        builder.append(query.getPrefixLength());
-        builder.append(",minSimilarity=");
-        builder.append(query.getMinSimilarity());
-    }
-
-    private void planWildcardQuery(final StringBuilder builder, final WildcardQuery query) {
-        builder.append(query.getTerm());
-    }
-
-    private void planPrefixQuery(final StringBuilder builder, final PrefixQuery query) {
-        builder.append(query.getPrefix());
-    }
-
-    private void planTermRangeQuery(final StringBuilder builder, final TermRangeQuery query) {
-        builder.append(query.getLowerTerm());
-        builder.append(" TO ");
-        builder.append(query.getUpperTerm());
-    }
-
-    private void planBooleanQuery(final StringBuilder builder, final BooleanQuery query) {
-        for (final BooleanClause clause : query.getClauses()) {
-            builder.append(clause.getOccur());
-            toPlan(builder, clause.getQuery());
+    @Override
+    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+        if (req.getParameter("q") == null) {
+            resp.sendError(400, "Missing q attribute.");
+            return;
         }
-    }
 
-    private void planTermQuery(final StringBuilder builder, final TermQuery query) {
-        builder.append(query.getTerm());
+        final ViewSignature sig = state.locator.lookup(req);
+        if (sig == null) {
+            resp.sendError(400, "Unknown index.");
+            return;
+        }
+
+        final Database database = state.couch.getDatabase(sig.getDatabaseName());
+        final boolean debug = getBooleanParameter(req, "debug");
+        final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
+
+        final String body = state.lucene.withSearcher(sig, new SearcherCallback<String>() {
+            public String callback(final IndexSearcher searcher, final String etag) throws IOException {
+                // Check for 304 - Not Modified.
+                if (!debug && etag.equals(req.getHeader("If-None-Match"))) {
+                    resp.setStatus(304);
+                    return null;
+                }
+
+                // Parse query.
+                final Query q = toQuery(req);
+                if (q == null) {
+                    resp.sendError(400, "Bad query syntax.");
+                    return null;
+                }
+
+                final JSONObject json = new JSONObject();
+                json.put("q", q.toString());
+                if (debug) {
+                    json.put("plan", toPlan(q));
+                }
+                json.put("etag", etag);
+
+                if (rewrite_query) {
+                    final Query rewritten_q = q.rewrite(searcher.getIndexReader());
+                    json.put("rewritten_q", rewritten_q.toString());
+
+                    final JSONObject freqs = new JSONObject();
+
+                    final Set<Term> terms = new HashSet<Term>();
+                    rewritten_q.extractTerms(terms);
+                    for (final Object term : terms) {
+                        final int freq = searcher.docFreq((Term) term);
+                        freqs.put(term, freq);
+                    }
+                    json.put("freqs", freqs);
+                } else {
+                    // Perform the search.
+                    final TopDocs td;
+                    final StopWatch stopWatch = new StopWatch();
+
+                    final boolean include_docs = getBooleanParameter(req, "include_docs");
+                    final int limit = getIntParameter(req, "limit", 25);
+                    final Sort sort = toSort(req.getParameter("sort"));
+                    final int skip = getIntParameter(req, "skip", 0);
+
+                    if (sort == null) {
+                        td = searcher.search(q, null, skip + limit);
+                    } else {
+                        td = searcher.search(q, null, skip + limit, sort);
+                    }
+                    stopWatch.lap("search");
+
+                    // Fetch matches (if any).
+                    final int max = max(0, min(td.totalHits - skip, limit));
+                    final JSONArray rows = new JSONArray();
+                    final String[] fetch_ids = new String[max];
+                    for (int i = skip; i < skip + max; i++) {
+                        final Document doc = searcher.doc(td.scoreDocs[i].doc);
+                        final JSONObject row = new JSONObject();
+                        final JSONObject fields = new JSONObject();
+
+                        // Include stored fields.
+                        for (final Object f : doc.getFields()) {
+                            final Field fld = (Field) f;
+
+                            if (!fld.isStored()) {
+                                continue;
+                            }
+                            final String name = fld.name();
+                            final String value = fld.stringValue();
+                            if (value != null) {
+                                if ("_id".equals(name)) {
+                                    row.put("id", value);
+                                } else {
+                                    if (!fields.has(name)) {
+                                        fields.put(name, value);
+                                    } else {
+                                        final Object obj = fields.get(name);
+                                        if (obj instanceof String) {
+                                            final JSONArray arr = new JSONArray();
+                                            arr.add(obj);
+                                            arr.add(value);
+                                            fields.put(name, arr);
+                                        } else {
+                                            assert obj instanceof JSONArray;
+                                            ((JSONArray) obj).add(value);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!Float.isNaN(td.scoreDocs[i].score)) {
+                            row.put("score", td.scoreDocs[i].score);
+                        }
+                        // Include sort order (if any).
+                        if (td instanceof TopFieldDocs) {
+                            final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
+                            row.put("sort_order", fd.fields);
+                        }
+                        // Fetch document (if requested).
+                        if (include_docs) {
+                            fetch_ids[i - skip] = doc.get("_id");
+                        }
+                        if (fields.size() > 0) {
+                            row.put("fields", fields);
+                        }
+                        rows.add(row);
+                    }
+                    // Fetch documents (if requested).
+                    if (include_docs && fetch_ids.length > 0) {
+                        final JSONArray fetched_docs = database.getDocuments(fetch_ids).getJSONArray("rows");
+                        for (int i = 0; i < max; i++) {
+                            rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
+                        }
+                    }
+                    stopWatch.lap("fetch");
+
+                    json.put("skip", skip);
+                    json.put("limit", limit);
+                    json.put("total_rows", td.totalHits);
+                    json.put("search_duration", stopWatch.getElapsed("search"));
+                    json.put("fetch_duration", stopWatch.getElapsed("fetch"));
+                    // Include sort info (if requested).
+                    if (td instanceof TopFieldDocs) {
+                        json.put("sort_order", SearchServlet.toString(((TopFieldDocs) td).fields));
+                    }
+                    json.put("rows", rows);
+                }
+
+                Utils.setResponseContentTypeAndEncoding(req, resp);
+
+                // Cache-related headers.
+                resp.setHeader("ETag", etag);
+                resp.setHeader("Cache-Control", "must-revalidate");
+
+                // Format response body.
+                final String callback = req.getParameter("callback");
+                if (callback != null) {
+                    return String.format("%s(%s)", callback, json);
+                } else {
+                    return json.toString(debug ? 2 : 0);
+                }
+            }
+        });
+
+        // Write response if we have one.
+        if (body != null) {
+            final Writer writer = resp.getWriter();
+            try {
+                writer.write(body);
+            } finally {
+                writer.close();
+            }
+        }
     }
 
 }

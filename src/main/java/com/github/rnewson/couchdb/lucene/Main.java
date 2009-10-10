@@ -27,6 +27,8 @@ import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.servlet.GzipFilter;
 
+import com.github.rnewson.couchdb.lucene.couchdb.Couch;
+
 /**
  * Configure and start embedded Jetty server.
  * 

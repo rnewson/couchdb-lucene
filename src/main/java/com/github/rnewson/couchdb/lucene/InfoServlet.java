@@ -16,6 +16,7 @@ import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.store.Directory;
 
 import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
+import com.github.rnewson.couchdb.lucene.util.Utils;
 
 /**
  * Provides information current indexes.
@@ -26,6 +27,14 @@ import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
 public class InfoServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+
+    private static long size(final Directory dir) throws IOException {
+        long result = 0;
+        for (final String name : dir.listAll()) {
+            result += dir.fileLength(name);
+        }
+        return result;
+    }
 
     private final State state;
 
@@ -50,8 +59,9 @@ public class InfoServlet extends HttpServlet {
                 result.put("doc_del_count", reader.numDeletedDocs());
                 final JSONArray fields = new JSONArray();
                 for (final Object field : reader.getFieldNames(FieldOption.INDEXED)) {
-                    if (((String) field).startsWith("_"))
+                    if (((String) field).startsWith("_")) {
                         continue;
+                    }
                     fields.add(field);
                 }
                 result.put("fields", fields);
@@ -73,14 +83,6 @@ public class InfoServlet extends HttpServlet {
         } finally {
             writer.close();
         }
-    }
-
-    private static long size(final Directory dir) throws IOException {
-        long result = 0;
-        for (final String name : dir.listAll()) {
-            result += dir.fileLength(name);
-        }
-        return result;
     }
 
 }

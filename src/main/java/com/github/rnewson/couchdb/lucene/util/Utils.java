@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene;
+package com.github.rnewson.couchdb.lucene.util;
 
 /**
  * Copyright 2009 Robert Newson
@@ -16,7 +16,7 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
-import static com.github.rnewson.couchdb.lucene.ServletUtils.getBooleanParameter;
+import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanParameter;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -28,23 +28,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 
-class Utils {
-
-    public static String urlEncode(final String path) {
-        try {
-            return URLEncoder.encode(path, "UTF-8");
-        } catch (final UnsupportedEncodingException e) {
-            throw new Error("UTF-8 support missing!");
-        }
-    }
-
-    public static Field text(final String name, final String value, final boolean store) {
-        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
-    }
-
-    public static Field token(final String name, final String value, final boolean store) {
-        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
-    }
+public class Utils {
 
     public static Logger getLogger(final Class clazz, final String suffix) {
         return Logger.getLogger(clazz.getCanonicalName() + "." + suffix);
@@ -58,6 +42,22 @@ class Utils {
             resp.setContentType("text/plain");
         }
         resp.setCharacterEncoding("utf-8");
+    }
+
+    public static Field text(final String name, final String value, final boolean store) {
+        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
+    }
+
+    public static Field token(final String name, final String value, final boolean store) {
+        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
+    }
+
+    public static String urlEncode(final String path) {
+        try {
+            return URLEncoder.encode(path, "UTF-8");
+        } catch (final UnsupportedEncodingException e) {
+            throw new Error("UTF-8 support missing!");
+        }
     }
 
 }
