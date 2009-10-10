@@ -7,6 +7,11 @@
 * status page.
 * allow POST with a query array?
 
+* allow c-l operations even if couchdb is down (except include_docs=true, of course)
+* correctly handle database deletion, view renames, view adds, deletes, etc.
+* add a /test/ endpoint to run test suite.
+* configure jetty to return JSON for all errors.
+
 * Lucene 2.9 - done
 ** numeric range suppport. (indexing size needs testing -- query side needs post-processing or QP tweak)
 * use _local/lucene for recording progress. (recorded but not used to detect inconsistencies yet)
