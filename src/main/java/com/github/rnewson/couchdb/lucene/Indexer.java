@@ -100,28 +100,26 @@ public final class Indexer extends AbstractLifeCycle {
                 }
 
                 final String id = doc.getString("_id");
-
                 // New, updated or deleted document.
                 if (id.startsWith("_design")) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(id + ": design document updated.");
-                    }
+                    logUpdate(seq, id, "updated");
                     mapDesignDocument(doc);
                 } else if (doc.optBoolean("_deleted")) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(id + ": document deleted.");
-                    }
+                    logUpdate(seq, id, "deleted");
                     deleteDocument(doc);
                 } else {
-                    // New or updated document.
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(id + ": new/updated document.");
-                    }
+                    logUpdate(seq, id, "updated");
                     updateDocument(doc);
                 }
 
                 // Remember progress.
                 since = seq;
+            }
+
+            private void logUpdate(final long seq, final String id, final String suffix) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("seq:%d id:%s %s", seq, id, suffix));
+                }
             }
 
             private void commitDocuments() throws IOException {

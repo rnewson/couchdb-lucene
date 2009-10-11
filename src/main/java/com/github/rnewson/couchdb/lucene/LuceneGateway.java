@@ -6,12 +6,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexCommit;
+import org.apache.lucene.index.IndexDeletionPolicy;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.LockObtainFailedException;
 
 import com.github.rnewson.couchdb.lucene.util.Constants;
 
@@ -26,7 +34,7 @@ final class LuceneGateway {
 
     private static class Holder {
         private String etag;
-        private IndexWriter writer;
+        private DirtiableIndexWriter writer;
     }
 
     interface ReaderCallback<T> {
@@ -68,8 +76,8 @@ final class LuceneGateway {
         return Long.toHexString(System.nanoTime());
     }
 
-    private IndexWriter newWriter(final Directory dir) throws IOException {
-        final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
+    private DirtiableIndexWriter newWriter(final Directory dir) throws IOException {
+        final DirtiableIndexWriter result = new DirtiableIndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
         result.setMergeFactor(5);
         return result;
     }
@@ -102,11 +110,124 @@ final class LuceneGateway {
             synchronized (this) {
                 if (oom) {
                     holders.remove(viewSignature).writer.rollback();
-                } else {
+                } else if (getHolder(viewSignature).writer.isDirty()) {
                     getHolder(viewSignature).etag = newEtag();
+                    getHolder(viewSignature).writer.setDirty(false);
                 }
             }
         }
+    }
+
+    /**
+     * Track "dirty" status so we only change ETag when documents are added,
+     * updated or deleted.
+     * 
+     * @author robertnewson
+     * 
+     */
+    private class DirtiableIndexWriter extends IndexWriter {
+
+        private boolean isDirty;
+
+        public DirtiableIndexWriter(Directory d, Analyzer a, boolean create, IndexDeletionPolicy deletionPolicy, MaxFieldLength mfl)
+                throws CorruptIndexException, LockObtainFailedException, IOException {
+            super(d, a, create, deletionPolicy, mfl);
+        }
+
+        public DirtiableIndexWriter(Directory d, Analyzer a, boolean create, MaxFieldLength mfl) throws CorruptIndexException,
+                LockObtainFailedException, IOException {
+            super(d, a, create, mfl);
+        }
+
+        public DirtiableIndexWriter(Directory d, Analyzer a, IndexDeletionPolicy deletionPolicy, MaxFieldLength mfl,
+                IndexCommit commit) throws CorruptIndexException, LockObtainFailedException, IOException {
+            super(d, a, deletionPolicy, mfl, commit);
+        }
+
+        public DirtiableIndexWriter(Directory d, Analyzer a, IndexDeletionPolicy deletionPolicy, MaxFieldLength mfl)
+                throws CorruptIndexException, LockObtainFailedException, IOException {
+            super(d, a, deletionPolicy, mfl);
+        }
+
+        public DirtiableIndexWriter(Directory d, Analyzer a, MaxFieldLength mfl) throws CorruptIndexException,
+                LockObtainFailedException, IOException {
+            super(d, a, mfl);
+        }
+
+        public final boolean isDirty() {
+            return isDirty;
+        }
+
+        protected final void setDirty(final boolean isDirty) {
+            this.isDirty = isDirty;
+        }
+
+        @Override
+        public void addDocument(Document doc, Analyzer analyzer) throws CorruptIndexException, IOException {
+            super.addDocument(doc, analyzer);
+            setDirty(true);
+        }
+
+        @Override
+        public void addDocument(Document doc) throws CorruptIndexException, IOException {
+            super.addDocument(doc);
+            setDirty(true);
+        }
+
+        @Override
+        public void addIndexes(Directory[] dirs) throws CorruptIndexException, IOException {
+            super.addIndexes(dirs);
+            setDirty(true);
+        }
+
+        @Override
+        public void addIndexes(IndexReader[] readers) throws CorruptIndexException, IOException {
+            super.addIndexes(readers);
+            setDirty(true);
+        }
+
+        @Override
+        public void addIndexesNoOptimize(Directory[] dirs) throws CorruptIndexException, IOException {
+            super.addIndexesNoOptimize(dirs);
+            setDirty(true);
+        }
+
+        @Override
+        public void deleteDocuments(Query query) throws CorruptIndexException, IOException {
+            super.deleteDocuments(query);
+            setDirty(true);
+        }
+
+        @Override
+        public void deleteDocuments(Query[] queries) throws CorruptIndexException, IOException {
+            super.deleteDocuments(queries);
+            setDirty(true);
+        }
+
+        @Override
+        public void deleteDocuments(Term term) throws CorruptIndexException, IOException {
+            super.deleteDocuments(term);
+            setDirty(true);
+        }
+
+        @Override
+        public void deleteDocuments(Term[] terms) throws CorruptIndexException, IOException {
+            super.deleteDocuments(terms);
+            setDirty(true);
+        }
+
+        @Override
+        public void updateDocument(Term term, Document doc, Analyzer analyzer) throws CorruptIndexException, IOException {
+            super.updateDocument(term, doc, analyzer);
+            setDirty(true);
+        }
+
+        @Override
+        public void updateDocument(Term term, Document doc) throws CorruptIndexException, IOException {
+            super.updateDocument(term, doc);
+            setDirty(true);
+        }
+
     }
 
 }
