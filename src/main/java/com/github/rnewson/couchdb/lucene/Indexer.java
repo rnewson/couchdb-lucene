@@ -2,10 +2,8 @@ package com.github.rnewson.couchdb.lucene;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,11 +19,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.ResponseHandler;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -46,20 +40,22 @@ import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
 import com.github.rnewson.couchdb.lucene.RhinoDocument.RhinoContext;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
+import com.github.rnewson.couchdb.lucene.couchdb.Database.Action;
+import com.github.rnewson.couchdb.lucene.couchdb.Database.ChangesHandler;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
 /**
- * Pull data from couchdb into Lucene indexes.
+ * Indexes data from couchdb into Lucene indexes.
  * 
  * @author robertnewson
  */
 public final class Indexer extends AbstractLifeCycle {
 
-    private class CouchPoller implements Runnable {
+    private class CouchIndexer implements Runnable {
 
-        private final Logger logger = Logger.getLogger(CouchPoller.class);
+        private final Logger logger = Logger.getLogger(CouchIndexer.class);
 
         public void run() {
             try {
@@ -68,7 +64,7 @@ public final class Indexer extends AbstractLifeCycle {
                     for (final String databaseName : databases) {
                         if (!activeTasks.contains(databaseName)) {
                             activeTasks.add(databaseName);
-                            executor.execute(new DatabasePuller(databaseName));
+                            executor.execute(new DatabaseIndexer(databaseName));
                         }
                     }
                 }
@@ -78,66 +74,54 @@ public final class Indexer extends AbstractLifeCycle {
         }
     }
 
-    private class DatabasePuller implements Runnable {
+    private class DatabaseIndexer implements Runnable {
 
-        private final class ChangesResponseHandler implements ResponseHandler<Boolean> {
-            public Boolean handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
-                final HttpEntity entity = response.getEntity();
-                final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    final JSONObject json = JSONObject.fromObject(line);
+        private final class DatabaseChangesHandler implements ChangesHandler {
 
-                    // Error.
-                    if (json.has("error")) {
-                        if (json.optString("reason").equals("no_db_file")) {
-                            logger.warn("Database deleted.");
-                            // TODO delete indexes.
-                        } else {
-                            logger.warn("Unexpected error: " + json);
-                        }
-                        return false;
-                    }
-
-                    // End of feed.
-                    if (json.has("last_seq")) {
-                        if (hasPendingCommit(true)) {
-                            commitDocuments();
-                        }
-                        return true;
-                    }
-
-                    // Time's up.
-                    if (hasPendingCommit(false)) {
-                        commitDocuments();
-                    }
-
-                    final JSONObject doc = json.getJSONObject("doc");
-                    final String id = doc.getString("_id");
-
-                    // New, updated or deleted document.
-                    if (json.getString("id").startsWith("_design")) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace(id + ": design document updated.");
-                        }
-                        mapDesignDocument(doc);
-                    } else if (doc.optBoolean("_deleted")) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace(id + ": document deleted.");
-                        }
-                        deleteDocument(doc);
-                    } else {
-                        // New or updated document.
-                        if (logger.isTraceEnabled()) {
-                            logger.trace(id + ": new/updated document.");
-                        }
-                        updateDocument(doc);
-                    }
-
-                    // Remember progress.
-                    since = json.getLong("seq");
+            public void onError(final JSONObject error) {
+                if (error.optString("reason").equals("no_db_file")) {
+                    logger.warn("Database deleted.");
+                    // TODO delete indexes.
+                } else {
+                    logger.warn("Unexpected error: " + error);
                 }
-                return true;
+            }
+
+            public void onEndOfSequence(final long seq) throws IOException {
+                if (hasPendingCommit(true)) {
+                    commitDocuments();
+                }
+            }
+
+            public void onChange(final long seq, final JSONObject doc) throws IOException {
+                // Time's up.
+                if (hasPendingCommit(false)) {
+                    commitDocuments();
+                }
+
+                final String id = doc.getString("_id");
+
+                // New, updated or deleted document.
+                if (id.startsWith("_design")) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(id + ": design document updated.");
+                    }
+                    mapDesignDocument(doc);
+                } else if (doc.optBoolean("_deleted")) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(id + ": document deleted.");
+                    }
+                    deleteDocument(doc);
+                } else {
+                    // New or updated document.
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(id + ": new/updated document.");
+                    }
+                    updateDocument(doc);
+                }
+
+                // Remember progress.
+                since = seq;
             }
 
             private void commitDocuments() throws IOException {
@@ -225,6 +209,7 @@ public final class Indexer extends AbstractLifeCycle {
                     }
                 }
             }
+
         }
 
         private final class RestrictiveClassShutter implements ClassShutter {
@@ -253,8 +238,8 @@ public final class Indexer extends AbstractLifeCycle {
 
         private long since = 0L;
 
-        public DatabasePuller(final String databaseName) {
-            logger = Utils.getLogger(DatabasePuller.class, databaseName);
+        public DatabaseIndexer(final String databaseName) {
+            logger = Utils.getLogger(DatabaseIndexer.class, databaseName);
             this.databaseName = databaseName;
             this.database = state.couch.getDatabase(databaseName);
         }
@@ -269,8 +254,16 @@ public final class Indexer extends AbstractLifeCycle {
                     return;
                 }
                 readCheckpoints();
-                while (isRunning() && updateIndexes()) {
-                    ;
+                loop: while (isRunning()) {
+                    switch (updateIndexes()) {
+                    case ABORT:
+                        break loop;
+                    case CONTINUE:
+                        break;
+                    case PAUSE:
+                        SECONDS.sleep(10);
+                        break;
+                    }
                 }
             } catch (final Exception e) {
                 logger.warn("Tracking interrupted by exception.", e);
@@ -402,9 +395,10 @@ public final class Indexer extends AbstractLifeCycle {
          * @return true if the indexing loop should continue, false to make it
          *         exit.
          */
-        private boolean updateIndexes() throws IOException {
-            return database.handleChanges(since, new ChangesResponseHandler());
+        private Action updateIndexes() throws IOException {
+            return database.handleChanges(since, new DatabaseChangesHandler());
         }
+
     }
 
     private static class ViewTuple {
@@ -448,7 +442,7 @@ public final class Indexer extends AbstractLifeCycle {
     protected void doStart() throws Exception {
         executor = Executors.newCachedThreadPool();
         scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleWithFixedDelay(new CouchPoller(), 0, 60, TimeUnit.SECONDS);
+        scheduler.scheduleWithFixedDelay(new CouchIndexer(), 0, 60, TimeUnit.SECONDS);
     }
 
     @Override
