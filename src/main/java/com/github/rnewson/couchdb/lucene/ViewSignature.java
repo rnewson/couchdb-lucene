@@ -90,8 +90,12 @@ public final class ViewSignature {
         return result;
     }
 
-    public File toFile(final File base) {
-        return new File(new File(base, dbname), this + ".index");
+    public File toViewDir(final File base) {
+        return new File(toDatabaseDir(base), this + ".index");
+    }
+
+    public File toDatabaseDir(final File base) {
+        return new File(base, dbname);
     }
 
     @Override

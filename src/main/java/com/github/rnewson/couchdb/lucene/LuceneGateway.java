@@ -3,9 +3,13 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
@@ -60,7 +64,7 @@ final class LuceneGateway {
     private synchronized Holder getHolder(final ViewSignature viewSignature) throws IOException {
         Holder result = holders.get(viewSignature);
         if (result == null) {
-            final File dir = viewSignature.toFile(baseDir);
+            final File dir = viewSignature.toViewDir(baseDir);
             if (!dir.exists() && !dir.mkdirs()) {
                 throw new IOException("Could not make " + dir);
             }
@@ -82,7 +86,7 @@ final class LuceneGateway {
         return result;
     }
 
-    synchronized void close() throws IOException {
+    public synchronized void close() throws IOException {
         final Iterator<Holder> it = holders.values().iterator();
         while (it.hasNext()) {
             it.next().writer.rollback();
@@ -90,16 +94,16 @@ final class LuceneGateway {
         }
     }
 
-    <T> T withReader(final ViewSignature viewSignature, final ReaderCallback<T> callback) throws IOException {
+    public <T> T withReader(final ViewSignature viewSignature, final ReaderCallback<T> callback) throws IOException {
         return callback.callback(getHolder(viewSignature).writer.getReader());
     }
 
-    <T> T withSearcher(final ViewSignature viewSignature, final SearcherCallback<T> callback) throws IOException {
+    public <T> T withSearcher(final ViewSignature viewSignature, final SearcherCallback<T> callback) throws IOException {
         final Holder holder = getHolder(viewSignature);
         return callback.callback(new IndexSearcher(holder.writer.getReader()), holder.etag);
     }
 
-    <T> T withWriter(final ViewSignature viewSignature, final WriterCallback<T> callback) throws IOException {
+    public <T> T withWriter(final ViewSignature viewSignature, final WriterCallback<T> callback) throws IOException {
         boolean oom = false;
         try {
             return callback.callback(getHolder(viewSignature).writer);
@@ -116,6 +120,27 @@ final class LuceneGateway {
                 }
             }
         }
+    }
+
+    public void deleteDatabase(final String databaseName) throws IOException {
+        // Remove all active holders for this database.
+        final Set<Holder> oldHolders = new HashSet<Holder>();
+        synchronized (this) {
+            final Iterator<Entry<ViewSignature, Holder>> it = holders.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<ViewSignature, Holder> entry = it.next();
+                if (databaseName.equals(entry.getKey().getDatabaseName())) {
+                    oldHolders.add(entry.getValue());
+                    it.remove();
+                }
+            }
+        } 
+        // Close all file handles.
+        for (final Holder holder : oldHolders) {
+            holder.writer.rollback();
+        }
+        // Purge from disk.
+        FileUtils.deleteDirectory(new File(baseDir, databaseName));
     }
 
     /**

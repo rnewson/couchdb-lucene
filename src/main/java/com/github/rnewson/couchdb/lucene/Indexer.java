@@ -81,7 +81,11 @@ public final class Indexer extends AbstractLifeCycle {
             public void onError(final JSONObject error) {
                 if (error.optString("reason").equals("no_db_file")) {
                     logger.warn("Database deleted.");
-                    // TODO delete indexes.
+                    try {
+                        state.lucene.deleteDatabase(databaseName);
+                    } catch (final IOException e) {
+                        logger.warn("Failed to delete indexes for database " + databaseName, e);
+                    }
                 } else {
                     logger.warn("Unexpected error: " + error);
                 }
@@ -104,6 +108,7 @@ public final class Indexer extends AbstractLifeCycle {
                 if (id.startsWith("_design")) {
                     logUpdate(seq, id, "updated");
                     mapDesignDocument(doc);
+                    // TODO force reindexing of this function ONLY.
                 } else if (doc.optBoolean("_deleted")) {
                     logUpdate(seq, id, "deleted");
                     deleteDocument(doc);
