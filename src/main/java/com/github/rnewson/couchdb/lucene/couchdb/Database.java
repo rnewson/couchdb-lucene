@@ -127,7 +127,7 @@ public abstract class Database {
 
     public final JSONObject getDocuments(final String startkey, final String endkey) throws IOException {
         return JSONObject.fromObject(HttpUtils.get(httpClient, String.format(
-                "%s/_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true", url, Utils.urlEncode(startkey), Utils
+                "%s_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true", url, Utils.urlEncode(startkey), Utils
                         .urlEncode(endkey))));
     }
 
