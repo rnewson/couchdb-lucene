@@ -27,22 +27,55 @@ UNSCHEDULED
 * JSONQuery? (http://docs.persvr.org/documentation/jsonquery)
 * geospatial (need TrieRangeQuery from 2.9)
 
-Tracking;
+Indexing Algorithm;
 
-couchdb - store {"uuid":<uuid>} as JSON in _local/lucene
-lucene - store {"update_seq":seq,"uuid":<uuid>} as Map in userCommitData
+dbs[] = read _all_dbs
+for db in dbs
+    ddocs[] = read all design documents
+    if no fulltext functions in ddocs
+       skip this database
+    else
+	state = read db._local/lucene
+	if state is missing
+	   state = new state
+	   state.uuid = new random uuid
+	   write db._local/lucene
+	map db to state.uuid # so SearchServlet can find it
+	for ddoc in ddocs
+	    for fulltext_fun in ddoc
+	    	sig = hash(fulltext_fun)
+		map ddoc to sig # so SearchServlet can find it
+		if state.sig is missing
+		   seq = 0
+		   map state.sig to seq
+		else
+		   seq = state.sig
+         	views[] += { sig, state }
+            end for
+        end for
+        lowest_seq = smallest update_seq seen in previous loop
+	for change in changes since lowest_seq
+          for view in views
+            if (view.seq < change.seq)
+              apply change to view
+          end for
+	end for
+end for
 
-Verify at startup;
 
-if couchdb_uuid != < lucene_uuid then
-   // Database has been recreated.
-   delete existing index;
-   update_seq = 0;
-fi
+_local/lucene;
 
-if couchdb_uuid == lucene_uuid then
-   update_seq = <value from lucene>
-fi
+{
+  "_id":"_local/lucene",
+  "uuid":"<uuid>",
+  "indexes": {
+    "hash(fulltext_fun1)": {
+     update_seq: 10
+    },
+    "hash(fulltext_fun2)": {
+     update_seq: 100
+    }
+  }
+}
 
-starting index from update_seq.
 
