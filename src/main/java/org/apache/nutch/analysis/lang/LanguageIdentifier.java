@@ -48,9 +48,9 @@ public class LanguageIdentifier {
     /** My singleton instance */
     private static LanguageIdentifier identifier = null;
 
-    private static final LanguageIdentifier INSTANCE = new LanguageIdentifier();
-
     private final static Log LOG = LogFactory.getLog(LanguageIdentifier.class);
+
+    private static final LanguageIdentifier INSTANCE = new LanguageIdentifier();
 
     private final static float SCORE_THRESOLD = 0.00F;
 
