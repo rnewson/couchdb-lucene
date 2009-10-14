@@ -26,7 +26,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
-import org.apache.nutch.analysis.lang.LanguageIdentifier;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -63,12 +62,6 @@ public final class Tika {
 
         // Add DC attributes.
         addDublinCoreAttributes(md, doc);
-
-        // Detect language.
-        final String language = LanguageIdentifier.identifyLanguage(body);
-        if (language != null && language.length() > 0) {
-            doc.add(text(DC + DublinCore.LANGUAGE, language, false));
-        }
     }
 
     private void addAttribute(final String namespace, final String attributeName, final Metadata md, final Document doc) {
