@@ -104,7 +104,7 @@ public abstract class Database {
         return HttpUtils.delete(httpClient, url) == 201;
     }
 
-    public JSONArray getAllDesignDocuments(final String dbname) throws IOException {
+    public JSONArray getAllDesignDocuments() throws IOException {
         return getDocuments("_design", "_design0").getJSONArray("rows");
     }
 

@@ -325,7 +325,7 @@ public final class Indexer extends AbstractLifeCycle {
         }
 
         private boolean mapAllDesignDocuments() throws IOException {
-            final JSONArray designDocuments = database.getAllDesignDocuments(databaseName);
+            final JSONArray designDocuments = database.getAllDesignDocuments();
             boolean isLuceneEnabled = false;
             for (int i = 0; i < designDocuments.size(); i++) {
                 isLuceneEnabled |= mapDesignDocument(designDocuments.getJSONObject(i).getJSONObject("doc"));
