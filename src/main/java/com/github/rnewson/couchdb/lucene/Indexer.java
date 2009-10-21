@@ -176,7 +176,7 @@ public final class Indexer extends AbstractLifeCycle {
             }
 
             private void updateDocument(final JSONObject doc) {
-                for (final Entry<ViewSignature, ViewTuple> entry : functions.entrySet()) {
+                for (final Entry<ViewSignature, ViewIndexer> entry : functions.entrySet()) {
                     final RhinoContext rhinoContext = new RhinoContext();
                     rhinoContext.analyzer = entry.getValue().analyzer;
                     rhinoContext.database = database;
@@ -227,7 +227,7 @@ public final class Indexer extends AbstractLifeCycle {
 
         private final String databaseName;
 
-        private final Map<ViewSignature, ViewTuple> functions = new HashMap<ViewSignature, ViewTuple>();
+        private final Map<ViewSignature, ViewIndexer> functions = new HashMap<ViewSignature, ViewIndexer>();
 
         private final Logger logger;
 
@@ -348,7 +348,7 @@ public final class Indexer extends AbstractLifeCycle {
                     function = function.replaceFirst("\"$", "");
                     final ViewSignature sig = state.locator
                             .update(databaseName, designDocumentName, viewName, viewValue.toString());
-                    functions.put(sig, new ViewTuple(defaults, analyzer, context
+                    functions.put(sig, new ViewIndexer(defaults, analyzer, context
                             .compileFunction(scope, function, viewName, 0, null)));
                     isLuceneEnabled = true;
                 }
@@ -404,12 +404,12 @@ public final class Indexer extends AbstractLifeCycle {
 
     }
 
-    private static class ViewTuple {
+    private static class ViewIndexer {
         private final Analyzer analyzer;
         private final JSONObject defaults;
         private final Function function;
 
-        public ViewTuple(final JSONObject defaults, final Analyzer analyzer, final Function function) {
+        public ViewIndexer(final JSONObject defaults, final Analyzer analyzer, final Function function) {
             this.defaults = defaults;
             this.analyzer = analyzer;
             this.function = function;
