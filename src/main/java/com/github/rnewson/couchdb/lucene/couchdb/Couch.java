@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import net.sf.json.JSONArray;
 
-import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;

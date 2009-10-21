@@ -53,8 +53,6 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
  */
 public final class Indexer extends AbstractLifeCycle {
 
-    private static final String LOCAL_LUCENE = "_local/lucene";
-
     private class CouchIndexer implements Runnable {
 
         private final Logger logger = Logger.getLogger(CouchIndexer.class);
@@ -80,25 +78,6 @@ public final class Indexer extends AbstractLifeCycle {
 
         private final class DatabaseChangesHandler implements ChangesHandler {
 
-            public void onError(final JSONObject error) {
-                if (error.optString("reason").equals("no_db_file")) {
-                    logger.warn("Database deleted.");
-                    try {
-                        state.lucene.deleteDatabase(databaseName);
-                    } catch (final IOException e) {
-                        logger.warn("Failed to delete indexes for database " + databaseName, e);
-                    }
-                } else {
-                    logger.warn("Unexpected error: " + error);
-                }
-            }
-
-            public void onEndOfSequence(final long seq) throws IOException {
-                if (hasPendingCommit(true)) {
-                    commitDocuments();
-                }
-            }
-
             public void onChange(final long seq, final JSONObject doc) throws IOException {
                 // Time's up.
                 if (hasPendingCommit(false)) {
@@ -123,9 +102,22 @@ public final class Indexer extends AbstractLifeCycle {
                 since = seq;
             }
 
-            private void logUpdate(final long seq, final String id, final String suffix) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("seq:%d id:%s %s", seq, id, suffix));
+            public void onEndOfSequence(final long seq) throws IOException {
+                if (hasPendingCommit(true)) {
+                    commitDocuments();
+                }
+            }
+
+            public void onError(final JSONObject error) {
+                if (error.optString("reason").equals("no_db_file")) {
+                    logger.warn("Database deleted.");
+                    try {
+                        state.lucene.deleteDatabase(databaseName);
+                    } catch (final IOException e) {
+                        logger.warn("Failed to delete indexes for database " + databaseName, e);
+                    }
+                } else {
+                    logger.warn("Unexpected error: " + error);
                 }
             }
 
@@ -177,6 +169,12 @@ public final class Indexer extends AbstractLifeCycle {
                 }
             }
 
+            private void logUpdate(final long seq, final String id, final String suffix) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("seq:%d id:%s %s", seq, id, suffix));
+                }
+            }
+
             private void updateDocument(final JSONObject doc) {
                 for (final Entry<ViewSignature, ViewIndexer> entry : functions.entrySet()) {
                     final RhinoContext rhinoContext = new RhinoContext();
@@ -215,12 +213,6 @@ public final class Indexer extends AbstractLifeCycle {
                 }
             }
 
-        }
-
-        private final class RestrictiveClassShutter implements ClassShutter {
-            public boolean visibleToScripts(final String fullClassName) {
-                return false;
-            }
         }
 
         private Context context;
@@ -350,8 +342,8 @@ public final class Indexer extends AbstractLifeCycle {
                     function = function.replaceFirst("\"$", "");
                     final ViewSignature sig = state.locator
                             .update(databaseName, designDocumentName, viewName, viewValue.toString());
-                    functions.put(sig, new ViewIndexer(defaults, analyzer, context
-                            .compileFunction(scope, function, viewName, 0, null)));
+                    functions.put(sig, new ViewIndexer(defaults, analyzer, context.compileFunction(scope, function, viewName, 0,
+                            null)));
                     isLuceneEnabled = true;
                 }
             }
@@ -406,6 +398,12 @@ public final class Indexer extends AbstractLifeCycle {
 
     }
 
+    private final class RestrictiveClassShutter implements ClassShutter {
+        public boolean visibleToScripts(final String fullClassName) {
+            return false;
+        }
+    }
+
     private static class ViewIndexer {
         private final Analyzer analyzer;
         private final JSONObject defaults;
@@ -419,6 +417,8 @@ public final class Indexer extends AbstractLifeCycle {
     }
 
     private static final long COMMIT_INTERVAL = SECONDS.toNanos(60);
+
+    private static final String LOCAL_LUCENE = "_local/lucene";
 
     private final Set<String> activeTasks = new HashSet<String>();
 
