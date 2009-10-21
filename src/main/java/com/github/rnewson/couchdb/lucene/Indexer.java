@@ -53,6 +53,8 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
  */
 public final class Indexer extends AbstractLifeCycle {
 
+    private static final String LOCAL_LUCENE = "_local/lucene";
+
     private class CouchIndexer implements Runnable {
 
         private final Logger logger = Logger.getLogger(CouchIndexer.class);
@@ -159,7 +161,7 @@ public final class Indexer extends AbstractLifeCycle {
                     });
                 }
                 // Tell Couch.
-                database.saveDocument("_local/lucene", tracker.toString());
+                database.saveDocument(LOCAL_LUCENE, tracker.toString());
                 setPendingCommit(false);
             }
 
@@ -432,7 +434,7 @@ public final class Indexer extends AbstractLifeCycle {
 
     private JSONObject fetchTrackingDocument(final Database database) throws IOException {
         try {
-            return database.getDocument("_local/lucene");
+            return database.getDocument(LOCAL_LUCENE);
         } catch (final HttpResponseException e) {
             if (e.getStatusCode() == 404) {
                 return new JSONObject();
