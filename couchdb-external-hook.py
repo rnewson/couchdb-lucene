@@ -1,57 +1,86 @@
 #!/usr/bin/python
 
-import getopt, sys
+import httplib
+import optparse as op
+import sys
+import traceback
 import urllib
 
-from urllib2 import Request, urlopen, HTTPError, URLError
-
 try:
-    # Python 2.6
     import json
 except:
-    # Prior to 2.6 requires simplejson
     import simplejson as json
 
+__usage__ = "%prog [OPTIONS]"
+
+def options():
+    return [
+        op.make_option('-u', '--url', dest='url',
+            default="127.0.0.1",
+            help="Host of the CouchDB-Lucene indexer. [%default]"),
+        op.make_option('-p', '--port', dest='port', type='int',
+            default=5985,
+            help="Port of the CouchDB-Lucene indexer. [%default]")
+    ]
+
+def main():
+    parser = op.OptionParser(usage=__usage__, option_list=options())
+    opts, args = parser.parse_args()
+
+    if len(args):
+        parser.error("Unrecognized arguments: %s" % ' '.join(args))
+
+    res = httplib.HTTPConnection(opts.url, opts.port)
+    for req in requests():
+        try:
+            resp = respond(res, req)
+        except Exception, e:
+            body = traceback.format_exc()
+            resp = mkresp(500, body, {"Content-Type": "text/plain"})
+            res = httplib.HTTPConnection(opts.url, opts.port)
+
+        sys.stdout.write(json.dumps(resp))
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
 def requests():
-    # 'for line in sys.stdin' won't work here
     line = sys.stdin.readline()
     while line:
         yield json.loads(line)
         line = sys.stdin.readline()
 
-def respond(url, req):
-    hreq = Request("%s/search/%s/%s/%s?%s" % (url,
-                                              req["path"][0], req["path"][2], req["path"][3],
-                                              urllib.urlencode(req["query"])))
-    for header in ["Accept", "If-None-Match"]:
-        if header in req["headers"]:
-            hreq.add_header(header, req["headers"][header])
-    try:
-        f = urlopen(hreq)
-        body = f.read()
-        headers = {"Content-Type":f.info().getheader("Content-Type"), "ETag":f.info().getheader("ETag")}
-        sys.stdout.write("%s\n" % json.dumps({"code":f.getcode(),"headers":headers,"body":body}))
-    except HTTPError, e:
-        sys.stdout.write("%s\n" % json.dumps({"code":e.code}))
-    except URLError, e:
-        sys.stdout.write("%s\n" % json.dumps({"code":500, "body":"is couchdb-lucene running?\n"}))
-    sys.stdout.flush()
+def respond(res, req):
+    path = req.get("path", [])
+    
+    if len(path) != 4:
+        body = "\n".join([
+            "Invalid path: %s" % '/'.join([''] + path),
+            "Paths should be: /db_name/_fti/docid/index_name?q=...",
+            "'docid' is from the '_design/docid' that defines index_name"
+        ])
+        return mkresp(400, body, {"Content-Type": "text/plain"})
 
-def main():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'u:', ['url='])
-    except getopt.GetoptError:
-        sys.exit(2)
+    path = '/'.join(['', 'search', path[0], path[2], path[3]])
+    path = '?'.join([path, urllib.urlencode(req["query"])])
 
-    url = 'http://localhost:5985'
-    for opt, arg in opts:
-        if opt in ('-u', '--url'):
-            url = arg
-        else:
-            assert False, "unhandled option " + opt
+    headers = {}
+    for h in req.get("headers", []):
+        if h.lower() in ["accept", "if-none-match"]:
+            headers[h] = req["headers"][h]
 
-    for req in requests():
-        respond(url, req)
+    res.request("GET", path, headers=headers)
+    resp = res.getresponse()
+    return mkresp(resp.status, resp.read(), {
+        "Content-Type": resp.getheader("Content-Type"),
+        "ETag": resp.getheader("ETag")
+    })
+
+def mkresp(code, body, headers=None):
+    ret = {"code": code, "body": body}
+    if headers is not None:
+        ret["headers"] = headers
+    return ret
 
 if __name__ == "__main__":
     main()
+
