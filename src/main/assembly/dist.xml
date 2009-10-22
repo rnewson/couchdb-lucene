@@ -21,7 +21,7 @@
     </file>
     <file>
       <source>${project.basedir}/src/main/conf/couchdb-lucene.properties</source>
-      <fileMode>400</fileMode>
+      <fileMode>600</fileMode>
       <outputDirectory>/conf</outputDirectory>
     </file>
     <file>
