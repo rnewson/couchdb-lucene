@@ -295,6 +295,8 @@ public final class Indexer extends AbstractLifeCycle {
             scope = context.initStandardObjects();
             // Allow custom document helper class.
             ScriptableObject.defineClass(scope, RhinoDocument.class);
+            // Add a log object
+            ScriptableObject.putProperty(scope, "log", new JSLog());
             // Load JSON parser.
             context.evaluateString(scope, loadResource("json2.js"), "json2", 0, null);
             // Define outer function.
