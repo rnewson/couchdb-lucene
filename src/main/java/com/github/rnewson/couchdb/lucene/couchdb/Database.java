@@ -67,6 +67,9 @@ public abstract class Database {
                     final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
                     String line;
                     while ((line = reader.readLine()) != null) {
+                        if (line.isEmpty()) {
+                            changesHandler.onHeartbeat();
+                        }
                         final JSONObject json = JSONObject.fromObject(line);
                         if (json.has("error")) {
                             changesHandler.onError(json);
@@ -82,7 +85,8 @@ public abstract class Database {
                 }
             };
 
-            final HttpGet get = new HttpGet(url + "_changes?feed=continuous&timeout=30000&include_docs=true&since=" + since);
+            final HttpGet get = new HttpGet(url + "_changes?feed=continuous&timeout=30000&heartbeat=15000&include_docs=true&since="
+                    + since);
             return httpClient.execute(get, responseHandler);
         }
     }
@@ -149,6 +153,8 @@ public abstract class Database {
     public interface ChangesHandler {
 
         void onChange(final long seq, final JSONObject doc) throws IOException;
+
+        void onHeartbeat() throws IOException;
 
         void onError(final JSONObject error) throws IOException;
 

@@ -102,7 +102,15 @@ public final class Indexer extends AbstractLifeCycle {
                 since = seq;
             }
 
+            public void onHeartbeat() throws IOException {
+                commitIfPending();
+            }
+
             public void onEndOfSequence(final long seq) throws IOException {
+                commitIfPending();
+            }
+
+            private void commitIfPending() throws IOException {
                 if (hasPendingCommit(true)) {
                     commitDocuments();
                 }
