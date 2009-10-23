@@ -14,6 +14,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
+import org.mortbay.log.Log;
 
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
@@ -67,18 +68,27 @@ public abstract class Database {
                     final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
                     String line;
                     while ((line = reader.readLine()) != null) {
+                        // Consume response heartbeat.
                         if (line.isEmpty()) {
                             changesHandler.onHeartbeat();
+                            continue;
                         }
+
                         final JSONObject json = JSONObject.fromObject(line);
+
+                        // Error.
                         if (json.has("error")) {
                             changesHandler.onError(json);
                             return Action.ABORT;
                         }
+
+                        // End of response.
                         if (json.has("last_seq")) {
                             changesHandler.onEndOfSequence(json.getLong("last_seq"));
                             return Action.CONTINUE;
                         }
+
+                        // A document update.
                         changesHandler.onChange(json.getLong("seq"), json.getJSONObject("doc"));
                     }
                     return Action.CONTINUE;

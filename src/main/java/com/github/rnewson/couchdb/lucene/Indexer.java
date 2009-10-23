@@ -79,10 +79,8 @@ public final class Indexer extends AbstractLifeCycle {
         private final class DatabaseChangesHandler implements ChangesHandler {
 
             public void onChange(final long seq, final JSONObject doc) throws IOException {
-                // Time's up.
-                if (hasPendingCommit(false)) {
-                    commitDocuments();
-                }
+                // Time's up?
+                commitDocuments(false);
 
                 final String id = doc.getString("_id");
                 // New, updated or deleted document.
@@ -103,17 +101,11 @@ public final class Indexer extends AbstractLifeCycle {
             }
 
             public void onHeartbeat() throws IOException {
-                commitIfPending();
+                commitDocuments(true);
             }
 
             public void onEndOfSequence(final long seq) throws IOException {
-                commitIfPending();
-            }
-
-            private void commitIfPending() throws IOException {
-                if (hasPendingCommit(true)) {
-                    commitDocuments();
-                }
+                commitDocuments(true);
             }
 
             public void onError(final JSONObject error) {
@@ -129,7 +121,10 @@ public final class Indexer extends AbstractLifeCycle {
                 }
             }
 
-            private void commitDocuments() throws IOException {
+            private void commitDocuments(final boolean ignoreTimeout) throws IOException {
+                if (!hasPendingCommit(ignoreTimeout))
+                    return;
+
                 final JSONObject tracker = fetchTrackingDocument(database);
                 tracker.put("update_seq", since);
                 for (final ViewSignature sig : functions.keySet()) {
@@ -424,7 +419,7 @@ public final class Indexer extends AbstractLifeCycle {
         }
     }
 
-    private static final long COMMIT_INTERVAL = SECONDS.toNanos(60);
+    private static final long COMMIT_INTERVAL = SECONDS.toNanos(10);
 
     private static final String LOCAL_LUCENE = "_local/lucene";
 
