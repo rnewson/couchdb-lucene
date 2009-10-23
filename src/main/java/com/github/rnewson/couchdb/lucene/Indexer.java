@@ -206,9 +206,9 @@ public final class Indexer extends AbstractLifeCycle {
                         });
                         setPendingCommit(true);
                     } catch (final RhinoException e) {
-                        logger.warn("doc '" + doc.getString("id") + "' caused exception.", e);
+                        logger.warn("doc '" + doc.getString("_id") + "' caused exception.", e);
                     } catch (final IOException e) {
-                        logger.warn("doc '" + doc.getString("id") + "' caused exception.", e);
+                        logger.warn("doc '" + doc.getString("_id") + "' caused exception.", e);
                     }
                 }
             }
