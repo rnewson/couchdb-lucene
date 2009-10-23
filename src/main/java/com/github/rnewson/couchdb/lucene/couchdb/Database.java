@@ -113,7 +113,7 @@ public abstract class Database {
     }
 
     public final JSONObject getDocument(final String id) throws IOException {
-        final String response = HttpUtils.get(httpClient, url + "/" + Utils.urlEncode(id));
+        final String response = HttpUtils.get(httpClient, url + Utils.urlEncode(id));
         return JSONObject.fromObject(response);
     }
 
@@ -162,7 +162,7 @@ public abstract class Database {
     }
 
     public final boolean saveDocument(final String id, final String body) throws IOException {
-        return HttpUtils.put(httpClient, url + "/" + id, body) == 201;
+        return HttpUtils.put(httpClient, url + Utils.urlEncode(id), body) == 201;
     }
 
 }
