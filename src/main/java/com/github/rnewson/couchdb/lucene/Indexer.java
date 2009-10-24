@@ -440,7 +440,9 @@ public final class Indexer extends AbstractLifeCycle {
             return database.getDocument(LOCAL_LUCENE);
         } catch (final HttpResponseException e) {
             if (e.getStatusCode() == 404) {
-                return new JSONObject();
+                final JSONObject result = new JSONObject();
+                result.put("uuid", UUID.randomUUID().toString());
+                return result;
             }
             throw e;
         }
