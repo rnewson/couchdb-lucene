@@ -36,11 +36,18 @@ import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.tika.io.IOUtils;
 
+/**
+ * TODO; ignore ddoc changes lower than update_seq of current ddocs.
+ * 
+ * @author robertnewson
+ * 
+ */
 public class Spike {
 
     private static final Logger LOG = Logger.getLogger(Spike.class);
 
     private static final Map<String, UUID> dbs = new HashMap<String, UUID>();
+    private static final Map<UUID, IndexWriter> writers = new HashMap<UUID, IndexWriter>();
 
     public static void main(String[] args) throws Exception {
         final HttpClient client = new DefaultHttpClient();
@@ -48,30 +55,38 @@ public class Spike {
         UUID uuid = null;
         long sleep = 1;
 
-        final Directory dir = new RAMDirectory();
-        final IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Version.LUCENE_CURRENT), MaxFieldLength.UNLIMITED);
-
         while (true) {
             try {
                 HttpGet get = new HttpGet("http://localhost:5984/db1/_local/lucene");
                 uuid = client.execute(get, new UUIDHandler());
-                dbs.put("db1", uuid);
                 sleep = 1;
 
                 if (uuid == null) {
                     // Make a new UUID for this db.
                     final JSONObject json = new JSONObject();
-                    json.put("uuid", UUID.randomUUID().toString());
+                    final UUID newUUID = UUID.randomUUID();
+                    json.put("uuid", newUUID.toString());
                     final HttpPut put = new HttpPut("http://localhost:5984/db1/_local/lucene");
                     put.setEntity(new StringEntity(json.toString()));
                     client.execute(put, new BasicResponseHandler());
+                    // if 201 then
+                    uuid = newUUID;
                     continue;
                 }
 
+                dbs.put("db1", uuid);
+
                 LOG.info(dbs);
 
+                if (!writers.containsKey(uuid)) {
+                    final Directory dir = new RAMDirectory();
+                    final IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Version.LUCENE_CURRENT),
+                            MaxFieldLength.UNLIMITED);
+                    writers.put(uuid, writer);
+                }
+
                 get = new HttpGet("http://localhost:5984/db1/_changes?feed=continuous&heartbeat=5000&since=" + progress);
-                progress = client.execute(get, new ProgressHandler(writer));
+                progress = client.execute(get, new ProgressHandler(writers.get(uuid)));
                 LOG.info("Synced up to " + progress);
             } catch (IOException e) {
                 LOG.info("I/O exception, sleeping for " + sleep + " seconds.");
@@ -104,7 +119,7 @@ public class Spike {
             this.writer = writer;
         }
 
-        public Long handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
+        public Long handleResponse(final HttpResponse response) throws IOException {
             final HttpEntity entity = response.getEntity();
             final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
             String line;
@@ -121,7 +136,6 @@ public class Spike {
             while ((line = reader.readLine()) != null) {
                 // Commit on heartbeat (or end of sequence).
                 if (line.isEmpty()) {
-                    LOG.info("heartbeat");
                     if (update_seq != new_seq) {
                         commit = new HashMap();
                         commit.put("update_seq", Long.toString(new_seq));
@@ -154,6 +168,7 @@ public class Spike {
                     final Document doc = new Document();
                     doc.add(new NumericField("seq", Store.NO, true).setLongValue(seq));
                     doc.add(new Field("id", id, Store.YES, Index.NOT_ANALYZED_NO_NORMS));
+                    LOG.info(doc);
                     writer.updateDocument(new Term("id", id), doc);
                     new_seq = seq;
                 } else {
