@@ -8,7 +8,7 @@ import org.mozilla.javascript.ScriptableObject;
 
 class JSLog extends ScriptableObject {
 
-    private final Logger logger = Logger.getLogger(LogAdapter.class);
+    private final Logger logger = Logger.getLogger(JSLog.class);
 
     public JSLog() {
         String[] names = { "error", "warn", "info", "debug", "trace" };
