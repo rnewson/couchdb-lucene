@@ -135,7 +135,7 @@ public class Spike {
 
             while ((line = reader.readLine()) != null) {
                 // Commit on heartbeat (or end of sequence).
-                if (line.isEmpty()) {
+                if (line.length() == 0) {
                     if (update_seq != new_seq) {
                         commit = new HashMap();
                         commit.put("update_seq", Long.toString(new_seq));

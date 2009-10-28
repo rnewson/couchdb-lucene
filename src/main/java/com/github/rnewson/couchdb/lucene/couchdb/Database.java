@@ -69,7 +69,7 @@ public abstract class Database {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         // Consume response heartbeat.
-                        if (line.isEmpty()) {
+                        if (line.length() == 0) {
                             changesHandler.onHeartbeat();
                             continue;
                         }
