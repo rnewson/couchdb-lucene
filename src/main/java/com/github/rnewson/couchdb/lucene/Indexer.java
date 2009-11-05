@@ -194,6 +194,7 @@ public final class Indexer extends AbstractLifeCycle {
                         }
                         state.lucene.withWriter(entry.getKey(), new WriterCallback<Void>() {
                             public Void callback(final IndexWriter writer) throws IOException {
+                                writer.deleteDocuments(new Term("_id", rhinoContext.documentId));
                                 if (result instanceof RhinoDocument) {
                                     ((RhinoDocument) result).addDocument(rhinoContext, writer);
                                 } else if (result instanceof NativeArray) {

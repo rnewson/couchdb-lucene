@@ -173,7 +173,7 @@ public final class RhinoDocument extends ScriptableObject {
         for (final RhinoAttachment attachment : attachments) {
             addAttachment(attachment, context, doc);
         }
-        out.updateDocument(new Term("_id", context.documentId), doc, context.analyzer);
+        out.addDocument(doc, context.analyzer);
     }
 
     @Override
