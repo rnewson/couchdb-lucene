@@ -124,7 +124,6 @@ public final class Indexer extends AbstractLifeCycle {
             private void commitDocuments(final boolean ignoreTimeout) throws IOException {
                 if (!hasPendingCommit(ignoreTimeout))
                     return;
-
                 final JSONObject tracker = fetchTrackingDocument(database);
                 tracker.put("update_seq", since);
                 for (final ViewSignature sig : functions.keySet()) {
@@ -302,13 +301,9 @@ public final class Indexer extends AbstractLifeCycle {
         }
 
         private boolean hasPendingCommit(final boolean ignoreTimeout) {
-            if (ignoreTimeout) {
-                return pendingCommit;
-            }
-            if (!pendingCommit) {
-                return false;
-            }
-            return (now() - pendingSince) >= COMMIT_INTERVAL;
+            final boolean timeoutReached = (now() - pendingSince) >= COMMIT_INTERVAL;
+            logger.trace(String.format("pending commit: %b, timeout reached: %b", pendingCommit, timeoutReached));
+            return ignoreTimeout ? pendingCommit : pendingCommit && timeoutReached;
         }
 
         private void leaveContext() {
