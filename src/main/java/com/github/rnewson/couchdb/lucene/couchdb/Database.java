@@ -95,7 +95,7 @@ public abstract class Database {
                 }
             };
 
-            final HttpGet get = new HttpGet(url + "_changes?feed=continuous&timeout=30000&heartbeat=15000&include_docs=true&since="
+            final HttpGet get = new HttpGet(url + "_changes?feed=continuous&heartbeat=15000&include_docs=true&since="
                     + since);
             return httpClient.execute(get, responseHandler);
         }
