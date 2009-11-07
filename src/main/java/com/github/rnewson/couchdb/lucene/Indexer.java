@@ -137,8 +137,8 @@ public final class Indexer extends AbstractLifeCycle {
                     });
                     tracker.put(sig.toString(), uuid);
                     // Tell Lucene.
-                    state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                        public Void callback(final IndexWriter writer) throws IOException {
+                    state.lucene.withWriter(sig, new WriterCallback() {
+                        public boolean callback(final IndexWriter writer) throws IOException {
                             final Map<String, String> commitUserData = new HashMap<String, String>();
                             commitUserData.put("update_seq", Long.toString(since));
                             commitUserData.put("uuid", uuid);
@@ -151,7 +151,7 @@ public final class Indexer extends AbstractLifeCycle {
                                 writer.addDocument(new Document());
                             }
                             writer.commit(commitUserData);
-                            return null;
+                            return false;
                         }
                     });
                 }
@@ -162,11 +162,11 @@ public final class Indexer extends AbstractLifeCycle {
 
             private void deleteDocument(final JSONObject doc) throws IOException {
                 for (final ViewSignature sig : functions.keySet()) {
-                    state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                        public Void callback(final IndexWriter writer) throws IOException {
+                    state.lucene.withWriter(sig, new WriterCallback() {
+                        public boolean callback(final IndexWriter writer) throws IOException {
                             writer.deleteDocuments(new Term("_id", doc.getString("_id")));
                             setPendingCommit(true);
-                            return null;
+                            return true;
                         }
                     });
                 }
@@ -192,8 +192,8 @@ public final class Indexer extends AbstractLifeCycle {
                         if (result == null || result instanceof Undefined) {
                             return;
                         }
-                        state.lucene.withWriter(entry.getKey(), new WriterCallback<Void>() {
-                            public Void callback(final IndexWriter writer) throws IOException {
+                        state.lucene.withWriter(entry.getKey(), new WriterCallback() {
+                            public boolean callback(final IndexWriter writer) throws IOException {
                                 writer.deleteDocuments(new Term("_id", rhinoContext.documentId));
                                 if (result instanceof RhinoDocument) {
                                     ((RhinoDocument) result).addDocument(rhinoContext, writer);
@@ -205,7 +205,7 @@ public final class Indexer extends AbstractLifeCycle {
                                         }
                                     }
                                 }
-                                return null;
+                                return true;
                             }
                         });
                         setPendingCommit(true);

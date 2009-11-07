@@ -45,10 +45,10 @@ public final class AdminServlet extends HttpServlet {
         final String command = req.getParameter("cmd");
 
         if ("expunge".equals(command)) {
-            state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                public Void callback(final IndexWriter writer) throws IOException {
+            state.lucene.withWriter(sig, new WriterCallback() {
+                public boolean callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
-                    return null;
+                    return false;
                 }
             });
             resp.setStatus(202);
@@ -56,10 +56,10 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("optimize".equals(command)) {
-            state.lucene.withWriter(sig, new WriterCallback<Void>() {
-                public Void callback(final IndexWriter writer) throws IOException {
+            state.lucene.withWriter(sig, new WriterCallback() {
+                public boolean callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
-                    return null;
+                    return false;
                 }
             });
             resp.setStatus(202);
