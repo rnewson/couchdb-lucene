@@ -160,6 +160,7 @@ public final class RhinoDocument extends ScriptableObject {
     public RhinoDocument() {
     }
 
+    @Deprecated
     public void addDocument(final RhinoContext context, final IndexWriter out) throws IOException {
         final Document doc = new Document();
         // Add id.
@@ -174,6 +175,25 @@ public final class RhinoDocument extends ScriptableObject {
             addAttachment(attachment, context, doc);
         }
         out.addDocument(doc, context.analyzer);
+    }
+
+    public Document toDocument(final RhinoContext context) throws IOException {
+        final Document result = new Document();
+
+        // Add id.
+        result.add(Utils.token("_id", context.documentId, true));
+
+        // Add user-supplied fields.
+        for (final RhinoField field : fields) {
+            addField(field, context, result);
+        }
+
+        // Parse user-requested attachments.
+        for (final RhinoAttachment attachment : attachments) {
+            addAttachment(attachment, context, result);
+        }
+
+        return result;
     }
 
     @Override

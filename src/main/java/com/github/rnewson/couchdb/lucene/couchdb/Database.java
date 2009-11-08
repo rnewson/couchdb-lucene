@@ -10,11 +10,9 @@ import net.sf.json.JSONObject;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
-import org.mortbay.log.Log;
 
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
@@ -30,7 +28,7 @@ public abstract class Database {
             final int limit = 100;
             final ResponseHandler<Action> responseHandler = new ResponseHandler<Action>() {
 
-                public Action handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
+                public Action handleResponse(final HttpResponse response) throws IOException {
                     final HttpEntity entity = response.getEntity();
                     final String line = IOUtils.toString(entity.getContent());
                     final JSONObject json = JSONObject.fromObject(line);
@@ -63,7 +61,7 @@ public abstract class Database {
 
         public Action handleChanges(final long since, final ChangesHandler changesHandler) throws IOException {
             final ResponseHandler<Action> responseHandler = new ResponseHandler<Action>() {
-                public Action handleResponse(HttpResponse response) throws ClientProtocolException, IOException {
+                public Action handleResponse(HttpResponse response) throws IOException {
                     final HttpEntity entity = response.getEntity();
                     final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
                     String line;
@@ -95,8 +93,7 @@ public abstract class Database {
                 }
             };
 
-            final HttpGet get = new HttpGet(url + "_changes?feed=continuous&heartbeat=15000&include_docs=true&since="
-                    + since);
+            final HttpGet get = new HttpGet(url + "_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
             return httpClient.execute(get, responseHandler);
         }
     }

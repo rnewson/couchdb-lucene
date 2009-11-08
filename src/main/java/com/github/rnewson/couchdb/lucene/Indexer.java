@@ -3,7 +3,6 @@ package com.github.rnewson.couchdb.lucene;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.client.HttpResponseException;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
@@ -30,11 +28,7 @@ import org.mortbay.component.AbstractLifeCycle;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Function;
-import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.RhinoException;
-import org.mozilla.javascript.ScriptableObject;
-import org.mozilla.javascript.Undefined;
 
 import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
@@ -76,6 +70,12 @@ public final class Indexer extends AbstractLifeCycle {
 
     private class DatabaseIndexer implements Runnable {
 
+        private final class RestrictiveClassShutter implements ClassShutter {
+            public boolean visibleToScripts(final String fullClassName) {
+                return false;
+            }
+        }
+
         private final class DatabaseChangesHandler implements ChangesHandler {
 
             public void onChange(final long seq, final JSONObject doc) throws IOException {
@@ -95,6 +95,8 @@ public final class Indexer extends AbstractLifeCycle {
                     logUpdate(seq, id, "updated");
                     updateDocument(doc);
                 }
+                // TODO index design document if options {
+                // "include_design"true"}
 
                 // Remember progress.
                 since = seq;
@@ -126,7 +128,7 @@ public final class Indexer extends AbstractLifeCycle {
                     return;
                 final JSONObject tracker = fetchTrackingDocument(database);
                 tracker.put("update_seq", since);
-                for (final ViewSignature sig : functions.keySet()) {
+                for (final ViewSignature sig : viewIndexers.keySet()) {
                     // Fetch or generate index uuid.
                     final String uuid = state.lucene.withReader(sig, new ReaderCallback<String>() {
                         public String callback(final IndexReader reader) throws IOException {
@@ -160,7 +162,7 @@ public final class Indexer extends AbstractLifeCycle {
             }
 
             private void deleteDocument(final JSONObject doc) throws IOException {
-                for (final ViewSignature sig : functions.keySet()) {
+                for (final ViewSignature sig : viewIndexers.keySet()) {
                     state.lucene.withWriter(sig, new WriterCallback() {
                         public boolean callback(final IndexWriter writer) throws IOException {
                             writer.deleteDocuments(new Term("_id", doc.getString("_id")));
@@ -178,7 +180,7 @@ public final class Indexer extends AbstractLifeCycle {
             }
 
             private void updateDocument(final JSONObject doc) {
-                for (final Entry<ViewSignature, ViewIndexer> entry : functions.entrySet()) {
+                for (final Entry<ViewSignature, ViewIndexer> entry : viewIndexers.entrySet()) {
                     final RhinoContext rhinoContext = new RhinoContext();
                     rhinoContext.analyzer = entry.getValue().analyzer;
                     rhinoContext.database = database;
@@ -186,23 +188,16 @@ public final class Indexer extends AbstractLifeCycle {
                     rhinoContext.documentId = doc.getString("_id");
                     rhinoContext.state = state;
                     try {
-                        final Object result = main.call(context, scope, null, new Object[] { doc.toString(),
-                                entry.getValue().function });
-                        if (result == null || result instanceof Undefined) {
+                        final Document[] results = entry.getValue().converter.convert(doc, rhinoContext);
+
+                        if (results.length == 0)
                             return;
-                        }
+
                         state.lucene.withWriter(entry.getKey(), new WriterCallback() {
                             public boolean callback(final IndexWriter writer) throws IOException {
                                 writer.deleteDocuments(new Term("_id", rhinoContext.documentId));
-                                if (result instanceof RhinoDocument) {
-                                    ((RhinoDocument) result).addDocument(rhinoContext, writer);
-                                } else if (result instanceof NativeArray) {
-                                    final NativeArray array = (NativeArray) result;
-                                    for (int i = 0; i < (int) array.getLength(); i++) {
-                                        if (array.get(i, null) instanceof RhinoDocument) {
-                                            ((RhinoDocument) array.get(i, null)).addDocument(rhinoContext, writer);
-                                        }
-                                    }
+                                for (final Document result : results) {
+                                    writer.addDocument(result, rhinoContext.analyzer);
                                 }
                                 return true;
                             }
@@ -224,17 +219,13 @@ public final class Indexer extends AbstractLifeCycle {
 
         private final String databaseName;
 
-        private final Map<ViewSignature, ViewIndexer> functions = new HashMap<ViewSignature, ViewIndexer>();
+        private final Map<ViewSignature, ViewIndexer> viewIndexers = new HashMap<ViewSignature, ViewIndexer>();
 
         private final Logger logger;
-
-        private Function main;
 
         private boolean pendingCommit;
 
         private long pendingSince;
-
-        private ScriptableObject scope;
 
         private long since = 0L;
 
@@ -284,20 +275,12 @@ public final class Indexer extends AbstractLifeCycle {
 
         private void enterContext() throws Exception {
             context = ContextFactory.getGlobal().enterContext();
+
             // Optimize as much as possible.
             context.setOptimizationLevel(9);
+
             // Security restrictions
             context.setClassShutter(new RestrictiveClassShutter());
-            // Setup.
-            scope = context.initStandardObjects();
-            // Allow custom document helper class.
-            ScriptableObject.defineClass(scope, RhinoDocument.class);
-            // Add a log object
-            ScriptableObject.putProperty(scope, "log", new JSLog());
-            // Load JSON parser.
-            context.evaluateString(scope, loadResource("json2.js"), "json2", 0, null);
-            // Define outer function.
-            main = context.compileFunction(scope, "function(json, func){return func(JSON.parse(json));}", "main", 0, null);
         }
 
         private boolean hasPendingCommit(final boolean ignoreTimeout) {
@@ -310,16 +293,7 @@ public final class Indexer extends AbstractLifeCycle {
             Context.exit();
         }
 
-        private String loadResource(final String name) throws IOException {
-            final InputStream in = Indexer.class.getClassLoader().getResourceAsStream(name);
-            try {
-                return IOUtils.toString(in, "UTF-8");
-            } finally {
-                in.close();
-            }
-        }
-
-        private boolean mapAllDesignDocuments() throws IOException {
+        private boolean mapAllDesignDocuments() throws Exception {
             final JSONArray designDocuments = database.getAllDesignDocuments();
             boolean isLuceneEnabled = false;
             for (int i = 0; i < designDocuments.size(); i++) {
@@ -328,7 +302,7 @@ public final class Indexer extends AbstractLifeCycle {
             return isLuceneEnabled;
         }
 
-        private boolean mapDesignDocument(final JSONObject designDocument) {
+        private boolean mapDesignDocument(final JSONObject designDocument) throws IOException {
             final String designDocumentName = designDocument.getString("_id").substring(8);
             final JSONObject fulltext = designDocument.getJSONObject("fulltext");
             boolean isLuceneEnabled = false;
@@ -343,8 +317,7 @@ public final class Indexer extends AbstractLifeCycle {
                     function = function.replaceFirst("\"$", "");
                     final ViewSignature sig = state.locator
                             .update(databaseName, designDocumentName, viewName, viewValue.toString());
-                    functions.put(sig, new ViewIndexer(defaults, analyzer, context.compileFunction(scope, function, viewName, 0,
-                            null)));
+                    viewIndexers.put(sig, new ViewIndexer(context, defaults, analyzer, viewName, function));
                     isLuceneEnabled = true;
                 }
             }
@@ -357,7 +330,7 @@ public final class Indexer extends AbstractLifeCycle {
 
         private void readCheckpoints() throws IOException {
             long since = Long.MAX_VALUE;
-            for (final ViewSignature sig : functions.keySet()) {
+            for (final ViewSignature sig : viewIndexers.keySet()) {
                 since = Math.min(since, state.lucene.withReader(sig, new ReaderCallback<Long>() {
                     public Long callback(final IndexReader reader) throws IOException {
                         final Map<String, String> commitUserData = reader.getCommitUserData();
@@ -399,22 +372,23 @@ public final class Indexer extends AbstractLifeCycle {
 
     }
 
-    private final class RestrictiveClassShutter implements ClassShutter {
-        public boolean visibleToScripts(final String fullClassName) {
-            return false;
-        }
-    }
-
     private static class ViewIndexer {
+
         private final Analyzer analyzer;
         private final JSONObject defaults;
-        private final Function function;
+        private final DocumentConverter converter;
 
-        public ViewIndexer(final JSONObject defaults, final Analyzer analyzer, final Function function) {
+        public ViewIndexer(final Context context, final JSONObject defaults, final Analyzer analyzer, final String functionName,
+                final String function) throws IOException {
             this.defaults = defaults;
             this.analyzer = analyzer;
-            this.function = function;
+            this.converter = new DocumentConverter(context, functionName, function);
         }
+
+        public void update(final JSONObject doc, final IndexWriter writer) {
+            // TODO move logic to here.
+        }
+
     }
 
     private static final long COMMIT_INTERVAL = SECONDS.toNanos(10);
