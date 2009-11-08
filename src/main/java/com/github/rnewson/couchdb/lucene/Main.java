@@ -82,8 +82,7 @@ public final class Main {
         final Couch couch = Couch.getInstance(httpClient, couchUrl);
         final Locator locator = new Locator();
         final LuceneGateway gateway = new LuceneGateway(new File(luceneDir));
-        final Tika tika = new Tika();
-        final State state = new State(couch, gateway, locator, httpClient, tika);
+        final State state = new State(couch, gateway, locator, httpClient);
 
         // Configure Indexer.
         final Indexer indexer = new Indexer(state);

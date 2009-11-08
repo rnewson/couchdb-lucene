@@ -30,12 +30,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericField;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
@@ -54,14 +51,6 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
  * 
  */
 public final class RhinoDocument extends ScriptableObject {
-
-    public static class RhinoContext {
-        public Analyzer analyzer;
-        public Database database;
-        public JSONObject defaults;
-        public String documentId;
-        public State state;
-    }
 
     private static class RhinoAttachment {
         private String attachmentName;
@@ -160,37 +149,20 @@ public final class RhinoDocument extends ScriptableObject {
     public RhinoDocument() {
     }
 
-    @Deprecated
-    public void addDocument(final RhinoContext context, final IndexWriter out) throws IOException {
-        final Document doc = new Document();
-        // Add id.
-        doc.add(Utils.token("_id", context.documentId, true));
-
-        // Add user-supplied fields.
-        for (final RhinoField field : fields) {
-            addField(field, context, doc);
-        }
-        // Parse user-requested attachments.
-        for (final RhinoAttachment attachment : attachments) {
-            addAttachment(attachment, context, doc);
-        }
-        out.addDocument(doc, context.analyzer);
-    }
-
-    public Document toDocument(final RhinoContext context) throws IOException {
+    public Document toDocument(final String id, final JSONObject defaults, final Database database) throws IOException {
         final Document result = new Document();
 
         // Add id.
-        result.add(Utils.token("_id", context.documentId, true));
+        result.add(Utils.token("_id", id, true));
 
         // Add user-supplied fields.
         for (final RhinoField field : fields) {
-            addField(field, context, result);
+            addField(field, defaults, result);
         }
 
         // Parse user-requested attachments.
         for (final RhinoAttachment attachment : attachments) {
-            addAttachment(attachment, context, result);
+            addAttachment(attachment, id, database, result);
         }
 
         return result;
@@ -201,14 +173,15 @@ public final class RhinoDocument extends ScriptableObject {
         return "Document";
     }
 
-    private void addAttachment(final RhinoAttachment attachment, final RhinoContext context, final Document out) throws IOException {
+    private void addAttachment(final RhinoAttachment attachment, final String id, final Database database, final Document out)
+            throws IOException {
         final ResponseHandler<Void> handler = new ResponseHandler<Void>() {
 
             public Void handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
                 final HttpEntity entity = response.getEntity();
                 final InputStream in = entity.getContent();
                 try {
-                    context.state.tika.parse(in, entity.getContentType().getValue(), attachment.fieldName, out);
+                    Tika.INSTANCE.parse(in, entity.getContentType().getValue(), attachment.fieldName, out);
                 } finally {
                     in.close();
                 }
@@ -216,14 +189,14 @@ public final class RhinoDocument extends ScriptableObject {
             }
         };
 
-        context.database.handleAttachment(context.documentId, attachment.attachmentName, handler);
+        database.handleAttachment(id, attachment.attachmentName, handler);
     }
 
-    private void addField(final RhinoField field, final RhinoContext context, final Document out) {
-        String fieldName = context.defaults.optString("field", Constants.DEFAULT_FIELD);
-        String store = context.defaults.optString("store", "no");
-        String index = context.defaults.optString("index", "analyzed");
-        String type = context.defaults.optString("type", "string");
+    private void addField(final RhinoField field, final JSONObject defaults, final Document out) {
+        String fieldName = defaults.optString("field", Constants.DEFAULT_FIELD);
+        String store = defaults.optString("store", "no");
+        String index = defaults.optString("index", "analyzed");
+        String type = defaults.optString("type", "string");
 
         // Check for local settings.
         if (field.settings != null) {

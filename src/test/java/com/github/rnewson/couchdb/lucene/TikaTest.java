@@ -29,12 +29,10 @@ import org.junit.Test;
 
 public class TikaTest {
 
-    private Tika tika;
     private Document doc;
 
     @Before
     public void setup() {
-        tika = new Tika();
         doc = new Document();
     }
 
@@ -53,7 +51,7 @@ public class TikaTest {
     private void parse(final String resource, final String type, final String field) throws IOException {
         final InputStream in = getClass().getClassLoader().getResourceAsStream(resource);
         try {
-            tika.parse(in, type, field, doc);
+            Tika.INSTANCE.parse(in, type, field, doc);
         } finally {
             in.close();
         }

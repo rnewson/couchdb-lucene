@@ -16,14 +16,12 @@ public final class State {
     public final HttpClient httpClient;
     public final Locator locator;
     public final LuceneGateway lucene;
-    public final Tika tika;
 
-    public State(final Couch couch, final LuceneGateway lucene, final Locator locator, final HttpClient httpClient, final Tika tika) {
+    public State(final Couch couch, final LuceneGateway lucene, final Locator locator, final HttpClient httpClient) {
         this.couch = couch;
         this.lucene = lucene;
         this.locator = locator;
         this.httpClient = httpClient;
-        this.tika = tika;
     }
 
 }

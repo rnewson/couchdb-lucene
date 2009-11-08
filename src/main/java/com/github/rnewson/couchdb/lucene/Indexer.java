@@ -32,7 +32,6 @@ import org.mozilla.javascript.RhinoException;
 
 import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
-import com.github.rnewson.couchdb.lucene.RhinoDocument.RhinoContext;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.Database.Action;
 import com.github.rnewson.couchdb.lucene.couchdb.Database.ChangesHandler;
@@ -181,23 +180,18 @@ public final class Indexer extends AbstractLifeCycle {
 
             private void updateDocument(final JSONObject doc) {
                 for (final Entry<ViewSignature, ViewIndexer> entry : viewIndexers.entrySet()) {
-                    final RhinoContext rhinoContext = new RhinoContext();
-                    rhinoContext.analyzer = entry.getValue().analyzer;
-                    rhinoContext.database = database;
-                    rhinoContext.defaults = entry.getValue().defaults;
-                    rhinoContext.documentId = doc.getString("_id");
-                    rhinoContext.state = state;
                     try {
-                        final Document[] results = entry.getValue().converter.convert(doc, rhinoContext);
+                        final String id = doc.getString("_id");
+                        final Document[] results = entry.getValue().converter.convert(doc, entry.getValue().defaults, database);
 
                         if (results.length == 0)
                             return;
 
                         state.lucene.withWriter(entry.getKey(), new WriterCallback() {
                             public boolean callback(final IndexWriter writer) throws IOException {
-                                writer.deleteDocuments(new Term("_id", rhinoContext.documentId));
+                                writer.deleteDocuments(new Term("_id", id));
                                 for (final Document result : results) {
-                                    writer.addDocument(result, rhinoContext.analyzer);
+                                    writer.addDocument(result, entry.getValue().analyzer);
                                 }
                                 return true;
                             }

@@ -34,9 +34,14 @@ import org.apache.tika.parser.ParsingReader;
 
 public final class Tika {
 
+    public static final Tika INSTANCE = new Tika();
+
     private static final String DC = "_dc.";
 
     private static final Logger log = LogManager.getLogger(Tika.class);
+
+    private Tika() {
+    }
 
     public void parse(final InputStream in, final String contentType, final String fieldName, final Document doc)
             throws IOException {
