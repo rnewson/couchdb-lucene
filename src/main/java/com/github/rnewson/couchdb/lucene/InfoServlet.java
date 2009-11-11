@@ -50,7 +50,7 @@ public class InfoServlet extends HttpServlet {
             return;
         }
 
-        final JSONObject json = state.lucene.withReader(sig, new ReaderCallback<JSONObject>() {
+        final JSONObject json = state.lucene.withReader(sig, Utils.getStaleOk(req), new ReaderCallback<JSONObject>() {
             public JSONObject callback(final IndexReader reader) throws IOException {
                 final JSONObject result = new JSONObject();
                 result.put("current", reader.isCurrent());

@@ -10,20 +10,12 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexCommit;
-import org.apache.lucene.index.IndexDeletionPolicy;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.store.LockObtainFailedException;
 
 import com.github.rnewson.couchdb.lucene.util.Constants;
 
@@ -39,6 +31,7 @@ final class LuceneGateway {
     private static class Holder {
         private String etag;
         private IndexWriter writer;
+        private IndexReader reader;
     }
 
     interface ReaderCallback<T> {
@@ -86,24 +79,56 @@ final class LuceneGateway {
     private IndexWriter newWriter(final Directory dir) throws IOException {
         final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
         result.setMergeFactor(5);
+        result.setUseCompoundFile(false);
         return result;
     }
 
     public synchronized void close() throws IOException {
-        final Iterator<Holder> it = holders.values().iterator();
-        while (it.hasNext()) {
-            it.next().writer.rollback();
-            it.remove();
+        for (final Holder holder : holders.values()) {
+            holder.reader.clone();
+            holder.writer.rollback();
+        }
+        holders.clear();
+    }
+
+    public <T> T withReader(final ViewSignature viewSignature, final boolean staleOk, final ReaderCallback<T> callback)
+            throws IOException {
+        final Holder holder = getHolder(viewSignature);
+
+        final IndexReader reader;
+        synchronized (holder) {
+            if (holder.reader == null) {
+                holder.reader = holder.writer.getReader();
+                holder.reader.incRef();
+            }
+            
+            if (!staleOk) {
+                final IndexReader newReader = holder.reader.reopen();
+                if (newReader != holder.reader) {
+                    holder.reader.decRef();
+                    holder.reader = newReader;
+                }
+            }
+            reader = holder.reader;
+        }
+
+        reader.incRef();
+        try {
+            return callback.callback(reader);
+        } finally {
+            reader.decRef();
         }
     }
 
-    public <T> T withReader(final ViewSignature viewSignature, final ReaderCallback<T> callback) throws IOException {
-        return callback.callback(getHolder(viewSignature).writer.getReader());
-    }
-
-    public <T> T withSearcher(final ViewSignature viewSignature, final SearcherCallback<T> callback) throws IOException {
+    public <T> T withSearcher(final ViewSignature viewSignature, final boolean staleOk, final SearcherCallback<T> callback)
+            throws IOException {
         final Holder holder = getHolder(viewSignature);
-        return callback.callback(new IndexSearcher(holder.writer.getReader()), holder.etag);
+        return withReader(viewSignature, staleOk, new ReaderCallback<T>() {
+
+            public T callback(final IndexReader reader) throws IOException {
+                return callback.callback(new IndexSearcher(reader), holder.etag);
+            }
+        });
     }
 
     public void withWriter(final ViewSignature viewSignature, final WriterCallback callback) throws IOException {
@@ -132,6 +157,8 @@ final class LuceneGateway {
         }
         // Close all file handles.
         for (final Holder holder : oldHolders) {
+            if (holder.reader != null)
+                holder.reader.close();
             holder.writer.rollback();
         }
         // Purge from disk.

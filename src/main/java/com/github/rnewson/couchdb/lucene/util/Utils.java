@@ -44,6 +44,10 @@ public class Utils {
         resp.setCharacterEncoding("utf-8");
     }
 
+    public static boolean getStaleOk(final HttpServletRequest req) {
+        return "ok".equals(req.getHeader("stale"));
+    }
+
     public static Field text(final String name, final String value, final boolean store) {
         return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
     }
