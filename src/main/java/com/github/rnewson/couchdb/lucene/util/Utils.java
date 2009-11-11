@@ -44,8 +44,8 @@ public class Utils {
         resp.setCharacterEncoding("utf-8");
     }
 
-    public static boolean getStaleOk(final HttpServletRequest req) {
-        return "ok".equals(req.getHeader("stale"));
+    public static boolean getStaleOk(final HttpServletRequest req) {        
+        return "ok".equals(req.getParameter("stale"));
     }
 
     public static Field text(final String name, final String value, final boolean store) {

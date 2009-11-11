@@ -298,7 +298,7 @@ public final class SearchServlet extends HttpServlet {
             resp.sendError(400, "Missing q attribute.");
             return;
         }
-
+        
         final ViewSignature sig = state.locator.lookup(req);
         if (sig == null) {
             resp.sendError(400, "Unknown index.");

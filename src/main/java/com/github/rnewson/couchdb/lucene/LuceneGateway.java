@@ -30,6 +30,7 @@ final class LuceneGateway {
 
     private static class Holder {
         private String etag;
+        private boolean dirty;
         private IndexWriter writer;
         private IndexReader reader;
     }
@@ -66,7 +67,6 @@ final class LuceneGateway {
             }
             result = new Holder();
             result.writer = newWriter(FSDirectory.open(dir));
-            result.etag = newEtag();
             holders.put(viewSignature, result);
         }
         return result;
@@ -94,21 +94,25 @@ final class LuceneGateway {
     public <T> T withReader(final ViewSignature viewSignature, final boolean staleOk, final ReaderCallback<T> callback)
             throws IOException {
         final Holder holder = getHolder(viewSignature);
-
         final IndexReader reader;
+        
         synchronized (holder) {
             if (holder.reader == null) {
                 holder.reader = holder.writer.getReader();
-                holder.reader.incRef();
+                holder.etag = newEtag();
+                holder.dirty = false;
+                holder.reader.incRef(); // keep the reader open.
             }
-            
+
             if (!staleOk) {
-                final IndexReader newReader = holder.reader.reopen();
-                if (newReader != holder.reader) {
-                    holder.reader.decRef();
-                    holder.reader = newReader;
+                holder.reader.decRef(); // allow the reader to close.
+                holder.reader = holder.writer.getReader();
+                if (holder.dirty) {
+                    holder.etag = newEtag();
+                    holder.dirty = false;
                 }
             }
+            
             reader = holder.reader;
         }
 
@@ -133,9 +137,8 @@ final class LuceneGateway {
 
     public void withWriter(final ViewSignature viewSignature, final WriterCallback callback) throws IOException {
         try {
-            if (callback.callback(getHolder(viewSignature).writer)) {
-                getHolder(viewSignature).etag = newEtag();
-            }
+            final Holder holder = getHolder(viewSignature);
+            holder.dirty |= callback.callback(holder.writer);
         } catch (final OutOfMemoryError e) {
             holders.remove(viewSignature).writer.rollback();
             throw e;
