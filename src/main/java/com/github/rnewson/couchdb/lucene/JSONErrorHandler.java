@@ -11,12 +11,14 @@ import org.mortbay.jetty.HttpConnection;
 import org.mortbay.jetty.HttpHeaders;
 import org.mortbay.jetty.handler.ErrorHandler;
 
+import com.github.rnewson.couchdb.lucene.util.Utils;
+
 public final class JSONErrorHandler extends ErrorHandler {
 
     public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch) throws IOException {
         HttpConnection connection = HttpConnection.getCurrentConnection();
         connection.getRequest().setHandled(true);
-        response.setContentType("application/json; charset=utf-8");
+        Utils.setResponseContentTypeAndEncoding(request, response);
         response.setHeader(HttpHeaders.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
         final JSONObject obj = new JSONObject();
         obj.put("code", connection.getResponse().getStatus());
