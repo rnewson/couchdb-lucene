@@ -114,7 +114,7 @@ public final class Main {
         final AdminServlet admin = new AdminServlet();
         admin.setLocator(locator);
         admin.setLucene(lucene);
-        setupContext(contexts, "/admin", info);
+        setupContext(contexts, "/admin", admin);
 
         // Lockdown
         // System.setSecurityManager(securityManager);
