@@ -32,6 +32,7 @@ import org.mozilla.javascript.RhinoException;
 
 import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
+import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.Database.Action;
 import com.github.rnewson.couchdb.lucene.couchdb.Database.ChangesHandler;
@@ -52,7 +53,7 @@ public final class Indexer extends AbstractLifeCycle {
 
         public void run() {
             try {
-                final String[] databases = state.couch.getAllDatabases();
+                final String[] databases = couch.getAllDatabases();
                 synchronized (activeTasks) {
                     for (final String databaseName : databases) {
                         if (!activeTasks.contains(databaseName)) {
@@ -68,12 +69,6 @@ public final class Indexer extends AbstractLifeCycle {
     }
 
     private class DatabaseIndexer implements Runnable {
-
-        private final class RestrictiveClassShutter implements ClassShutter {
-            public boolean visibleToScripts(final String fullClassName) {
-                return false;
-            }
-        }
 
         private final class DatabaseChangesHandler implements ChangesHandler {
 
@@ -101,10 +96,6 @@ public final class Indexer extends AbstractLifeCycle {
                 since = seq;
             }
 
-            public void onHeartbeat() throws IOException {
-                commitDocuments(true);
-            }
-
             public void onEndOfSequence(final long seq) throws IOException {
                 commitDocuments(true);
             }
@@ -113,7 +104,7 @@ public final class Indexer extends AbstractLifeCycle {
                 if (error.optString("reason").equals("no_db_file")) {
                     logger.warn("Database deleted.");
                     try {
-                        state.lucene.deleteDatabase(databaseName);
+                        lucene.deleteDatabase(databaseName);
                     } catch (final IOException e) {
                         logger.warn("Failed to delete indexes for database " + databaseName, e);
                     }
@@ -122,14 +113,19 @@ public final class Indexer extends AbstractLifeCycle {
                 }
             }
 
+            public void onHeartbeat() throws IOException {
+                commitDocuments(true);
+            }
+
             private void commitDocuments(final boolean ignoreTimeout) throws IOException {
-                if (!hasPendingCommit(ignoreTimeout))
+                if (!hasPendingCommit(ignoreTimeout)) {
                     return;
+                }
                 final JSONObject tracker = fetchTrackingDocument(database);
                 tracker.put("update_seq", since);
                 for (final ViewSignature sig : viewIndexers.keySet()) {
                     // Fetch or generate index uuid.
-                    final String uuid = state.lucene.withReader(sig, false, new ReaderCallback<String>() {
+                    final String uuid = lucene.withReader(sig, false, new ReaderCallback<String>() {
                         public String callback(final IndexReader reader) throws IOException {
                             final String result = (String) reader.getCommitUserData().get("uuid");
                             return result != null ? result : UUID.randomUUID().toString();
@@ -137,7 +133,7 @@ public final class Indexer extends AbstractLifeCycle {
                     });
                     tracker.put(sig.toString(), uuid);
                     // Tell Lucene.
-                    state.lucene.withWriter(sig, new WriterCallback() {
+                    lucene.withWriter(sig, new WriterCallback() {
                         public boolean callback(final IndexWriter writer) throws IOException {
                             final Map<String, String> commitUserData = new HashMap<String, String>();
                             commitUserData.put("update_seq", Long.toString(since));
@@ -162,7 +158,7 @@ public final class Indexer extends AbstractLifeCycle {
 
             private void deleteDocument(final JSONObject doc) throws IOException {
                 for (final ViewSignature sig : viewIndexers.keySet()) {
-                    state.lucene.withWriter(sig, new WriterCallback() {
+                    lucene.withWriter(sig, new WriterCallback() {
                         public boolean callback(final IndexWriter writer) throws IOException {
                             writer.deleteDocuments(new Term("_id", doc.getString("_id")));
                             setPendingCommit(true);
@@ -184,10 +180,11 @@ public final class Indexer extends AbstractLifeCycle {
                         final String id = doc.getString("_id");
                         final Document[] results = entry.getValue().converter.convert(doc, entry.getValue().defaults, database);
 
-                        if (results.length == 0)
+                        if (results.length == 0) {
                             return;
+                        }
 
-                        state.lucene.withWriter(entry.getKey(), new WriterCallback() {
+                        lucene.withWriter(entry.getKey(), new WriterCallback() {
                             public boolean callback(final IndexWriter writer) throws IOException {
                                 writer.deleteDocuments(new Term("_id", id));
                                 for (final Document result : results) {
@@ -207,13 +204,17 @@ public final class Indexer extends AbstractLifeCycle {
 
         }
 
+        private final class RestrictiveClassShutter implements ClassShutter {
+            public boolean visibleToScripts(final String fullClassName) {
+                return false;
+            }
+        }
+
         private Context context;
 
         private final Database database;
 
         private final String databaseName;
-
-        private final Map<ViewSignature, ViewIndexer> viewIndexers = new HashMap<ViewSignature, ViewIndexer>();
 
         private final Logger logger;
 
@@ -223,10 +224,12 @@ public final class Indexer extends AbstractLifeCycle {
 
         private long since = 0L;
 
+        private final Map<ViewSignature, ViewIndexer> viewIndexers = new HashMap<ViewSignature, ViewIndexer>();
+
         public DatabaseIndexer(final String databaseName) {
             logger = Utils.getLogger(DatabaseIndexer.class, databaseName);
             this.databaseName = databaseName;
-            this.database = state.couch.getDatabase(databaseName);
+            this.database = couch.getDatabase(databaseName);
         }
 
         public void run() {
@@ -309,8 +312,7 @@ public final class Indexer extends AbstractLifeCycle {
                     String function = viewValue.getString("index");
                     function = function.replaceFirst("^\"", "");
                     function = function.replaceFirst("\"$", "");
-                    final ViewSignature sig = state.locator
-                            .update(databaseName, designDocumentName, viewName, viewValue.toString());
+                    final ViewSignature sig = locator.update(databaseName, designDocumentName, viewName, viewValue.toString());
                     viewIndexers.put(sig, new ViewIndexer(context, defaults, analyzer, viewName, function));
                     isLuceneEnabled = true;
                 }
@@ -325,7 +327,7 @@ public final class Indexer extends AbstractLifeCycle {
         private void readCheckpoints() throws IOException {
             long since = Long.MAX_VALUE;
             for (final ViewSignature sig : viewIndexers.keySet()) {
-                since = Math.min(since, state.lucene.withReader(sig, false, new ReaderCallback<Long>() {
+                since = Math.min(since, lucene.withReader(sig, false, new ReaderCallback<Long>() {
                     public Long callback(final IndexReader reader) throws IOException {
                         final Map<String, String> commitUserData = reader.getCommitUserData();
                         final String result = commitUserData.get("update_seq");
@@ -369,8 +371,8 @@ public final class Indexer extends AbstractLifeCycle {
     private static class ViewIndexer {
 
         private final Analyzer analyzer;
-        private final JSONObject defaults;
         private final DocumentConverter converter;
+        private final JSONObject defaults;
 
         public ViewIndexer(final Context context, final JSONObject defaults, final Analyzer analyzer, final String functionName,
                 final String function) throws IOException {
@@ -391,14 +393,26 @@ public final class Indexer extends AbstractLifeCycle {
 
     private final Set<String> activeTasks = new HashSet<String>();
 
+    private Couch couch;
+
     private ExecutorService executor;
 
+    private Locator locator;
+
+    private LuceneGateway lucene;
+    
     private ScheduledExecutorService scheduler;
 
-    private final State state;
+    public void setCouch(final Couch couch) {
+        this.couch = couch;
+    }
 
-    public Indexer(final State state) {
-        this.state = state;
+    public void setLocator(final Locator locator) {
+        this.locator = locator;
+    }
+
+    public void setLucene(final LuceneGateway lucene) {
+        this.lucene = lucene;
     }
 
     private JSONObject fetchTrackingDocument(final Database database) throws IOException {

@@ -42,6 +42,7 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.WildcardQuery;
 
 import com.github.rnewson.couchdb.lucene.LuceneGateway.SearcherCallback;
+import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
@@ -212,10 +213,22 @@ public final class SearchServlet extends HttpServlet {
         return result.toString();
     }
 
-    private final State state;
+    private Couch couch;
 
-    SearchServlet(final State state) {
-        this.state = state;
+    private Locator locator;
+
+    private LuceneGateway lucene;
+
+    public void setCouch(final Couch couch) {
+        this.couch = couch;
+    }
+
+    public void setLocator(final Locator locator) {
+        this.locator = locator;
+    }
+
+    public void setLucene(final LuceneGateway lucene) {
+        this.lucene = lucene;
     }
 
     private void planBooleanQuery(final StringBuilder builder, final BooleanQuery query) {
@@ -298,18 +311,18 @@ public final class SearchServlet extends HttpServlet {
             resp.sendError(400, "Missing q attribute.");
             return;
         }
-        
-        final ViewSignature sig = state.locator.lookup(req);
+
+        final ViewSignature sig = locator.lookup(req);
         if (sig == null) {
             resp.sendError(400, "Unknown index.");
             return;
         }
 
-        final Database database = state.couch.getDatabase(sig.getDatabaseName());
+        final Database database = couch.getDatabase(sig.getDatabaseName());
         final boolean debug = getBooleanParameter(req, "debug");
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
 
-        final String body = state.lucene.withSearcher(sig, Utils.getStaleOk(req), new SearcherCallback<String>() {
+        final String body = lucene.withSearcher(sig, Utils.getStaleOk(req), new SearcherCallback<String>() {
             public String callback(final IndexSearcher searcher, final String etag) throws IOException {
                 // Check for 304 - Not Modified.
                 if (!debug && etag.equals(req.getHeader("If-None-Match"))) {

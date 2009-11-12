@@ -36,21 +36,26 @@ public class InfoServlet extends HttpServlet {
         return result;
     }
 
-    private final State state;
+    private Locator locator;
+    private LuceneGateway lucene;
 
-    InfoServlet(final State state) {
-        this.state = state;
+    public void setLocator(final Locator locator) {
+        this.locator = locator;
+    }
+
+    public void setLucene(final LuceneGateway lucene) {
+        this.lucene = lucene;
     }
 
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        final ViewSignature sig = state.locator.lookup(req);
+        final ViewSignature sig = locator.lookup(req);
         if (sig == null) {
             resp.sendError(400, "Invalid path.");
             return;
         }
 
-        final JSONObject json = state.lucene.withReader(sig, Utils.getStaleOk(req), new ReaderCallback<JSONObject>() {
+        final JSONObject json = lucene.withReader(sig, Utils.getStaleOk(req), new ReaderCallback<JSONObject>() {
             public JSONObject callback(final IndexReader reader) throws IOException {
                 final JSONObject result = new JSONObject();
                 result.put("current", reader.isCurrent());

@@ -28,15 +28,20 @@ public final class AdminServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final State state;
+    private Locator locator;
+    private LuceneGateway lucene;
 
-    AdminServlet(final State state) {
-        this.state = state;
+    public void setLocator(final Locator locator) {
+        this.locator = locator;
+    }
+
+    public void setLucene(final LuceneGateway lucene) {
+        this.lucene = lucene;
     }
 
     @Override
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        final ViewSignature sig = state.locator.lookup(req);
+        final ViewSignature sig = locator.lookup(req);
         if (sig == null) {
             resp.sendError(400, "Invalid path.");
             return;
@@ -45,7 +50,7 @@ public final class AdminServlet extends HttpServlet {
         final String command = req.getParameter("cmd");
 
         if ("expunge".equals(command)) {
-            state.lucene.withWriter(sig, new WriterCallback() {
+            lucene.withWriter(sig, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
                     return false;
@@ -56,7 +61,7 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("optimize".equals(command)) {
-            state.lucene.withWriter(sig, new WriterCallback() {
+            lucene.withWriter(sig, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
                     return false;

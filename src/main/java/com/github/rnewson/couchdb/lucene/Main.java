@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Properties;
 
+import javax.servlet.http.HttpServlet;
+
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ClientConnectionManager;
@@ -81,11 +83,13 @@ public final class Main {
         // Configure other objects.
         final Couch couch = Couch.getInstance(httpClient, couchUrl);
         final Locator locator = new Locator();
-        final LuceneGateway gateway = new LuceneGateway(new File(luceneDir));
-        final State state = new State(couch, gateway, locator, httpClient);
+        final LuceneGateway lucene = new LuceneGateway(new File(luceneDir));
 
         // Configure Indexer.
-        final Indexer indexer = new Indexer(state);
+        final Indexer indexer = new Indexer();
+        indexer.setCouch(couch);
+        indexer.setLocator(locator);
+        indexer.setLucene(lucene);
 
         // Configure Jetty.
         final Server server = new Server(Integer.getInteger("port", lucenePort));
@@ -96,17 +100,21 @@ public final class Main {
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
         server.setHandler(contexts);
 
-        final Context search = new Context(contexts, "/search", Context.NO_SESSIONS);
-        search.addServlet(new ServletHolder(new SearchServlet(state)), "/*");
-        setupContext(search);
+        final SearchServlet search = new SearchServlet();
+        search.setCouch(couch);
+        search.setLocator(locator);
+        search.setLucene(lucene);
+        setupContext(contexts, "/search", search);
 
-        final Context info = new Context(contexts, "/info", Context.NO_SESSIONS);
-        info.addServlet(new ServletHolder(new InfoServlet(state)), "/*");
-        setupContext(info);
+        final InfoServlet info = new InfoServlet();
+        info.setLocator(locator);
+        info.setLucene(lucene);
+        setupContext(contexts, "/info", info);
 
-        final Context admin = new Context(contexts, "/admin", Context.NO_SESSIONS);
-        admin.addServlet(new ServletHolder(new AdminServlet(state)), "/*");
-        setupContext(admin);
+        final AdminServlet admin = new AdminServlet();
+        admin.setLocator(locator);
+        admin.setLucene(lucene);
+        setupContext(contexts, "/admin", info);
 
         // Lockdown
         // System.setSecurityManager(securityManager);
@@ -115,7 +123,9 @@ public final class Main {
         server.join();
     }
 
-    private static void setupContext(final Context context) {
+    private static void setupContext(final ContextHandlerCollection contexts, final String root, final HttpServlet servlet) {
+        final Context context = new Context(contexts, root, Context.NO_SESSIONS);
+        context.addServlet(new ServletHolder(servlet), "/*");
         context.addFilter(new FilterHolder(new GzipFilter()), "/*", Handler.DEFAULT);
         context.setErrorHandler(new JSONErrorHandler());
     }
