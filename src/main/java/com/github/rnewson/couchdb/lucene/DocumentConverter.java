@@ -71,7 +71,7 @@ public final class DocumentConverter {
             final Document[] arrayResult = new Document[(int) nativeArray.getLength()];
             for (int i = 0; i < (int) nativeArray.getLength(); i++) {
                 if (nativeArray.get(i, null) instanceof RhinoDocument) {
-                    final RhinoDocument rhinoDocument = (RhinoDocument) result;
+                    final RhinoDocument rhinoDocument = (RhinoDocument) nativeArray.get(i, null);
                     final Document document = rhinoDocument.toDocument(doc.getString("_id"), defaults, database);
                     arrayResult[i] = document;
                 }
