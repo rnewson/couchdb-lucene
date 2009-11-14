@@ -51,7 +51,7 @@ def requests():
 
 def respond(res, req):
     path = req.get("path", [])
-    
+
     if len(path) != 4:
         body = "\n".join([
             "Invalid path: %s" % '/'.join([''] + path),
@@ -63,17 +63,20 @@ def respond(res, req):
     path = '/'.join(['', 'search', path[0], path[2], path[3]])
     path = '?'.join([path, urllib.urlencode(req["query"])])
 
-    headers = {}
+    req_headers = {}
     for h in req.get("headers", []):
         if h.lower() in ["accept", "if-none-match"]:
-            headers[h] = req["headers"][h]
+            req_headers[h] = req["headers"][h]
 
-    res.request("GET", path, headers=headers)
+    res.request("GET", path, headers=req_headers)
     resp = res.getresponse()
-    return mkresp(resp.status, resp.read(), {
-        "Content-Type": resp.getheader("Content-Type"),
-        "ETag": resp.getheader("ETag")
-    })
+
+    resp_headers = {}
+    for h, v in resp.getheaders():
+        if h.lower() in ["content-type", "etag"]:
+            resp_headers[h] = resp.getheader(h, [])
+
+    return mkresp(resp.status, resp.read(), resp_headers)
 
 def mkresp(code, body, headers=None):
     ret = {"code": code, "body": body}
