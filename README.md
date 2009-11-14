@@ -47,7 +47,7 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 <h1>Configure couchdb-lucene</h1>
 
-From 0.5 onwards, couchdb-lucene runs in a single, standalone JVM. As such, you can choose to locate your couchdb-lucene server on a different machine to couchdb if you wish, or keep it on the same machine, it's your call. 
+couchdb-lucene runs in a single, standalone JVM. As such, you can choose to locate your couchdb-lucene server on a different machine to couchdb if you wish, or keep it on the same machine, it's your call. 
 
 <ol>
 <li>Unzip the couchdb-lucene zip file.
