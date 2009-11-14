@@ -59,7 +59,25 @@ public final class SearchServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private static Query fixup(final Query query) {
+    private Couch couch;
+
+    private Locator locator;
+
+    private LuceneGateway lucene;
+
+    public void setCouch(final Couch couch) {
+        this.couch = couch;
+    }
+
+    public void setLocator(final Locator locator) {
+        this.locator = locator;
+    }
+
+    public void setLucene(final LuceneGateway lucene) {
+        this.lucene = lucene;
+    }
+
+    private Query fixup(final Query query) {
         if (query instanceof BooleanQuery) {
             final BooleanQuery booleanQuery = (BooleanQuery) query;
             for (final BooleanClause clause : booleanQuery.getClauses()) {
@@ -97,7 +115,7 @@ public final class SearchServlet extends HttpServlet {
         return query;
     }
 
-    private static Object fixup(final String value) {
+    private Object fixup(final String value) {
         if (value.matches("\\d+\\.\\d+f")) {
             return Float.parseFloat(value);
         }
@@ -111,124 +129,6 @@ public final class SearchServlet extends HttpServlet {
             return Integer.parseInt(value);
         }
         return String.class;
-    }
-
-    private static Query toQuery(final HttpServletRequest req) {
-        // Parse query.
-        final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
-        final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
-        try {
-            return fixup(parser.parse(req.getParameter("q")));
-        } catch (final ParseException e) {
-            return null;
-        }
-    }
-
-    private static Sort toSort(final String sort) {
-        if (sort == null) {
-            return null;
-        } else {
-            final String[] split = sort.split(",");
-            final SortField[] sort_fields = new SortField[split.length];
-            for (int i = 0; i < split.length; i++) {
-                String tmp = split[i];
-                final boolean reverse = tmp.charAt(0) == '\\';
-                // Strip sort order character.
-                if (tmp.charAt(0) == '\\' || tmp.charAt(0) == '/') {
-                    tmp = tmp.substring(1);
-                }
-                final boolean has_type = tmp.indexOf(':') != -1;
-                if (!has_type) {
-                    sort_fields[i] = new SortField(tmp, SortField.STRING, reverse);
-                } else {
-                    final String field = tmp.substring(0, tmp.indexOf(':'));
-                    final String type = tmp.substring(tmp.indexOf(':') + 1);
-                    int type_int = SortField.STRING;
-                    if ("int".equals(type)) {
-                        type_int = SortField.INT;
-                    } else if ("float".equals(type)) {
-                        type_int = SortField.FLOAT;
-                    } else if ("double".equals(type)) {
-                        type_int = SortField.DOUBLE;
-                    } else if ("long".equals(type)) {
-                        type_int = SortField.LONG;
-                    } else if ("date".equals(type)) {
-                        type_int = SortField.LONG;
-                    } else if ("string".equals(type)) {
-                        type_int = SortField.STRING;
-                    }
-                    sort_fields[i] = new SortField(field, type_int, reverse);
-                }
-            }
-            return new Sort(sort_fields);
-        }
-    }
-
-    private static String toString(final SortField[] sortFields) {
-        final JSONArray result = new JSONArray();
-        for (final SortField field : sortFields) {
-            final JSONObject col = new JSONObject();
-            col.element("field", field.getField());
-            col.element("reverse", field.getReverse());
-
-            final String type;
-            switch (field.getType()) {
-            case SortField.DOC:
-                type = "doc";
-                break;
-            case SortField.SCORE:
-                type = "score";
-                break;
-            case SortField.INT:
-                type = "int";
-                break;
-            case SortField.LONG:
-                type = "long";
-                break;
-            case SortField.BYTE:
-                type = "byte";
-                break;
-            case SortField.CUSTOM:
-                type = "custom";
-                break;
-            case SortField.DOUBLE:
-                type = "double";
-                break;
-            case SortField.FLOAT:
-                type = "float";
-                break;
-            case SortField.SHORT:
-                type = "short";
-                break;
-            case SortField.STRING:
-                type = "string";
-                break;
-            default:
-                type = "unknown";
-                break;
-            }
-            col.element("type", type);
-            result.add(col);
-        }
-        return result.toString();
-    }
-
-    private Couch couch;
-
-    private Locator locator;
-
-    private LuceneGateway lucene;
-
-    public void setCouch(final Couch couch) {
-        this.couch = couch;
-    }
-
-    public void setLocator(final Locator locator) {
-        this.locator = locator;
-    }
-
-    public void setLucene(final LuceneGateway lucene) {
-        this.lucene = lucene;
     }
 
     private void planBooleanQuery(final StringBuilder builder, final BooleanQuery query) {
@@ -303,6 +203,106 @@ public final class SearchServlet extends HttpServlet {
             planNumericRangeQuery(builder, (NumericRangeQuery) query);
         }
         builder.append(",boost=" + query.getBoost() + ")");
+    }
+
+    private Query toQuery(final HttpServletRequest req) {
+        // Parse query.
+        final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
+        final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
+        try {
+            return fixup(parser.parse(req.getParameter("q")));
+        } catch (final ParseException e) {
+            return null;
+        }
+    }
+
+    private Sort toSort(final String sort) {
+        if (sort == null) {
+            return null;
+        } else {
+            final String[] split = sort.split(",");
+            final SortField[] sort_fields = new SortField[split.length];
+            for (int i = 0; i < split.length; i++) {
+                String tmp = split[i];
+                final boolean reverse = tmp.charAt(0) == '\\';
+                // Strip sort order character.
+                if (tmp.charAt(0) == '\\' || tmp.charAt(0) == '/') {
+                    tmp = tmp.substring(1);
+                }
+                final boolean has_type = tmp.indexOf(':') != -1;
+                if (!has_type) {
+                    sort_fields[i] = new SortField(tmp, SortField.STRING, reverse);
+                } else {
+                    final String field = tmp.substring(0, tmp.indexOf(':'));
+                    final String type = tmp.substring(tmp.indexOf(':') + 1);
+                    int type_int = SortField.STRING;
+                    if ("int".equals(type)) {
+                        type_int = SortField.INT;
+                    } else if ("float".equals(type)) {
+                        type_int = SortField.FLOAT;
+                    } else if ("double".equals(type)) {
+                        type_int = SortField.DOUBLE;
+                    } else if ("long".equals(type)) {
+                        type_int = SortField.LONG;
+                    } else if ("date".equals(type)) {
+                        type_int = SortField.LONG;
+                    } else if ("string".equals(type)) {
+                        type_int = SortField.STRING;
+                    }
+                    sort_fields[i] = new SortField(field, type_int, reverse);
+                }
+            }
+            return new Sort(sort_fields);
+        }
+    }
+
+    private String toString(final SortField[] sortFields) {
+        final JSONArray result = new JSONArray();
+        for (final SortField field : sortFields) {
+            final JSONObject col = new JSONObject();
+            col.element("field", field.getField());
+            col.element("reverse", field.getReverse());
+
+            final String type;
+            switch (field.getType()) {
+            case SortField.DOC:
+                type = "doc";
+                break;
+            case SortField.SCORE:
+                type = "score";
+                break;
+            case SortField.INT:
+                type = "int";
+                break;
+            case SortField.LONG:
+                type = "long";
+                break;
+            case SortField.BYTE:
+                type = "byte";
+                break;
+            case SortField.CUSTOM:
+                type = "custom";
+                break;
+            case SortField.DOUBLE:
+                type = "double";
+                break;
+            case SortField.FLOAT:
+                type = "float";
+                break;
+            case SortField.SHORT:
+                type = "short";
+                break;
+            case SortField.STRING:
+                type = "string";
+                break;
+            default:
+                type = "unknown";
+                break;
+            }
+            col.element("type", type);
+            result.add(col);
+        }
+        return result.toString();
     }
 
     @Override
@@ -447,7 +447,7 @@ public final class SearchServlet extends HttpServlet {
                     json.put("fetch_duration", stopWatch.getElapsed("fetch"));
                     // Include sort info (if requested).
                     if (td instanceof TopFieldDocs) {
-                        json.put("sort_order", SearchServlet.toString(((TopFieldDocs) td).fields));
+                        json.put("sort_order", SearchServlet.this.toString(((TopFieldDocs) td).fields));
                     }
                     json.put("rows", rows);
                 }
