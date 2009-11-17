@@ -7,16 +7,6 @@ import java.util.Properties;
 
 import javax.servlet.http.HttpServlet;
 
-import org.apache.http.HttpVersion;
-import org.apache.http.client.HttpClient;
-import org.apache.http.conn.params.ConnManagerParams;
-import org.apache.http.conn.params.ConnPerRoute;
-import org.apache.http.conn.routing.HttpRoute;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
 import org.apache.log4j.Logger;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
@@ -36,7 +26,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         final Properties properties = loadProperties();
 
-        final File dir = new File(properties.getProperty("lucene.dir"), "indexes");
+        final File dir = new File(properties.getProperty("lucene.dir", "indexes"));
         if (dir == null) {
             LOG.error("lucene.dir not set.");
             System.exit(1);
@@ -53,7 +43,6 @@ public class Main {
 
         final CouchDbRegistry registry = new CouchDbRegistry(properties, "couchdb.url.");
         final Lucene lucene = new Lucene(dir, registry);
-        final HttpClient client = httpClient();
         final int port = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
         final Server jetty = jetty(lucene, port);
 
@@ -71,20 +60,6 @@ public class Main {
         properties.load(in);
         in.close();
         return properties;
-    }
-
-    private static HttpClient httpClient() {
-        final HttpParams params = new BasicHttpParams();
-        ConnManagerParams.setMaxTotalConnections(params, 1000);
-        ConnManagerParams.setMaxConnectionsPerRoute(params, new ConnPerRoute() {
-            public int getMaxForRoute(final HttpRoute route) {
-                return 1000;
-            }
-        });
-        HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
-        HttpProtocolParams.setUseExpectContinue(params, false);
-
-        return new DefaultHttpClient(new ThreadSafeClientConnManager(params, null), params);
     }
 
     private static Server jetty(final Lucene lucene, final int port) {

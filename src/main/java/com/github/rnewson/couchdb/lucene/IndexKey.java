@@ -88,4 +88,10 @@ public final class IndexKey {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "IndexKey [databaseName=" + databaseName + ", designDocumentName=" + designDocumentName + ", hostKey=" + hostKey
+                + ", viewName=" + viewName + "]";
+    }
+
 }

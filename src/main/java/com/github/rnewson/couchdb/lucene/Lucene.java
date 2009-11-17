@@ -55,7 +55,7 @@ public final class Lucene {
     }
 
     public void startIndexing(final IndexKey indexKey) {
-        final String url = registry.url(indexKey.getHostKey(), "");
+        final String url = registry.url(indexKey.getHostKey(), indexKey.getDatabaseName());
         executor.submit(new TaskKey(indexKey), new DatabaseIndexer(url));
     }
 
@@ -96,11 +96,10 @@ public final class Lucene {
     }
 
     public void withSearcher(final IndexKey key, final boolean staleOk, final SearcherCallback callback) throws IOException {
-        final String version = map.get(key).version;
         withReader(key, staleOk, new ReaderCallback() {
 
             public void callback(final IndexReader reader) throws IOException {
-                callback.callback(new IndexSearcher(reader), version);
+                callback.callback(new IndexSearcher(reader), map.get(key).version);
             }
 
             public void onMissing() throws IOException {

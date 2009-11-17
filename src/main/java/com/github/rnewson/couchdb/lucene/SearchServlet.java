@@ -465,7 +465,7 @@ public final class SearchServlet extends HttpServlet {
             }
 
             public void onMissing() throws IOException {
-                resp.sendError(404, "Index for " + key + " is missing.");
+                resp.sendError(404, "Index for " + key.getDatabaseName() + " is missing.");
             }
         };
 
