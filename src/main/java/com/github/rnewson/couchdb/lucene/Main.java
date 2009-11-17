@@ -1,6 +1,7 @@
 package com.github.rnewson.couchdb.lucene;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -8,13 +9,9 @@ import javax.servlet.http.HttpServlet;
 
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
-import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.params.ConnManagerParams;
 import org.apache.http.conn.params.ConnPerRoute;
 import org.apache.http.conn.routing.HttpRoute;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
@@ -29,43 +26,54 @@ import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.servlet.GzipFilter;
 
-import com.github.rnewson.couchdb.lucene.couchdb.Couch;
-
-/**
- * Configure and start embedded Jetty server.
- * 
- * @author rnewson
- * 
- */
-public final class Main {
+public class Main {
 
     private static final Logger LOG = Logger.getLogger(Main.class);
 
-    public static void main(final String[] args) throws Exception {
-        final Properties properties = new Properties();
-        final InputStream in = Main.class.getClassLoader().getResourceAsStream("couchdb-lucene.properties");
-        if (in == null) {
-            System.out.println("No couchdb-lucene.properties file found.");
-            return;
-        }
-        properties.load(in);
-        in.close();
+    /**
+     * Run couchdb-lucene.
+     */
+    public static void main(String[] args) throws Exception {
+        final Properties properties = loadProperties();
 
-        final String luceneDir = properties.getProperty("lucene.dir");
-        final int lucenePort = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
-        final String couchUrl = properties.getProperty("couchdb.url");
-
-        if (luceneDir == null) {
+        final File dir = new File(properties.getProperty("lucene.dir"), "indexes");
+        if (dir == null) {
             LOG.error("lucene.dir not set.");
             System.exit(1);
         }
-
-        if (couchUrl == null) {
-            LOG.error("couchdb.url not set.");
+        if (!dir.canRead()) {
+            LOG.error(dir + " is not readable.");
             System.exit(1);
         }
+        if (!dir.canWrite()) {
+            LOG.error(dir + " is not writable.");
+            System.exit(1);
+        }
+        LOG.info("Index output goes to :" + dir.getCanonicalPath());
 
-        // Configure httpClient.
+        final CouchDbRegistry registry = new CouchDbRegistry(properties, "couchdb.url.");
+        final Lucene lucene = new Lucene(dir, registry);
+        final HttpClient client = httpClient();
+        final int port = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
+        final Server jetty = jetty(lucene, port);
+
+        jetty.start();
+        jetty.join();
+    }
+
+    private static Properties loadProperties() throws IOException {
+        final Properties properties = new Properties();
+        final InputStream in = Main.class.getClassLoader().getResourceAsStream("couchdb-lucene.properties");
+        if (in == null) {
+            LOG.error("No couchdb-lucene.properties file found.");
+            return null;
+        }
+        properties.load(in);
+        in.close();
+        return properties;
+    }
+
+    private static HttpClient httpClient() {
         final HttpParams params = new BasicHttpParams();
         ConnManagerParams.setMaxTotalConnections(params, 1000);
         ConnManagerParams.setMaxConnectionsPerRoute(params, new ConnPerRoute() {
@@ -75,52 +83,32 @@ public final class Main {
         });
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
         HttpProtocolParams.setUseExpectContinue(params, false);
-        final SchemeRegistry schemeRegistry = new SchemeRegistry();
-        schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 5984));
-        final ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
-        final HttpClient httpClient = new DefaultHttpClient(cm, params);
 
-        // Configure other objects.
-        final Couch couch = Couch.getInstance(httpClient, couchUrl);
-        final Locator locator = new Locator();
-        final LuceneGateway lucene = new LuceneGateway(new File(luceneDir));
+        return new DefaultHttpClient(new ThreadSafeClientConnManager(params, null), params);
+    }
 
-        // Configure Indexer.
-        final Indexer indexer = new Indexer();
-        indexer.setCouch(couch);
-        indexer.setLocator(locator);
-        indexer.setLucene(lucene);
-
+    private static Server jetty(final Lucene lucene, final int port) {
         // Configure Jetty.
-        final Server server = new Server(Integer.getInteger("port", lucenePort));
+        final Server server = new Server(Integer.getInteger("port", port));
         server.setStopAtShutdown(true);
         server.setSendServerVersion(false);
-        server.addLifeCycle(indexer);
 
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
         server.setHandler(contexts);
 
         final SearchServlet search = new SearchServlet();
-        search.setCouch(couch);
-        search.setLocator(locator);
         search.setLucene(lucene);
         setupContext(contexts, "/search", search);
 
         final InfoServlet info = new InfoServlet();
-        info.setLocator(locator);
         info.setLucene(lucene);
         setupContext(contexts, "/info", info);
 
         final AdminServlet admin = new AdminServlet();
-        admin.setLocator(locator);
         admin.setLucene(lucene);
         setupContext(contexts, "/admin", admin);
 
-        // Lockdown
-        // System.setSecurityManager(securityManager);
-
-        server.start();
-        server.join();
+        return server;
     }
 
     private static void setupContext(final ContextHandlerCollection contexts, final String root, final HttpServlet servlet) {

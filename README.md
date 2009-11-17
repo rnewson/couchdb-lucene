@@ -274,12 +274,12 @@ function(doc) {
         ret.add(group, {"field":"group", "store":"yes"});
         return ret;
     };
-    var ret = [];
     if(doc.type != "reference") return null;
+    var ret = new Array();
     for(var g in doc.groups) {
-        ret.add(mk("library", doc.groups[g].library, g));
-        ret.add(mk("method", doc.groups[g].method, g));
-        ret.add(mk("target", doc.groups[g].target, g));
+        ret.push(mk("library", doc.groups[g].library, g));
+        ret.push(mk("method", doc.groups[g].method, g));
+        ret.push(mk("target", doc.groups[g].target, g));
     }
     return ret;
 }

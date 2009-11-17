@@ -1,6 +1,8 @@
 0.5
 ----------------------
 
+INDEX ON DEMAND - DON'T POLL
+
 * sniff user agent for _changes vs. _all_docs_by_seq, etc. (Database subclasses)(work in progress -- needs testing against 0.9.1 and 0.10)
 * support authentication against couchdb (basic/digest/etc)
 * pause/resume control over indexer.

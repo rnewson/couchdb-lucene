@@ -40,10 +40,9 @@ import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.util.Version;
 
-import com.github.rnewson.couchdb.lucene.LuceneGateway.SearcherCallback;
-import com.github.rnewson.couchdb.lucene.couchdb.Couch;
-import com.github.rnewson.couchdb.lucene.couchdb.Database;
+import com.github.rnewson.couchdb.lucene.Lucene.SearcherCallback;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
@@ -59,21 +58,9 @@ public final class SearchServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private Couch couch;
+    private Lucene lucene;
 
-    private Locator locator;
-
-    private LuceneGateway lucene;
-
-    public void setCouch(final Couch couch) {
-        this.couch = couch;
-    }
-
-    public void setLocator(final Locator locator) {
-        this.locator = locator;
-    }
-
-    public void setLucene(final LuceneGateway lucene) {
+    public void setLucene(final Lucene lucene) {
         this.lucene = lucene;
     }
 
@@ -208,7 +195,7 @@ public final class SearchServlet extends HttpServlet {
     private Query toQuery(final HttpServletRequest req) {
         // Parse query.
         final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
-        final QueryParser parser = new QueryParser(Constants.DEFAULT_FIELD, analyzer);
+        final QueryParser parser = new QueryParser(Version.LUCENE_CURRENT, Constants.DEFAULT_FIELD, analyzer);
         try {
             return fixup(parser.parse(req.getParameter("q")));
         } catch (final ParseException e) {
@@ -307,34 +294,33 @@ public final class SearchServlet extends HttpServlet {
 
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+        // q is mandatory.
         if (req.getParameter("q") == null) {
             resp.sendError(400, "Missing q attribute.");
             return;
         }
 
-        final ViewSignature sig = locator.lookup(req);
-        if (sig == null) {
-            resp.sendError(400, "Unknown index.");
-            return;
-        }
-
-        final Database database = couch.getDatabase(sig.getDatabaseName());
         final boolean debug = getBooleanParameter(req, "debug");
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
+        final boolean staleOk = Utils.getStaleOk(req);
 
-        final String body = lucene.withSearcher(sig, Utils.getStaleOk(req), new SearcherCallback<String>() {
-            public String callback(final IndexSearcher searcher, final String etag) throws IOException {
+        final IndexKey key = new IndexKey(req);
+        lucene.startIndexing(key);
+
+        final SearcherCallback callback = new SearcherCallback() {
+
+            public void callback(final IndexSearcher searcher, final String version) throws IOException {
                 // Check for 304 - Not Modified.
-                if (!debug && etag.equals(req.getHeader("If-None-Match"))) {
+                if (!debug && version.equals(req.getHeader("If-None-Match"))) {
                     resp.setStatus(304);
-                    return null;
+                    return;
                 }
 
                 // Parse query.
                 final Query q = toQuery(req);
                 if (q == null) {
                     resp.sendError(400, "Bad query syntax.");
-                    return null;
+                    return;
                 }
 
                 final JSONObject json = new JSONObject();
@@ -342,7 +328,7 @@ public final class SearchServlet extends HttpServlet {
                 if (debug) {
                     json.put("plan", toPlan(q));
                 }
-                json.put("etag", etag);
+                json.put("etag", version);
 
                 if (rewrite_query) {
                     final Query rewritten_q = q.rewrite(searcher.getIndexReader());
@@ -432,13 +418,16 @@ public final class SearchServlet extends HttpServlet {
                         rows.add(row);
                     }
                     // Fetch documents (if requested).
-                    if (include_docs && fetch_ids.length > 0) {
-                        final JSONArray fetched_docs = database.getDocuments(fetch_ids).getJSONArray("rows");
-                        for (int i = 0; i < max; i++) {
-                            rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
-                        }
-                    }
-                    stopWatch.lap("fetch");
+                    // RESTORE
+                    // if (include_docs && fetch_ids.length > 0) {
+                    // final JSONArray fetched_docs =
+                    // database.getDocuments(fetch_ids).getJSONArray("rows");
+                    // for (int i = 0; i < max; i++) {
+                    // rows.getJSONObject(i).put("doc",
+                    // fetched_docs.getJSONObject(i).getJSONObject("doc"));
+                    // }
+                    // }
+                    // stopWatch.lap("fetch");
 
                     json.put("skip", skip);
                     json.put("limit", limit);
@@ -455,28 +444,32 @@ public final class SearchServlet extends HttpServlet {
                 Utils.setResponseContentTypeAndEncoding(req, resp);
 
                 // Cache-related headers.
-                resp.setHeader("ETag", etag);
+                resp.setHeader("ETag", version);
                 resp.setHeader("Cache-Control", "must-revalidate");
 
                 // Format response body.
                 final String callback = req.getParameter("callback");
+                final String body;
                 if (callback != null) {
-                    return String.format("%s(%s)", callback, json);
+                    body = String.format("%s(%s)", callback, json);
                 } else {
-                    return json.toString(debug ? 2 : 0);
+                    body = json.toString(debug ? 2 : 0);
+                }
+
+                final Writer writer = resp.getWriter();
+                try {
+                    writer.write(body);
+                } finally {
+                    writer.close();
                 }
             }
-        });
 
-        // Write response if we have one.
-        if (body != null) {
-            final Writer writer = resp.getWriter();
-            try {
-                writer.write(body);
-            } finally {
-                writer.close();
+            public void onMissing() throws IOException {
+                resp.sendError(404, "Index for " + key + " is missing.");
             }
-        }
+        };
+
+        lucene.withSearcher(key, staleOk, callback);
     }
 
 }

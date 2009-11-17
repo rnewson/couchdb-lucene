@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.lucene.index.IndexWriter;
 
-import com.github.rnewson.couchdb.lucene.LuceneGateway.WriterCallback;
+import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
 
 /**
  * Administrative functions.
@@ -28,32 +28,27 @@ public final class AdminServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private Locator locator;
-    private LuceneGateway lucene;
+    private Lucene lucene;
 
-    public void setLocator(final Locator locator) {
-        this.locator = locator;
-    }
-
-    public void setLucene(final LuceneGateway lucene) {
+    public void setLucene(final Lucene lucene) {
         this.lucene = lucene;
     }
 
     @Override
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        final ViewSignature sig = locator.lookup(req);
-        if (sig == null) {
-            resp.sendError(400, "Invalid path.");
-            return;
-        }
+        final IndexKey key = new IndexKey(req);
 
         final String command = req.getParameter("cmd");
 
         if ("expunge".equals(command)) {
-            lucene.withWriter(sig, new WriterCallback() {
+            lucene.withWriter(key, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
                     return false;
+                }
+
+                public void onMissing() throws IOException {
+                    resp.sendError(404);
                 }
             });
             resp.setStatus(202);
@@ -61,10 +56,14 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("optimize".equals(command)) {
-            lucene.withWriter(sig, new WriterCallback() {
+            lucene.withWriter(key, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
                     return false;
+                }
+
+                public void onMissing() throws IOException {
+                    resp.sendError(404);
                 }
             });
             resp.setStatus(202);

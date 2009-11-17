@@ -7,9 +7,11 @@ import java.lang.reflect.InvocationTargetException;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
@@ -19,6 +21,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.Database;
 public final class DocumentConverter {
 
     private static final Document[] NO_DOCUMENTS = new Document[0];
+    private static final Logger LOG = Logger.getLogger(DocumentConverter.class);
 
     private final Context context;
     private final Function main;
@@ -54,7 +57,13 @@ public final class DocumentConverter {
     }
 
     public Document[] convert(final JSONObject doc, final JSONObject defaults, final Database database) throws IOException {
-        final Object result = main.call(context, scope, null, new Object[] { doc.toString(), viewFun });
+        final Object result;
+        try {
+            result = main.call(context, scope, null, new Object[] { doc.toString(), viewFun });
+        } catch (final JavaScriptException e) {
+            LOG.warn(doc + " caused exception during conversion.", e);
+            return NO_DOCUMENTS;
+        }
 
         if (result == null || result instanceof Undefined) {
             return NO_DOCUMENTS;

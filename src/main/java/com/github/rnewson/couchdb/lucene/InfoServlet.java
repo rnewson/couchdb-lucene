@@ -15,7 +15,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.store.Directory;
 
-import com.github.rnewson.couchdb.lucene.LuceneGateway.ReaderCallback;
+import com.github.rnewson.couchdb.lucene.Lucene.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
 /**
@@ -36,27 +36,18 @@ public class InfoServlet extends HttpServlet {
         return result;
     }
 
-    private Locator locator;
-    private LuceneGateway lucene;
+    private Lucene lucene;
 
-    public void setLocator(final Locator locator) {
-        this.locator = locator;
-    }
-
-    public void setLucene(final LuceneGateway lucene) {
+    public void setLucene(final Lucene lucene) {
         this.lucene = lucene;
     }
 
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        final ViewSignature sig = locator.lookup(req);
-        if (sig == null) {
-            resp.sendError(400, "Invalid path.");
-            return;
-        }
+        final IndexKey key = new IndexKey(req);
 
-        final JSONObject json = lucene.withReader(sig, Utils.getStaleOk(req), new ReaderCallback<JSONObject>() {
-            public JSONObject callback(final IndexReader reader) throws IOException {
+        lucene.withReader(key, Utils.getStaleOk(req), new ReaderCallback() {
+            public void callback(final IndexReader reader) throws IOException {
                 final JSONObject result = new JSONObject();
                 result.put("current", reader.isCurrent());
                 result.put("disk_size", size(reader.directory()));
@@ -77,17 +68,20 @@ public class InfoServlet extends HttpServlet {
                 final JSONObject info = new JSONObject();
                 info.put("code", 200);
                 info.put("json", result);
-                return result;
+
+                Utils.setResponseContentTypeAndEncoding(req, resp);
+                final Writer writer = resp.getWriter();
+                try {
+                    writer.write(result.toString());
+                } finally {
+                    writer.close();
+                }
+            }
+
+            public void onMissing() throws IOException {
+                resp.sendError(404);
             }
         });
-
-        Utils.setResponseContentTypeAndEncoding(req, resp);
-        final Writer writer = resp.getWriter();
-        try {
-            writer.write(json.toString());
-        } finally {
-            writer.close();
-        }
     }
 
 }
