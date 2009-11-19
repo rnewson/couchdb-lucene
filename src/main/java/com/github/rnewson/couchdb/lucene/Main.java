@@ -39,7 +39,7 @@ public class Main {
             LOG.error(dir + " is not writable.");
             System.exit(1);
         }
-        LOG.info("Index output goes to :" + dir.getCanonicalPath());
+        LOG.info("Index output goes to: " + dir.getCanonicalPath());
 
         final CouchDbRegistry registry = new CouchDbRegistry(properties, "couchdb.url.");
         final Lucene lucene = new Lucene(dir, registry);

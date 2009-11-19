@@ -18,9 +18,9 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
 
 public abstract class Database {
 
-    public static final class V10 extends Database {
+    public static final class DatabaseWithoutChanges extends Database {
 
-        public V10(final HttpClient httpClient, final String url) {
+        public DatabaseWithoutChanges(final HttpClient httpClient, final String url) {
             super(httpClient, url);
         }
 
@@ -53,9 +53,9 @@ public abstract class Database {
         }
     }
 
-    public static final class V11 extends Database {
+    public static final class DatabaseWithChanges extends Database {
 
-        public V11(final HttpClient httpClient, final String url) {
+        public DatabaseWithChanges(final HttpClient httpClient, final String url) {
             super(httpClient, url);
         }
 

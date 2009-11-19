@@ -304,7 +304,13 @@ public final class SearchServlet extends HttpServlet {
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
         final boolean staleOk = Utils.getStaleOk(req);
 
-        final IndexKey key = new IndexKey(req);
+        final IndexKey key;
+        try {
+            key = new IndexKey(req);
+        } catch (final IllegalArgumentException e) {
+            resp.setStatus(400);
+            return;
+        }
         lucene.startIndexing(key);
 
         final SearcherCallback callback = new SearcherCallback() {
@@ -418,16 +424,13 @@ public final class SearchServlet extends HttpServlet {
                         rows.add(row);
                     }
                     // Fetch documents (if requested).
-                    // RESTORE
-                    // if (include_docs && fetch_ids.length > 0) {
-                    // final JSONArray fetched_docs =
-                    // database.getDocuments(fetch_ids).getJSONArray("rows");
-                    // for (int i = 0; i < max; i++) {
-                    // rows.getJSONObject(i).put("doc",
-                    // fetched_docs.getJSONObject(i).getJSONObject("doc"));
-                    // }
-                    // }
-                    // stopWatch.lap("fetch");
+                    if (include_docs && fetch_ids.length > 0) {
+                        final JSONArray fetched_docs = new JSONArray(); //database.getDocuments(fetch_ids).getJSONArray("rows");
+                        for (int i = 0; i < max; i++) {
+                            rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
+                        }
+                    }
+                    stopWatch.lap("fetch");
 
                     json.put("skip", skip);
                     json.put("limit", limit);
@@ -471,5 +474,4 @@ public final class SearchServlet extends HttpServlet {
 
         lucene.withSearcher(key, staleOk, callback);
     }
-
 }

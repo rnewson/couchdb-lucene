@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene;
+ package com.github.rnewson.couchdb.lucene;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 

@@ -3,12 +3,12 @@ package com.github.rnewson.couchdb.lucene;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- *  An IndexKey uniquely identifies an index.
- *   
+ * An IndexKey uniquely identifies an index.
+ * 
  * @author robertnewson
  */
 public final class IndexKey {
-    
+
     private final String databaseName;
     private final String designDocumentName;
     private final String hostKey;
@@ -90,8 +90,15 @@ public final class IndexKey {
 
     @Override
     public String toString() {
-        return "IndexKey [databaseName=" + databaseName + ", designDocumentName=" + designDocumentName + ", hostKey=" + hostKey
-                + ", viewName=" + viewName + "]";
+        final StringBuffer buffer = new StringBuffer(100);
+        buffer.append(hostKey);
+        buffer.append("/");
+        buffer.append(databaseName);
+        buffer.append("/");
+        buffer.append(designDocumentName);
+        buffer.append("/");
+        buffer.append(viewName);
+        return buffer.toString();
     }
 
 }

@@ -311,7 +311,7 @@ Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to 
 
 <h1>Searching with couchdb-lucene</h1>
 
-You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>. The _body field is searched by default which will include the extracted text from all attachments. The following parameters can be passed for more sophisticated searches;
+You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>. The following parameters can be passed for more sophisticated searches;
 
 <dl>
 <dt>analyzer</dt><dd>The analyzer used to convert the query string into a query object.

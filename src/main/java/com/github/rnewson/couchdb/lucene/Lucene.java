@@ -2,15 +2,20 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 
 import com.github.rnewson.couchdb.lucene.util.Constants;
 
@@ -18,14 +23,18 @@ public final class Lucene {
 
     private final File root;
     private final CouchDbRegistry registry;
-    private final IdempotentExecutor<TaskKey> executor = new IdempotentExecutor<TaskKey>();
-    private final Map<IndexKey, Tuple> map = Collections.synchronizedMap(new HashMap<IndexKey, Tuple>());
+    private final IdempotentExecutor<IndexKey> executor = new IdempotentExecutor<IndexKey>();
+    private final Map<IndexKey, Tuple> map = new HashMap<IndexKey, Tuple>();
 
     private static class Tuple {
         private String version;
         private boolean dirty;
-        private IndexWriter writer;
+        private final IndexWriter writer;
         private IndexReader reader;
+
+        public Tuple(final IndexWriter writer) {
+            this.writer = writer;
+        }
     }
 
     public interface ReaderCallback {
@@ -55,12 +64,14 @@ public final class Lucene {
     }
 
     public void startIndexing(final IndexKey indexKey) {
-        final String url = registry.url(indexKey.getHostKey(), indexKey.getDatabaseName());
-        executor.submit(new TaskKey(indexKey), new DatabaseIndexer(url));
+        executor.submit(indexKey, new ViewIndexer(this, registry, indexKey));
     }
 
     public void withReader(final IndexKey key, final boolean staleOk, final ReaderCallback callback) throws IOException {
-        final Tuple tuple = map.get(key);
+        final Tuple tuple;
+        synchronized (map) {
+            tuple = map.get(key);
+        }
         if (tuple == null) {
             callback.onMissing();
             return;
@@ -109,7 +120,11 @@ public final class Lucene {
     }
 
     public void withWriter(final IndexKey key, final WriterCallback callback) throws IOException {
-        final Tuple tuple = map.get(key);
+        final Tuple tuple;
+        synchronized (map) {
+            tuple = map.get(key);
+        }
+
         if (tuple == null) {
             callback.onMissing();
             return;
@@ -126,8 +141,34 @@ public final class Lucene {
         }
     }
 
+    public void createWriter(final IndexKey key, final UUID uuid, final String function) throws IOException {
+        final String digest = digest(function);
+        final File dir = new File(new File(root, uuid.toString()), digest);
+        dir.mkdirs();
+
+        synchronized (map) {
+            if (map.containsKey(key))
+                return;
+            final Directory d = FSDirectory.open(dir);
+            final Tuple tuple = new Tuple(newWriter(d));
+            map.put(key, tuple);
+        }
+    }
+
     public void close() {
         executor.shutdownNow();
+    }
+
+    private String digest(final String function) {
+        try {
+            final MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(function.replaceAll("\\s+", "").getBytes("UTF-8"));
+            return new BigInteger(1, md.digest()).toString(Character.MAX_RADIX);
+        } catch (final NoSuchAlgorithmException e) {
+            throw new Error("MD5 support missing.");
+        } catch (final UnsupportedEncodingException e) {
+            throw new Error("UTF-8 support missing.");
+        }
     }
 
     private IndexWriter newWriter(final Directory dir) throws IOException {
@@ -139,43 +180,6 @@ public final class Lucene {
 
     private String newVersion() {
         return Long.toHexString(System.nanoTime());
-    }
-
-    private static class TaskKey {
-
-        private final String hostKey;
-        private final String databaseName;
-
-        public TaskKey(final IndexKey key) {
-            this.hostKey = key.getHostKey();
-            this.databaseName = key.getDatabaseName();
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + databaseName.hashCode();
-            result = prime * result + hostKey.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            TaskKey other = (TaskKey) obj;
-            if (!databaseName.equals(other.databaseName))
-                return false;
-            if (!hostKey.equals(other.hostKey))
-                return false;
-            return true;
-        }
-
     }
 
 }

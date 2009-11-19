@@ -21,28 +21,40 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
  */
 public abstract class Couch {
 
-    private static class CouchV10 extends Couch {
+    private static class CouchWithoutChanges extends Couch {
 
-        private CouchV10(final HttpClient client, final String url) {
+        private CouchWithoutChanges(final HttpClient client, final String url) {
             super(client, url);
         }
 
         @Override
         public Database getDatabase(final String dbname) {
-            return new Database.V10(httpClient, url + Utils.urlEncode(dbname));
+            return new Database.DatabaseWithoutChanges(httpClient, url + Utils.urlEncode(dbname));
         }
+        
+        @Override
+        public String toString() {
+            return "CouchDB without _changes";
+        }
+        
     }
 
-    private static class CouchV11 extends Couch {
+    private static class CouchWithChanges extends Couch {
 
-        private CouchV11(final HttpClient client, final String url) {
+        private CouchWithChanges(final HttpClient client, final String url) {
             super(client, url);
         }
 
         @Override
         public Database getDatabase(final String dbname) {
-            return new Database.V11(httpClient, url + Utils.urlEncode(dbname));
+            return new Database.DatabaseWithChanges(httpClient, url + Utils.urlEncode(dbname));
         }
+
+        @Override
+        public String toString() {
+            return "CouchDB with _changes";
+        }
+        
     }
 
     private static final Logger LOG = Logger.getLogger(Couch.class);
@@ -51,16 +63,13 @@ public abstract class Couch {
         final String version = getCouchVersion(client, url);
 
         if (version.contains("CouchDB/0.11")) {
-            LOG.info("CouchDB 0.11 detected.");
-            return new CouchV11(client, url);
+            return new CouchWithChanges(client, url);
         }
         if (version.contains("CouchDB/0.10")) {
-            LOG.info("CouchDB 0.10 detected.");
-            return new CouchV10(client, url);
+            return new CouchWithoutChanges(client, url);
         }
         if (version.contains("CouchDB/0.9.1")) {
-            LOG.info("CouchDB 0.9.1 detected.");
-            return new CouchV10(client, url);
+            return new CouchWithoutChanges(client, url);
         }
         throw new UnsupportedOperationException("No support for " + version);
     }
