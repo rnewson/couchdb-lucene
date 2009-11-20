@@ -39,6 +39,7 @@ public final class ServletUtils {
 
         Utils.setResponseContentTypeAndEncoding(request, response);
         response.setHeader(HttpHeaders.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
+        response.setStatus(code);
         
         final Writer writer = response.getWriter();
         try {
