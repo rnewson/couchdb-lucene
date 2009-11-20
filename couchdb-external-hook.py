@@ -15,12 +15,15 @@ __usage__ = "%prog [OPTIONS]"
 
 def options():
     return [
-        op.make_option('-u', '--url', dest='url',
+        op.make_option('--host', dest='host',
             default="127.0.0.1",
-            help="Host of the CouchDB-Lucene indexer. [%default]"),
-        op.make_option('-p', '--port', dest='port', type='int',
+            help="Hostname of the couchdb-lucene server. [%default]"),
+        op.make_option('--port', dest='port', type='int',
             default=5985,
-            help="Port of the CouchDB-Lucene indexer. [%default]")
+            help="Port of the couchdb-lucene server. [%default]"),
+        op.make_option('--key', dest='key',
+            default="local",
+            help="Host key of this couchdb instance. [%default]")
     ]
 
 def main():
@@ -29,15 +32,14 @@ def main():
 
     if len(args):
         parser.error("Unrecognized arguments: %s" % ' '.join(args))
-
-    res = httplib.HTTPConnection(opts.url, opts.port)
+    res = httplib.HTTPConnection(opts.host, opts.port)
     for req in requests():
         try:
-            resp = respond(res, req)
+            resp = respond(res, req, opts.key)
         except Exception, e:
             body = traceback.format_exc()
             resp = mkresp(500, body, {"Content-Type": "text/plain"})
-            res = httplib.HTTPConnection(opts.url, opts.port)
+            res = httplib.HTTPConnection(opts.host, opts.port)
 
         sys.stdout.write(json.dumps(resp))
         sys.stdout.write("\n")
@@ -49,18 +51,18 @@ def requests():
         yield json.loads(line)
         line = sys.stdin.readline()
 
-def respond(res, req):
+def respond(res, req, host_key):
     path = req.get("path", [])
 
     if len(path) != 4:
         body = "\n".join([
             "Invalid path: %s" % '/'.join([''] + path),
-            "Paths should be: /db_name/_fti/docid/index_name?q=...",
+            "Paths should be: /host_key/db_name/_fti/docid/index_name?q=...",
             "'docid' is from the '_design/docid' that defines index_name"
         ])
         return mkresp(400, body, {"Content-Type": "text/plain"})
 
-    path = '/'.join(['', 'search', path[0], path[2], path[3]])
+    path = '/'.join(['', 'search', host_key, path[0], path[2], path[3]])
     path = '?'.join([path, urllib.urlencode(req["query"])])
 
     req_headers = {}
