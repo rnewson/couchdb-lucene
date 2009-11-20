@@ -38,6 +38,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.Undefined;
 
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.util.Constants;
@@ -96,6 +97,11 @@ public final class RhinoDocument extends ScriptableObject {
 
         if (args[0] == null) {
             throw Context.reportRuntimeError("first argument must be non-null.");
+        }
+        
+        if (args[0] instanceof Undefined) {
+            // Ignore
+            return;
         }
 
         if (args.length == 2 && (args[1] == null || args[1] instanceof NativeObject == false)) {

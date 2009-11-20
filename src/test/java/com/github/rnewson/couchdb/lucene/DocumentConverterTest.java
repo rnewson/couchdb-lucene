@@ -63,6 +63,14 @@ public class DocumentConverterTest {
         assertThat(result.length, is(0));
     }
 
+    @Test
+    public void testNullAddsAreIgnored() throws Exception {
+        final DocumentConverter converter = new DocumentConverter(context, "null",
+                "function(doc) {var ret=new Document(); ret.add(doc.nope); return ret;}");
+        final Document[] result = converter.convert(doc("{_id:\"hello\"}"), new JSONObject(), null);
+        assertThat(result.length, is(1));
+    }
+
     private JSONObject doc(final String json) {
         return JSONObject.fromObject(json);
     }
