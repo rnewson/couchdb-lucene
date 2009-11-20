@@ -12,6 +12,7 @@ import java.util.UUID;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.ClientProtocolException;
@@ -58,7 +59,7 @@ public final class ViewIndexer implements Runnable {
 
     public ViewIndexer(final Lucene lucene, final CouchDbRegistry registry, final IndexKey key) {
         this.lucene = lucene;
-        this.logger = Logger.getLogger(key.toString());
+        this.logger = Logger.getLogger(ViewIndexer.class.getName() + "." + key.toString());
         this.registry = registry;
         this.key = key;
     }
@@ -67,13 +68,13 @@ public final class ViewIndexer implements Runnable {
         try {
             setup();
         } catch (final Exception e) {
-            logger.warn("Exception starting indexing.", e);
+            logger.debug("Exception starting indexing.", e);
             return;
         }
         try {
             index();
         } catch (final Exception e) {
-            logger.warn("Exception while indexing.", e);
+            logger.debug("Exception while indexing.", e);
         } finally {
             teardown();
         }
@@ -174,6 +175,7 @@ public final class ViewIndexer implements Runnable {
         private long pendingSince;
         private boolean pendingCommit;
         private final String digest;
+        private HttpGet get;
 
         public ViewChangesHandler(final UUID uuid, final JSONObject ddoc) throws IOException {
             final JSONObject view = extractView(ddoc);
@@ -207,30 +209,33 @@ public final class ViewIndexer implements Runnable {
         }
 
         public void start() throws IOException {
-            database.getChanges(since, this);
+            get = new HttpGet(url + "/_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
+            client.execute(get, this);
         }
 
         public Void handleResponse(final HttpResponse response) throws IOException {
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+            final HttpEntity entity = response.getEntity();
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
             String line;
-            while ((line = reader.readLine()) != null) {
+            loop: while ((line = reader.readLine()) != null) {
                 commitDocuments();
 
                 // Heartbeat.
                 if (line.length() == 0) {
-                    continue;
+                    logger.trace("heartbeat");
+                    continue loop;
                 }
 
                 final JSONObject json = JSONObject.fromObject(line);
 
                 if (json.has("error")) {
                     logger.warn("Indexing stopping due to error: " + json);
-                    return null;
+                    break loop;
                 }
-                
+
                 if (json.has("last_seq")) {
                     logger.warn("End of changes detected.");
-                    return null;
+                    break loop;
                 }
 
                 final JSONObject doc = json.getJSONObject("doc");
@@ -238,17 +243,18 @@ public final class ViewIndexer implements Runnable {
                 if (id.equals("_design/" + key.getDesignDocumentName())) {
                     if (doc.optBoolean("_deleted")) {
                         logger.info("Design document for this view was deleted.");
-                        return null;
-                    }                    
+                        break loop;
+                    }
                     final String newDigest = Lucene.digest(extractFunction(doc));
                     if (!digest.equals(newDigest)) {
                         logger.info("Digest of function changed.");
-                        return null;
+                        break loop;
                     }
                 } else if (id.startsWith("_design")) {
                     // Ignore other design document changes.
-                    continue;
+                    continue loop;
                 } else if (doc.optBoolean("_deleted")) {
+                    logger.trace(id + " deleted.");
                     lucene.withWriter(key, new WriterCallback() {
 
                         public boolean callback(final IndexWriter writer) throws IOException {
@@ -262,14 +268,15 @@ public final class ViewIndexer implements Runnable {
                     });
                     setPendingCommit(true);
                 } else {
+                    logger.trace(id + " inserted or updated.");
                     final Document[] docs;
                     try {
                         docs = converter.convert(doc, defaults, database);
                     } catch (final RhinoException e) {
                         logger.warn(id + " caused " + e.getMessage());
-                        continue;
+                        continue loop;
                     }
-                    logger.debug(id + " generated " + docs.length + " documents.");
+
                     lucene.withWriter(key, new WriterCallback() {
 
                         public boolean callback(final IndexWriter writer) throws IOException {
@@ -288,6 +295,7 @@ public final class ViewIndexer implements Runnable {
                 }
                 since = json.getLong("seq");
             }
+            get.abort();
             return null;
         }
 

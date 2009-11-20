@@ -35,6 +35,14 @@ public final class Lucene {
         public Tuple(final IndexWriter writer) {
             this.writer = writer;
         }
+
+        public void close() throws IOException {
+            if (reader != null)
+                reader.close();
+            if (writer != null)
+                writer.close();
+        }
+
     }
 
     public interface ReaderCallback {
@@ -147,10 +155,12 @@ public final class Lucene {
         dir.mkdirs();
 
         synchronized (map) {
-            if (map.containsKey(key))
-                return;
+            Tuple tuple = map.remove(key);
+            if (tuple != null) {
+                tuple.close();
+            }
             final Directory d = FSDirectory.open(dir);
-            final Tuple tuple = new Tuple(newWriter(d));
+            tuple = new Tuple(newWriter(d));
             map.put(key, tuple);
         }
     }

@@ -34,11 +34,6 @@ public final class Database {
         return getDocuments("_design", "_design0").getJSONArray("rows");
     }
 
-    public <T> T getChanges(final long since, final ResponseHandler<T> handler) throws IOException {
-        final HttpGet get = new HttpGet(url + "_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
-        return httpClient.execute(get, handler);
-    }
-
     public final JSONObject getDocument(final String id) throws IOException {
         final String response = HttpUtils.get(httpClient, url + Utils.urlEncode(id));
         return JSONObject.fromObject(response);
