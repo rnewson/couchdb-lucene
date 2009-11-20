@@ -45,6 +45,7 @@ import org.apache.lucene.util.Version;
 import com.github.rnewson.couchdb.lucene.Lucene.SearcherCallback;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
+import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
@@ -296,7 +297,7 @@ public final class SearchServlet extends HttpServlet {
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
         // q is mandatory.
         if (req.getParameter("q") == null) {
-            resp.sendError(400, "Missing q attribute.");
+            ServletUtils.sendJSONError(req, resp, 400, "Missing q attribute.");
             return;
         }
 
@@ -308,7 +309,7 @@ public final class SearchServlet extends HttpServlet {
         try {
             key = new IndexKey(req);
         } catch (final IllegalArgumentException e) {
-            resp.setStatus(400);
+            ServletUtils.sendJSONError(req, resp, 400, "Bad path");
             return;
         }
         lucene.startIndexing(key);
@@ -325,7 +326,7 @@ public final class SearchServlet extends HttpServlet {
                 // Parse query.
                 final Query q = toQuery(req);
                 if (q == null) {
-                    resp.sendError(400, "Bad query syntax.");
+                    ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax");
                     return;
                 }
 
@@ -425,7 +426,7 @@ public final class SearchServlet extends HttpServlet {
                     }
                     // Fetch documents (if requested).
                     if (include_docs && fetch_ids.length > 0) {
-                        final JSONArray fetched_docs = new JSONArray(); //database.getDocuments(fetch_ids).getJSONArray("rows");
+                        final JSONArray fetched_docs = new JSONArray(); // database.getDocuments(fetch_ids).getJSONArray("rows");
                         for (int i = 0; i < max; i++) {
                             rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
                         }
@@ -468,10 +469,11 @@ public final class SearchServlet extends HttpServlet {
             }
 
             public void onMissing() throws IOException {
-                resp.sendError(404, "Index for " + key.getDatabaseName() + " is missing.");
+                ServletUtils.sendJSONError(req, resp, 404, "Index for " + key.getDatabaseName() + " is missing.");
             }
         };
 
         lucene.withSearcher(key, staleOk, callback);
     }
+
 }
