@@ -92,7 +92,7 @@ public final class DocumentConverter {
     }
 
     private String loadResource(final String name) throws IOException {
-        final InputStream in = Indexer.class.getClassLoader().getResourceAsStream(name);
+        final InputStream in = DocumentConverter.class.getClassLoader().getResourceAsStream(name);
         try {
             return IOUtils.toString(in, "UTF-8");
         } finally {

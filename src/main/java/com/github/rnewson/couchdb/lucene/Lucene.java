@@ -159,7 +159,7 @@ public final class Lucene {
         executor.shutdownNow();
     }
 
-    private String digest(final String function) {
+    public static String digest(final String function) {
         try {
             final MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(function.replaceAll("\\s+", "").getBytes("UTF-8"));
