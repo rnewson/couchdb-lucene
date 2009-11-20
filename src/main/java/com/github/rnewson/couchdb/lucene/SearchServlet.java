@@ -8,7 +8,9 @@ import static java.lang.Math.min;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.ServletException;
@@ -59,6 +61,8 @@ public final class SearchServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    private final Map<String, View> views = new HashMap<String, View>();
+    
     private Lucene lucene;
 
     public void setLucene(final Lucene lucene) {
