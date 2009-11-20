@@ -227,11 +227,20 @@ public final class ViewIndexer implements Runnable {
                     logger.warn("Indexing stopping due to error: " + json);
                     return null;
                 }
+                
+                if (json.has("last_seq")) {
+                    logger.warn("End of changes detected.");
+                    return null;
+                }
 
                 final JSONObject doc = json.getJSONObject("doc");
                 final String id = doc.getString("_id");
                 if (id.equals("_design/" + key.getDesignDocumentName())) {
-                    final String newDigest = Lucene.digest(extractFunction(json));
+                    if (doc.optBoolean("_deleted")) {
+                        logger.info("Design document for this view was deleted.");
+                        return null;
+                    }                    
+                    final String newDigest = Lucene.digest(extractFunction(doc));
                     if (!digest.equals(newDigest)) {
                         logger.info("Digest of function changed.");
                         return null;
@@ -239,7 +248,7 @@ public final class ViewIndexer implements Runnable {
                 } else if (id.startsWith("_design")) {
                     // Ignore other design document changes.
                     continue;
-                } else if (json.optBoolean("_deleted")) {
+                } else if (doc.optBoolean("_deleted")) {
                     lucene.withWriter(key, new WriterCallback() {
 
                         public boolean callback(final IndexWriter writer) throws IOException {
