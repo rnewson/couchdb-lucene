@@ -31,6 +31,10 @@ public class Main {
             LOG.error("lucene.dir not set.");
             System.exit(1);
         }
+        if (!dir.exists() && !dir.mkdir()) {
+            LOG.error("Could not create " + dir.getCanonicalPath());
+            System.exit(1);
+        }
         if (!dir.canRead()) {
             LOG.error(dir + " is not readable.");
             System.exit(1);
