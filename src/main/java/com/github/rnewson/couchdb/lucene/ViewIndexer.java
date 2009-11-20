@@ -299,7 +299,7 @@ public final class ViewIndexer implements Runnable {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     final Map<String, String> userData = new HashMap<String, String>();
                     userData.put("last_seq", Long.toString(since));
-                    logger.info("Committing update_seq " + since);
+                    logger.info("Checkpoint at update_seq " + since);
                     writer.commit(userData);
                     return false;
                 }
