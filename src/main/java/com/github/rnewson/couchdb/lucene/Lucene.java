@@ -22,9 +22,8 @@ import com.github.rnewson.couchdb.lucene.util.Constants;
 public final class Lucene {
 
     private final File root;
-    private final CouchDbRegistry registry;
-    private final IdempotentExecutor<IndexKey> executor = new IdempotentExecutor<IndexKey>();
-    private final Map<IndexKey, Tuple> map = new HashMap<IndexKey, Tuple>();
+    private final IdempotentExecutor<String> executor = new IdempotentExecutor<String>();
+    private final Map<String, Tuple> map = new HashMap<String, Tuple>();
 
     private static class Tuple {
         private String version;
@@ -66,19 +65,18 @@ public final class Lucene {
         public void onMissing() throws IOException;
     }
 
-    public Lucene(final File root, final CouchDbRegistry registry) {
+    public Lucene(final File root) {
         this.root = root;
-        this.registry = registry;
     }
 
-    public void startIndexing(final IndexKey indexKey) {
-        executor.submit(indexKey, new ViewIndexer(this, registry, indexKey));
+    public void startIndexing(final String path) {
+        executor.submit(path, new ViewIndexer(this, path));
     }
 
-    public void withReader(final IndexKey key, final boolean staleOk, final ReaderCallback callback) throws IOException {
+    public void withReader(final String path, final boolean staleOk, final ReaderCallback callback) throws IOException {
         final Tuple tuple;
         synchronized (map) {
-            tuple = map.get(key);
+            tuple = map.get(path);
         }
         if (tuple == null) {
             callback.onMissing();
@@ -114,11 +112,11 @@ public final class Lucene {
         }
     }
 
-    public void withSearcher(final IndexKey key, final boolean staleOk, final SearcherCallback callback) throws IOException {
-        withReader(key, staleOk, new ReaderCallback() {
+    public void withSearcher(final String path, final boolean staleOk, final SearcherCallback callback) throws IOException {
+        withReader(path, staleOk, new ReaderCallback() {
 
             public void callback(final IndexReader reader) throws IOException {
-                callback.callback(new IndexSearcher(reader), map.get(key).version);
+                callback.callback(new IndexSearcher(reader), map.get(path).version);
             }
 
             public void onMissing() throws IOException {
@@ -127,10 +125,10 @@ public final class Lucene {
         });
     }
 
-    public void withWriter(final IndexKey key, final WriterCallback callback) throws IOException {
+    public void withWriter(final String path, final WriterCallback callback) throws IOException {
         final Tuple tuple;
         synchronized (map) {
-            tuple = map.get(key);
+            tuple = map.get(path);
         }
 
         if (tuple == null) {
@@ -144,24 +142,24 @@ public final class Lucene {
                 tuple.dirty = dirty;
             }
         } catch (final OutOfMemoryError e) {
-            map.remove(key).writer.rollback();
+            map.remove(path).writer.rollback();
             throw e;
         }
     }
 
-    public void createWriter(final IndexKey key, final UUID uuid, final String function) throws IOException {
+    public void createWriter(final String path, final UUID uuid, final String function) throws IOException {
         final String digest = digest(function);
         final File dir = new File(new File(root, uuid.toString()), digest);
         dir.mkdirs();
 
         synchronized (map) {
-            Tuple tuple = map.remove(key);
+            Tuple tuple = map.remove(path);
             if (tuple != null) {
                 tuple.close();
             }
             final Directory d = FSDirectory.open(dir);
             tuple = new Tuple(newWriter(d));
-            map.put(key, tuple);
+            map.put(path, tuple);
         }
     }
 

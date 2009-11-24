@@ -45,8 +45,7 @@ public class Main {
         }
         LOG.info("Index output goes to: " + dir.getCanonicalPath());
 
-        final CouchDbRegistry registry = new CouchDbRegistry(properties, "couchdb.url.");
-        final Lucene lucene = new Lucene(dir, registry);
+        final Lucene lucene = new Lucene(dir);
         final int port = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
         final Server jetty = jetty(lucene, port);
 

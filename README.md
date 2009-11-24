@@ -39,20 +39,25 @@ You will now have a zip file in the target/ directory. This contains all the cou
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
 
 [external]
-fti=/path/to/python /usr/lib/couchdb/couchdb-lucene/couchdb-external-hook.py --host=localhost --port=5985
+fti=/path/to/python /usr/lib/couchdb/couchdb-lucene/couchdb-external-hook.py
 
 [httpd_db_handlers]
 _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 </pre>
 
+<h2>Hook options</h2>
+
+<table>
+<tr><th>Option</th><th>Meaning</th><th>Default Value</th></tr>
+<tr><td>--remote-host</td><td>The hostname of the couchdb-lucene server</td><td>localhost</td></tr>
+<tr><td>--remote-port</td><td>The port of the couchdb-lucene server</td><td>5985</td></tr>
+<tr><td>--local-host</td><td>The hostname of the couchdb server</td><td>localhost</td></tr>
+<tr><td>--local-port</td><td>The port of the couchdb server</td><td>5984</td></tr>
+</table>
+
 <h1>Configure couchdb-lucene</h1>
 
-couchdb-lucene runs in a single, standalone JVM. As such, you can choose to locate your couchdb-lucene server on a different machine to couchdb if you wish, or keep it on the same machine, it's your call. 
-
-<ol>
-<li>Unzip the couchdb-lucene zip file.
-<li>Open the conf/couchdb-lucene.properties file.
-<li>Edit the couchdb.url to point to your couchdb installation.
+couchdb-lucene runs in a single, standalone JVM. As such, you can choose to locate your couchdb-lucene server on a different machine to couchdb if you wish, or keep it on the same machine, it's your call.
 
 <h1>Start couchdb-lucene</h1>
 

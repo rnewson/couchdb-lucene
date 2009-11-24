@@ -305,14 +305,7 @@ public final class SearchServlet extends HttpServlet {
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
         final boolean staleOk = Utils.getStaleOk(req);
 
-        final IndexKey key;
-        try {
-            key = new IndexKey(req);
-        } catch (final IllegalArgumentException e) {
-            ServletUtils.sendJSONError(req, resp, 400, "Bad path");
-            return;
-        }
-        lucene.startIndexing(key);
+        lucene.startIndexing(req.getPathInfo());
 
         final SearcherCallback callback = new SearcherCallback() {
 
@@ -469,11 +462,11 @@ public final class SearchServlet extends HttpServlet {
             }
 
             public void onMissing() throws IOException {
-                ServletUtils.sendJSONError(req, resp, 404, "Index for " + key.getDatabaseName() + " is missing.");
+                ServletUtils.sendJSONError(req, resp, 404, "Index for " + req.getPathInfo() + " is missing.");
             }
         };
 
-        lucene.withSearcher(key, staleOk, callback);
+        lucene.withSearcher(req.getPathInfo(), staleOk, callback);
     }
 
 }

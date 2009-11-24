@@ -36,12 +36,10 @@ public final class AdminServlet extends HttpServlet {
 
     @Override
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        final IndexKey key = new IndexKey(req);
-
         final String command = req.getParameter("cmd");
 
         if ("expunge".equals(command)) {
-            lucene.withWriter(key, new WriterCallback() {
+            lucene.withWriter(req.getPathInfo(), new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
                     return false;
@@ -56,7 +54,7 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("optimize".equals(command)) {
-            lucene.withWriter(key, new WriterCallback() {
+            lucene.withWriter(req.getPathInfo(), new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
                     return false;

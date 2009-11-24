@@ -14,13 +14,12 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
@@ -31,7 +30,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
-import org.apache.tika.io.IOUtils;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.RhinoException;
@@ -42,7 +40,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
-import com.github.rnewson.couchdb.lucene.util.StatusCodeResponseHandler;
+import com.github.rnewson.couchdb.lucene.util.Utils;
 
 public final class ViewIndexer implements Runnable {
 
@@ -51,17 +49,14 @@ public final class ViewIndexer implements Runnable {
     private final Logger logger;
     private HttpClient client;
     private Context context;
-    private final IndexKey key;
-    private final CouchDbRegistry registry;
+    private final String path;
     private Database database;
-    private String url;
     private final Lucene lucene;
 
-    public ViewIndexer(final Lucene lucene, final CouchDbRegistry registry, final IndexKey key) {
+    public ViewIndexer(final Lucene lucene, final String path) {
         this.lucene = lucene;
-        this.logger = Logger.getLogger(ViewIndexer.class.getName() + "." + key.toString());
-        this.registry = registry;
-        this.key = key;
+        this.logger = Logger.getLogger(ViewIndexer.class.getName() + "." + path);
+        this.path = path;
     }
 
     public void run() {
@@ -86,9 +81,9 @@ public final class ViewIndexer implements Runnable {
         context.setClassShutter(new RestrictiveClassShutter());
         context.setOptimizationLevel(9);
         client = httpClient();
-        url = registry.createUrlByHostKey(key.getHostKey(), key.getDatabaseName());
-        final Couch couch = new Couch(client, registry.createUrlByHostKey(key.getHostKey(), ""));
-        database = couch.getDatabase(key.getDatabaseName());
+        final String url = String.format("http://%s:%d/", Utils.getHost(path), Utils.getPort(path));
+        final Couch couch = new Couch(client, url);
+        database = couch.getDatabase(Utils.getDatabase(path));
     }
 
     private void teardown() {
@@ -99,7 +94,7 @@ public final class ViewIndexer implements Runnable {
 
     private void index() throws IOException {
         final UUID uuid = getDatabaseUuid();
-        final JSONObject ddoc = database.getDocument("_design/" + key.getDesignDocumentName());
+        final JSONObject ddoc = database.getDocument("_design/" + Utils.getDesignDocumentName(path));
         new ViewChangesHandler(uuid, ddoc).start();
     }
 
@@ -126,44 +121,21 @@ public final class ViewIndexer implements Runnable {
     }
 
     private UUID getDatabaseUuid() throws IOException {
-        final HttpGet get = new HttpGet(url + "/_local/lucene");
-        UUID result = client.execute(get, new UUIDHandler());
-
-        if (result == null) {
-            result = UUID.randomUUID();
-            final String doc = String.format("{\"uuid\":\"%s\"}", result);
-            final HttpPut put = new HttpPut(url + "/_local/lucene");
-            put.setEntity(new StringEntity(doc));
-            final int sc = client.execute(put, new StatusCodeResponseHandler());
-            switch (sc) {
-            case 201:
-                break;
-            case 404:
-            case 409:
-                result = getDatabaseUuid();
-                break;
+        try {
+            final JSONObject local = database.getDocument("_local/lucene");
+            final UUID uuid = UUID.fromString(local.getString("uuid"));
+            logger.info("Database has uuid " + uuid);
+            return uuid;
+        } catch (final HttpResponseException e) {
+            switch (e.getStatusCode()) {
+            case HttpStatus.SC_NOT_FOUND:
+                final UUID uuid = UUID.randomUUID();
+                database.saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
+                return getDatabaseUuid();
             default:
-                throw new IOException("Unexpected error code: " + sc);
+                throw e;
             }
         }
-
-        logger.info("Database has uuid " + result);
-        return result;
-    }
-
-    private class UUIDHandler implements ResponseHandler<UUID> {
-
-        public UUID handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
-            switch (response.getStatusLine().getStatusCode()) {
-            case 200:
-                final String body = IOUtils.toString(response.getEntity().getContent());
-                final JSONObject json = JSONObject.fromObject(body);
-                return UUID.fromString(json.getString("uuid"));
-            default:
-                return null;
-            }
-        }
-
     }
 
     private class ViewChangesHandler implements ResponseHandler<Void> {
@@ -183,9 +155,9 @@ public final class ViewIndexer implements Runnable {
             analyzer = Analyzers.getAnalyzer(view.optString("analyzer", "standard"));
             final String function = extractFunction(ddoc);
             converter = new DocumentConverter(context, null, function);
-            lucene.createWriter(key, uuid, function);
+            lucene.createWriter(path, uuid, function);
             digest = Lucene.digest(function);
-            lucene.withReader(key, false, new ReaderCallback() {
+            lucene.withReader(path, false, new ReaderCallback() {
                 public void callback(final IndexReader reader) throws IOException {
                     final Map commit = reader.getCommitUserData();
                     if (commit != null && commit.containsKey("last_seq")) {
@@ -201,7 +173,7 @@ public final class ViewIndexer implements Runnable {
 
         private JSONObject extractView(final JSONObject ddoc) {
             final JSONObject fulltext = ddoc.getJSONObject("fulltext");
-            return fulltext.getJSONObject(key.getViewName());
+            return fulltext.getJSONObject(Utils.getViewName(path));
         }
 
         private String extractFunction(final JSONObject ddoc) {
@@ -209,8 +181,7 @@ public final class ViewIndexer implements Runnable {
         }
 
         public void start() throws IOException {
-            get = new HttpGet(url + "/_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
-            client.execute(get, this);
+            database.handleChanges(since, this);
         }
 
         public Void handleResponse(final HttpResponse response) throws IOException {
@@ -240,7 +211,7 @@ public final class ViewIndexer implements Runnable {
 
                 final JSONObject doc = json.getJSONObject("doc");
                 final String id = doc.getString("_id");
-                if (id.equals("_design/" + key.getDesignDocumentName())) {
+                if (id.equals("_design/" + Utils.getDesignDocumentName(path))) {
                     if (doc.optBoolean("_deleted")) {
                         logger.info("Design document for this view was deleted.");
                         break loop;
@@ -255,7 +226,7 @@ public final class ViewIndexer implements Runnable {
                     continue loop;
                 } else if (doc.optBoolean("_deleted")) {
                     logger.trace(id + " deleted.");
-                    lucene.withWriter(key, new WriterCallback() {
+                    lucene.withWriter(path, new WriterCallback() {
 
                         public boolean callback(final IndexWriter writer) throws IOException {
                             writer.deleteDocuments(new Term("_id", id));
@@ -277,7 +248,7 @@ public final class ViewIndexer implements Runnable {
                         continue loop;
                     }
 
-                    lucene.withWriter(key, new WriterCallback() {
+                    lucene.withWriter(path, new WriterCallback() {
 
                         public boolean callback(final IndexWriter writer) throws IOException {
                             writer.deleteDocuments(new Term("_id", id));
@@ -303,7 +274,7 @@ public final class ViewIndexer implements Runnable {
             if (!hasPendingCommit())
                 return;
 
-            lucene.withWriter(key, new WriterCallback() {
+            lucene.withWriter(path, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     final Map<String, String> userData = new HashMap<String, String>();
                     userData.put("last_seq", Long.toString(since));

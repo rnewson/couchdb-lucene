@@ -66,6 +66,11 @@ public final class Database {
         return httpClient.execute(get, handler);
     }
 
+    public <T> T handleChanges(final long since, final ResponseHandler<T> handler) throws IOException {
+        final HttpGet get = new HttpGet(url + "/_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
+        return httpClient.execute(get, handler);
+    }
+
     public final boolean saveDocument(final String id, final String body) throws IOException {
         return HttpUtils.put(httpClient, url + Utils.urlEncode(id), body) == 201;
     }

@@ -44,9 +44,7 @@ public class InfoServlet extends HttpServlet {
 
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        final IndexKey key = new IndexKey(req);
-
-        lucene.withReader(key, Utils.getStaleOk(req), new ReaderCallback() {
+        lucene.withReader(req.getPathInfo(), Utils.getStaleOk(req), new ReaderCallback() {
             public void callback(final IndexReader reader) throws IOException {
                 final JSONObject result = new JSONObject();
                 result.put("current", reader.isCurrent());

@@ -20,6 +20,7 @@ import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanPara
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Arrays;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -63,5 +64,34 @@ public class Utils {
             throw new Error("UTF-8 support missing!");
         }
     }
+    
+    public static String getHost(final String path) {
+        return split(path)[0];
+    }
+
+    public static int getPort(final String path) {
+        return Integer.parseInt(split(path)[1]);
+    }
+
+    public static String getDatabase(final String path) {
+        return split(path)[2];
+    }
+
+    public static String getDesignDocumentName(final String path) {
+        return split(path)[3];
+    }
+
+    public static String getViewName(final String path) {
+        return split(path)[4];
+    }
+
+    private static String[] split(final String path) {
+        final String[] result = path.substring(1).split("/");
+        if (result.length != 5) {
+            throw new IllegalArgumentException("Malformed path (" + Arrays.toString(result) + ")");
+        }
+        return result;
+    }
+
 
 }
