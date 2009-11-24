@@ -70,7 +70,10 @@ public final class Lucene {
     }
 
     public void startIndexing(final String path) {
-        executor.submit(path, new ViewIndexer(this, path));
+        final ViewIndexer viewIndexer = new ViewIndexer(this, path);
+        if (executor.submit(path, viewIndexer)) {
+            viewIndexer.awaitInitialIndexing();
+        }
     }
 
     public void withReader(final String path, final boolean staleOk, final ReaderCallback callback) throws IOException {

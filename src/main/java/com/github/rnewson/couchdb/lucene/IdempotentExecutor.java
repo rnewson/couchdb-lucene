@@ -14,13 +14,16 @@ public final class IdempotentExecutor<K> {
 
     private final Map<K, Thread> tasks = new HashMap<K, Thread>();
 
-    public synchronized void submit(final K key, final Runnable runnable) {
+    public synchronized boolean submit(final K key, final Runnable runnable) {
         cleanup();
-        if (!tasks.containsKey(key)) {
-            final Thread thread = new Thread(runnable, key.toString());
-            tasks.put(key, thread);
-            thread.start();
+        if (tasks.containsKey(key)) {
+            return false;
         }
+
+        final Thread thread = new Thread(runnable, key.toString());
+        tasks.put(key, thread);
+        thread.start();
+        return true;
     }
 
     public synchronized int getTaskCount() {

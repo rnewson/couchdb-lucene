@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 
 import net.sf.json.JSONObject;
 
@@ -52,11 +53,20 @@ public final class ViewIndexer implements Runnable {
     private final String path;
     private Database database;
     private final Lucene lucene;
+    private final CountDownLatch latch = new CountDownLatch(1);
 
     public ViewIndexer(final Lucene lucene, final String path) {
         this.lucene = lucene;
         this.logger = Logger.getLogger(ViewIndexer.class.getName() + "." + path);
         this.path = path;
+    }
+
+    public void awaitInitialIndexing() {
+        try {
+            latch.await();
+        } catch (final InterruptedException e) {
+            // Ignore.
+        }
     }
 
     public void run() {
@@ -95,7 +105,8 @@ public final class ViewIndexer implements Runnable {
     private void index() throws IOException {
         final UUID uuid = getDatabaseUuid();
         final JSONObject ddoc = database.getDocument("_design/" + Utils.getDesignDocumentName(path));
-        new ViewChangesHandler(uuid, ddoc).start();
+        final JSONObject info = database.getInfo();
+        new ViewChangesHandler(uuid, ddoc, info.getLong("update_seq")).start();
     }
 
     private HttpClient httpClient() {
@@ -148,15 +159,17 @@ public final class ViewIndexer implements Runnable {
         private boolean pendingCommit;
         private final String digest;
         private HttpGet get;
+        private final long latchThreshold;
 
-        public ViewChangesHandler(final UUID uuid, final JSONObject ddoc) throws IOException {
+        public ViewChangesHandler(final UUID uuid, final JSONObject ddoc, final long latchThreshold) throws IOException {
             final JSONObject view = extractView(ddoc);
-            defaults = view.has("defaults") ? view.getJSONObject("defaults") : defaults();
-            analyzer = Analyzers.getAnalyzer(view.optString("analyzer", "standard"));
+            this.latchThreshold = latchThreshold;
+            this.defaults = view.has("defaults") ? view.getJSONObject("defaults") : defaults();
+            this.analyzer = Analyzers.getAnalyzer(view.optString("analyzer", "standard"));
             final String function = extractFunction(ddoc);
-            converter = new DocumentConverter(context, null, function);
+            this.converter = new DocumentConverter(context, null, function);
             lucene.createWriter(path, uuid, function);
-            digest = Lucene.digest(function);
+            this.digest = Lucene.digest(function);
             lucene.withReader(path, false, new ReaderCallback() {
                 public void callback(final IndexReader reader) throws IOException {
                     final Map commit = reader.getCommitUserData();
@@ -265,6 +278,9 @@ public final class ViewIndexer implements Runnable {
                     setPendingCommit(true);
                 }
                 since = json.getLong("seq");
+                if (since >= latchThreshold) {
+                    latch.countDown();
+                }
             }
             get.abort();
             return null;
