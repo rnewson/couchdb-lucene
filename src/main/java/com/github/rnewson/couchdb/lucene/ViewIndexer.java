@@ -183,6 +183,7 @@ public final class ViewIndexer implements Runnable {
                     since = 0;
                 }
             });
+            releaseCatch();
         }
 
         private JSONObject extractView(final JSONObject ddoc) {
@@ -279,12 +280,17 @@ public final class ViewIndexer implements Runnable {
                     setPendingCommit(true);
                 }
                 since = json.getLong("seq");
-                if (since >= latchThreshold) {
-                    latch.countDown();
-                }
+                releaseCatch();
             }
             get.abort();
             return null;
+        }
+
+        private void releaseCatch() {
+            if (since >= latchThreshold) {
+                logger.debug("caught up to threshold of " + latchThreshold);
+                latch.countDown();
+            }
         }
 
         private void commitDocuments() throws IOException {
