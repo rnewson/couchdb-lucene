@@ -18,6 +18,7 @@ package com.github.rnewson.couchdb.lucene.util;
 
 import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanParameter;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
@@ -28,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.store.Directory;
 
 public class Utils {
 
@@ -45,7 +47,7 @@ public class Utils {
         resp.setCharacterEncoding("utf-8");
     }
 
-    public static boolean getStaleOk(final HttpServletRequest req) {        
+    public static boolean getStaleOk(final HttpServletRequest req) {
         return "ok".equals(req.getParameter("stale"));
     }
 
@@ -64,7 +66,7 @@ public class Utils {
             throw new Error("UTF-8 support missing!");
         }
     }
-    
+
     public static String getHost(final String path) {
         return split(path)[0];
     }
@@ -93,5 +95,12 @@ public class Utils {
         return result;
     }
 
+    public static long directorySize(final Directory dir) throws IOException {
+        long result = 0;
+        for (final String name : dir.listAll()) {
+            result += dir.fileLength(name);
+        }
+        return result;
+    }
 
 }

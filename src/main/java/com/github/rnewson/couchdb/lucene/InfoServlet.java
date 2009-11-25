@@ -13,7 +13,6 @@ import net.sf.json.JSONObject;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexReader.FieldOption;
-import org.apache.lucene.store.Directory;
 
 import com.github.rnewson.couchdb.lucene.Lucene.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.util.Utils;
@@ -28,14 +27,6 @@ public class InfoServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private static long size(final Directory dir) throws IOException {
-        long result = 0;
-        for (final String name : dir.listAll()) {
-            result += dir.fileLength(name);
-        }
-        return result;
-    }
-
     private Lucene lucene;
 
     public void setLucene(final Lucene lucene) {
@@ -48,7 +39,7 @@ public class InfoServlet extends HttpServlet {
             public void callback(final IndexReader reader) throws IOException {
                 final JSONObject result = new JSONObject();
                 result.put("current", reader.isCurrent());
-                result.put("disk_size", size(reader.directory()));
+                result.put("disk_size", Utils.directorySize(reader.directory()));
                 result.put("doc_count", reader.numDocs());
                 result.put("doc_del_count", reader.numDeletedDocs());
                 final JSONArray fields = new JSONArray();

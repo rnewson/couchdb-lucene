@@ -29,7 +29,6 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
-import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.util.Version;
@@ -57,107 +56,6 @@ public final class SearchServlet extends HttpServlet {
         this.lucene = lucene;
     }
 
-    private Query toQuery(final HttpServletRequest req) {
-        // Parse query.
-        final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
-        final CustomQueryParser parser = new CustomQueryParser(new QueryParser(Version.LUCENE_CURRENT, Constants.DEFAULT_FIELD,
-                analyzer));
-        try {
-            return parser.parse(req.getParameter("q"));
-        } catch (final ParseException e) {
-            return null;
-        }
-    }
-
-    private Sort toSort(final String sort) {
-        if (sort == null) {
-            return null;
-        } else {
-            final String[] split = sort.split(",");
-            final SortField[] sort_fields = new SortField[split.length];
-            for (int i = 0; i < split.length; i++) {
-                String tmp = split[i];
-                final boolean reverse = tmp.charAt(0) == '\\';
-                // Strip sort order character.
-                if (tmp.charAt(0) == '\\' || tmp.charAt(0) == '/') {
-                    tmp = tmp.substring(1);
-                }
-                final boolean has_type = tmp.indexOf(':') != -1;
-                if (!has_type) {
-                    sort_fields[i] = new SortField(tmp, SortField.STRING, reverse);
-                } else {
-                    final String field = tmp.substring(0, tmp.indexOf(':'));
-                    final String type = tmp.substring(tmp.indexOf(':') + 1);
-                    int type_int = SortField.STRING;
-                    if ("int".equals(type)) {
-                        type_int = SortField.INT;
-                    } else if ("float".equals(type)) {
-                        type_int = SortField.FLOAT;
-                    } else if ("double".equals(type)) {
-                        type_int = SortField.DOUBLE;
-                    } else if ("long".equals(type)) {
-                        type_int = SortField.LONG;
-                    } else if ("date".equals(type)) {
-                        type_int = SortField.LONG;
-                    } else if ("string".equals(type)) {
-                        type_int = SortField.STRING;
-                    }
-                    sort_fields[i] = new SortField(field, type_int, reverse);
-                }
-            }
-            return new Sort(sort_fields);
-        }
-    }
-
-    private String toString(final SortField[] sortFields) {
-        final JSONArray result = new JSONArray();
-        for (final SortField field : sortFields) {
-            final JSONObject col = new JSONObject();
-            col.element("field", field.getField());
-            col.element("reverse", field.getReverse());
-
-            final String type;
-            switch (field.getType()) {
-            case SortField.DOC:
-                type = "doc";
-                break;
-            case SortField.SCORE:
-                type = "score";
-                break;
-            case SortField.INT:
-                type = "int";
-                break;
-            case SortField.LONG:
-                type = "long";
-                break;
-            case SortField.BYTE:
-                type = "byte";
-                break;
-            case SortField.CUSTOM:
-                type = "custom";
-                break;
-            case SortField.DOUBLE:
-                type = "double";
-                break;
-            case SortField.FLOAT:
-                type = "float";
-                break;
-            case SortField.SHORT:
-                type = "short";
-                break;
-            case SortField.STRING:
-                type = "string";
-                break;
-            default:
-                type = "unknown";
-                break;
-            }
-            col.element("type", type);
-            result.add(col);
-        }
-        return result.toString();
-    }
-
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
         // q is mandatory.
@@ -182,8 +80,14 @@ public final class SearchServlet extends HttpServlet {
                 }
 
                 // Parse query.
-                final Query q = toQuery(req);
-                if (q == null) {
+                final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
+                final CustomQueryParser parser = new CustomQueryParser(new QueryParser(Version.LUCENE_CURRENT,
+                        Constants.DEFAULT_FIELD, analyzer));
+
+                final Query q;
+                try {
+                    q = parser.parse(req.getParameter("q"));
+                } catch (final ParseException e) {
                     ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax");
                     return;
                 }
@@ -215,7 +119,7 @@ public final class SearchServlet extends HttpServlet {
 
                     final boolean include_docs = getBooleanParameter(req, "include_docs");
                     final int limit = getIntParameter(req, "limit", 25);
-                    final Sort sort = toSort(req.getParameter("sort"));
+                    final Sort sort = parser.toSort(req.getParameter("sort"));
                     final int skip = getIntParameter(req, "skip", 0);
 
                     if (sort == null) {
@@ -298,7 +202,7 @@ public final class SearchServlet extends HttpServlet {
                     json.put("fetch_duration", stopWatch.getElapsed("fetch"));
                     // Include sort info (if requested).
                     if (td instanceof TopFieldDocs) {
-                        json.put("sort_order", SearchServlet.this.toString(((TopFieldDocs) td).fields));
+                        json.put("sort_order", parser.toString(((TopFieldDocs) td).fields));
                     }
                     json.put("rows", rows);
                 }

@@ -12,13 +12,6 @@
       <artifactId>httpclient</artifactId>
       <version>4.0</version>
     </dependency>
-    <!-- Temporary jcip dep until httpclient 4.0.1 -->
-    <dependency>
-      <groupId>net.jcip</groupId>
-      <artifactId>jcip-annotations</artifactId>
-      <version>1.0</version>
-    </dependency>
-    <!-- remove above -->
     <dependency>
       <groupId>org.mortbay.jetty</groupId>
       <artifactId>jetty-embedded</artifactId>
