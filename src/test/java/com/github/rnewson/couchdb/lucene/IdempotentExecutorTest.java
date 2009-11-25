@@ -31,11 +31,11 @@ public class IdempotentExecutorTest {
 
     }
 
-    private IdempotentExecutor<Integer> executor;
+    private IdempotentExecutor<Integer, MyRunnable> executor;
 
     @Before
     public void setup() {
-        executor = new IdempotentExecutor<Integer>();
+        executor = new IdempotentExecutor<Integer, MyRunnable>();
     }
 
     @After
