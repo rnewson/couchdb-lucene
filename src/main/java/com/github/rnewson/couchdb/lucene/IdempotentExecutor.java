@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
+
 /**
  * Prevents the same task executing concurrently.
  * 
@@ -13,18 +15,22 @@ import java.util.Map.Entry;
  */
 public final class IdempotentExecutor<K, V extends Runnable> {
 
+    private static final Logger LOG = Logger.getLogger(IdempotentExecutor.class);
+
     private final Map<K, Thread> threads = new HashMap<K, Thread>();
     private final Map<K, V> values = new HashMap<K, V>();
 
     public synchronized V submit(final K key, final V value) {
         cleanup();
         if (values.containsKey(key)) {
+            LOG.debug("Existing view indexer found for " + key);
             return values.get(key);
         }
         final Thread thread = new Thread(value, key.toString());
         values.put(key, value);
         threads.put(key, thread);
         thread.start();
+        LOG.debug("Started new view indexer found for " + key);
         return value;
     }
 
@@ -47,6 +53,7 @@ public final class IdempotentExecutor<K, V extends Runnable> {
         while (it.hasNext()) {
             final Entry<K, Thread> entry = it.next();
             if (!entry.getValue().isAlive()) {
+                LOG.debug("Reaped dead view indexer for " + entry.getKey());
                 it.remove();
                 values.remove(entry.getKey());
             }

@@ -68,6 +68,11 @@ public final class SearchServlet extends HttpServlet {
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
         final boolean staleOk = Utils.getStaleOk(req);
 
+        if (!Utils.validatePath(req.getPathInfo())) {
+            ServletUtils.sendJSONError(req, resp, 400, "Bad path");
+            return;
+        }
+
         lucene.startIndexing(req.getPathInfo());
 
         final SearcherCallback callback = new SearcherCallback() {
