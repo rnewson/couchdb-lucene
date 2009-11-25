@@ -22,7 +22,7 @@ import com.github.rnewson.couchdb.lucene.util.Constants;
 public final class Lucene {
 
     private final File root;
-    private final IdempotentExecutor<String> executor = new IdempotentExecutor<String>();
+    private final IdempotentExecutor<String, ViewIndexer> executor = new IdempotentExecutor<String, ViewIndexer>();
     private final Map<String, Tuple> map = new HashMap<String, Tuple>();
 
     private static class Tuple {
@@ -70,10 +70,8 @@ public final class Lucene {
     }
 
     public void startIndexing(final String path) {
-        final ViewIndexer viewIndexer = new ViewIndexer(this, path);
-        if (executor.submit(path, viewIndexer)) {
-            viewIndexer.awaitInitialIndexing();
-        }
+        final ViewIndexer viewIndexer = executor.submit(path, new ViewIndexer(this, path));
+        viewIndexer.awaitInitialIndexing();
     }
 
     public void withReader(final String path, final boolean staleOk, final ReaderCallback callback) throws IOException {

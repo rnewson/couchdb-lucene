@@ -71,12 +71,12 @@ public final class ViewIndexer implements Runnable {
 
     public void run() {
         try {
-            setup();
-        } catch (final Exception e) {
-            logger.debug("Exception starting indexing.", e);
-            return;
-        }
-        try {
+            try {
+                setup();
+            } catch (final Exception e) {
+                logger.debug("Exception starting indexing.", e);
+                return;
+            }
             index();
         } catch (final Exception e) {
             logger.debug("Exception while indexing.", e);
@@ -97,6 +97,7 @@ public final class ViewIndexer implements Runnable {
     }
 
     private void teardown() {
+        latch.countDown();
         logger.info("Stopping.");
         client.getConnectionManager().shutdown();
         Context.exit();

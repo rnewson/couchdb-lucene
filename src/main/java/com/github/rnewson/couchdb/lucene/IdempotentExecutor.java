@@ -3,6 +3,7 @@ package com.github.rnewson.couchdb.lucene;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Prevents the same task executing concurrently.
@@ -10,41 +11,45 @@ import java.util.Map;
  * @author robertnewson
  * 
  */
-public final class IdempotentExecutor<K> {
+public final class IdempotentExecutor<K, V extends Runnable> {
 
-    private final Map<K, Thread> tasks = new HashMap<K, Thread>();
+    private final Map<K, Thread> threads = new HashMap<K, Thread>();
+    private final Map<K, V> values = new HashMap<K, V>();
 
-    public synchronized boolean submit(final K key, final Runnable runnable) {
+    public synchronized V submit(final K key, final V value) {
         cleanup();
-        if (tasks.containsKey(key)) {
-            return false;
+        if (values.containsKey(key)) {
+            return values.get(key);
         }
-
-        final Thread thread = new Thread(runnable, key.toString());
-        tasks.put(key, thread);
+        final Thread thread = new Thread(value, key.toString());
+        values.put(key, value);
+        threads.put(key, thread);
         thread.start();
-        return true;
+        return value;
     }
 
     public synchronized int getTaskCount() {
         cleanup();
-        return tasks.size();
+        return values.size();
     }
 
     public synchronized void shutdownNow() {
-        for (final Thread thread : tasks.values()) {
+        for (final Thread thread : threads.values()) {
             thread.interrupt();
         }
-        tasks.clear();
+        threads.clear();
+        values.clear();
     }
 
     private void cleanup() {
         assert Thread.holdsLock(this);
-        final Iterator<Thread> it = tasks.values().iterator();
+        final Iterator<Entry<K, Thread>> it = threads.entrySet().iterator();
         while (it.hasNext()) {
-            if (!it.next().isAlive())
+            final Entry<K, Thread> entry = it.next();
+            if (!entry.getValue().isAlive()) {
                 it.remove();
+                values.remove(entry.getKey());
+            }
         }
     }
-
 }
