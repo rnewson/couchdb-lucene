@@ -283,12 +283,12 @@ public final class ViewIndexer implements Runnable {
                 releaseCatch();
             }
             get.abort();
+            reader.close();
             return null;
         }
 
         private void releaseCatch() {
             if (since >= latchThreshold) {
-                logger.debug("caught up to threshold of " + latchThreshold);
                 latch.countDown();
             }
         }

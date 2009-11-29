@@ -27,7 +27,7 @@ public final class Database {
     }
 
     public final boolean delete() throws IOException {
-        return HttpUtils.delete(httpClient, url) == 201;
+        return HttpUtils.delete(httpClient, url) == 200;
     }
 
     public JSONArray getAllDesignDocuments() throws IOException {
