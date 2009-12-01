@@ -11,7 +11,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.http.client.HttpClient;
+import net.sf.json.JSONObject;
+
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.After;
 import org.junit.Before;
@@ -27,8 +30,13 @@ public final class TestServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    // TODO get this from getPathInfo()
+    private static final String URL = "http://localhost:5984/";
+
     private Lucene lucene;
     private Database db;
+
+    private DefaultHttpClient client;
 
     public void setLucene(final Lucene lucene) {
         this.lucene = lucene;
@@ -42,7 +50,7 @@ public final class TestServlet extends HttpServlet {
         final Writer writer = resp.getWriter();
         try {
             if (result.wasSuccessful()) {
-                writer.append("All tests passed.");
+                writer.append("All tests passed.\n");
             } else {
                 for (final Failure failure : result.getFailures()) {
                     writer.append(failure.toString());
@@ -56,8 +64,8 @@ public final class TestServlet extends HttpServlet {
 
     @Before
     public void setup() throws Exception {
-        final HttpClient client = new DefaultHttpClient();
-        final Couch couch = new Couch(client, "http://localhost:5984");
+        client = new DefaultHttpClient();
+        final Couch couch = new Couch(client, URL);
         db = couch.getDatabase("lucenetestdb");
         db.delete();
         assertThat("couldn't create database", db.create(), is(true));
@@ -65,12 +73,23 @@ public final class TestServlet extends HttpServlet {
 
     @After
     public void teardown() throws Exception {
-        assertThat("couldn't delete database", db.delete(), is(true));
+        // assertThat("couldn't delete database", db.delete(), is(true));
     }
 
     @Test
-    public void test1() {
-        assertThat(true, is(true));
+    public void basicIndexing() throws Exception {
+        assertThat("can't save ddoc.", db.saveDocument("_design/ddoc", fix("{'fulltext':{'by_subject':"
+                + "{'index':'function(doc) { var ret = new Document(); ret.add(doc.subject); return ret;}'}}}")), is(true));
+        assertThat("can't save doc1.", db.saveDocument("doc1", fix("{'subject':'cat dog'}")), is(true));
+
+        final HttpGet get = new HttpGet("http://localhost:5985/search/localhost/5984/lucenetestdb/ddoc/by_subject?q=cat");
+        final String response = client.execute(get, new BasicResponseHandler());
+        final JSONObject result = JSONObject.fromObject(response);
+        assertThat(result.getLong("total_rows"), is(1L));
+    }
+
+    private String fix(final String str) {
+        return str.replaceAll("'", "\"");
     }
 
 }
