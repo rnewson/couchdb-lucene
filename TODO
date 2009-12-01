@@ -6,7 +6,9 @@ OPTIMIZE
 2) use one connection per db not one connection per view
 
 SIMPLIFY
-support 0.10 onwards only (where _changes?since=N&heartbeat=N work)
+support 0.11 onwards only (where _changes?since=N&heartbeat=N work)
+
+* auto-configuration (c-l will PUT directly to _config)
 
 * support authentication against couchdb (basic/digest/etc)
 * pause/resume control over indexer.
