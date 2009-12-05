@@ -16,15 +16,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -90,9 +85,9 @@ public final class ViewIndexer implements Runnable {
         context = Context.enter();
         context.setClassShutter(new RestrictiveClassShutter());
         context.setOptimizationLevel(9);
-        client = httpClient();
+        client = HttpClientFactory.getInstance();
         final String url = String.format("http://%s:%d/", Utils.getHost(path), Utils.getPort(path));
-        final Couch couch = new Couch(client, url);
+        final Couch couch = Couch.getInstance(client, url);
         database = couch.getDatabase(Utils.getDatabase(path));
     }
 
@@ -110,12 +105,6 @@ public final class ViewIndexer implements Runnable {
         new ViewChangesHandler(uuid, ddoc, info.getLong("update_seq")).start();
     }
 
-    private HttpClient httpClient() {
-        final HttpParams params = new BasicHttpParams();
-        HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
-        HttpProtocolParams.setUseExpectContinue(params, false);
-        return new DefaultHttpClient(params);
-    }
 
     private final class RestrictiveClassShutter implements ClassShutter {
         public boolean visibleToScripts(final String fullClassName) {

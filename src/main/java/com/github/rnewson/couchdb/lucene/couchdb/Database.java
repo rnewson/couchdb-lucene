@@ -22,11 +22,11 @@ public final class Database {
         this.url = url.endsWith("/") ? url : url + "/";
     }
 
-    public final boolean create() throws IOException {
+    public boolean create() throws IOException {
         return HttpUtils.put(httpClient, url, null) == 201;
     }
 
-    public final boolean delete() throws IOException {
+    public boolean delete() throws IOException {
         return HttpUtils.delete(httpClient, url) == 200;
     }
 
@@ -34,12 +34,14 @@ public final class Database {
         return getDocuments("_design", "_design0").getJSONArray("rows");
     }
 
-    public final JSONObject getDocument(final String id) throws IOException {
+    public JSONObject getDocument(final String id) throws IOException {
         final String response = HttpUtils.get(httpClient, url + Utils.urlEncode(id));
         return JSONObject.fromObject(response);
     }
 
-    public final JSONObject getDocuments(final String... ids) throws IOException {
+    // public final JSONObject getView(final )
+
+    public JSONObject getDocuments(final String... ids) throws IOException {
         final JSONArray keys = new JSONArray();
         for (final String id : ids) {
             keys.add(id);
@@ -51,17 +53,17 @@ public final class Database {
         return JSONObject.fromObject(response);
     }
 
-    public final JSONObject getDocuments(final String startkey, final String endkey) throws IOException {
+    public JSONObject getDocuments(final String startkey, final String endkey) throws IOException {
         return JSONObject.fromObject(HttpUtils.get(httpClient, String.format(
                 "%s_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true", url, Utils.urlEncode(startkey), Utils
                         .urlEncode(endkey))));
     }
 
-    public final JSONObject getInfo() throws IOException {
+    public JSONObject getInfo() throws IOException {
         return JSONObject.fromObject(HttpUtils.get(httpClient, url));
     }
 
-    public final <T> T handleAttachment(final String doc, final String att, final ResponseHandler<T> handler) throws IOException {
+    public <T> T handleAttachment(final String doc, final String att, final ResponseHandler<T> handler) throws IOException {
         final HttpGet get = new HttpGet(url + "/" + Utils.urlEncode(doc) + "/" + Utils.urlEncode(att));
         return httpClient.execute(get, handler);
     }
@@ -71,7 +73,7 @@ public final class Database {
         return httpClient.execute(get, handler);
     }
 
-    public final boolean saveDocument(final String id, final String body) throws IOException {
+    public boolean saveDocument(final String id, final String body) throws IOException {
         return HttpUtils.put(httpClient, url + Utils.urlEncode(id), body) == 201;
     }
 

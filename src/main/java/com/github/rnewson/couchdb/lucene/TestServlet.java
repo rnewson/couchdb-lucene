@@ -65,7 +65,7 @@ public final class TestServlet extends HttpServlet {
     @Before
     public void setup() throws Exception {
         client = new DefaultHttpClient();
-        final Couch couch = new Couch(client, URL);
+        final Couch couch = Couch.getInstance(client, URL);
         db = couch.getDatabase("lucenetestdb");
         db.delete();
         assertThat("couldn't create database", db.create(), is(true));

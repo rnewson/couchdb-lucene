@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.http.client.HttpClient;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -34,6 +35,8 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.util.Version;
 
 import com.github.rnewson.couchdb.lucene.Lucene.SearcherCallback;
+import com.github.rnewson.couchdb.lucene.couchdb.Couch;
+import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
@@ -193,9 +196,20 @@ public final class SearchServlet extends HttpServlet {
                     }
                     // Fetch documents (if requested).
                     if (include_docs && fetch_ids.length > 0) {
-                        final JSONArray fetched_docs = new JSONArray(); // database.getDocuments(fetch_ids).getJSONArray("rows");
-                        for (int i = 0; i < max; i++) {
-                            rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
+                        // TODO cache this somehow;
+                        final String url = String.format("http://%s:%d/", Utils.getHost(req.getPathInfo()), Utils.getPort(req
+                                .getPathInfo()));
+                        final HttpClient httpClient = HttpClientFactory.getInstance();
+                        try {
+                            final Couch couch = Couch.getInstance(httpClient, url);
+                            final Database database = couch.getDatabase(Utils.getDatabase(req.getPathInfo()));
+
+                            final JSONArray fetched_docs = database.getDocuments(fetch_ids).getJSONArray("rows");
+                            for (int i = 0; i < max; i++) {
+                                rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
+                            }
+                        } finally {
+                            httpClient.getConnectionManager().shutdown();
                         }
                     }
                     stopWatch.lap("fetch");
