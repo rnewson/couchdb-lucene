@@ -89,6 +89,8 @@ public class QueryPlan {
             planFuzzyQuery(builder, (FuzzyQuery) query);
         } else if (query instanceof NumericRangeQuery<?>) {
             planNumericRangeQuery(builder, (NumericRangeQuery<?>) query);
+        } else {
+            builder.append(query);
         }
         builder.append(",boost=" + query.getBoost() + ")");
     }
