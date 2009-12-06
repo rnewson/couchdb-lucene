@@ -33,7 +33,7 @@ import org.apache.lucene.store.Directory;
 
 public class Utils {
 
-    public static Logger getLogger(final Class clazz, final String suffix) {
+    public static Logger getLogger(final Class<?> clazz, final String suffix) {
         return Logger.getLogger(clazz.getCanonicalName() + "." + suffix);
     }
 

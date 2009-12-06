@@ -1,13 +1,11 @@
 package com.github.rnewson.couchdb.lucene;
 
 import org.apache.log4j.Logger;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Function;
-import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 class JSLog extends ScriptableObject {
 
+    private static final long serialVersionUID = 1L;
     private final Logger logger = Logger.getLogger(JSLog.class);
 
     public JSLog() {

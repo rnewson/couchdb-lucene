@@ -25,7 +25,7 @@ public enum Analyzers {
     BRAZILIAN {
         @Override
         public Analyzer newAnalyzer() {
-            return new BrazilianAnalyzer();
+            return new BrazilianAnalyzer(VERSION);
         }
     },
     CHINESE {
@@ -37,37 +37,37 @@ public enum Analyzers {
     CJK {
         @Override
         public Analyzer newAnalyzer() {
-            return new CJKAnalyzer();
+            return new CJKAnalyzer(VERSION);
         }
     },
     CZECH {
         @Override
         public Analyzer newAnalyzer() {
-            return new CzechAnalyzer();
+            return new CzechAnalyzer(VERSION);
         }
     },
     DUTCH {
         @Override
         public Analyzer newAnalyzer() {
-            return new DutchAnalyzer();
+            return new DutchAnalyzer(VERSION);
         }
     },
     ENGLISH {
         @Override
         public Analyzer newAnalyzer() {
-            return new StandardAnalyzer(Version.LUCENE_CURRENT);
+            return new StandardAnalyzer(VERSION);
         }
     },
     FRENCH {
         @Override
         public Analyzer newAnalyzer() {
-            return new FrenchAnalyzer();
+            return new FrenchAnalyzer(VERSION);
         }
     },
     GERMAN {
         @Override
         public Analyzer newAnalyzer() {
-            return new GermanAnalyzer();
+            return new GermanAnalyzer(VERSION);
         }
     },
     KEYWORD {
@@ -85,7 +85,7 @@ public enum Analyzers {
     RUSSIAN {
         @Override
         public Analyzer newAnalyzer() {
-            return new RussianAnalyzer();
+            return new RussianAnalyzer(VERSION);
         }
     },
     SIMPLE {
@@ -103,9 +103,11 @@ public enum Analyzers {
     THAI {
         @Override
         public Analyzer newAnalyzer() {
-            return new ThaiAnalyzer();
+            return new ThaiAnalyzer(VERSION);
         }
     };
+
+    private static final Version VERSION = Version.LUCENE_30;
 
     private static final class PorterStemAnalyzer extends Analyzer {
         @Override

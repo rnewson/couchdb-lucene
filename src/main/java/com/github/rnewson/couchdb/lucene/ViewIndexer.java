@@ -162,9 +162,9 @@ public final class ViewIndexer implements Runnable {
             this.digest = Lucene.digest(function);
             lucene.withReader(path, false, new ReaderCallback() {
                 public void callback(final IndexReader reader) throws IOException {
-                    final Map commit = reader.getCommitUserData();
+                    final Map<String, String> commit = reader.getCommitUserData();
                     if (commit != null && commit.containsKey("last_seq")) {
-                        since = Long.parseLong((String) commit.get("last_seq"));
+                        since = Long.parseLong(commit.get("last_seq"));
                     }
                 }
 

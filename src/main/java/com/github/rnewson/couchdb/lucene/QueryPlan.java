@@ -46,7 +46,7 @@ public class QueryPlan {
         builder.append(query.getMinSimilarity());
     }
 
-    private void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery query) {
+    private void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery<?> query) {
         builder.append(query.getMin());
         builder.append(" TO ");
         builder.append(query.getMax());
@@ -87,8 +87,8 @@ public class QueryPlan {
             planWildcardQuery(builder, (WildcardQuery) query);
         } else if (query instanceof FuzzyQuery) {
             planFuzzyQuery(builder, (FuzzyQuery) query);
-        } else if (query instanceof NumericRangeQuery) {
-            planNumericRangeQuery(builder, (NumericRangeQuery) query);
+        } else if (query instanceof NumericRangeQuery<?>) {
+            planNumericRangeQuery(builder, (NumericRangeQuery<?>) query);
         }
         builder.append(",boost=" + query.getBoost() + ")");
     }
