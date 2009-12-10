@@ -69,8 +69,8 @@ public final class Lucene {
         this.root = root;
     }
 
-    public void startIndexing(final String path) {
-        final ViewIndexer viewIndexer = executor.submit(path, new ViewIndexer(this, path));
+    public void startIndexing(final String path, final boolean staleOk) {
+        final ViewIndexer viewIndexer = executor.submit(path, new ViewIndexer(this, path, staleOk));
         viewIndexer.awaitInitialIndexing();
     }
 

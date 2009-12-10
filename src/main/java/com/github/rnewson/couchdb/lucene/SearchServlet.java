@@ -76,7 +76,7 @@ public final class SearchServlet extends HttpServlet {
             return;
         }
 
-        lucene.startIndexing(req.getPathInfo());
+        lucene.startIndexing(req.getPathInfo(), staleOk);
 
         final SearcherCallback callback = new SearcherCallback() {
 

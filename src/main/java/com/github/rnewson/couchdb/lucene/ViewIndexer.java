@@ -48,12 +48,15 @@ public final class ViewIndexer implements Runnable {
     private final String path;
     private Database database;
     private final Lucene lucene;
+    
+    private boolean staleOk;
     private final CountDownLatch latch = new CountDownLatch(1);
 
-    public ViewIndexer(final Lucene lucene, final String path) {
+    public ViewIndexer(final Lucene lucene, final String path, final boolean staleOk) {
         this.lucene = lucene;
         this.logger = Logger.getLogger(ViewIndexer.class.getName() + "." + path);
         this.path = path;
+        this.staleOk = staleOk;
     }
 
     public void awaitInitialIndexing() {
@@ -102,7 +105,9 @@ public final class ViewIndexer implements Runnable {
         final UUID uuid = getDatabaseUuid();
         final JSONObject ddoc = database.getDocument("_design/" + Utils.getDesignDocumentName(path));
         final JSONObject info = database.getInfo();
-        new ViewChangesHandler(uuid, ddoc, info.getLong("update_seq")).start();
+        
+        long seqThreshhold = staleOk ? 0 : info.getLong("update_seq");
+        new ViewChangesHandler(uuid, ddoc, seqThreshhold).start();
     }
 
 
