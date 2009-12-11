@@ -46,9 +46,6 @@ public final class DocumentConverter {
         // Add a log object
         ScriptableObject.putProperty(scope, "log", new JSLog());
 
-        // Load JSON parser.
-        context.evaluateString(scope, loadResource("json2.js"), "json2", 0, null);
-
         // Compile user-specified function
         viewFun = context.compileFunction(scope, function, functionName, 0, null);
     }
