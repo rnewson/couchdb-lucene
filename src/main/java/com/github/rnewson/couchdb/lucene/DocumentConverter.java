@@ -17,6 +17,7 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
+import com.github.rnewson.couchdb.rhino.JSONDocumentAdapter;
 
 public final class DocumentConverter {
 
@@ -24,7 +25,6 @@ public final class DocumentConverter {
     private static final Logger LOG = Logger.getLogger(DocumentConverter.class);
 
     private final Context context;
-    private final Function main;
     private final Function viewFun;
     private final ScriptableObject scope;
 
@@ -49,17 +49,16 @@ public final class DocumentConverter {
         // Load JSON parser.
         context.evaluateString(scope, loadResource("json2.js"), "json2", 0, null);
 
-        // Define outer function.
-        main = context.compileFunction(scope, "function(json, func) { return func(JSON.parse(json)); }", "main", 0, null);
-
         // Compile user-specified function
         viewFun = context.compileFunction(scope, function, functionName, 0, null);
     }
 
     public Document[] convert(final JSONObject doc, final JSONObject defaults, final Database database) throws IOException {
         final Object result;
+        final JSONDocumentAdapter doc_adapter = new JSONDocumentAdapter(doc);
+        
         try {
-            result = main.call(context, scope, null, new Object[] { doc.toString(), viewFun });
+        	result = viewFun.call(context, scope, null, new Object[] { doc_adapter });
         } catch (final JavaScriptException e) {
             LOG.warn(doc + " caused exception during conversion.", e);
             return NO_DOCUMENTS;
