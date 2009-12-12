@@ -17,7 +17,9 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
+import com.github.rnewson.couchdb.rhino.JSLog;
 import com.github.rnewson.couchdb.rhino.JSONDocumentAdapter;
+import com.github.rnewson.couchdb.rhino.RhinoDocument;
 
 public final class DocumentConverter {
 
@@ -85,15 +87,6 @@ public final class DocumentConverter {
         }
 
         return null;
-    }
-
-    private String loadResource(final String name) throws IOException {
-        final InputStream in = DocumentConverter.class.getClassLoader().getResourceAsStream(name);
-        try {
-            return IOUtils.toString(in, "UTF-8");
-        } finally {
-            in.close();
-        }
     }
 
 }

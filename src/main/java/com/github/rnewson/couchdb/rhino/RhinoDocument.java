@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.lucene;
+package com.github.rnewson.couchdb.rhino;
 
 /**
  * Copyright 2009 Robert Newson
@@ -40,6 +40,7 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
+import com.github.rnewson.couchdb.lucene.Tika;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.Conversion;

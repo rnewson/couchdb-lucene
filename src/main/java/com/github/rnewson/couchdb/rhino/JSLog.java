@@ -1,9 +1,9 @@
-package com.github.rnewson.couchdb.lucene;
+package com.github.rnewson.couchdb.rhino;
 
 import org.apache.log4j.Logger;
 import org.mozilla.javascript.ScriptableObject;
 
-class JSLog extends ScriptableObject {
+public class JSLog extends ScriptableObject {
 
     private static final long serialVersionUID = 1L;
     private final Logger logger = Logger.getLogger(JSLog.class);
