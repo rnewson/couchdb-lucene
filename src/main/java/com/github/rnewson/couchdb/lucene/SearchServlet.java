@@ -71,12 +71,12 @@ public final class SearchServlet extends HttpServlet {
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
         final boolean staleOk = Utils.getStaleOk(req);
 
-        if (!Utils.validatePath(req.getPathInfo())) {
+        if (!Utils.validatePath(Utils.getPath(req))) {
             ServletUtils.sendJSONError(req, resp, 400, "Bad path");
             return;
         }
 
-        lucene.startIndexing(req.getPathInfo(), staleOk);
+        lucene.startIndexing(Utils.getPath(req), staleOk);
 
         final SearcherCallback callback = new SearcherCallback() {
 
@@ -197,12 +197,12 @@ public final class SearchServlet extends HttpServlet {
                     // Fetch documents (if requested).
                     if (include_docs && fetch_ids.length > 0) {
                         // TODO cache this somehow;
-                        final String url = String.format("http://%s:%d/", Utils.getHost(req.getPathInfo()), Utils.getPort(req
-                                .getPathInfo()));
+                        final String url = String.format("http://%s:%d/", Utils.getHost(Utils.getPath(req)), Utils.getPort(Utils
+                                .getPath(req)));
                         final HttpClient httpClient = HttpClientFactory.getInstance();
                         try {
                             final Couch couch = Couch.getInstance(httpClient, url);
-                            final Database database = couch.getDatabase(Utils.getDatabase(req.getPathInfo()));
+                            final Database database = couch.getDatabase(Utils.getDatabase(Utils.getPath(req)));
 
                             final JSONArray fetched_docs = database.getDocuments(fetch_ids).getJSONArray("rows");
                             for (int i = 0; i < max; i++) {
@@ -250,11 +250,10 @@ public final class SearchServlet extends HttpServlet {
             }
 
             public void onMissing() throws IOException {
-                ServletUtils.sendJSONError(req, resp, 404, "Index for " + req.getPathInfo() + " is missing.");
+                ServletUtils.sendJSONError(req, resp, 404, "Index for " + Utils.getPath(req) + " is missing.");
             }
         };
 
         lucene.withSearcher(req.getPathInfo(), staleOk, callback);
     }
-
 }

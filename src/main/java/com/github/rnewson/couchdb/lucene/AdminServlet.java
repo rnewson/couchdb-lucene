@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.lucene.index.IndexWriter;
 
 import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
+import com.github.rnewson.couchdb.lucene.util.Utils;
 
 /**
  * Administrative functions.
@@ -39,7 +40,7 @@ public final class AdminServlet extends HttpServlet {
         final String command = req.getParameter("cmd");
 
         if ("expunge".equals(command)) {
-            lucene.withWriter(req.getPathInfo(), new WriterCallback() {
+            lucene.withWriter(Utils.getPath(req), new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
                     return false;
@@ -54,7 +55,7 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("optimize".equals(command)) {
-            lucene.withWriter(req.getPathInfo(), new WriterCallback() {
+            lucene.withWriter(Utils.getPath(req), new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
                     return false;

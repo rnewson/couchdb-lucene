@@ -90,13 +90,17 @@ public class Utils {
     public static boolean validatePath(final String path) {
         return split(path, false).length == 5;
     }
-
+   
     private static String[] split(final String path, final boolean throwIfWrong) {
         final String[] result = path.substring(1).split("/");
         if (throwIfWrong && result.length != 5) {
             throw new IllegalArgumentException("Malformed path (" + Arrays.toString(result) + ")");
         }
         return result;
+    }
+    
+    public static String getPath(final HttpServletRequest req) {
+        return req.getPathInfo();
     }
 
     public static long directorySize(final Directory dir) throws IOException {
