@@ -48,7 +48,7 @@ public final class ViewIndexer implements Runnable {
     private final String path;
     private Database database;
     private final Lucene lucene;
-    
+
     private boolean staleOk;
     private final CountDownLatch latch = new CountDownLatch(1);
 
@@ -104,12 +104,14 @@ public final class ViewIndexer implements Runnable {
     private void index() throws IOException {
         final UUID uuid = getDatabaseUuid();
         final JSONObject ddoc = database.getDocument("_design/" + Utils.getDesignDocumentName(path));
-        final JSONObject info = database.getInfo();
-        
-        long seqThreshhold = staleOk ? 0 : info.getLong("update_seq");
-        new ViewChangesHandler(uuid, ddoc, seqThreshhold).start();
-    }
+        final JSONObject view = extractView(ddoc);
+        if (view == null)
+            return;
 
+        final JSONObject info = database.getInfo();
+        final long seqThreshhold = staleOk ? 0 : info.getLong("update_seq");
+        new ViewChangesHandler(uuid, view, seqThreshhold).start();
+    }
 
     private final class RestrictiveClassShutter implements ClassShutter {
         public boolean visibleToScripts(final String fullClassName) {
@@ -156,12 +158,11 @@ public final class ViewIndexer implements Runnable {
         private HttpGet get;
         private final long latchThreshold;
 
-        public ViewChangesHandler(final UUID uuid, final JSONObject ddoc, final long latchThreshold) throws IOException {
-            final JSONObject view = extractView(ddoc);
+        public ViewChangesHandler(final UUID uuid, final JSONObject view, final long latchThreshold) throws IOException {
             this.latchThreshold = latchThreshold;
             this.defaults = view.has("defaults") ? view.getJSONObject("defaults") : defaults();
             this.analyzer = Analyzers.getAnalyzer(view.optString("analyzer", "standard"));
-            final String function = extractFunction(ddoc);
+            final String function = extractFunction(view);
             this.converter = new DocumentConverter(context, null, function);
             lucene.createWriter(path, uuid, function);
             this.digest = Lucene.digest(function);
@@ -178,15 +179,6 @@ public final class ViewIndexer implements Runnable {
                 }
             });
             releaseCatch();
-        }
-
-        private JSONObject extractView(final JSONObject ddoc) {
-            final JSONObject fulltext = ddoc.getJSONObject("fulltext");
-            return fulltext.getJSONObject(Utils.getViewName(path));
-        }
-
-        private String extractFunction(final JSONObject ddoc) {
-            return StringUtils.trim(extractView(ddoc).getString("index"));
         }
 
         public void start() throws IOException {
@@ -329,6 +321,21 @@ public final class ViewIndexer implements Runnable {
             return System.nanoTime();
         }
 
+    }
+
+    private JSONObject extractView(final JSONObject ddoc) {
+        if (!ddoc.has("fulltext"))
+            return null;
+        final JSONObject fulltext = ddoc.getJSONObject("fulltext");
+        if (!fulltext.has(Utils.getViewName(path)))
+            return null;
+        return fulltext.getJSONObject(Utils.getViewName(path));
+    }
+
+    private String extractFunction(final JSONObject view) {
+        if (!view.has("index"))
+            return null;
+        return StringUtils.trim(view.getString("index"));
     }
 
 }
