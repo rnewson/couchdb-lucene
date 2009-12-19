@@ -40,123 +40,23 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
 
 public final class ViewIndexer implements Runnable {
 
-    private static final long COMMIT_INTERVAL = SECONDS.toNanos(10);
-
-    private final Logger logger;
-    private HttpClient client;
-    private Context context;
-    private final String path;
-    private Database database;
-    private final Lucene lucene;
-
-    private boolean staleOk;
-    private final CountDownLatch latch = new CountDownLatch(1);
-
-    public ViewIndexer(final Lucene lucene, final String path, final boolean staleOk) {
-        this.lucene = lucene;
-        this.logger = Logger.getLogger(ViewIndexer.class.getName() + "." + path);
-        this.path = path;
-        this.staleOk = staleOk;
-    }
-
-    public void awaitInitialIndexing() {
-        try {
-            latch.await();
-        } catch (final InterruptedException e) {
-            // Ignore.
-        }
-    }
-
-    public void run() {
-        try {
-            try {
-                setup();
-            } catch (final Exception e) {
-                logger.debug("Exception starting indexing.", e);
-                return;
-            }
-            index();
-        } catch (final Exception e) {
-            logger.debug("Exception while indexing.", e);
-        } finally {
-            teardown();
-        }
-    }
-
-    private void setup() throws IOException {
-        logger.info("Starting.");
-        context = Context.enter();
-        context.setClassShutter(new RestrictiveClassShutter());
-        context.setOptimizationLevel(9);
-        client = HttpClientFactory.getInstance();
-        final String url = String.format("http://%s:%d/", Utils.getHost(path), Utils.getPort(path));
-        final Couch couch = Couch.getInstance(client, url);
-        database = couch.getDatabase(Utils.getDatabase(path));
-    }
-
-    private void teardown() {
-        latch.countDown();
-        logger.info("Stopping.");
-        client.getConnectionManager().shutdown();
-        Context.exit();
-    }
-
-    private void index() throws IOException {
-        final UUID uuid = getDatabaseUuid();
-        final JSONObject ddoc = database.getDocument("_design/" + Utils.getDesignDocumentName(path));
-        final JSONObject view = extractView(ddoc);
-        if (view == null)
-            return;
-
-        final JSONObject info = database.getInfo();
-        final long seqThreshhold = staleOk ? 0 : info.getLong("update_seq");
-        new ViewChangesHandler(uuid, view, seqThreshhold).start();
-    }
-
     private final class RestrictiveClassShutter implements ClassShutter {
         public boolean visibleToScripts(final String fullClassName) {
             return false;
         }
     }
 
-    private JSONObject defaults() {
-        final JSONObject result = new JSONObject();
-        result.put("field", Constants.DEFAULT_FIELD);
-        result.put("store", "no");
-        result.put("index", "analyzed");
-        result.put("type", "string");
-        return result;
-    }
-
-    private UUID getDatabaseUuid() throws IOException {
-        try {
-            final JSONObject local = database.getDocument("_local/lucene");
-            final UUID uuid = UUID.fromString(local.getString("uuid"));
-            logger.info("Database has uuid " + uuid);
-            return uuid;
-        } catch (final HttpResponseException e) {
-            switch (e.getStatusCode()) {
-            case HttpStatus.SC_NOT_FOUND:
-                final UUID uuid = UUID.randomUUID();
-                database.saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
-                return getDatabaseUuid();
-            default:
-                throw e;
-            }
-        }
-    }
-
     private class ViewChangesHandler implements ResponseHandler<Void> {
 
-        private long since;
-        private final JSONObject defaults;
         private final Analyzer analyzer;
         private final DocumentConverter converter;
-        private long pendingSince;
-        private boolean pendingCommit;
+        private final JSONObject defaults;
         private final String digest;
         private HttpGet get;
         private final long latchThreshold;
+        private boolean pendingCommit;
+        private long pendingSince;
+        private long since;
 
         public ViewChangesHandler(final UUID uuid, final JSONObject view, final long latchThreshold) throws IOException {
             this.latchThreshold = latchThreshold;
@@ -179,10 +79,6 @@ public final class ViewIndexer implements Runnable {
                 }
             });
             releaseCatch();
-        }
-
-        public void start() throws IOException {
-            database.handleChanges(since, this);
         }
 
         public Void handleResponse(final HttpResponse response) throws IOException {
@@ -273,15 +169,14 @@ public final class ViewIndexer implements Runnable {
             return null;
         }
 
-        private void releaseCatch() {
-            if (since >= latchThreshold) {
-                latch.countDown();
-            }
+        public void start() throws IOException {
+            database.handleChanges(since, this);
         }
 
         private void commitDocuments() throws IOException {
-            if (!hasPendingCommit())
+            if (!hasPendingCommit()) {
                 return;
+            }
 
             lucene.withWriter(path, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
@@ -305,6 +200,16 @@ public final class ViewIndexer implements Runnable {
             return pendingCommit && timeoutReached;
         }
 
+        private long now() {
+            return System.nanoTime();
+        }
+
+        private void releaseCatch() {
+            if (since >= latchThreshold) {
+                latch.countDown();
+            }
+        }
+
         private void setPendingCommit(final boolean pendingCommit) {
             if (pendingCommit) {
                 if (!this.pendingCommit) {
@@ -317,25 +222,126 @@ public final class ViewIndexer implements Runnable {
             }
         }
 
-        private long now() {
-            return System.nanoTime();
-        }
-
     }
 
-    private JSONObject extractView(final JSONObject ddoc) {
-        if (!ddoc.has("fulltext"))
-            return null;
-        final JSONObject fulltext = ddoc.getJSONObject("fulltext");
-        if (!fulltext.has(Utils.getViewName(path)))
-            return null;
-        return fulltext.getJSONObject(Utils.getViewName(path));
+    private static final long COMMIT_INTERVAL = SECONDS.toNanos(10);
+    private HttpClient client;
+    private Context context;
+    private Database database;
+    private final CountDownLatch latch = new CountDownLatch(1);
+
+    private final Logger logger;
+    private final Lucene lucene;
+
+    private final String path;
+
+    private final boolean staleOk;
+
+    public ViewIndexer(final Lucene lucene, final String path, final boolean staleOk) {
+        this.lucene = lucene;
+        this.logger = Logger.getLogger(ViewIndexer.class.getName() + "." + path);
+        this.path = path;
+        this.staleOk = staleOk;
+    }
+
+    public void awaitInitialIndexing() {
+        try {
+            latch.await();
+        } catch (final InterruptedException e) {
+            // Ignore.
+        }
+    }
+
+    public void run() {
+        try {
+            try {
+                setup();
+            } catch (final Exception e) {
+                logger.debug("Exception starting indexing.", e);
+                return;
+            }
+            index();
+        } catch (final Exception e) {
+            logger.debug("Exception while indexing.", e);
+        } finally {
+            teardown();
+        }
+    }
+
+    private JSONObject defaults() {
+        final JSONObject result = new JSONObject();
+        result.put("field", Constants.DEFAULT_FIELD);
+        result.put("store", "no");
+        result.put("index", "analyzed");
+        result.put("type", "string");
+        return result;
     }
 
     private String extractFunction(final JSONObject view) {
-        if (!view.has("index"))
+        if (!view.has("index")) {
             return null;
+        }
         return StringUtils.trim(view.getString("index"));
+    }
+
+    private JSONObject extractView(final JSONObject ddoc) {
+        if (!ddoc.has("fulltext")) {
+            return null;
+        }
+        final JSONObject fulltext = ddoc.getJSONObject("fulltext");
+        if (!fulltext.has(Utils.getViewName(path))) {
+            return null;
+        }
+        return fulltext.getJSONObject(Utils.getViewName(path));
+    }
+
+    private UUID getDatabaseUuid() throws IOException {
+        try {
+            final JSONObject local = database.getDocument("_local/lucene");
+            final UUID uuid = UUID.fromString(local.getString("uuid"));
+            logger.info("Database has uuid " + uuid);
+            return uuid;
+        } catch (final HttpResponseException e) {
+            switch (e.getStatusCode()) {
+            case HttpStatus.SC_NOT_FOUND:
+                final UUID uuid = UUID.randomUUID();
+                database.saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
+                return getDatabaseUuid();
+            default:
+                throw e;
+            }
+        }
+    }
+
+    private void index() throws IOException {
+        final UUID uuid = getDatabaseUuid();
+        final JSONObject ddoc = database.getDocument("_design/" + Utils.getDesignDocumentName(path));
+        final JSONObject view = extractView(ddoc);
+        if (view == null) {
+            return;
+        }
+
+        final JSONObject info = database.getInfo();
+        final long seqThreshhold = staleOk ? 0 : info.getLong("update_seq");
+        new ViewChangesHandler(uuid, view, seqThreshhold).start();
+    }
+
+    private void setup() throws IOException {
+        logger.info("Starting.");
+        context = Context.enter();
+        context.setClassShutter(new RestrictiveClassShutter());
+        context.setOptimizationLevel(9);
+        client = HttpClientFactory.getInstance();
+        final String url = String.format("http://%s:%d/", Utils.getHost(path), Utils.getPort(path));
+        final Couch couch = Couch.getInstance(client, url);
+        database = couch.getDatabase(Utils.getDatabase(path));
+    }
+
+    private void teardown() {
+        latch.countDown();
+        logger.info("Stopping.");
+        client.getConnectionManager().shutdown();
+        Context.exit();
     }
 
 }
