@@ -19,7 +19,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -52,7 +52,7 @@ public final class ViewIndexer implements Runnable {
         private final DocumentConverter converter;
         private final JSONObject defaults;
         private final String digest;
-        private HttpGet get;
+        private HttpUriRequest request;
         private final long latchThreshold;
         private boolean pendingCommit;
         private long pendingSince;
@@ -113,7 +113,17 @@ public final class ViewIndexer implements Runnable {
                         logger.info("Design document for this view was deleted.");
                         break loop;
                     }
-                    final String newDigest = Lucene.digest(extractFunction(doc));
+                    final JSONObject view = extractView(doc);
+                    if (view == null) {
+                        logger.info("View was deleted.");
+                        break loop;
+                    }
+                    final String fun = extractFunction(view);
+                    if (fun == null) {
+                        logger.warn("View has no index function.");
+                        break loop;
+                    }
+                    final String newDigest = Lucene.digest(fun);
                     if (!digest.equals(newDigest)) {
                         logger.info("Digest of function changed.");
                         break loop;
@@ -164,13 +174,14 @@ public final class ViewIndexer implements Runnable {
                 since = json.getLong("seq");
                 releaseCatch();
             }
-            get.abort();
-            reader.close();
+            logger.info("_changes loop is exiting.");
+            request.abort();
             return null;
         }
 
         public void start() throws IOException {
-            database.handleChanges(since, this);
+            request = database.getChangesRequest(since);
+            client.execute(request, this);
         }
 
         private void commitDocuments() throws IOException {

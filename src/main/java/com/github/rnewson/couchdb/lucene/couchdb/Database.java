@@ -8,6 +8,7 @@ import net.sf.json.JSONObject;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
@@ -39,8 +40,6 @@ public final class Database {
         return JSONObject.fromObject(response);
     }
 
-    // public final JSONObject getView(final )
-
     public JSONObject getDocuments(final String... ids) throws IOException {
         final JSONArray keys = new JSONArray();
         for (final String id : ids) {
@@ -68,9 +67,8 @@ public final class Database {
         return httpClient.execute(get, handler);
     }
 
-    public <T> T handleChanges(final long since, final ResponseHandler<T> handler) throws IOException {
-        final HttpGet get = new HttpGet(url + "/_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
-        return httpClient.execute(get, handler);
+    public HttpUriRequest getChangesRequest(final long since) throws IOException {
+        return new HttpGet(url + "/_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
     }
 
     public boolean saveDocument(final String id, final String body) throws IOException {
