@@ -23,14 +23,14 @@ public final class IdempotentExecutor<K, V extends Runnable> {
     public synchronized V submit(final K key, final V value) {
         cleanup();
         if (values.containsKey(key)) {
-            LOG.debug("Existing view indexer found for " + key);
+            LOG.trace("Existing view indexer found for " + key);
             return values.get(key);
         }
         final Thread thread = new Thread(value, key.toString());
         values.put(key, value);
         threads.put(key, thread);
         thread.start();
-        LOG.debug("Started new view indexer found for " + key);
+        LOG.trace("Started new view indexer found for " + key);
         return value;
     }
 

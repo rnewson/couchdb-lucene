@@ -257,12 +257,12 @@ public final class ViewIndexer implements Runnable {
             try {
                 setup();
             } catch (final Exception e) {
-                logger.debug("Exception starting indexing.", e);
+                logger.trace("Exception starting indexing.", e);
                 return;
             }
             index();
         } catch (final Exception e) {
-            logger.debug("Exception while indexing.", e);
+            logger.trace("Exception while indexing.", e);
         } finally {
             teardown();
         }
@@ -299,7 +299,7 @@ public final class ViewIndexer implements Runnable {
         try {
             final JSONObject local = database.getDocument("_local/lucene");
             final UUID uuid = UUID.fromString(local.getString("uuid"));
-            logger.info("Database has uuid " + uuid);
+            logger.trace("Database has uuid " + uuid);
             return uuid;
         } catch (final HttpResponseException e) {
             switch (e.getStatusCode()) {
