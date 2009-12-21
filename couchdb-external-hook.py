@@ -65,10 +65,13 @@ def respond(res, req, host, port):
         ])
         return mkresp(400, body, {"Content-Type": "text/plain"})
 
+    # Drop name of external hook.
+    del path[1]
+
     if req["query"] == {}:
-        path = '/'.join(['', 'info', host, str(port), path[0], path[2], path[3]])
+        path = '/'.join(['', 'info', host, str(port)] + path)
     else:
-        path = '/'.join(['', 'search', host, str(port), path[0], path[2], path[3]])
+        path = '/'.join(['', 'search', host, str(port)] + path)
         path = '?'.join([path, urllib.urlencode(req["query"])])
 
     req_headers = {}
