@@ -5,7 +5,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.InterruptedIOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -273,10 +272,8 @@ public final class ViewIndexer implements Runnable {
                 return;
             }
             index();
-        } catch (final InterruptedIOException e) {
-            // Normal exit.
         } catch (final Exception e) {
-            logger.warn("Exception while indexing.", e);
+            logger.debug("Exception while indexing.", e);
         } finally {
             teardown();
         }
@@ -334,6 +331,8 @@ public final class ViewIndexer implements Runnable {
         if (view == null) {
             return;
         }
+        if (extractFunction(view) == null)
+            return;
 
         final JSONObject info = database.getInfo();
         final long seqThreshhold = staleOk ? 0 : info.getLong("update_seq");
