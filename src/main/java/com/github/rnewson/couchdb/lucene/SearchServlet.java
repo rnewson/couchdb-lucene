@@ -196,7 +196,6 @@ public final class SearchServlet extends HttpServlet {
                     }
                     // Fetch documents (if requested).
                     if (include_docs && fetch_ids.length > 0) {
-                        // TODO cache this somehow;
                         final String url = String.format("http://%s:%d/", Utils.getHost(Utils.getPath(req)), Utils.getPort(Utils
                                 .getPath(req)));
                         final HttpClient httpClient = HttpClientFactory.getInstance();
