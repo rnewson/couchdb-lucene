@@ -5,6 +5,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -268,12 +269,14 @@ public final class ViewIndexer implements Runnable {
             try {
                 setup();
             } catch (final Exception e) {
-                logger.trace("Exception starting indexing.", e);
+                logger.warn("Exception while starting indexing.", e);
                 return;
             }
             index();
+        } catch (final InterruptedIOException e) {
+            // Normal exit.
         } catch (final Exception e) {
-            logger.trace("Exception while indexing.", e);
+            logger.warn("Exception while indexing.", e);
         } finally {
             teardown();
         }
