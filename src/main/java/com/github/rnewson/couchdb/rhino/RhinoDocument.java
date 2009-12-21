@@ -99,7 +99,7 @@ public final class RhinoDocument extends ScriptableObject {
         if (args[0] == null) {
             throw Context.reportRuntimeError("first argument must be non-null.");
         }
-        
+
         if (args[0] instanceof Undefined) {
             // Ignore
             return;
@@ -186,12 +186,7 @@ public final class RhinoDocument extends ScriptableObject {
 
             public Void handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
                 final HttpEntity entity = response.getEntity();
-                final InputStream in = entity.getContent();
-                try {
-                    Tika.INSTANCE.parse(in, entity.getContentType().getValue(), attachment.fieldName, out);
-                } finally {
-                    in.close();
-                }
+                Tika.INSTANCE.parse(entity.getContent(), entity.getContentType().getValue(), attachment.fieldName, out);
                 return null;
             }
         };

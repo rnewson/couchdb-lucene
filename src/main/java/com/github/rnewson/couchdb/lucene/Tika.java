@@ -20,12 +20,11 @@ import static com.github.rnewson.couchdb.lucene.util.Utils.text;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -47,22 +46,17 @@ public final class Tika {
             throws IOException {
         final Metadata md = new Metadata();
         md.set(HttpHeaders.CONTENT_TYPE, contentType);
-        final Reader reader = tika.parse(in, md);
 
-        final String body;
         try {
-            try {
-                body = IOUtils.toString(reader);
-            } finally {
-                reader.close();
-            }
+            // Add body text.
+            doc.add(text(fieldName, tika.parseToString(in, md), false));
         } catch (final IOException e) {
             log.warn("Failed to index an attachment.", e);
             return;
+        } catch (final TikaException e) {
+            log.warn("Failed to parse an attachment.", e);
+            return;
         }
-
-        // Add body text.
-        doc.add(text(fieldName, body, false));
 
         // Add DC attributes.
         addDublinCoreAttributes(md, doc);
