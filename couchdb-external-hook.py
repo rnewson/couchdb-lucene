@@ -65,8 +65,11 @@ def respond(res, req, host, port):
         ])
         return mkresp(400, body, {"Content-Type": "text/plain"})
 
-    path = '/'.join(['', 'search', host, str(port), path[0], path[2], path[3]])
-    path = '?'.join([path, urllib.urlencode(req["query"])])
+    if req["query"] == {}:
+        path = '/'.join(['', 'info', host, str(port), path[0], path[2], path[3]])
+    else:
+        path = '/'.join(['', 'search', host, str(port), path[0], path[2], path[3]])
+        path = '?'.join([path, urllib.urlencode(req["query"])])
 
     req_headers = {}
     for h in req.get("headers", []):
