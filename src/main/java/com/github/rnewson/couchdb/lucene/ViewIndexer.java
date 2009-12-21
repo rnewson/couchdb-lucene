@@ -322,6 +322,10 @@ public final class ViewIndexer implements Runnable {
         } catch (final HttpResponseException e) {
             switch (e.getStatusCode()) {
             case HttpStatus.SC_NOT_FOUND:
+                final JSONObject err = JSONObject.fromObject(e.getMessage());
+                if ("no_db_file".equals(err.getString("reason"))) {
+                    throw e;
+                }
                 final UUID uuid = UUID.randomUUID();
                 database.saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
                 return getDatabaseUuid();

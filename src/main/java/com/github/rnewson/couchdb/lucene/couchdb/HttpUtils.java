@@ -9,9 +9,9 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicResponseHandler;
 
 import com.github.rnewson.couchdb.lucene.util.Constants;
+import com.github.rnewson.couchdb.lucene.util.ErrorPreservingResponseHandler;
 import com.github.rnewson.couchdb.lucene.util.StatusCodeResponseHandler;
 
 public final class HttpUtils {
@@ -21,7 +21,7 @@ public final class HttpUtils {
     }
 
     public static final String execute(final HttpClient httpClient, final HttpUriRequest request) throws IOException {
-        return httpClient.execute(request, new BasicResponseHandler());
+        return httpClient.execute(request, new ErrorPreservingResponseHandler());
     }
 
     public static final String get(final HttpClient httpClient, final String url) throws IOException {
