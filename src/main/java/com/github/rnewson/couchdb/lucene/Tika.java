@@ -29,8 +29,6 @@ import org.apache.lucene.document.Document;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParsingReader;
 
 public final class Tika {
 
@@ -40,16 +38,17 @@ public final class Tika {
 
     private static final Logger log = LogManager.getLogger(Tika.class);
 
+    private final org.apache.tika.Tika tika = new org.apache.tika.Tika();
+
     private Tika() {
     }
 
     public void parse(final InputStream in, final String contentType, final String fieldName, final Document doc)
             throws IOException {
-        final AutoDetectParser parser = new AutoDetectParser();
         final Metadata md = new Metadata();
         md.set(HttpHeaders.CONTENT_TYPE, contentType);
+        final Reader reader = tika.parse(in, md);
 
-        final Reader reader = new ParsingReader(parser, in, md);
         final String body;
         try {
             try {
