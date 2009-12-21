@@ -10,7 +10,7 @@
   	<level value="DEBUG"/>
   </logger>
   <root>
-    <priority value="INFO"/>
+    <priority value="WARN"/>
     <appender-ref ref="ConsoleAppender"/>
   </root>
 </log4j:configuration>

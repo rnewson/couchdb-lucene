@@ -10,25 +10,22 @@
   </appender>
 
   <!-- Output to file, adjust path to taste. -->
-  <appender name="FILE" class="org.apache.log4j.RollingFileAppender"> 
+  <appender name="FILE" class="org.apache.log4j.RollingFileAppender">
     <param name="file" value="/please/set/me/"/>
     <param name="MaxFileSize" value="100KB"/>
     <!-- Keep one backup file -->
     <param name="MaxBackupIndex" value="1"/>
-    <layout class="org.apache.log4j.PatternLayout"> 
+    <layout class="org.apache.log4j.PatternLayout">
       <param name="ConversionPattern" value="%d{ISO8601} %p [%c{1}] %m%n"/>
-    </layout> 
+    </layout>
   </appender>
 
-  <!-- Uncomment to debug couchdb-lucene -->
-  <!--
   <logger name="com.github">
-    <level value="TRACE"/>
+    <level value="INFO"/>
   </logger>
-  -->
 
   <root>
-    <priority value="INFO"/>
+    <priority value="WARN"/>
     <appender-ref ref="CONSOLE"/>
 
     <!-- Uncomment to get a log file -->
