@@ -18,12 +18,13 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 import com.github.rnewson.couchdb.lucene.util.Constants;
+import com.github.rnewson.couchdb.lucene.util.IndexPath;
 
 public final class Lucene {
 
     private final File root;
-    private final IdempotentExecutor<String, ViewIndexer> executor = new IdempotentExecutor<String, ViewIndexer>();
-    private final Map<String, Tuple> map = new HashMap<String, Tuple>();
+    private final IdempotentExecutor<IndexPath, ViewIndexer> executor = new IdempotentExecutor<IndexPath, ViewIndexer>();
+    private final Map<IndexPath, Tuple> map = new HashMap<IndexPath, Tuple>();
 
     private static class Tuple {
         private String version;
@@ -69,12 +70,12 @@ public final class Lucene {
         this.root = root;
     }
 
-    public void startIndexing(final String path, final boolean staleOk) {
+    public void startIndexing(final IndexPath path, final boolean staleOk) {
         final ViewIndexer viewIndexer = executor.submit(path, new ViewIndexer(this, path, staleOk));
         viewIndexer.awaitInitialIndexing();
     }
 
-    public void withReader(final String path, final boolean staleOk, final ReaderCallback callback) throws IOException {
+    public void withReader(final IndexPath path, final boolean staleOk, final ReaderCallback callback) throws IOException {
         final Tuple tuple;
         synchronized (map) {
             tuple = map.get(path);
@@ -113,7 +114,7 @@ public final class Lucene {
         }
     }
 
-    public void withSearcher(final String path, final boolean staleOk, final SearcherCallback callback) throws IOException {
+    public void withSearcher(final IndexPath path, final boolean staleOk, final SearcherCallback callback) throws IOException {
         withReader(path, staleOk, new ReaderCallback() {
 
             public void callback(final IndexReader reader) throws IOException {
@@ -126,7 +127,7 @@ public final class Lucene {
         });
     }
 
-    public void withWriter(final String path, final WriterCallback callback) throws IOException {
+    public void withWriter(final IndexPath path, final WriterCallback callback) throws IOException {
         final Tuple tuple;
         synchronized (map) {
             tuple = map.get(path);
@@ -148,7 +149,7 @@ public final class Lucene {
         }
     }
 
-    public void createWriter(final String path, final UUID uuid, final String function) throws IOException {
+    public void createWriter(final IndexPath path, final UUID uuid, final String function) throws IOException {
         final String digest = digest(function);
         final File dir = new File(new File(root, uuid.toString()), digest);
         dir.mkdirs();

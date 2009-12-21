@@ -39,6 +39,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
+import com.github.rnewson.couchdb.lucene.util.IndexPath;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
 import com.github.rnewson.couchdb.lucene.util.Utils;
@@ -71,12 +72,14 @@ public final class SearchServlet extends HttpServlet {
         final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
         final boolean staleOk = Utils.getStaleOk(req);
 
-        if (!Utils.validatePath(Utils.getPath(req))) {
+        final IndexPath path = IndexPath.parse(req);
+
+        if (path == null) {
             ServletUtils.sendJSONError(req, resp, 400, "Bad path");
             return;
         }
 
-        lucene.startIndexing(Utils.getPath(req), staleOk);
+        lucene.startIndexing(path, staleOk);
 
         final SearcherCallback callback = new SearcherCallback() {
 
@@ -196,13 +199,12 @@ public final class SearchServlet extends HttpServlet {
                     }
                     // Fetch documents (if requested).
                     if (include_docs && fetch_ids.length > 0) {
-                        final String url = String.format("http://%s:%d/", Utils.getHost(Utils.getPath(req)), Utils.getPort(Utils
-                                .getPath(req)));
+                        final String url = String.format("http://%s:%d/", path.getHost(), path.getPort());
+
                         final HttpClient httpClient = HttpClientFactory.getInstance();
                         try {
                             final Couch couch = Couch.getInstance(httpClient, url);
-                            final Database database = couch.getDatabase(Utils.getDatabase(Utils.getPath(req)));
-
+                            final Database database = couch.getDatabase(path.getDatabase());
                             final JSONArray fetched_docs = database.getDocuments(fetch_ids).getJSONArray("rows");
                             for (int i = 0; i < max; i++) {
                                 rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
@@ -249,10 +251,10 @@ public final class SearchServlet extends HttpServlet {
             }
 
             public void onMissing() throws IOException {
-                ServletUtils.sendJSONError(req, resp, 404, "Index for " + Utils.getPath(req) + " is missing.");
+                ServletUtils.sendJSONError(req, resp, 404, "Index for " + path + " is missing.");
             }
         };
 
-        lucene.withSearcher(req.getPathInfo(), staleOk, callback);
+        lucene.withSearcher(path, staleOk, callback);
     }
 }

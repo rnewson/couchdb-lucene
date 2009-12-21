@@ -15,6 +15,8 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexReader.FieldOption;
 
 import com.github.rnewson.couchdb.lucene.Lucene.ReaderCallback;
+import com.github.rnewson.couchdb.lucene.util.IndexPath;
+import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
 /**
@@ -35,7 +37,14 @@ public class InfoServlet extends HttpServlet {
 
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        lucene.withReader(Utils.getPath(req), Utils.getStaleOk(req), new ReaderCallback() {
+        final IndexPath path = IndexPath.parse(req);
+
+        if (path == null) {
+            ServletUtils.sendJSONError(req, resp, 400, "Bad path");
+            return;
+        }
+        
+        lucene.withReader(path, Utils.getStaleOk(req), new ReaderCallback() {
             public void callback(final IndexReader reader) throws IOException {
                 final JSONObject result = new JSONObject();
                 result.put("current", reader.isCurrent());

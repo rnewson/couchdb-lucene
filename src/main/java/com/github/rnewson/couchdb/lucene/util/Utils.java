@@ -21,7 +21,6 @@ import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanPara
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Arrays;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -65,42 +64,6 @@ public class Utils {
         } catch (final UnsupportedEncodingException e) {
             throw new Error("UTF-8 support missing!");
         }
-    }
-
-    public static String getHost(final String path) {
-        return split(path, true)[0];
-    }
-
-    public static int getPort(final String path) {
-        return Integer.parseInt(split(path, true)[1]);
-    }
-
-    public static String getDatabase(final String path) {
-        return split(path, true)[2];
-    }
-
-    public static String getDesignDocumentName(final String path) {
-        return split(path, true)[3];
-    }
-
-    public static String getViewName(final String path) {
-        return split(path, true)[4];
-    }
-
-    public static boolean validatePath(final String path) {
-        return split(path, false).length == 5;
-    }
-   
-    private static String[] split(final String path, final boolean throwIfWrong) {
-        final String[] result = path.substring(1).split("/");
-        if (throwIfWrong && result.length != 5) {
-            throw new IllegalArgumentException("Malformed path (" + Arrays.toString(result) + ")");
-        }
-        return result;
-    }
-    
-    public static String getPath(final HttpServletRequest req) {
-        return req.getPathInfo();
     }
 
     public static long directorySize(final Directory dir) throws IOException {

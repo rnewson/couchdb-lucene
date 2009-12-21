@@ -36,7 +36,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
-import com.github.rnewson.couchdb.lucene.util.Utils;
+import com.github.rnewson.couchdb.lucene.util.IndexPath;
 
 public final class ViewIndexer implements Runnable {
 
@@ -115,7 +115,7 @@ public final class ViewIndexer implements Runnable {
                 }
 
                 final String id = doc.getString("_id");
-                if (id.equals("_design/" + Utils.getDesignDocumentName(path))) {
+                if (id.equals("_design/" + path.getDesignDocumentName())) {
                     if (doc.optBoolean("_deleted")) {
                         logger.info("Design document for this view was deleted.");
                         break loop;
@@ -251,11 +251,11 @@ public final class ViewIndexer implements Runnable {
     private final Logger logger;
     private final Lucene lucene;
 
-    private final String path;
+    private final IndexPath path;
 
     private final boolean staleOk;
 
-    public ViewIndexer(final Lucene lucene, final String path, final boolean staleOk) {
+    public ViewIndexer(final Lucene lucene, final IndexPath path, final boolean staleOk) {
         this.lucene = lucene;
         this.logger = Logger.getLogger(ViewIndexer.class.getName() + "." + path);
         this.path = path;
@@ -307,10 +307,10 @@ public final class ViewIndexer implements Runnable {
             return null;
         }
         final JSONObject fulltext = ddoc.getJSONObject("fulltext");
-        if (!fulltext.has(Utils.getViewName(path))) {
+        if (!fulltext.has(path.getViewName())) {
             return null;
         }
-        return fulltext.getJSONObject(Utils.getViewName(path));
+        return fulltext.getJSONObject(path.getViewName());
     }
 
     private UUID getDatabaseUuid() throws IOException {
@@ -337,7 +337,7 @@ public final class ViewIndexer implements Runnable {
 
     private void index() throws IOException {
         final UUID uuid = getDatabaseUuid();
-        final JSONObject ddoc = database.getDocument("_design/" + Utils.getDesignDocumentName(path));
+        final JSONObject ddoc = database.getDocument("_design/" + path.getDesignDocumentName());
         final JSONObject view = extractView(ddoc);
         if (view == null) {
             return;
@@ -356,9 +356,9 @@ public final class ViewIndexer implements Runnable {
         context.setClassShutter(new RestrictiveClassShutter());
         context.setOptimizationLevel(9);
         client = HttpClientFactory.getInstance();
-        final String url = String.format("http://%s:%d/", Utils.getHost(path), Utils.getPort(path));
+        final String url = String.format("http://%s:%d/", path.getHost(), path.getPort());
         final Couch couch = Couch.getInstance(client, url);
-        database = couch.getDatabase(Utils.getDatabase(path));
+        database = couch.getDatabase(path.getDatabase());
     }
 
     private void teardown() {

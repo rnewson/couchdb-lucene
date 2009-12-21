@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.lucene.index.IndexWriter;
 
 import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
+import com.github.rnewson.couchdb.lucene.util.IndexPath;
+import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
 /**
@@ -39,8 +41,15 @@ public final class AdminServlet extends HttpServlet {
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
         final String command = req.getParameter("cmd");
 
+        final IndexPath path = IndexPath.parse(req);
+
+        if (path == null) {
+            ServletUtils.sendJSONError(req, resp, 400, "Bad path");
+            return;
+        }
+
         if ("expunge".equals(command)) {
-            lucene.withWriter(Utils.getPath(req), new WriterCallback() {
+            lucene.withWriter(path, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
                     return false;
@@ -55,7 +64,7 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("optimize".equals(command)) {
-            lucene.withWriter(Utils.getPath(req), new WriterCallback() {
+            lucene.withWriter(path, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
                     return false;
