@@ -60,8 +60,8 @@ def respond(res, req, host, port):
     if len(path) != 4:
         body = "\n".join([
             "Invalid path: %s" % '/'.join([''] + path),
-            "Paths should be: /db_name/_fti/docid/index_name?q=...",
-            "'docid' is from the '_design/docid' that defines index_name"
+            "Paths should be: /db_name/_fti/ddocid/index_name?q=...",
+            "'ddocid' is from the '_design/ddocid' that defines index_name"
         ])
         return mkresp(400, body, {"Content-Type": "text/plain"})
 
