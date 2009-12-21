@@ -106,7 +106,14 @@ public final class ViewIndexer implements Runnable {
                     break loop;
                 }
 
-                final JSONObject doc = json.getJSONObject("doc");
+                final JSONObject doc;
+                if (json.has("doc")) {
+                    doc = json.getJSONObject("doc");
+                } else {
+                    // include_docs=true doesn't work prior to 0.11.
+                    doc = database.getDocument(json.getString("id"));
+                }
+
                 final String id = doc.getString("_id");
                 if (id.equals("_design/" + Utils.getDesignDocumentName(path))) {
                     if (doc.optBoolean("_deleted")) {

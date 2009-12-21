@@ -21,7 +21,7 @@ public class Couch {
     public static Couch getInstance(final HttpClient httpClient, final String url) throws IOException {
         final Couch result = new Couch(httpClient, url);
         final JSONObject info = result.getInfo();
-        if (info.getString("version").compareTo("0.11") < 0) {
+        if (info.getString("version").compareTo("0.10") < 0) {
             throw new IllegalStateException("Incompatible version found: " + info);
         }
         return result;
