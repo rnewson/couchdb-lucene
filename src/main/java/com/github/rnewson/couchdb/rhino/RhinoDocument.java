@@ -19,6 +19,7 @@ package com.github.rnewson.couchdb.rhino;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Map;
 
 import net.sf.json.JSONObject;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -218,7 +220,7 @@ public final class RhinoDocument extends ScriptableObject {
         } else if ("long".equals(type)) {
             out.add(new NumericField(fieldName, 8, storeObj, true).setLongValue(Conversion.convert(field.value, Long.class)));
         } else if ("date".equals(type)) {
-            final Date date = Conversion.convert(field.value, Date.class);
+            final Date date = DateUtils.round(Conversion.convert(field.value, Date.class), Calendar.SECOND);
             out.add(new NumericField(fieldName, 8, storeObj, true).setLongValue(date.getTime()));
         } else if ("string".equals(type)) {
             out.add(new Field(fieldName, Conversion.convert(field.value).toString(), storeObj, Index.get(index)));
