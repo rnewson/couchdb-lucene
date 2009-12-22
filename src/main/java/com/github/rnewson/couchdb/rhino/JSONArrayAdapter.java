@@ -8,40 +8,44 @@ import org.mozilla.javascript.ScriptableObject;
 
 public class JSONArrayAdapter extends ScriptableObject {
 
-	private static final long serialVersionUID = 3L;
-	
-	final JSONArray array;
-	final int size;
-	
-	public JSONArrayAdapter(JSONArray _array) {
-		this.array = _array;
-		this.size = _array.size();
-	}
+    private static final long serialVersionUID = 3L;
 
-	@Override
-	public String getClassName() {
-		return "JSONArrayAdapter";
-	}
-	
-	@Override
-	public Object get(String name, Scriptable start) {
-		if (name.equals("length"))
-			return size;
-		return super.get(name, start);
-	}
-	
-	@Override
-	public Object get(int index, Scriptable start) {
-		if ((index >= 0) && (index < size)) {
-			Object value = array.get(index);
-			
-			if (value instanceof JSONObject)
-				return new JSONDocumentAdapter((JSONObject) value);
-			if (value instanceof JSONArray)
-				return new JSONArrayAdapter((JSONArray) value);
-			return value;
-		}
-		
-		return super.get(index, start);
-	}
+    final JSONArray array;
+    final int size;
+
+    public JSONArrayAdapter(JSONArray _array) {
+        this.array = _array;
+        this.size = _array.size();
+    }
+
+    @Override
+    public String getClassName() {
+        return "JSONArrayAdapter";
+    }
+
+    @Override
+    public Object get(String name, Scriptable start) {
+        if (name.equals("length"))
+            return size;
+        return super.get(name, start);
+    }
+
+    @Override
+    public Object get(int index, Scriptable start) {
+        if ((index >= 0) && (index < size)) {
+            Object value = array.get(index);
+            if (value instanceof JSONObject) {
+                final JSONObject obj = (JSONObject) value;
+                if (obj.isNullObject())
+                    return null;
+                else
+                    return new JSONDocumentAdapter(obj);
+            }
+            if (value instanceof JSONArray)
+                return new JSONArrayAdapter((JSONArray) value);
+            return value;
+        }
+
+        return super.get(index, start);
+    }
 }
