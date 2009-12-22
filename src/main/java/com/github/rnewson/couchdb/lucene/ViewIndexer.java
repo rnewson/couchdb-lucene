@@ -154,7 +154,7 @@ public final class ViewIndexer implements Runnable {
                         });
                         setPendingCommit(true);
                     } else {
-                        logger.trace(id + " inserted or updated.");
+                        logger.trace(id + " updated.");
                         final Document[] docs;
                         try {
                             docs = converter.convert(doc, defaults, database);
@@ -168,6 +168,9 @@ public final class ViewIndexer implements Runnable {
                             public boolean callback(final IndexWriter writer) throws IOException {
                                 writer.deleteDocuments(new Term("_id", id));
                                 for (final Document doc : docs) {
+                                    if (logger.isTraceEnabled()) {
+                                        logger.trace(id + " -> " + doc);
+                                    }
                                     writer.addDocument(doc, analyzer);
                                 }
                                 return true;
