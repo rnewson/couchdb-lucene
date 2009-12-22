@@ -1,5 +1,8 @@
 package com.github.rnewson.couchdb.lucene;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -82,7 +85,15 @@ public final class CustomQueryParser {
         if (value.matches("\\d+")) {
             return Integer.parseInt(value);
         }
-        return String.class;
+
+        final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZ");
+        try {
+            return dateFormat.parse(value.toUpperCase()).getTime();
+        } catch (final java.text.ParseException e) {
+            // Ignore.
+        }
+
+        return value;
     }
 
     public Sort toSort(final String sort) {
