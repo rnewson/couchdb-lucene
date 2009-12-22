@@ -1,6 +1,6 @@
 <h1>WARNING</h1>
 
-This branch (master) contains the development version of the next release (0.5). It is not yet released, may contain bugs, and may change before its release. It is, however, worth trying, though 0.4 is suggested if you find 0.5 unsuitable.
+0.5 is not yet released and may contain bugs and regressions. However, it is shaping up nicely so I recommend you try it first. 0.4 remains available if you hit insurmountable problems; but please take time to file a ticket at github if you do.
 
 <h1>Version Compatibility</h1>
 
