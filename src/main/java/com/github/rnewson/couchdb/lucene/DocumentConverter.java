@@ -1,12 +1,10 @@
 package com.github.rnewson.couchdb.lucene;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 
 import net.sf.json.JSONObject;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.mozilla.javascript.Context;
@@ -18,7 +16,7 @@ import org.mozilla.javascript.Undefined;
 
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.rhino.JSLog;
-import com.github.rnewson.couchdb.rhino.JSONDocumentAdapter;
+import com.github.rnewson.couchdb.rhino.JsonToRhinoConverter;
 import com.github.rnewson.couchdb.rhino.RhinoDocument;
 
 public final class DocumentConverter {
@@ -54,10 +52,10 @@ public final class DocumentConverter {
 
     public Document[] convert(final JSONObject doc, final JSONObject defaults, final Database database) throws IOException {
         final Object result;
-        final JSONDocumentAdapter doc_adapter = new JSONDocumentAdapter(doc);
-        
+        final ScriptableObject scriptableObject = JsonToRhinoConverter.convertObject(doc);
+
         try {
-        	result = viewFun.call(context, scope, null, new Object[] { doc_adapter });
+            result = viewFun.call(context, scope, null, new Object[] { scriptableObject });
         } catch (final JavaScriptException e) {
             LOG.warn(doc + " caused exception during conversion.", e);
             return NO_DOCUMENTS;
