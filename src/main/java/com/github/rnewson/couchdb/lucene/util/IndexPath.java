@@ -97,8 +97,7 @@ public final class IndexPath {
 
     @Override
     public String toString() {
-        return "IndexPath [host=" + host + ", port=" + port + ", database=" + database + ", designDocumentName="
-                + designDocumentName + ", viewName=" + viewName + "]";
+        return host + "/" + port + "/" + database + "/" + designDocumentName + "/" + viewName;
     }
 
 }
