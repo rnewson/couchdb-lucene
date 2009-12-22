@@ -205,8 +205,9 @@ public final class ViewIndexer implements Runnable {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     final Map<String, String> userData = new HashMap<String, String>();
                     userData.put("last_seq", Long.toString(since));
-                    logger.info("Checkpoint at update_seq " + since);
+                    logger.debug("Starting checkpoint at update_seq " + since);
                     writer.commit(userData);
+                    logger.info("Committed checkpoint at update_seq " + since);
                     return false;
                 }
 
