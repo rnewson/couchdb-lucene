@@ -78,6 +78,19 @@ public class DocumentConverterTest {
     }
 
     @Test
+    public void testForEverything() throws Exception {
+        final DocumentConverter converter = new DocumentConverter(
+                context,
+                "multi",
+                "function(doc) {var ret=new Document(); function idx(obj) {for (var key in obj) {switch (typeof obj[key]) {case 'object':idx(obj[key]); break; case 'function': break; default: ret.add(obj[key]); break;} } }; idx(doc); return ret; }");
+
+        final Document[] result = converter.convert(doc("{_id:\"hello\", l1: { l2: {l3:[\"v3\", \"v4\"]}}}"), new JSONObject(), null);
+        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[0], is("hello"));
+        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[1], is("v3"));
+        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[2], is("v4"));
+    }
+
+    @Test
     public void testNullReturn() throws Exception {
         final DocumentConverter converter = new DocumentConverter(context, "null", "function(doc) {return null;}");
         final Document[] result = converter.convert(doc("{_id:\"hello\"}"), new JSONObject(), null);
