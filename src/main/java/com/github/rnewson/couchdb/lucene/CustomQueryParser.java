@@ -47,7 +47,7 @@ public final class CustomQueryParser {
 
             // Sanity check.
             if (lower.getClass() != upper.getClass()) {
-                return null;
+                return query;
             }
 
             if (lower instanceof String) {
