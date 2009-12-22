@@ -5,6 +5,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -288,8 +289,10 @@ public final class ViewIndexer implements Runnable {
                 return;
             }
             index();
+        } catch (final SocketException e) {
+            // Ignore.
         } catch (final Exception e) {
-            logger.debug("Exception while indexing.", e);
+            logger.warn("Exception while indexing.", e);
         } finally {
             teardown();
         }
