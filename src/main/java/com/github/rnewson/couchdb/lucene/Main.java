@@ -8,9 +8,11 @@ import java.util.Properties;
 import javax.servlet.http.HttpServlet;
 
 import org.apache.log4j.Logger;
+import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.ContextHandlerCollection;
+import org.mortbay.jetty.nio.SelectChannelConnector;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.ServletHolder;
@@ -46,8 +48,9 @@ public class Main {
         LOG.info("Index output goes to: " + dir.getCanonicalPath());
 
         final Lucene lucene = new Lucene(dir);
+        final String host = properties.getProperty("lucene.host", "localhost");
         final int port = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
-        final Server jetty = jetty(lucene, port);
+        final Server jetty = jetty(lucene, host, port);
 
         jetty.start();
         jetty.join();
@@ -65,9 +68,19 @@ public class Main {
         return properties;
     }
 
-    private static Server jetty(final Lucene lucene, final int port) {
-        // Configure Jetty.
-        final Server server = new Server(Integer.getInteger("port", port));
+    /**
+     * Configure Jetty.
+     */
+    private static Server jetty(final Lucene lucene, final String host, final int port) {
+        final Server server = new Server();
+
+        final SelectChannelConnector connector = new SelectChannelConnector();
+        connector.setHost(host);
+        connector.setPort(port);
+        
+        LOG.info("Accepting connections with " + connector);
+        
+        server.setConnectors(new Connector[] { connector });
         server.setStopAtShutdown(true);
         server.setSendServerVersion(false);
 
@@ -85,7 +98,7 @@ public class Main {
         final AdminServlet admin = new AdminServlet();
         admin.setLucene(lucene);
         setupContext(contexts, "/admin", admin);
-        
+
         final TestServlet test = new TestServlet();
         test.setLucene(lucene);
         setupContext(contexts, "/test", test);
