@@ -81,108 +81,113 @@ public final class ViewIndexer implements Runnable {
             releaseCatch();
         }
 
-        public Void handleResponse(final HttpResponse response) throws IOException {
-            final HttpEntity entity = response.getEntity();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
-            String line;
-            loop: while ((line = reader.readLine()) != null) {
-                commitDocuments();
+        public Void handleResponse(final HttpResponse response) {
+            try {
+                final HttpEntity entity = response.getEntity();
+                final BufferedReader reader = new BufferedReader(new InputStreamReader(entity.getContent(), "UTF-8"));
+                String line;
+                loop: while ((line = reader.readLine()) != null) {
+                    commitDocuments();
 
-                // Heartbeat.
-                if (line.length() == 0) {
-                    logger.trace("heartbeat");
-                    continue loop;
-                }
-
-                final JSONObject json = JSONObject.fromObject(line);
-
-                if (json.has("error")) {
-                    logger.warn("Indexing stopping due to error: " + json);
-                    break loop;
-                }
-
-                if (json.has("last_seq")) {
-                    logger.warn("End of changes detected.");
-                    break loop;
-                }
-
-                final JSONObject doc;
-                if (json.has("doc")) {
-                    doc = json.getJSONObject("doc");
-                } else {
-                    // include_docs=true doesn't work prior to 0.11.
-                    doc = database.getDocument(json.getString("id"));
-                }
-
-                final String id = doc.getString("_id");
-                if (id.equals("_design/" + path.getDesignDocumentName())) {
-                    if (doc.optBoolean("_deleted")) {
-                        logger.info("Design document for this view was deleted.");
-                        break loop;
-                    }
-                    final JSONObject view = extractView(doc);
-                    if (view == null) {
-                        logger.info("View was deleted.");
-                        break loop;
-                    }
-                    final String fun = extractFunction(view);
-                    if (fun == null) {
-                        logger.warn("View has no index function.");
-                        break loop;
-                    }
-                    final String newDigest = Lucene.digest(fun);
-                    if (!digest.equals(newDigest)) {
-                        logger.info("Digest of function changed.");
-                        break loop;
-                    }
-                } else if (id.startsWith("_design")) {
-                    // Ignore other design document changes.
-                    continue loop;
-                } else if (doc.optBoolean("_deleted")) {
-                    logger.trace(id + " deleted.");
-                    lucene.withWriter(path, new WriterCallback() {
-
-                        public boolean callback(final IndexWriter writer) throws IOException {
-                            writer.deleteDocuments(new Term("_id", id));
-                            return true;
-                        }
-
-                        public void onMissing() throws IOException {
-                            // Ignore.
-                        }
-                    });
-                    setPendingCommit(true);
-                } else {
-                    logger.trace(id + " inserted or updated.");
-                    final Document[] docs;
-                    try {
-                        docs = converter.convert(doc, defaults, database);
-                    } catch (final RhinoException e) {
-                        logger.warn(id + " caused " + e.getMessage());
+                    // Heartbeat.
+                    if (line.length() == 0) {
+                        logger.trace("heartbeat");
                         continue loop;
                     }
 
-                    lucene.withWriter(path, new WriterCallback() {
+                    final JSONObject json = JSONObject.fromObject(line);
 
-                        public boolean callback(final IndexWriter writer) throws IOException {
-                            writer.deleteDocuments(new Term("_id", id));
-                            for (final Document doc : docs) {
-                                writer.addDocument(doc, analyzer);
+                    if (json.has("error")) {
+                        logger.warn("Indexing stopping due to error: " + json);
+                        break loop;
+                    }
+
+                    if (json.has("last_seq")) {
+                        logger.warn("End of changes detected.");
+                        break loop;
+                    }
+
+                    final JSONObject doc;
+                    if (json.has("doc")) {
+                        doc = json.getJSONObject("doc");
+                    } else {
+                        // include_docs=true doesn't work prior to 0.11.
+                        doc = database.getDocument(json.getString("id"));
+                    }
+
+                    final String id = doc.getString("_id");
+                    if (id.equals("_design/" + path.getDesignDocumentName())) {
+                        if (doc.optBoolean("_deleted")) {
+                            logger.info("Design document for this view was deleted.");
+                            break loop;
+                        }
+                        final JSONObject view = extractView(doc);
+                        if (view == null) {
+                            logger.info("View was deleted.");
+                            break loop;
+                        }
+                        final String fun = extractFunction(view);
+                        if (fun == null) {
+                            logger.warn("View has no index function.");
+                            break loop;
+                        }
+                        final String newDigest = Lucene.digest(fun);
+                        if (!digest.equals(newDigest)) {
+                            logger.info("Digest of function changed.");
+                            break loop;
+                        }
+                    } else if (id.startsWith("_design")) {
+                        // Ignore other design document changes.
+                        continue loop;
+                    } else if (doc.optBoolean("_deleted")) {
+                        logger.trace(id + " deleted.");
+                        lucene.withWriter(path, new WriterCallback() {
+
+                            public boolean callback(final IndexWriter writer) throws IOException {
+                                writer.deleteDocuments(new Term("_id", id));
+                                return true;
                             }
-                            return true;
+
+                            public void onMissing() throws IOException {
+                                // Ignore.
+                            }
+                        });
+                        setPendingCommit(true);
+                    } else {
+                        logger.trace(id + " inserted or updated.");
+                        final Document[] docs;
+                        try {
+                            docs = converter.convert(doc, defaults, database);
+                        } catch (final RhinoException e) {
+                            logger.warn(id + " caused " + e.getMessage());
+                            continue loop;
                         }
 
-                        public void onMissing() throws IOException {
-                            // Ignore.
-                        }
-                    });
-                    setPendingCommit(true);
+                        lucene.withWriter(path, new WriterCallback() {
+
+                            public boolean callback(final IndexWriter writer) throws IOException {
+                                writer.deleteDocuments(new Term("_id", id));
+                                for (final Document doc : docs) {
+                                    writer.addDocument(doc, analyzer);
+                                }
+                                return true;
+                            }
+
+                            public void onMissing() throws IOException {
+                                // Ignore.
+                            }
+                        });
+                        setPendingCommit(true);
+                    }
+                    since = json.getLong("seq");
+                    releaseCatch();
                 }
-                since = json.getLong("seq");
-                releaseCatch();
+            } catch (final IOException e) {
+                logger.warn("I/O exception inside response handler.", e);
+            } finally {
+                logger.info("_changes loop is exiting.");
+                request.abort();
             }
-            logger.info("_changes loop is exiting.");
-            request.abort();
             return null;
         }
 
