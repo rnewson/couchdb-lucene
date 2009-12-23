@@ -77,9 +77,9 @@ public class Main {
         final SelectChannelConnector connector = new SelectChannelConnector();
         connector.setHost(host);
         connector.setPort(port);
-        
+
         LOG.info("Accepting connections with " + connector);
-        
+
         server.setConnectors(new Connector[] { connector });
         server.setStopAtShutdown(true);
         server.setSendServerVersion(false);
@@ -98,10 +98,6 @@ public class Main {
         final AdminServlet admin = new AdminServlet();
         admin.setLucene(lucene);
         setupContext(contexts, "/admin", admin);
-
-        final TestServlet test = new TestServlet();
-        test.setLucene(lucene);
-        setupContext(contexts, "/test", test);
 
         return server;
     }
