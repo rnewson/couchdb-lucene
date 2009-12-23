@@ -250,7 +250,7 @@ function(doc) {
   var result = new Document();
   result.add(doc.subject, {"field":"subject", "store":"yes"});
   result.add(doc.content, {"field":"subject"});
-  result.add({"field":"indexed_at"});
+  result.add(new Date(), {"field":"indexed_at"});
   return result;
 }
 </pre>
