@@ -16,7 +16,6 @@
       <groupId>net.jcip</groupId>
       <artifactId>jcip-annotations</artifactId>
       <version>1.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.mortbay.jetty</groupId>
@@ -63,7 +62,6 @@
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>${tika-version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
