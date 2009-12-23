@@ -29,6 +29,11 @@
       <fileMode>644</fileMode>
       <outputDirectory>/conf</outputDirectory>
     </file>
+    <file>
+      <source>${project.basedir}/couchdb-external-hook.py</source>
+      <fileMode>755</fileMode>
+      <outputDirectory>/tools</outputDirectory>
+    </file>
   </files>
   <dependencySets>
     <dependencySet>
