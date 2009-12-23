@@ -13,6 +13,8 @@ except:
 
 __usage__ = "%prog [OPTIONS]"
 
+httpdict = {"etag":"ETag", "content-type":"Content-Type"}
+
 def options():
     return [
         op.make_option('--remote-host', dest='remote_host',
@@ -87,8 +89,8 @@ def respond(res, req, host, port):
 
     resp_headers = {}
     for h, v in resp.getheaders():
-        if h.lower() in ["content-type", "etag"]:
-            resp_headers[h] = resp.getheader(h, [])
+        if h.lower() in httpdict:
+            resp_headers[httpdict[h]] = resp.getheader(h, [])
 
     return mkresp(resp.status, resp.read(), resp_headers)
 
