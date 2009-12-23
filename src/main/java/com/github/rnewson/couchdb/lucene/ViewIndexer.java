@@ -192,7 +192,9 @@ public final class ViewIndexer implements Runnable {
                                 // Ignore.
                             }
                         });
-                        setPendingCommit(true);
+                        if (docs.length > 0) {
+                            setPendingCommit(true);
+                        }
                     }
                     since = json.getLong("seq");
                     releaseCatch();
