@@ -1,11 +1,10 @@
 package com.github.rnewson.couchdb.lucene;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.http.impl.cookie.DateParseException;
+import org.apache.http.impl.cookie.DateUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
@@ -22,6 +21,9 @@ import org.apache.lucene.util.Version;
  * 
  */
 public final class CustomQueryParser extends QueryParser {
+
+    private static String[] DATE_PATTERNS = new String[] { "yyyy-MM-dd'T'HH:mm:ssZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZZ",
+            "yyyy-MM-dd" };
 
     public CustomQueryParser(final Version matchVersion, final String f, final Analyzer a) {
         super(matchVersion, f, a);
@@ -130,10 +132,9 @@ public final class CustomQueryParser extends QueryParser {
             return Integer.parseInt(value);
         }
 
-        final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZ");
         try {
-            return dateFormat.parse(value.toUpperCase()).getTime();
-        } catch (final java.text.ParseException e) {
+            return DateUtils.parseDate(value.toUpperCase(), DATE_PATTERNS).getTime();
+        } catch (final DateParseException e) {
             // Ignore.
         }
 
