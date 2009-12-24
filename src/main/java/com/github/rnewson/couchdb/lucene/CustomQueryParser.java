@@ -6,15 +6,14 @@ import java.text.SimpleDateFormat;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
-import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.util.Version;
 
 /**
  * Custom query parser that uses NumericFieldQuery where appropriate.
@@ -22,78 +21,10 @@ import org.apache.lucene.search.TermRangeQuery;
  * @author robertnewson
  * 
  */
-public final class CustomQueryParser {
+public final class CustomQueryParser extends QueryParser {
 
-    private QueryParser delegate;
-
-    public CustomQueryParser(final QueryParser delegate) {
-        this.delegate = delegate;
-    }
-
-    public Query parse(final String query) throws ParseException {
-        return fixup(delegate.parse(query));
-    }
-
-    private Query fixup(final Query query) {
-        if (query instanceof BooleanQuery) {
-            final BooleanQuery booleanQuery = (BooleanQuery) query;
-            for (final BooleanClause clause : booleanQuery.getClauses()) {
-                clause.setQuery(fixup(clause.getQuery()));
-            }
-        } else if (query instanceof TermRangeQuery) {
-            final TermRangeQuery termRangeQuery = (TermRangeQuery) query;
-            final String field = termRangeQuery.getField();
-            final Object lower = fixup(termRangeQuery.getLowerTerm());
-            final Object upper = fixup(termRangeQuery.getUpperTerm());
-            final boolean includesLower = termRangeQuery.includesLower();
-            final boolean includesUpper = termRangeQuery.includesUpper();
-
-            // Sanity check.
-            if (lower.getClass() != upper.getClass()) {
-                return query;
-            }
-
-            if (lower instanceof String) {
-                return termRangeQuery;
-            }
-            if (lower instanceof Float) {
-                return NumericRangeQuery.newFloatRange(field, 4, (Float) lower, (Float) upper, includesLower, includesUpper);
-            }
-            if (lower instanceof Double) {
-                return NumericRangeQuery.newDoubleRange(field, 8, (Double) lower, (Double) upper, includesLower, includesUpper);
-            }
-            if (lower instanceof Long) {
-                return NumericRangeQuery.newLongRange(field, 8, (Long) lower, (Long) upper, includesLower, includesUpper);
-            }
-            if (lower instanceof Integer) {
-                return NumericRangeQuery.newIntRange(field, 4, (Integer) lower, (Integer) upper, includesLower, includesUpper);
-            }
-        }
-        return query;
-    }
-
-    private Object fixup(final String value) {
-        if (value.matches("\\d+\\.\\d+f")) {
-            return Float.parseFloat(value);
-        }
-        if (value.matches("\\d+\\.\\d+")) {
-            return Double.parseDouble(value);
-        }
-        if (value.matches("\\d+[lL]")) {
-            return Long.parseLong(value.substring(0, value.length() - 1));
-        }
-        if (value.matches("\\d+")) {
-            return Integer.parseInt(value);
-        }
-
-        final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZ");
-        try {
-            return dateFormat.parse(value.toUpperCase()).getTime();
-        } catch (final java.text.ParseException e) {
-            // Ignore.
-        }
-
-        return value;
+    public CustomQueryParser(final Version matchVersion, final String f, final Analyzer a) {
+        super(matchVersion, f, a);
     }
 
     public Sort toSort(final String sort) {
@@ -183,6 +114,58 @@ public final class CustomQueryParser {
             result.add(col);
         }
         return result.toString();
+    }
+
+    private Object fixup(final String value) {
+        if (value.matches("\\d+\\.\\d+f")) {
+            return Float.parseFloat(value);
+        }
+        if (value.matches("\\d+\\.\\d+")) {
+            return Double.parseDouble(value);
+        }
+        if (value.matches("\\d+[lL]")) {
+            return Long.parseLong(value.substring(0, value.length() - 1));
+        }
+        if (value.matches("\\d+")) {
+            return Integer.parseInt(value);
+        }
+
+        final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZ");
+        try {
+            return dateFormat.parse(value.toUpperCase()).getTime();
+        } catch (final java.text.ParseException e) {
+            // Ignore.
+        }
+
+        return value;
+    }
+
+    @Override
+    protected Query getRangeQuery(final String field, final String part1, final String part2, final boolean inclusive)
+            throws ParseException {
+        final Object lower = fixup(part1);
+        final Object upper = fixup(part2);
+
+        // Sanity check.
+        if (lower.getClass() == upper.getClass()) {
+            if (lower instanceof Float) {
+                return NumericRangeQuery.newFloatRange(field, 4, (Float) lower, (Float) upper, inclusive, inclusive);
+            }
+
+            if (lower instanceof Double) {
+                return NumericRangeQuery.newDoubleRange(field, 8, (Double) lower, (Double) upper, inclusive, inclusive);
+            }
+
+            if (lower instanceof Long) {
+                return NumericRangeQuery.newLongRange(field, 8, (Long) lower, (Long) upper, inclusive, inclusive);
+            }
+
+            if (lower instanceof Integer) {
+                return NumericRangeQuery.newIntRange(field, 4, (Integer) lower, (Integer) upper, inclusive, inclusive);
+            }
+        }
+
+        return newRangeQuery(field, part1, part2, inclusive);
     }
 
 }

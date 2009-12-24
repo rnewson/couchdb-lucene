@@ -25,7 +25,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -92,8 +91,7 @@ public final class SearchServlet extends HttpServlet {
 
                 // Parse query.
                 final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
-                final CustomQueryParser parser = new CustomQueryParser(new QueryParser(Version.LUCENE_CURRENT,
-                        Constants.DEFAULT_FIELD, analyzer));
+                final CustomQueryParser parser = new CustomQueryParser(Version.LUCENE_CURRENT, Constants.DEFAULT_FIELD, analyzer);
 
                 final Query q;
                 try {
