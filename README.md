@@ -314,7 +314,24 @@ Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to 
 
 <h1>Searching with couchdb-lucene</h1>
 
-You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>. The following parameters can be passed for more sophisticated searches;
+You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>.
+
+<h2>Numeric range queries</h2>
+
+In addition to normal text-based range searches (using the "field:[lower TO upper]" syntax), couchdb-lucene all supports numeric range searches for the following types: integer, long, float, double and date. The type is automatically derived from the search terms used, as follows;
+
+<table>
+<tr><td>type</td><td>format</td><td>example</td></tr>
+<tr><td>integer</td><td>[0-9]+</td><td>[0 TO 100]</td></tr>
+<tr><td>long</td><td>[0-9]+L</td><td>[0L TO 100L]</td></tr>
+<tr><td>float</td><td>[0-9]+.[0-9]+f</td><td>[0.0f TO 100.0f]</td></tr>
+<tr><td>double</td><td>[0-9]+.[0-9]+</td><td>[0.0 TO 100.0]</td></tr>
+<tr><td>date</td><td>yyyy-MM-dd or yyyy-MM-ddZZ or yyyy-MM-dd'T'HH:mm:ss or yyyy-MM-dd'T'HH:mm:ssZZ</td><td>2001-01-01 or 2001-01-01-0500 or 2000-01-01T00:00:00 or 2000-01-01T00:00:00-0500</td></tr>
+</table>
+
+Both the upper and lower bound must be of the same type to trigger numeric range searching. If they don't match, then a normal text-based range search is performed.
+
+The following parameters can be passed for more sophisticated searches;
 
 <dl>
 <dt>analyzer</dt><dd>The analyzer used to convert the query string into a query object.
