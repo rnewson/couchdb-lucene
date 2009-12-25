@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.http.client.HttpClient;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -55,8 +56,14 @@ public final class SearchServlet extends HttpServlet {
 
     private Lucene lucene;
 
+    private Configuration configuration;
+
     public void setLucene(final Lucene lucene) {
         this.lucene = lucene;
+    }
+
+    public void setConfiguration(final Configuration configuration) {
+        this.configuration = configuration;
     }
 
     @Override

@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexReader.FieldOption;
 
@@ -31,8 +32,14 @@ public class InfoServlet extends HttpServlet {
 
     private Lucene lucene;
 
+    private Configuration configuration;
+
     public void setLucene(final Lucene lucene) {
         this.lucene = lucene;
+    }
+
+    public void setConfiguration(final Configuration configuration) {
+        this.configuration = configuration;
     }
 
     @Override
@@ -43,7 +50,7 @@ public class InfoServlet extends HttpServlet {
             ServletUtils.sendJSONError(req, resp, 400, "Bad path");
             return;
         }
-        
+
         lucene.withReader(path, Utils.getStaleOk(req), new ReaderCallback() {
             public void callback(final IndexReader reader) throws IOException {
                 final JSONObject result = new JSONObject();

@@ -4,7 +4,6 @@ import java.io.File;
 
 import javax.servlet.http.HttpServlet;
 
-import org.apache.commons.configuration.FileConfiguration;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.log4j.Logger;
@@ -26,11 +25,11 @@ public class Main {
      * Run couchdb-lucene.
      */
     public static void main(String[] args) throws Exception {
-        final FileConfiguration config = new HierarchicalINIConfiguration(Main.class.getClassLoader().getResource(
-                "couchdb-lucene.properties"));
-        config.setReloadingStrategy(new FileChangedReloadingStrategy());
+        final HierarchicalINIConfiguration configuration = new HierarchicalINIConfiguration(Main.class.getClassLoader()
+                .getResource("couchdb-lucene.properties"));
+        configuration.setReloadingStrategy(new FileChangedReloadingStrategy());
 
-        final File dir = new File(config.getString("lucene.dir", "indexes"));
+        final File dir = new File(configuration.getString("lucene.dir", "indexes"));
 
         if (dir == null) {
             LOG.error("lucene.dir not set.");
@@ -51,23 +50,11 @@ public class Main {
         LOG.info("Index output goes to: " + dir.getCanonicalPath());
 
         final Lucene lucene = new Lucene(dir);
-        final String host = config.getString("lucene.host", "localhost");
-        final int port = config.getInt("lucene.port", 5985);
-        final Server jetty = jetty(lucene, host, port);
 
-        jetty.start();
-        jetty.join();
-    }
-
-    /**
-     * Configure Jetty.
-     */
-    private static Server jetty(final Lucene lucene, final String host, final int port) {
         final Server server = new Server();
-
         final SelectChannelConnector connector = new SelectChannelConnector();
-        connector.setHost(host);
-        connector.setPort(port);
+        connector.setHost(configuration.getString("lucene.host", "localhost"));
+        connector.setPort(configuration.getInt("lucene.port", 5985));
 
         LOG.info("Accepting connections with " + connector);
 
@@ -80,17 +67,21 @@ public class Main {
 
         final SearchServlet search = new SearchServlet();
         search.setLucene(lucene);
+        search.setConfiguration(configuration);
         setupContext(contexts, "/search", search);
 
         final InfoServlet info = new InfoServlet();
         info.setLucene(lucene);
+        info.setConfiguration(configuration);
         setupContext(contexts, "/info", info);
 
         final AdminServlet admin = new AdminServlet();
         admin.setLucene(lucene);
+        admin.setConfiguration(configuration);
         setupContext(contexts, "/admin", admin);
 
-        return server;
+        server.start();
+        server.join();
     }
 
     private static void setupContext(final ContextHandlerCollection contexts, final String root, final HttpServlet servlet) {
