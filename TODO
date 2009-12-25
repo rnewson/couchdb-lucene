@@ -5,14 +5,7 @@ OPTIMIZE
 1) use nio so we have one thread per core - not one thread per view
 2) use one connection per db not one connection per view
 
-SIMPLIFY
-support 0.11 onwards only (where _changes?since=N&heartbeat=N work)
-
-* auto-configuration (c-l will PUT directly to _config)
-
-* support authentication against couchdb (basic/digest/etc)
 * pause/resume control over indexer.
-* status page.
 * allow POST with a query array?
 
 * allow c-l operations even if couchdb is down (except include_docs=true, of course)
@@ -21,11 +14,14 @@ support 0.11 onwards only (where _changes?since=N&heartbeat=N work)
 
 * make attachment call support "store":"yes|no"
 
+0.6
+
+* distributed search.
+
 UNSCHEDULED
 
 * LuceneDictionary/spellcheck/suggestions mode.
 * _show and _list-like support for search results.
-* distributed search.
 * hit highlighting (lucene contrib).
 * clustering (carrot2).
 * JSONQuery? (http://docs.persvr.org/documentation/jsonquery)
