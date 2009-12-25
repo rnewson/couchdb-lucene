@@ -1,12 +1,12 @@
 package com.github.rnewson.couchdb.lucene;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
 
 import javax.servlet.http.HttpServlet;
 
+import org.apache.commons.configuration.FileConfiguration;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.log4j.Logger;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
@@ -26,9 +26,12 @@ public class Main {
      * Run couchdb-lucene.
      */
     public static void main(String[] args) throws Exception {
-        final Properties properties = loadProperties();
+        final FileConfiguration config = new HierarchicalINIConfiguration(Main.class.getClassLoader().getResource(
+                "couchdb-lucene.properties"));
+        config.setReloadingStrategy(new FileChangedReloadingStrategy());
 
-        final File dir = new File(properties.getProperty("lucene.dir", "indexes"));
+        final File dir = new File(config.getString("lucene.dir", "indexes"));
+
         if (dir == null) {
             LOG.error("lucene.dir not set.");
             System.exit(1);
@@ -48,24 +51,12 @@ public class Main {
         LOG.info("Index output goes to: " + dir.getCanonicalPath());
 
         final Lucene lucene = new Lucene(dir);
-        final String host = properties.getProperty("lucene.host", "localhost");
-        final int port = Integer.parseInt(properties.getProperty("lucene.port", "5985"));
+        final String host = config.getString("lucene.host", "localhost");
+        final int port = config.getInt("lucene.port", 5985);
         final Server jetty = jetty(lucene, host, port);
 
         jetty.start();
         jetty.join();
-    }
-
-    private static Properties loadProperties() throws IOException {
-        final Properties properties = new Properties();
-        final InputStream in = Main.class.getClassLoader().getResourceAsStream("couchdb-lucene.properties");
-        if (in == null) {
-            LOG.error("No couchdb-lucene.properties file found.");
-            return null;
-        }
-        properties.load(in);
-        in.close();
-        return properties;
     }
 
     /**
