@@ -37,15 +37,15 @@ def main():
 
     if len(args):
         parser.error("Unrecognized arguments: %s" % ' '.join(args))
-    res = httplib.HTTPConnection(opts.remote_host, opts.remote_port)
     for req in requests():
+        res = httplib.HTTPConnection(opts.remote_host, opts.remote_port)
         try:
             resp = respond(res, req, opts.local_host, opts.local_port)
         except Exception, e:
             body = traceback.format_exc()
             resp = mkresp(500, body, {"Content-Type": "text/plain"})
-            res = httplib.HTTPConnection(opts.remote_host, opts.remote_port)
 
+        res.close()
         sys.stdout.write(json.dumps(resp))
         sys.stdout.write("\n")
         sys.stdout.flush()
@@ -74,7 +74,7 @@ def respond(res, req, host, port):
         path[index] = urllib.quote(path[index], "")
 
     if req["query"] == {}:
-        path = '/'.join(['', 'info', host, str(port)], path)
+        path = '/'.join(['', 'info', host, str(port)] + path)
     else:
         path = '/'.join(['', 'search', host, str(port)] + path)
         path = '?'.join([path, urllib.urlencode(req["query"])])
