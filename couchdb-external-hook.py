@@ -74,7 +74,7 @@ def respond(res, req, host, port):
         path[index] = urllib.quote(path[index], "")
 
     if req["query"] == {}:
-        path = '/'.join(['', 'info', host, str(port)], path)
+        path = '/'.join(['', 'info', host, str(port)] + path)
     else:
         path = '/'.join(['', 'search', host, str(port)] + path)
         path = '?'.join([path, urllib.urlencode(req["query"])])
