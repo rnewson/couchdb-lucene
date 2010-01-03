@@ -70,7 +70,6 @@ public class DocumentConverterTest {
         final Document[] result = converter.convert(doc("{_id:\"hello\", arr:[0,1,2,3]}"), new JSONObject(), null);
         assertThat(result.length, is(1));
         assertThat(result[0].get("_id"), is("hello"));
-        System.err.println(result[0]);
         assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[0], is("0"));
         assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[1], is("1"));
         assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[2], is("2"));
@@ -84,7 +83,8 @@ public class DocumentConverterTest {
                 "multi",
                 "function(doc) {var ret=new Document(); function idx(obj) {for (var key in obj) {switch (typeof obj[key]) {case 'object':idx(obj[key]); break; case 'function': break; default: ret.add(obj[key]); break;} } }; idx(doc); return ret; }");
 
-        final Document[] result = converter.convert(doc("{_id:\"hello\", l1: { l2: {l3:[\"v3\", \"v4\"]}}}"), new JSONObject(), null);
+        final Document[] result = converter.convert(doc("{_id:\"hello\", l1: { l2: {l3:[\"v3\", \"v4\"]}}}"), new JSONObject(),
+                null);
         assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[0], is("hello"));
         assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[1], is("v3"));
         assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[2], is("v4"));
@@ -117,6 +117,14 @@ public class DocumentConverterTest {
                 "function(doc) {var ret=new Document(); ret.add(doc.nope); return ret;}");
         final Document[] result = converter.convert(doc("{_id:\"hello\"}"), new JSONObject(), null);
         assertThat(result.length, is(1));
+    }
+
+    @Test
+    public void testQuoteRemoval() throws Exception {
+        final DocumentConverter converter = new DocumentConverter(context, "single", "\"function(doc) {return new Document();}\"");
+        final Document[] result = converter.convert(doc("{_id:\"hello\"}"), new JSONObject(), null);
+        assertThat(result.length, is(1));
+        assertThat(result[0].get("_id"), is("hello"));
     }
 
     private JSONObject doc(final String json) {
