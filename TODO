@@ -5,7 +5,10 @@ OPTIMIZE
 1) use nio so we have one thread per core - not one thread per view
 2) use one connection per db not one connection per view
 
-* pause/resume control over indexer.
+* add _view_cleanup equivalent
+* add _compact equivalent
+* finish config work.
+* pause/resume control over indexer?
 * allow POST with a query array?
 
 * allow c-l operations even if couchdb is down (except include_docs=true, of course)
