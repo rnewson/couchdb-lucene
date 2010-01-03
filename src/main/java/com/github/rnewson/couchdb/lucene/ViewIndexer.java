@@ -13,7 +13,6 @@ import java.util.concurrent.CountDownLatch;
 
 import net.sf.json.JSONObject;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -324,7 +323,7 @@ public final class ViewIndexer implements Runnable {
         if (!view.has("index")) {
             return null;
         }
-        return StringUtils.trim(view.getString("index"));
+        return view.getString("index");
     }
 
     private JSONObject extractView(final JSONObject ddoc) {

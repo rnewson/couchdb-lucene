@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import net.sf.json.JSONObject;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.mozilla.javascript.Context;
@@ -47,7 +48,7 @@ public final class DocumentConverter {
         ScriptableObject.putProperty(scope, "log", new JSLog());
 
         // Compile user-specified function
-        viewFun = context.compileFunction(scope, function, functionName, 0, null);
+        viewFun = context.compileFunction(scope, trim(function), functionName, 0, null);
     }
 
     public Document[] convert(final JSONObject doc, final JSONObject defaults, final Database database) throws IOException {
@@ -85,6 +86,14 @@ public final class DocumentConverter {
         }
 
         return null;
+    }
+
+    private String trim(final String fun) {
+        String result = fun;
+        result = StringUtils.trim(result);
+        result = StringUtils.removeStart(result, "\"");
+        result = StringUtils.removeEnd(result, "\"");
+        return result;
     }
 
 }
