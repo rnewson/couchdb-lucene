@@ -351,7 +351,6 @@ The following parameters can be passed for more sophisticated searches;
 <h2>Special Fields</h2>
 
 <dl>
-<dt>_db</dt><dd>The source database of the document.</dd>
 <dt>_id</dt><dd>The _id of the document.</dd>
 </dl>
 
