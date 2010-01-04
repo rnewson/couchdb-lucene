@@ -29,7 +29,7 @@ public final class CustomQueryParser extends QueryParser {
         super(matchVersion, f, a);
     }
 
-    public Sort toSort(final String sort) {
+    public static Sort toSort(final String sort) {
         if (sort == null) {
             return null;
         } else {
@@ -69,7 +69,7 @@ public final class CustomQueryParser extends QueryParser {
         }
     }
 
-    public String toString(final SortField[] sortFields) {
+    public static String toString(final SortField[] sortFields) {
         final JSONArray result = new JSONArray();
         for (final SortField field : sortFields) {
             final JSONObject col = new JSONObject();

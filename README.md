@@ -340,7 +340,7 @@ The following parameters can be passed for more sophisticated searches;
 <dt>force_json<dt><dd>Usually couchdb-lucene determines the Content-Type of its response based on the presence of the Accept header. If Accept contains "application/json", you get "application/json" in the response, otherwise you get "text/plain;charset=utf8". Some tools, like JSONView for FireFox, do not send the Accept header but do render "application/json" responses if received. Setting force_json=true forces all response to "application/json" regardless of the Accept header.</dd>
 <dt>include_docs</dt><dd>whether to include the source docs</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>
-<dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched.</dd>
+<dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched. Multiple q parameters are permitted, the resulting JSON will be an array of responses.</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
 <dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified). Type-specific sorting is also available by appending a : and the sort type as normal (e.g, 'sort=amount:float'). Supported types are 'float', 'double', 'int', 'long' and 'date'.</dd>
 <dt>stale=ok</dt><dd>If you set the <i>stale</i> option to <i>ok</i>, couchdb-lucene may not perform any refreshing on the index. Searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will use the latest data committed to the index.</dd>

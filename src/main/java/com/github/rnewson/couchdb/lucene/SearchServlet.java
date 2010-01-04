@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -23,6 +24,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.FieldDoc;
@@ -68,7 +70,7 @@ public final class SearchServlet extends HttpServlet {
         }
 
         final boolean debug = getBooleanParameter(req, "debug");
-        final boolean rewrite_query = getBooleanParameter(req, "rewrite_query");
+        final boolean rewrite_query = getBooleanParameter(req, "rewrite");
         final boolean staleOk = Utils.getStaleOk(req);
 
         final IndexPath path = IndexPath.parse(req);
@@ -93,24 +95,55 @@ public final class SearchServlet extends HttpServlet {
                 final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
                 final CustomQueryParser parser = new CustomQueryParser(Version.LUCENE_CURRENT, Constants.DEFAULT_FIELD, analyzer);
 
-                final Query q;
-                try {
-                    q = parser.parse(req.getParameter("q"));
-                } catch (final ParseException e) {
-                    ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax");
-                    return;
+                final String[] queries = req.getParameterValues("q");
+                final JSONArray arr = new JSONArray();
+
+                for (final String query : queries) {
+                    try {
+                        arr.add(performQuery(debug, rewrite_query, searcher, version, parser.parse(query)));
+                    } catch (final ParseException e) {
+                        ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax");
+                        return;
+                    }
                 }
 
-                final JSONObject json = new JSONObject();
-                json.put("q", q.toString());
-                if (debug) {
-                    json.put("plan", new QueryPlan().toPlan(q));
+                Utils.setResponseContentTypeAndEncoding(req, resp);
+
+                // Cache-related headers.
+                resp.setHeader("ETag", version);
+                resp.setHeader("Cache-Control", "must-revalidate");
+
+                final JSON json = arr.size() > 1 ? arr : arr.getJSONObject(0);
+
+                // Format response body.
+                final String callback = req.getParameter("callback");
+                final String body;
+                if (callback != null) {
+                    body = String.format("%s(%s)", callback, json);
+                } else {
+                    body = json.toString(debug ? 2 : 0);
                 }
-                json.put("etag", version);
+
+                final Writer writer = resp.getWriter();
+                try {
+                    writer.write(body);
+                } finally {
+                    writer.close();
+                }
+            }
+
+            private JSONObject performQuery(final boolean debug, final boolean rewrite_query, final IndexSearcher searcher,
+                    final String version, final Query q) throws IOException, CorruptIndexException {
+                final JSONObject result = new JSONObject();
+                result.put("q", q.toString());
+                if (debug) {
+                    result.put("plan", QueryPlan.toPlan(q));
+                }
+                result.put("etag", version);
 
                 if (rewrite_query) {
                     final Query rewritten_q = q.rewrite(searcher.getIndexReader());
-                    json.put("rewritten_q", rewritten_q.toString());
+                    result.put("rewritten_q", rewritten_q.toString());
 
                     final JSONObject freqs = new JSONObject();
 
@@ -120,7 +153,7 @@ public final class SearchServlet extends HttpServlet {
                         final int freq = searcher.docFreq((Term) term);
                         freqs.put(term, freq);
                     }
-                    json.put("freqs", freqs);
+                    result.put("freqs", freqs);
                 } else {
                     // Perform the search.
                     final TopDocs td;
@@ -128,7 +161,7 @@ public final class SearchServlet extends HttpServlet {
 
                     final boolean include_docs = getBooleanParameter(req, "include_docs");
                     final int limit = getIntParameter(req, "limit", 25);
-                    final Sort sort = parser.toSort(req.getParameter("sort"));
+                    final Sort sort = CustomQueryParser.toSort(req.getParameter("sort"));
                     final int skip = getIntParameter(req, "skip", 0);
 
                     if (sort == null) {
@@ -213,39 +246,18 @@ public final class SearchServlet extends HttpServlet {
                     }
                     stopWatch.lap("fetch");
 
-                    json.put("skip", skip);
-                    json.put("limit", limit);
-                    json.put("total_rows", td.totalHits);
-                    json.put("search_duration", stopWatch.getElapsed("search"));
-                    json.put("fetch_duration", stopWatch.getElapsed("fetch"));
+                    result.put("skip", skip);
+                    result.put("limit", limit);
+                    result.put("total_rows", td.totalHits);
+                    result.put("search_duration", stopWatch.getElapsed("search"));
+                    result.put("fetch_duration", stopWatch.getElapsed("fetch"));
                     // Include sort info (if requested).
                     if (td instanceof TopFieldDocs) {
-                        json.put("sort_order", parser.toString(((TopFieldDocs) td).fields));
+                        result.put("sort_order", CustomQueryParser.toString(((TopFieldDocs) td).fields));
                     }
-                    json.put("rows", rows);
+                    result.put("rows", rows);
                 }
-
-                Utils.setResponseContentTypeAndEncoding(req, resp);
-
-                // Cache-related headers.
-                resp.setHeader("ETag", version);
-                resp.setHeader("Cache-Control", "must-revalidate");
-
-                // Format response body.
-                final String callback = req.getParameter("callback");
-                final String body;
-                if (callback != null) {
-                    body = String.format("%s(%s)", callback, json);
-                } else {
-                    body = json.toString(debug ? 2 : 0);
-                }
-
-                final Writer writer = resp.getWriter();
-                try {
-                    writer.write(body);
-                } finally {
-                    writer.close();
-                }
+                return result;
             }
 
             public void onMissing() throws IOException {
