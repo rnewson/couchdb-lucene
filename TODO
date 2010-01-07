@@ -7,9 +7,9 @@ OPTIMIZE
 
 * add _view_cleanup equivalent
 * add _compact equivalent
+* add perfield analyzer for indexing and querying
 * finish config work.
 * pause/resume control over indexer?
-* allow POST with a query array?
 
 * allow c-l operations even if couchdb is down (except include_docs=true, of course)
 * correctly handle database deletion, view renames, view adds, deletes, etc.
