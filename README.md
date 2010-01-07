@@ -37,7 +37,7 @@ You will now have a zip file in the target/ directory. This contains all the cou
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
 
 [external]
-fti=/path/to/python /usr/lib/couchdb/couchdb-lucene/couchdb-external-hook.py
+fti=/path/to/python <path to couchdb-lucene>/tools/couchdb-external-hook.py
 
 [httpd_db_handlers]
 _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
