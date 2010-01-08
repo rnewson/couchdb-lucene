@@ -82,7 +82,7 @@ public enum Analyzers {
     PERFIELD {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            final JSONObject json = JSONObject.fromObject(args);
+            final JSONObject json = JSONObject.fromObject(args == null ? "{}" : args);
             final Analyzer defaultAnalyzer = Analyzers.getAnalyzer(json.optString("_default", "standard"));
             final PerFieldAnalyzerWrapper result = new PerFieldAnalyzerWrapper(defaultAnalyzer);
             for (final Object obj : json.keySet()) {
