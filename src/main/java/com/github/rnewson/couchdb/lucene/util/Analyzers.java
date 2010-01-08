@@ -83,11 +83,11 @@ public enum Analyzers {
         @Override
         public Analyzer newAnalyzer(final String args) {
             final JSONObject json = JSONObject.fromObject(args == null ? "{}" : args);
-            final Analyzer defaultAnalyzer = Analyzers.getAnalyzer(json.optString("_default", "standard"));
+            final Analyzer defaultAnalyzer = Analyzers.getAnalyzer(json.optString(Constants.DEFAULT_FIELD, "standard"));
             final PerFieldAnalyzerWrapper result = new PerFieldAnalyzerWrapper(defaultAnalyzer);
             for (final Object obj : json.keySet()) {
                 final String key = obj.toString();
-                if ("_default".equals(key))
+                if (Constants.DEFAULT_FIELD.equals(key))
                     continue;
                 result.addAnalyzer(key, Analyzers.getAnalyzer(json.getString(key)));
             }

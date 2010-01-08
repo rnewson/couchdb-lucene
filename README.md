@@ -172,10 +172,10 @@ The "perfield" option lets you use a different analyzer for different fields and
 perfield:{field_name:"analyzer_name"}
 </pre>
 
-Unless overridden, any field name not specified will be handled by the standard analyzer. To change the default, use the special _default field name;
+Unless overridden, any field name not specified will be handled by the standard analyzer. To change the default, use the special default field name;
 
 <pre>
-perfield:{_default:"keyword"}
+perfield:{default:"keyword"}
 </pre>
 
 <h3>The Document class</h3>
