@@ -156,6 +156,7 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 <li>french</li>
 <li>german</li>
 <li>keyword</li>
+<li>perfield</li>
 <li>porter</li>
 <li>russian</li>
 <li>simple</li>
@@ -164,6 +165,18 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 </ul>
 
 Note: You must also supply analyzer=<analyzer_name> as a query parameter to ensure that queries are processed correctly.
+
+The "perfield" option lets you use a different analyzer for different fields and is configured as follows;
+
+<pre>
+perfield:{field_name:"analyzer_name"}
+</pre>
+
+Unless overridden, any field name not specified will be handled by the standard analyzer. To change the default, use the special _default field name;
+
+<pre>
+perfield:{_default:"keyword"}
+</pre>
 
 <h3>The Document class</h3>
 
