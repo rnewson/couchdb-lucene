@@ -17,7 +17,11 @@ import org.apache.lucene.search.WildcardQuery;
  * @author robertnewson
  * 
  */
-public class QueryPlan {
+public final class QueryPlan {
+
+    private QueryPlan() {
+
+    }
 
     /**
      * Produces a string representation of the query classes used for a query.
@@ -25,20 +29,20 @@ public class QueryPlan {
      * @param query
      * @return
      */
-    public String toPlan(final Query query) {
+    public static String toPlan(final Query query) {
         final StringBuilder builder = new StringBuilder(300);
         toPlan(builder, query);
         return builder.toString();
     }
 
-    private void planBooleanQuery(final StringBuilder builder, final BooleanQuery query) {
+    private static void planBooleanQuery(final StringBuilder builder, final BooleanQuery query) {
         for (final BooleanClause clause : query.getClauses()) {
             builder.append(clause.getOccur());
             toPlan(builder, clause.getQuery());
         }
     }
 
-    private void planFuzzyQuery(final StringBuilder builder, final FuzzyQuery query) {
+    private static void planFuzzyQuery(final StringBuilder builder, final FuzzyQuery query) {
         builder.append(query.getTerm());
         builder.append(",prefixLength=");
         builder.append(query.getPrefixLength());
@@ -46,7 +50,7 @@ public class QueryPlan {
         builder.append(query.getMinSimilarity());
     }
 
-    private void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery<?> query) {
+    private static void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery<?> query) {
         builder.append(query.getMin());
         builder.append(" TO ");
         builder.append(query.getMax());
@@ -54,25 +58,25 @@ public class QueryPlan {
         builder.append(query.getMin().getClass().getSimpleName());
     }
 
-    private void planPrefixQuery(final StringBuilder builder, final PrefixQuery query) {
+    private static void planPrefixQuery(final StringBuilder builder, final PrefixQuery query) {
         builder.append(query.getPrefix());
     }
 
-    private void planTermQuery(final StringBuilder builder, final TermQuery query) {
+    private static void planTermQuery(final StringBuilder builder, final TermQuery query) {
         builder.append(query.getTerm());
     }
 
-    private void planTermRangeQuery(final StringBuilder builder, final TermRangeQuery query) {
+    private static void planTermRangeQuery(final StringBuilder builder, final TermRangeQuery query) {
         builder.append(query.getLowerTerm());
         builder.append(" TO ");
         builder.append(query.getUpperTerm());
     }
 
-    private void planWildcardQuery(final StringBuilder builder, final WildcardQuery query) {
+    private static void planWildcardQuery(final StringBuilder builder, final WildcardQuery query) {
         builder.append(query.getTerm());
     }
 
-    private void toPlan(final StringBuilder builder, final Query query) {
+    private static void toPlan(final StringBuilder builder, final Query query) {
         builder.append(query.getClass().getSimpleName());
         builder.append("(");
         if (query instanceof TermQuery) {

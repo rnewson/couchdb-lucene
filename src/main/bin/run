@@ -9,4 +9,4 @@ do
     CLASSPATH="$CLASSPATH:$JAR"
 done
 
-java $JAVA_OPTS -cp $CLASSPATH $CLASS
+exec java $JAVA_OPTS -cp $CLASSPATH $CLASS

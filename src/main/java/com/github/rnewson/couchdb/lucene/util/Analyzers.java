@@ -2,9 +2,12 @@ package com.github.rnewson.couchdb.lucene.util;
 
 import java.io.Reader;
 
+import net.sf.json.JSONObject;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.analysis.LowerCaseTokenizer;
+import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.PorterStemFilter;
 import org.apache.lucene.analysis.SimpleAnalyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -24,85 +27,100 @@ public enum Analyzers {
 
     BRAZILIAN {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new BrazilianAnalyzer(VERSION);
         }
     },
     CHINESE {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new ChineseAnalyzer();
         }
     },
     CJK {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new CJKAnalyzer(VERSION);
         }
     },
     CZECH {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new CzechAnalyzer(VERSION);
         }
     },
     DUTCH {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new DutchAnalyzer(VERSION);
         }
     },
     ENGLISH {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new StandardAnalyzer(VERSION);
         }
     },
     FRENCH {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new FrenchAnalyzer(VERSION);
         }
     },
     GERMAN {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new GermanAnalyzer(VERSION);
         }
     },
     KEYWORD {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new KeywordAnalyzer();
+        }
+    },
+    PERFIELD {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            final JSONObject json = JSONObject.fromObject(args == null ? "{}" : args);
+            final Analyzer defaultAnalyzer = Analyzers.getAnalyzer(json.optString(Constants.DEFAULT_FIELD, "standard"));
+            final PerFieldAnalyzerWrapper result = new PerFieldAnalyzerWrapper(defaultAnalyzer);
+            for (final Object obj : json.keySet()) {
+                final String key = obj.toString();
+                if (Constants.DEFAULT_FIELD.equals(key))
+                    continue;
+                result.addAnalyzer(key, Analyzers.getAnalyzer(json.getString(key)));
+            }
+            return result;
         }
     },
     PORTER {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new PorterStemAnalyzer();
         }
     },
     RUSSIAN {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new RussianAnalyzer(VERSION);
         }
     },
     SIMPLE {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new SimpleAnalyzer();
         }
     },
     STANDARD {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new StandardAnalyzer(Version.LUCENE_CURRENT);
         }
     },
     THAI {
         @Override
-        public Analyzer newAnalyzer() {
+        public Analyzer newAnalyzer(final String args) {
             return new ThaiAnalyzer(VERSION);
         }
     };
@@ -116,10 +134,13 @@ public enum Analyzers {
         }
     }
 
-    public static Analyzer getAnalyzer(final String name) {
-        return Analyzers.valueOf(name.toUpperCase()).newAnalyzer();
+    public static Analyzer getAnalyzer(final String str) {
+        final String[] parts = str.split(":", 2);
+        final String name = parts[0].toUpperCase();
+        final String args = parts.length == 2 ? parts[1] : null;
+        return Analyzers.valueOf(name).newAnalyzer(args);
     }
 
-    public abstract Analyzer newAnalyzer();
+    public abstract Analyzer newAnalyzer(final String args);
 
 }
