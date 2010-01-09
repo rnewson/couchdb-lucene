@@ -7,6 +7,7 @@ OPTIMIZE
 
 * add _view_cleanup equivalent
 * add _compact equivalent
+* add radial searching (?q=pizza&location=51.1793;-0.1860&distance=2km)
 * pause/resume control over indexer?
 
 * allow c-l operations even if couchdb is down (except include_docs=true, of course)
