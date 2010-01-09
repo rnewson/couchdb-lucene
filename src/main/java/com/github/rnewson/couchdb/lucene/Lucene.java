@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import net.sf.json.JSONObject;
+
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -149,8 +151,8 @@ public final class Lucene {
         }
     }
 
-    public void createWriter(final IndexPath path, final UUID uuid, final String function) throws IOException {
-        final String digest = digest(function);
+    public void createWriter(final IndexPath path, final UUID uuid, final JSONObject view) throws IOException {
+        final String digest = digest(view);
         final File dir = new File(new File(root, uuid.toString()), digest);
         dir.mkdirs();
 
@@ -169,13 +171,24 @@ public final class Lucene {
         executor.shutdownNow();
     }
 
-    public static String digest(final String function) {
+    public static String digest(final JSONObject view) {
         try {
             final MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(function.replaceAll("\\s+", "").getBytes("UTF-8"));
+            md.update(toBytes(view.optString("analyzer")));
+            md.update(toBytes(view.optString("defaults")));
+            md.update(toBytes(view.optString("index")));
             return new BigInteger(1, md.digest()).toString(Character.MAX_RADIX);
         } catch (final NoSuchAlgorithmException e) {
             throw new Error("MD5 support missing.");
+        }
+    }
+
+    private static byte[] toBytes(final String str) {
+        if (str == null) {
+            return new byte[0];
+        }
+        try {
+            return str.getBytes("UTF-8");
         } catch (final UnsupportedEncodingException e) {
             throw new Error("UTF-8 support missing.");
         }

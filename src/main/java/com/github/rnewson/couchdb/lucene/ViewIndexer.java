@@ -64,8 +64,8 @@ public final class ViewIndexer implements Runnable {
             this.analyzer = Analyzers.getAnalyzer(view.optString("analyzer", "standard"));
             final String function = extractFunction(view);
             this.converter = new DocumentConverter(context, null, function);
-            lucene.createWriter(path, uuid, function);
-            this.digest = Lucene.digest(function);
+            lucene.createWriter(path, uuid, view);
+            this.digest = Lucene.digest(view);
             lucene.withReader(path, false, new ReaderCallback() {
                 public void callback(final IndexReader reader) throws IOException {
                     final Map<String, String> commit = reader.getCommitUserData();
@@ -142,7 +142,7 @@ public final class ViewIndexer implements Runnable {
                             logger.warn("View has no index function.");
                             break loop;
                         }
-                        final String newDigest = Lucene.digest(fun);
+                        final String newDigest = Lucene.digest(view);
                         if (!digest.equals(newDigest)) {
                             logger.info("Digest of function changed.");
                             break loop;
