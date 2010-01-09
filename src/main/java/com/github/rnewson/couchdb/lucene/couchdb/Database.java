@@ -68,7 +68,7 @@ public final class Database {
     }
 
     public HttpUriRequest getChangesRequest(final long since) throws IOException {
-        return new HttpGet(url + "/_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
+        return new HttpGet(url + "_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
     }
 
     public boolean saveDocument(final String id, final String body) throws IOException {
