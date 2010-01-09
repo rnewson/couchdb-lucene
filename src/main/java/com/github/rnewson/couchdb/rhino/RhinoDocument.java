@@ -1,7 +1,7 @@
 package com.github.rnewson.couchdb.rhino;
 
 /**
- * Copyright 2009 Robert Newson
+ * Copyright 2009 Robert Newson, Paul Davis
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License. 
@@ -51,7 +51,7 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
 /**
  * Collect data from the user.
  * 
- * @author robertnewson
+ * @author rnewson
  * 
  */
 public final class RhinoDocument extends ScriptableObject {
