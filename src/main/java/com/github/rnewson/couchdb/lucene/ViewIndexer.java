@@ -149,7 +149,6 @@ public final class ViewIndexer implements Runnable {
                         }
                     } else if (id.startsWith("_design")) {
                         // Ignore other design document changes.
-                        continue loop;
                     } else if (doc.optBoolean("_deleted")) {
                         logger.trace(id + " deleted.");
                         lucene.withWriter(path, new WriterCallback() {
