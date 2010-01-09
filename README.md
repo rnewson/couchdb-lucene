@@ -354,6 +354,12 @@ In addition to normal text-based range searches (using the "field:[lower TO uppe
 
 Both the upper and lower bound must be of the same type to trigger numeric range searching. If they don't match, then a normal text-based range search is performed.
 
+An example numeric range query for spatial searching.
+
+<pre>
+?q=pizza AND lat:[51.4707 TO 51.5224] AND long:[-0.6622 TO -0.5775]
+</pre>
+
 The following parameters can be passed for more sophisticated searches;
 
 <dl>
