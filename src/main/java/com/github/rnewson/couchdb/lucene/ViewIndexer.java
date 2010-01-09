@@ -380,8 +380,7 @@ public final class ViewIndexer implements Runnable {
         context.setClassShutter(new RestrictiveClassShutter());
         context.setOptimizationLevel(9);
         client = HttpClientFactory.getInstance();
-        final String url = String.format("http://%s:%d/", path.getHost(), path.getPort());
-        final Couch couch = Couch.getInstance(client, url);
+        final Couch couch = Couch.getInstance(client, path.getUrl());
         database = couch.getDatabase(path.getDatabase());
     }
 

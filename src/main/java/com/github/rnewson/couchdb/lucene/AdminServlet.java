@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.lucene.index.IndexWriter;
 
 import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
@@ -33,13 +33,13 @@ public final class AdminServlet extends HttpServlet {
 
     private Lucene lucene;
 
-    private Configuration configuration;
+    private HierarchicalINIConfiguration configuration;
 
     public void setLucene(final Lucene lucene) {
         this.lucene = lucene;
     }
 
-    public void setConfiguration(final Configuration configuration) {
+    public void setConfiguration(final HierarchicalINIConfiguration configuration) {
         this.configuration = configuration;
     }
 
@@ -47,7 +47,7 @@ public final class AdminServlet extends HttpServlet {
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
         final String command = req.getParameter("cmd");
 
-        final IndexPath path = IndexPath.parse(req);
+        final IndexPath path = IndexPath.parse(configuration, req);
 
         if (path == null) {
             ServletUtils.sendJSONError(req, resp, 400, "Bad path");

@@ -20,7 +20,7 @@ import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.http.client.HttpClient;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -58,13 +58,13 @@ public final class SearchServlet extends HttpServlet {
 
     private Lucene lucene;
 
-    private Configuration configuration;
+    private HierarchicalINIConfiguration configuration;
 
     public void setLucene(final Lucene lucene) {
         this.lucene = lucene;
     }
 
-    public void setConfiguration(final Configuration configuration) {
+    public void setConfiguration(final HierarchicalINIConfiguration configuration) {
         this.configuration = configuration;
     }
 
@@ -80,7 +80,7 @@ public final class SearchServlet extends HttpServlet {
         final boolean rewrite_query = getBooleanParameter(req, "rewrite");
         final boolean staleOk = Utils.getStaleOk(req);
 
-        final IndexPath path = IndexPath.parse(req);
+        final IndexPath path = IndexPath.parse(configuration, req);
 
         if (path == null) {
             ServletUtils.sendJSONError(req, resp, 400, "Bad path");
@@ -237,11 +237,9 @@ public final class SearchServlet extends HttpServlet {
                     }
                     // Fetch documents (if requested).
                     if (include_docs && fetch_ids.length > 0) {
-                        final String url = String.format("http://%s:%d/", path.getHost(), path.getPort());
-
                         final HttpClient httpClient = HttpClientFactory.getInstance();
                         try {
-                            final Couch couch = Couch.getInstance(httpClient, url);
+                            final Couch couch = Couch.getInstance(httpClient, path.getUrl());
                             final Database database = couch.getDatabase(path.getDatabase());
                             final JSONArray fetched_docs = database.getDocuments(fetch_ids).getJSONArray("rows");
                             for (int i = 0; i < max; i++) {
