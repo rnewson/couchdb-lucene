@@ -23,12 +23,9 @@ def options():
         op.make_option('--remote-port', dest='remote_port', type='int',
             default=5985,
             help="Port of the couchdb-lucene server. [%default]"),
-        op.make_option('--local-host', dest='local_host',
-            default="localhost",
-            help="Hostname of this couchdb instance. [%default]"),
-        op.make_option('--local-port', dest='local_port', type='int',
-            default=5984,
-            help="Port of this couchdb instance. [%default]"),
+        op.make_option('--local-key', dest='key',
+            default="local",
+            help="Configured key name for this couchdb instance. [%default]"),
     ]
 
 def main():
@@ -40,7 +37,7 @@ def main():
     for req in requests():
         res = httplib.HTTPConnection(opts.remote_host, opts.remote_port)
         try:
-            resp = respond(res, req, opts.local_host, opts.local_port)
+            resp = respond(res, req, opts.key)
         except Exception, e:
             body = traceback.format_exc()
             resp = mkresp(500, body, {"Content-Type": "text/plain"})
@@ -56,7 +53,7 @@ def requests():
         yield json.loads(line)
         line = sys.stdin.readline()
 
-def respond(res, req, host, port):
+def respond(res, req, key):
     path = req.get("path", [])
 
     if len(path) != 4:
@@ -74,9 +71,9 @@ def respond(res, req, host, port):
         path[index] = urllib.quote(path[index], "")
 
     if req["query"] == {}:
-        path = '/'.join(['', 'info', host, str(port)] + path)
+        path = '/'.join(['', 'info', key] + path)
     else:
-        path = '/'.join(['', 'search', host, str(port)] + path)
+        path = '/'.join(['', 'search', key] + path)
         path = '?'.join([path, urllib.urlencode(req["query"])])
 
     req_headers = {}
