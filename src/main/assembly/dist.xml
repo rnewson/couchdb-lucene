@@ -20,7 +20,7 @@
       <outputDirectory>/bin</outputDirectory>
     </file>
     <file>
-      <source>${project.basedir}/src/main/conf/couchdb-lucene.properties</source>
+      <source>${project.basedir}/src/main/conf/couchdb-lucene.ini</source>
       <fileMode>644</fileMode>
       <outputDirectory>/conf</outputDirectory>
     </file>

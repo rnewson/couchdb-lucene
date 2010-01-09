@@ -26,7 +26,7 @@ public class Main {
      */
     public static void main(String[] args) throws Exception {
         final HierarchicalINIConfiguration configuration = new HierarchicalINIConfiguration(Main.class.getClassLoader()
-                .getResource("couchdb-lucene.properties"));
+                .getResource("couchdb-lucene.ini"));
         configuration.setReloadingStrategy(new FileChangedReloadingStrategy());
 
         final File dir = new File(configuration.getString("lucene.dir", "indexes"));
