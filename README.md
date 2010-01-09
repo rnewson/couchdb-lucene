@@ -164,8 +164,6 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 <li>thai</li>
 </ul>
 
-Note: You must also supply analyzer=<analyzer_name> as a query parameter to ensure that queries are processed correctly.
-
 The "perfield" option lets you use a different analyzer for different fields and is configured as follows;
 
 <pre>
@@ -363,7 +361,6 @@ An example numeric range query for spatial searching.
 The following parameters can be passed for more sophisticated searches;
 
 <dl>
-<dt>analyzer</dt><dd>The analyzer used to convert the query string into a query object.
 <dt>callback</dt><dd>Specify a JSONP callback wrapper. The full JSON result will be prepended with this parameter and also placed with parentheses."
 <dt>debug</dt><dd>Setting this to true disables response caching (the query is executed every time) and indents the JSON response for readability.</dd>
 <dt>force_json<dt><dd>Usually couchdb-lucene determines the Content-Type of its response based on the presence of the Accept header. If Accept contains "application/json", you get "application/json" in the response, otherwise you get "text/plain;charset=utf8". Some tools, like JSONView for FireFox, do not send the Accept header but do render "application/json" responses if received. Setting force_json=true forces all response to "application/json" regardless of the Accept header.</dd>

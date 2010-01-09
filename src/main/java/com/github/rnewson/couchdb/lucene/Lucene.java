@@ -88,9 +88,10 @@ public final class Lucene {
         this.root = root;
     }
 
-    public void startIndexing(final IndexPath path, final boolean staleOk) {
-        final ViewIndexer viewIndexer = executor.submit(path, new ViewIndexer(this, path, staleOk));
-        viewIndexer.awaitInitialIndexing();
+    public ViewIndexer startIndexing(final IndexPath path, final boolean staleOk) {
+        final ViewIndexer result = executor.submit(path, new ViewIndexer(this, path, staleOk));
+        result.awaitInitialIndexing();
+        return result;
     }
 
     public void withReader(final IndexPath path, final boolean staleOk, final ReaderCallback callback) throws IOException {

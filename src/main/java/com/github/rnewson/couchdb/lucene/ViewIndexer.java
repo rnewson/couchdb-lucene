@@ -284,13 +284,11 @@ public final class ViewIndexer implements Runnable {
     private Context context;
     private Database database;
     private final CountDownLatch latch = new CountDownLatch(1);
-
     private final Logger logger;
     private final Lucene lucene;
-
     private final IndexPath path;
-
-    private final boolean staleOk;
+    private final boolean staleOk;    
+    private ViewChangesHandler handler;
 
     public ViewIndexer(final Lucene lucene, final IndexPath path, final boolean staleOk) {
         this.lucene = lucene;
@@ -305,6 +303,10 @@ public final class ViewIndexer implements Runnable {
         } catch (final InterruptedException e) {
             // Ignore.
         }
+    }
+    
+    public Analyzer getAnalyzer() {
+        return handler.analyzer;
     }
 
     public void run() {
@@ -386,7 +388,8 @@ public final class ViewIndexer implements Runnable {
 
         final JSONObject info = database.getInfo();
         final long seqThreshhold = staleOk ? 0 : info.getLong("update_seq");
-        new ViewChangesHandler(uuid, view, seqThreshhold).start();
+        this.handler = new ViewChangesHandler(uuid, view, seqThreshhold);
+        handler.start();
     }
 
     private void setup() throws IOException {

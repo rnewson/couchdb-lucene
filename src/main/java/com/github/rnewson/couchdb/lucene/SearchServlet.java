@@ -103,7 +103,7 @@ public final class SearchServlet extends HttpServlet {
             return;
         }
 
-        lucene.startIndexing(path, staleOk);
+        final ViewIndexer indexer = lucene.startIndexing(path, staleOk);
 
         final SearcherCallback callback = new SearcherCallback() {
 
@@ -115,7 +115,7 @@ public final class SearchServlet extends HttpServlet {
                 }
 
                 // Parse query.
-                final Analyzer analyzer = Analyzers.getAnalyzer(getParameter(req, "analyzer", "standard"));
+                final Analyzer analyzer = indexer.getAnalyzer();
                 final CustomQueryParser parser = new CustomQueryParser(Version.LUCENE_CURRENT, Constants.DEFAULT_FIELD, analyzer);
 
                 final String[] queries = req.getParameterValues("q");
@@ -160,6 +160,7 @@ public final class SearchServlet extends HttpServlet {
                 final JSONObject result = new JSONObject();
                 result.put("q", q.toString());
                 if (debug) {
+                    result.put("analyzer", indexer.getAnalyzer().getClass().getSimpleName());
                     result.put("plan", QueryPlan.toPlan(q));
                 }
                 result.put("etag", version);
