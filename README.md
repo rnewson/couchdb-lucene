@@ -533,11 +533,11 @@ returns;
 For optimal query speed you can optimize your indexes. This causes the index to be rewritten into a single segment.
 
 <pre>
-curl -X POST http://localhost:5984/<db>/_fti/<ddoc>/<index>/_optimize
+curl -X POST http://localhost:5984/&lt;db>/_fti/&lt;ddoc>/&lt;index>/_optimize
 </pre>
 
 If you just want to expunge pending deletes, then call;
 
 <pre>
-curl -X POST http://localhost:5984/<db>/_fti/<ddoc>/<index>/_expunge
+curl -X POST http://localhost:5984/&lt;db>/_fti/&lt;ddoc>/&lt;index>/_expunge
 </pre>
