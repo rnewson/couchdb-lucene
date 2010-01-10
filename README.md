@@ -525,7 +525,9 @@ http://127.0.0.1:5984/&lt;db>/_fti/&lt;ddoc>/&lt;index
 returns;
 
 <pre>
-{"current":true,"disk_size":110674,"doc_count":397,"doc_del_count":0,"fields":["default","number"],"last_modified":"1263066382000","optimized":true,"ref_count":2}
+{"current":true,"disk_size":110674,"doc_count":397,"doc_del_count":0,
+"fields":["default","number"],"last_modified":"1263066382000",
+"optimized":true,"ref_count":2}
 </pre>
 
 <h1>Index Maintenance</h1>
