@@ -516,16 +516,16 @@ The Content-Type of the response is negotiated via the Accept request header lik
 
 <h1>Fetching information about the index</h1>
 
-Calling couchdb-lucene without arguments returns a JSON object with information about the <i>whole</i> index.
+Calling couchdb-lucene without arguments returns a JSON object with information about the index.
 
 <pre>
-http://127.0.0.1:5984/enron/_fti
+http://127.0.0.1:5984/&lt;db>/_fti/&lt;ddoc>/&lt;index
 </pre>
 
 returns;
 
 <pre>
-{"doc_count":517350,"doc_del_count":1,"disk_size":318543045}
+{"current":true,"disk_size":110674,"doc_count":397,"doc_del_count":0,"fields":["default","number"],"last_modified":"1263066382000","optimized":true,"ref_count":2}
 </pre>
 
 <h1>Index Maintenance</h1>
