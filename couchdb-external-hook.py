@@ -56,32 +56,30 @@ def requests():
 def respond(res, req, key):
     path = req.get("path", [])
 
-    if len(path) != 4:
-        body = "\n".join([
-            "Invalid path: %s" % '/'.join([''] + path),
-            "Paths should be: /db_name/_fti/ddocid/index_name?q=...",
-            "'ddocid' is from the '_design/ddocid' that defines index_name"
-        ])
-        return mkresp(400, body, {"Content-Type": "text/plain"})
-
     # Drop name of external hook.
     del path[1]
     # URL-escape each part
     for index, item in enumerate(path):
         path[index] = urllib.quote(path[index], "")
 
-    if req["query"] == {}:
-        path = '/'.join(['', 'info', key] + path)
+    if len(path) == 3:
+        if req["query"] == {}:
+            path = '/'.join(['', 'info', key] + path)
+        else:
+            path = '/'.join(['', 'search', key] + path)
+            path = '?'.join([path, urllib.urlencode(req["query"])])
+    elif len(path) == 4:
+        path = '/'.join(['', 'admin', key] + path)
     else:
-        path = '/'.join(['', 'search', key] + path)
-        path = '?'.join([path, urllib.urlencode(req["query"])])
+        return mkresp(400, "Invalid path\n" + str(len(req)), {"Content-Type":"text/plain"})
 
     req_headers = {}
     for h in req.get("headers", []):
         if h.lower() in ["accept", "if-none-match"]:
             req_headers[h] = req["headers"][h]
 
-    res.request("GET", path, headers=req_headers)
+    sys.stderr.write(str(path))
+    res.request(req["method"], path, headers=req_headers)
     resp = res.getresponse()
 
     resp_headers = {}

@@ -26,7 +26,7 @@ public final class IndexPath {
     public static IndexPath parse(final HierarchicalINIConfiguration configuration, final HttpServletRequest req) {
         final String uri = req.getRequestURI().replaceFirst("^/\\w+/", "");
         final String[] parts = uri.split("/");
-        if (parts.length != 4) {
+        if (parts.length < 4) {
             return null;
         }
         final Configuration section = configuration.getSection(parts[0]);

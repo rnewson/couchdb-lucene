@@ -17,6 +17,7 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import java.io.IOException;
+import java.io.Writer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -29,6 +30,7 @@ import org.apache.lucene.index.IndexWriter;
 import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
+import com.github.rnewson.couchdb.lucene.util.Utils;
 
 /**
  * Administrative functions.
@@ -47,6 +49,8 @@ public final class AdminServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    private static final String JSON_SUCCESS = "{\"ok\":true}";
+
     private Lucene lucene;
 
     private HierarchicalINIConfiguration configuration;
@@ -61,16 +65,18 @@ public final class AdminServlet extends HttpServlet {
 
     @Override
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        final String command = req.getParameter("cmd");
-
         final IndexPath path = IndexPath.parse(configuration, req);
 
         if (path == null) {
             ServletUtils.sendJSONError(req, resp, 400, "Bad path");
             return;
         }
+        lucene.startIndexing(path, true);
+        
+        String command = req.getPathInfo();
+        command = command.substring(command.lastIndexOf("/") + 1);
 
-        if ("expunge".equals(command)) {
+        if ("_expunge".equals(command)) {
             lucene.withWriter(path, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
@@ -81,11 +87,13 @@ public final class AdminServlet extends HttpServlet {
                     resp.sendError(404);
                 }
             });
+            Utils.setResponseContentTypeAndEncoding(req, resp);
             resp.setStatus(202);
+            sendJSON(resp, JSON_SUCCESS);
             return;
         }
 
-        if ("optimize".equals(command)) {
+        if ("_optimize".equals(command)) {
             lucene.withWriter(path, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
@@ -96,11 +104,22 @@ public final class AdminServlet extends HttpServlet {
                     resp.sendError(404);
                 }
             });
+            Utils.setResponseContentTypeAndEncoding(req, resp);
             resp.setStatus(202);
+            sendJSON(resp, JSON_SUCCESS);
             return;
         }
 
         resp.sendError(400, "Bad request");
+    }
+
+    private void sendJSON(final HttpServletResponse resp, final String json) throws IOException {
+        final Writer writer = resp.getWriter();
+        try {
+            writer.write(json);
+        } finally {
+            writer.close();
+        }
     }
 
 }

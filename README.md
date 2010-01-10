@@ -527,3 +527,17 @@ returns;
 <pre>
 {"doc_count":517350,"doc_del_count":1,"disk_size":318543045}
 </pre>
+
+<h1>Index Maintenance</h1>
+
+For optimal query speed you can optimize your indexes. This causes the index to be rewritten into a single segment.
+
+<pre>
+curl -X POST http://localhost:5984/<db>/_fti/<ddoc>/<index>/_optimize
+</pre>
+
+If you just want to expunge pending deletes, then call;
+
+<pre>
+curl -X POST http://localhost:5984/<db>/_fti/<ddoc>/<index>/_expunge
+</pre>

@@ -66,6 +66,7 @@ public class InfoServlet extends HttpServlet {
             ServletUtils.sendJSONError(req, resp, 400, "Bad path");
             return;
         }
+        lucene.startIndexing(path, true);
 
         lucene.withReader(path, Utils.getStaleOk(req), new ReaderCallback() {
             public void callback(final IndexReader reader) throws IOException {

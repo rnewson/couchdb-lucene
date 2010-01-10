@@ -18,7 +18,6 @@ package com.github.rnewson.couchdb.lucene;
 
 import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanParameter;
 import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getIntParameter;
-import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getParameter;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -55,7 +54,6 @@ import org.apache.lucene.util.Version;
 import com.github.rnewson.couchdb.lucene.Lucene.SearcherCallback;
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
-import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
