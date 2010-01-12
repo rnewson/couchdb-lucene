@@ -95,6 +95,8 @@ public class Main {
         admin.setLucene(lucene);
         admin.setConfiguration(configuration);
         setupContext(contexts, "/admin", admin);
+        
+        setupContext(contexts, "/", new WelcomeServlet());
 
         server.start();
         server.join();

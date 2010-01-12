@@ -17,12 +17,13 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import java.io.IOException;
-import java.io.Writer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.lucene.index.IndexWriter;
@@ -49,7 +50,7 @@ public final class AdminServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private static final String JSON_SUCCESS = "{\"ok\":true}";
+    private static final JSONObject JSON_SUCCESS = JSONObject.fromObject("{\"ok\":true}");
 
     private Lucene lucene;
 
@@ -72,7 +73,7 @@ public final class AdminServlet extends HttpServlet {
             return;
         }
         lucene.startIndexing(path, true);
-        
+
         String command = req.getPathInfo();
         command = command.substring(command.lastIndexOf("/") + 1);
 
@@ -89,7 +90,7 @@ public final class AdminServlet extends HttpServlet {
             });
             Utils.setResponseContentTypeAndEncoding(req, resp);
             resp.setStatus(202);
-            sendJSON(resp, JSON_SUCCESS);
+            Utils.writeJSON(resp, JSON_SUCCESS);
             return;
         }
 
@@ -106,20 +107,11 @@ public final class AdminServlet extends HttpServlet {
             });
             Utils.setResponseContentTypeAndEncoding(req, resp);
             resp.setStatus(202);
-            sendJSON(resp, JSON_SUCCESS);
+            Utils.writeJSON(resp, JSON_SUCCESS);
             return;
         }
 
         resp.sendError(400, "Bad request");
-    }
-
-    private void sendJSON(final HttpServletResponse resp, final String json) throws IOException {
-        final Writer writer = resp.getWriter();
-        try {
-            writer.write(json);
-        } finally {
-            writer.close();
-        }
     }
 
 }

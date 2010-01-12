@@ -20,10 +20,13 @@ import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanPara
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URLEncoder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
@@ -72,6 +75,15 @@ public class Utils {
             result += dir.fileLength(name);
         }
         return result;
+    }
+
+    public static void writeJSON(final HttpServletResponse resp, final JSONObject json) throws IOException {
+        final Writer writer = resp.getWriter();
+        try {
+            writer.write(json.toString() + "\r\n");
+        } finally {
+            writer.close();
+        }
     }
 
 }
