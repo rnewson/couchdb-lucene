@@ -16,6 +16,7 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.BufferedReader;
@@ -73,6 +74,9 @@ public final class ViewIndexer implements Runnable {
         private boolean pendingCommit;
         private long pendingSince;
         private long since;
+
+        private long startNanos = System.nanoTime();
+        private long updateCount;
 
         public ViewChangesHandler(final UUID uuid, final JSONObject view, final long latchThreshold) throws IOException {
             this.latchThreshold = latchThreshold;
@@ -211,6 +215,7 @@ public final class ViewIndexer implements Runnable {
                         }
                     }
                     since = json.getLong("seq");
+                    updateCount++;
                     releaseCatch();
                 }
             } catch (final IOException e) {
@@ -238,7 +243,12 @@ public final class ViewIndexer implements Runnable {
                     userData.put("last_seq", Long.toString(since));
                     logger.debug("Starting checkpoint at update_seq " + since);
                     writer.commit(userData);
-                    logger.info("Committed checkpoint at update_seq " + since);
+                    final long elapsedSeconds = NANOSECONDS.toSeconds(System.nanoTime() - startNanos);
+                    logger.info(String.format(
+                            "Committed checkpoint at update_seq %,d (%,d updates in %d seconds, %,d updates per minute)", since,
+                            updateCount, elapsedSeconds, 60 * updateCount / elapsedSeconds));
+                    updateCount = 0;
+                    startNanos = System.nanoTime();
                     return false;
                 }
 
@@ -287,7 +297,7 @@ public final class ViewIndexer implements Runnable {
     private final Logger logger;
     private final Lucene lucene;
     private final IndexPath path;
-    private final boolean staleOk;    
+    private final boolean staleOk;
     private ViewChangesHandler handler;
 
     public ViewIndexer(final Lucene lucene, final IndexPath path, final boolean staleOk) {
@@ -304,7 +314,7 @@ public final class ViewIndexer implements Runnable {
             // Ignore.
         }
     }
-    
+
     public Analyzer getAnalyzer() {
         return handler.analyzer;
     }
