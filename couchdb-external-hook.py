@@ -78,7 +78,8 @@ def respond(res, req, key):
         if h.lower() in ["accept", "if-none-match"]:
             req_headers[h] = req["headers"][h]
 
-    res.request(req["method"], path, headers=req_headers)
+    method = req["method"] if "method" in req else req["verb"]
+    res.request(method, path, headers=req_headers)
     resp = res.getresponse()
 
     resp_headers = {}
