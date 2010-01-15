@@ -67,7 +67,8 @@ def respond(res, req, key):
             path = '/'.join(['', 'info', key] + path)
         else:
             path = '/'.join(['', 'search', key] + path)
-            path = '?'.join([path, urllib.urlencode(req["query"])])
+            params = urllib.urlencode(dict([k, v.encode('utf-8')] for k, v in req["query"].items()))
+            path = '?'.join([path, params])
     elif len(path) == 4:
         path = '/'.join(['', 'admin', key] + path)
     else:
