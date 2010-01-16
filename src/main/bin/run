@@ -4,7 +4,7 @@ JAVA_OPTS="-server -Xmx1g"
 CLASS=com.github.rnewson.couchdb.lucene.Main
 
 CLASSPATH="conf"
-for JAR in `find lib -name '*.jar'`
+for JAR in `ls lib/*.jar`
 do
     CLASSPATH="$CLASSPATH:$JAR"
 done
