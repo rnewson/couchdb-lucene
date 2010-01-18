@@ -40,5 +40,5 @@
       <scope>runtime</scope>
       <outputDirectory>/lib</outputDirectory>
     </dependencySet>
-  </dependencySets>  
+  </dependencySets>
 </assembly>

@@ -1,5 +1,8 @@
 #!/bin/sh
 
+DIR=`dirname "$0"`
+cd $DIR/..
+
 JAVA_OPTS="-server -Xmx1g"
 CLASS=com.github.rnewson.couchdb.lucene.Main
 
