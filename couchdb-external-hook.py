@@ -79,7 +79,12 @@ def respond(res, req, key):
         if h.lower() in ["accept", "if-none-match"]:
             req_headers[h] = req["headers"][h]
 
-    method = req["method"] if "method" in req else req["verb"]
+    # verb renamed to method in 0.11 onwards.
+    if "method" in req:
+        method = req["method"]
+    else:
+        method = req["verb"]
+
     res.request(method, path, headers=req_headers)
     resp = res.getresponse()
 
