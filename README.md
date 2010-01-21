@@ -339,23 +339,21 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 
 <h2>Numeric range queries</h2>
 
-In addition to normal text-based range searches (using the "field:[lower TO upper]" syntax), couchdb-lucene all supports numeric range searches for the following types: integer, long, float, double and date. The type is automatically derived from the search terms used, as follows;
+In addition to normal text-based range searches (using the "field:[lower TO upper]" syntax), couchdb-lucene all supports numeric range searches for the following types: int, long, float, double and date. The type is specified after the field name, as follows;
 
 <table>
-<tr><td>type</td><td>format</td><td>example</td></tr>
-<tr><td>integer</td><td>[0-9]+</td><td>[0 TO 100]</td></tr>
-<tr><td>long</td><td>[0-9]+L</td><td>[0L TO 100L]</td></tr>
-<tr><td>float</td><td>[0-9]+.[0-9]+f</td><td>[0.0f TO 100.0f]</td></tr>
-<tr><td>double</td><td>[0-9]+.[0-9]+</td><td>[0.0 TO 100.0]</td></tr>
-<tr><td>date</td><td>yyyy-MM-dd or yyyy-MM-ddZZ or yyyy-MM-dd'T'HH:mm:ss or yyyy-MM-dd'T'HH:mm:ssZZ</td><td>2001-01-01 or 2001-01-01-0500 or 2000-01-01T00:00:00 or 2000-01-01T00:00:00-0500</td></tr>
+<tr><td>type</td><td>example</td></tr>
+<tr><td>integer</td><td>field<int>:[0 TO 100]</td></tr>
+<tr><td>long</td><td>field<long>:[0 TO 100]</td></tr>
+<tr><td>float</td><td>field<float>:[0.0 TO 100.0]</td></tr>
+<tr><td>double</td><td>field<double>:[0.0 TO 100.0]</td></tr>
+<tr><td>date</td><td>field<date>:[2001-01-01 TO 2010-01-01] or field<date>:[2000-01-01T00:00:00-0500 TO 2010-01-01T00:00:00-0500]</td></tr>
 </table>
-
-Both the upper and lower bound must be of the same type to trigger numeric range searching. If they don't match, then a normal text-based range search is performed.
 
 An example numeric range query for spatial searching.
 
 <pre>
-?q=pizza AND lat:[51.4707 TO 51.5224] AND long:[-0.6622 TO -0.5775]
+?q=pizza AND lat<double>:[51.4707 TO 51.5224] AND long<double>:[-0.6622 TO -0.5775]
 </pre>
 
 The following parameters can be passed for more sophisticated searches;

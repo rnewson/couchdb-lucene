@@ -123,7 +123,7 @@ public final class SearchServlet extends HttpServlet {
                     try {
                         arr.add(performQuery(debug, rewrite_query, searcher, version, parser.parse(query)));
                     } catch (final ParseException e) {
-                        ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax");
+                        ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax: " + e.getMessage());
                         return;
                     }
                 }

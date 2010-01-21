@@ -16,6 +16,9 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -40,6 +43,8 @@ public final class CustomQueryParser extends QueryParser {
 
     private static String[] DATE_PATTERNS = new String[] { "yyyy-MM-dd'T'HH:mm:ssZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZZ",
             "yyyy-MM-dd" };
+
+    private static Pattern NUMERIC_RANGE_PATTERN = Pattern.compile("^(\\w+)(<\\w+>)?$");
 
     public CustomQueryParser(final Version matchVersion, final String f, final Analyzer a) {
         super(matchVersion, f, a);
@@ -134,55 +139,53 @@ public final class CustomQueryParser extends QueryParser {
         return result.toString();
     }
 
-    private Object fixup(final String value) {
-        if (value.matches("[-+]?\\d+\\.\\d+f")) {
-            return Float.parseFloat(value);
-        }
-        if (value.matches("[-+]?\\d+\\.\\d+")) {
-            return Double.parseDouble(value);
-        }
-        if (value.matches("[-+]?\\d+[lL]")) {
-            return Long.parseLong(value.substring(0, value.length() - 1));
-        }
-        if (value.matches("[-+]?\\d+")) {
-            return Integer.parseInt(value);
+    @Override
+    protected Query getRangeQuery(final String fieldAndType, final String part1, final String part2, final boolean inclusive)
+            throws ParseException {
+        final Matcher matcher = NUMERIC_RANGE_PATTERN.matcher(fieldAndType);
+
+        if (!matcher.matches()) {
+            throw new ParseException("Field name '" + fieldAndType + "' not recognized.");
         }
 
-        try {
-            return DateUtils.parseDate(value.toUpperCase(), DATE_PATTERNS).getTime();
-        } catch (final DateParseException e) {
-            // Ignore.
+        final String field = matcher.group(1);
+        final String type = matcher.group(2) == null ? "<string>" : matcher.group(2);
+
+        if ("<string>".equals(type)) {
+            return newRangeQuery(field, part1, part2, inclusive);
         }
 
-        return value;
+        if ("<int>".equals(type)) {
+            return NumericRangeQuery.newIntRange(field, 4, Integer.parseInt(part1), Integer.parseInt(part2), inclusive, inclusive);
+        }
+
+        if ("<long>".equals(type)) {
+            return NumericRangeQuery.newLongRange(field, 4, Long.parseLong(part1), Long.parseLong(part2), inclusive, inclusive);
+        }
+
+        if ("<float>".equals(type)) {
+            return NumericRangeQuery
+                    .newFloatRange(field, 4, Float.parseFloat(part1), Float.parseFloat(part2), inclusive, inclusive);
+        }
+
+        if ("<double>".equals(type)) {
+            return NumericRangeQuery.newDoubleRange(field, 4, Double.parseDouble(part1), Double.parseDouble(part2), inclusive,
+                    inclusive);
+        }
+
+        if ("<date>".equals(type)) {
+            return NumericRangeQuery.newLongRange(field, 8, date(part1), date(part2), inclusive, inclusive);
+        }
+
+        throw new ParseException("Unrecognized type '" + type + "'");
     }
 
-    @Override
-    protected Query getRangeQuery(final String field, final String part1, final String part2, final boolean inclusive)
-            throws ParseException {
-        final Object lower = fixup(part1);
-        final Object upper = fixup(part2);
-
-        // Sanity check.
-        if (lower.getClass() == upper.getClass()) {
-            if (lower instanceof Float) {
-                return NumericRangeQuery.newFloatRange(field, 4, (Float) lower, (Float) upper, inclusive, inclusive);
-            }
-
-            if (lower instanceof Double) {
-                return NumericRangeQuery.newDoubleRange(field, 8, (Double) lower, (Double) upper, inclusive, inclusive);
-            }
-
-            if (lower instanceof Long) {
-                return NumericRangeQuery.newLongRange(field, 8, (Long) lower, (Long) upper, inclusive, inclusive);
-            }
-
-            if (lower instanceof Integer) {
-                return NumericRangeQuery.newIntRange(field, 4, (Integer) lower, (Integer) upper, inclusive, inclusive);
-            }
+    private long date(final String str) throws ParseException {
+        try {
+            return DateUtils.parseDate(str.toUpperCase(), DATE_PATTERNS).getTime();
+        } catch (DateParseException e) {
+            throw new ParseException(e.getMessage());
         }
-
-        return newRangeQuery(field, part1, part2, inclusive);
     }
 
 }
