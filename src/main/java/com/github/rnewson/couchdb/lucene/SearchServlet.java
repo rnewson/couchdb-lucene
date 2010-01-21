@@ -40,7 +40,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.FieldDoc;
@@ -154,7 +153,7 @@ public final class SearchServlet extends HttpServlet {
             }
 
             private JSONObject performQuery(final boolean debug, final boolean rewrite_query, final IndexSearcher searcher,
-                    final String version, final Query q) throws IOException, CorruptIndexException {
+                    final String version, final Query q) throws IOException, ParseException {
                 final JSONObject result = new JSONObject();
                 result.put("q", q.toString());
                 if (debug) {

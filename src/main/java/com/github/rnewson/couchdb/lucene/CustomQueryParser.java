@@ -16,9 +16,6 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -44,13 +41,11 @@ public final class CustomQueryParser extends QueryParser {
     private static String[] DATE_PATTERNS = new String[] { "yyyy-MM-dd'T'HH:mm:ssZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZZ",
             "yyyy-MM-dd" };
 
-    private static Pattern NUMERIC_RANGE_PATTERN = Pattern.compile("^(\\w+)(<\\w+>)?$");
-
     public CustomQueryParser(final Version matchVersion, final String f, final Analyzer a) {
         super(matchVersion, f, a);
     }
 
-    public static Sort toSort(final String sort) {
+    public static Sort toSort(final String sort) throws ParseException {
         if (sort == null) {
             return null;
         } else {
@@ -63,28 +58,9 @@ public final class CustomQueryParser extends QueryParser {
                 if (tmp.charAt(0) == '\\' || tmp.charAt(0) == '/') {
                     tmp = tmp.substring(1);
                 }
-                final boolean has_type = tmp.indexOf(':') != -1;
-                if (!has_type) {
-                    sort_fields[i] = new SortField(tmp, SortField.STRING, reverse);
-                } else {
-                    final String field = tmp.substring(0, tmp.indexOf(':'));
-                    final String type = tmp.substring(tmp.indexOf(':') + 1);
-                    int type_int = SortField.STRING;
-                    if ("int".equals(type)) {
-                        type_int = SortField.INT;
-                    } else if ("float".equals(type)) {
-                        type_int = SortField.FLOAT;
-                    } else if ("double".equals(type)) {
-                        type_int = SortField.DOUBLE;
-                    } else if ("long".equals(type)) {
-                        type_int = SortField.LONG;
-                    } else if ("date".equals(type)) {
-                        type_int = SortField.LONG;
-                    } else if ("string".equals(type)) {
-                        type_int = SortField.STRING;
-                    }
-                    sort_fields[i] = new SortField(field, type_int, reverse);
-                }
+
+                final TypedField typedField = new TypedField(tmp);
+                sort_fields[i] = new SortField(typedField.getName(), typedField.getType().asSortField(), reverse);
             }
             return new Sort(sort_fields);
         }
@@ -140,44 +116,28 @@ public final class CustomQueryParser extends QueryParser {
     }
 
     @Override
-    protected Query getRangeQuery(final String fieldAndType, final String part1, final String part2, final boolean inclusive)
+    protected Query getRangeQuery(final String field, final String part1, final String part2, final boolean inclusive)
             throws ParseException {
-        final Matcher matcher = NUMERIC_RANGE_PATTERN.matcher(fieldAndType);
+        final TypedField typedField = new TypedField(field);
 
-        if (!matcher.matches()) {
-            throw new ParseException("Field name '" + fieldAndType + "' not recognized.");
-        }
-
-        final String field = matcher.group(1);
-        final String type = matcher.group(2) == null ? "<string>" : matcher.group(2);
-
-        if ("<string>".equals(type)) {
+        switch (typedField.getType()) {
+        case STRING:
             return newRangeQuery(field, part1, part2, inclusive);
-        }
-
-        if ("<int>".equals(type)) {
-            return NumericRangeQuery.newIntRange(field, 4, Integer.parseInt(part1), Integer.parseInt(part2), inclusive, inclusive);
-        }
-
-        if ("<long>".equals(type)) {
-            return NumericRangeQuery.newLongRange(field, 4, Long.parseLong(part1), Long.parseLong(part2), inclusive, inclusive);
-        }
-
-        if ("<float>".equals(type)) {
+        case INT:
+            return NumericRangeQuery.newIntRange(typedField.getName(), 4, Integer.parseInt(part1), Integer.parseInt(part2), inclusive, inclusive);
+        case LONG:
+            return NumericRangeQuery.newLongRange(typedField.getName(), 4, Long.parseLong(part1), Long.parseLong(part2), inclusive, inclusive);
+        case FLOAT:
             return NumericRangeQuery
-                    .newFloatRange(field, 4, Float.parseFloat(part1), Float.parseFloat(part2), inclusive, inclusive);
-        }
-
-        if ("<double>".equals(type)) {
-            return NumericRangeQuery.newDoubleRange(field, 4, Double.parseDouble(part1), Double.parseDouble(part2), inclusive,
+                    .newFloatRange(typedField.getName(), 4, Float.parseFloat(part1), Float.parseFloat(part2), inclusive, inclusive);
+        case DOUBLE:
+            return NumericRangeQuery.newDoubleRange(typedField.getName(), 4, Double.parseDouble(part1), Double.parseDouble(part2), inclusive,
                     inclusive);
+        case DATE:
+            return NumericRangeQuery.newLongRange(typedField.getName(), 8, date(part1), date(part2), inclusive, inclusive);
+        default:
+            throw new ParseException("Unknown type " + typedField);
         }
-
-        if ("<date>".equals(type)) {
-            return NumericRangeQuery.newLongRange(field, 8, date(part1), date(part2), inclusive, inclusive);
-        }
-
-        throw new ParseException("Unrecognized type '" + type + "'");
     }
 
     private long date(final String str) throws ParseException {
