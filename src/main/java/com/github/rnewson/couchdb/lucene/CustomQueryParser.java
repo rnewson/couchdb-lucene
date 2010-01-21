@@ -135,16 +135,16 @@ public final class CustomQueryParser extends QueryParser {
     }
 
     private Object fixup(final String value) {
-        if (value.matches("\\d+\\.\\d+f")) {
+        if (value.matches("[-+]?\\d+\\.\\d+f")) {
             return Float.parseFloat(value);
         }
-        if (value.matches("\\d+\\.\\d+")) {
+        if (value.matches("[-+]?\\d+\\.\\d+")) {
             return Double.parseDouble(value);
         }
-        if (value.matches("\\d+[lL]")) {
+        if (value.matches("[-+]?\\d+[lL]")) {
             return Long.parseLong(value.substring(0, value.length() - 1));
         }
-        if (value.matches("\\d+")) {
+        if (value.matches("[-+]?\\d+")) {
             return Integer.parseInt(value);
         }
 
