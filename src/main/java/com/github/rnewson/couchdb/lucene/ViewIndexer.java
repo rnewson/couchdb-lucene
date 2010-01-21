@@ -18,7 +18,6 @@ package com.github.rnewson.couchdb.lucene;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -76,7 +75,8 @@ public final class ViewIndexer implements Runnable {
         private long pendingSince;
         private long since;
 
-        private long startNanos = System.nanoTime();
+        private long firstUpdate = -1;
+        private long lastUpdate = -1;
         private long updateCount;
 
         public ViewChangesHandler(final UUID uuid, final JSONObject view, final long latchThreshold) throws IOException {
@@ -217,6 +217,9 @@ public final class ViewIndexer implements Runnable {
                     }
                     since = json.getLong("seq");
                     updateCount++;
+                    if (firstUpdate == -1)
+                        firstUpdate = now();
+                    lastUpdate = now();
                     releaseCatch();
                 }
             } catch (final IOException e) {
@@ -244,12 +247,12 @@ public final class ViewIndexer implements Runnable {
                     userData.put("last_seq", Long.toString(since));
                     logger.debug("Starting checkpoint at update_seq " + since);
                     writer.commit(userData);
-                    final long elapsedSeconds = NANOSECONDS.toSeconds(System.nanoTime() - startNanos);
+                    final long elapsedNanos = lastUpdate - firstUpdate;
                     logger.info(String.format(
                             "Committed checkpoint at update_seq %,d (%,d updates in %d seconds, %,d updates per minute)", since,
-                            updateCount, elapsedSeconds, 60 * updateCount / elapsedSeconds));
+                            updateCount, NANOSECONDS.toSeconds(elapsedNanos), (60000000000L * updateCount) / elapsedNanos));
                     updateCount = 0;
-                    startNanos = System.nanoTime();
+                    firstUpdate = -1;
                     return false;
                 }
 
@@ -418,6 +421,10 @@ public final class ViewIndexer implements Runnable {
         logger.info("Stopping.");
         client.getConnectionManager().shutdown();
         Context.exit();
+    }
+
+    private long now() {
+        return System.nanoTime();
     }
 
 }
