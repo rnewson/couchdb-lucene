@@ -343,11 +343,11 @@ In addition to normal text-based range searches (using the "field:[lower TO uppe
 
 <table>
 <tr><td>type</td><td>example</td></tr>
-<tr><td>integer</td><td>field<int>:[0 TO 100]</td></tr>
-<tr><td>long</td><td>field<long>:[0 TO 100]</td></tr>
-<tr><td>float</td><td>field<float>:[0.0 TO 100.0]</td></tr>
-<tr><td>double</td><td>field<double>:[0.0 TO 100.0]</td></tr>
-<tr><td>date</td><td>field<date>:[2001-01-01 TO 2010-01-01] or field<date>:[2000-01-01T00:00:00-0500 TO 2010-01-01T00:00:00-0500]</td></tr>
+<tr><td>integer</td><td>field&lt;int>:[0 TO 100]</td></tr>
+<tr><td>long</td><td>field&lt;long>:[0 TO 100]</td></tr>
+<tr><td>float</td><td>field&lt;float>:[0.0 TO 100.0]</td></tr>
+<tr><td>double</td><td>field&lt;double>:[0.0 TO 100.0]</td></tr>
+<tr><td>date</td><td>field&lt;date>:[2001-01-01 TO 2010-01-01] or field&lt;date>:[2000-01-01T00:00:00-0500 TO 2010-01-01T00:00:00-0500]</td></tr>
 </table>
 
 An example numeric range query for spatial searching.
