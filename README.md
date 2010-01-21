@@ -353,7 +353,7 @@ In addition to normal text-based range searches (using the "field:[lower TO uppe
 An example numeric range query for spatial searching.
 
 <pre>
-?q=pizza AND lat<double>:[51.4707 TO 51.5224] AND long<double>:[-0.6622 TO -0.5775]
+?q=pizza AND lat&lt;double>:[51.4707 TO 51.5224] AND long&lt;double>:[-0.6622 TO -0.5775]
 </pre>
 
 The following parameters can be passed for more sophisticated searches;
