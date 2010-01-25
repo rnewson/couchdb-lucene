@@ -49,8 +49,7 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 <tr><th>Option</th><th>Meaning</th><th>Default Value</th></tr>
 <tr><td>--remote-host</td><td>The hostname of the couchdb-lucene server</td><td>localhost</td></tr>
 <tr><td>--remote-port</td><td>The port of the couchdb-lucene server</td><td>5985</td></tr>
-<tr><td>--local-host</td><td>The hostname of the couchdb server</td><td>localhost</td></tr>
-<tr><td>--local-port</td><td>The port of the couchdb server</td><td>5984</td></tr>
+<tr><td>--local-key</td><td>The key for the local couchdb instance as known to the couchdb-lucene server</td><td>local</td></tr>
 </table>
 
 <h1>Configure couchdb-lucene</h1>
