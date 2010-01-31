@@ -18,16 +18,13 @@ package com.github.rnewson.couchdb.rhino;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.queryParser.ParseException;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -60,22 +57,7 @@ public final class RhinoDocument extends ScriptableObject {
         private Object value;
     }
 
-    private static final Map<String, Field.Index> Index = new HashMap<String, Field.Index>();
-
     private static final long serialVersionUID = 1L;
-
-    private static final Map<String, Field.Store> Store = new HashMap<String, Field.Store>();
-
-    static {
-        Store.put("no", Field.Store.NO);
-        Store.put("yes", Field.Store.YES);
-
-        Index.put("analyzed", Field.Index.ANALYZED);
-        Index.put("analyzed_no_norms", Field.Index.ANALYZED_NO_NORMS);
-        Index.put("no", Field.Index.NO);
-        Index.put("not_analyzed", Field.Index.NOT_ANALYZED);
-        Index.put("not_analyzed_no_norms", Field.Index.NOT_ANALYZED_NO_NORMS);
-    }
 
     public static Scriptable jsConstructor(final Context cx, final Object[] args, final Function ctorObj, final boolean inNewExpr) {
         final RhinoDocument doc = new RhinoDocument();
