@@ -116,17 +116,6 @@ public final class RhinoDocument extends ScriptableObject {
         return (RhinoDocument) obj;
     }
 
-    /**
-     * Foreign method for NativeObject.
-     */
-    private static String optString(final NativeObject obj, final String key, final String defaultValue) {
-        if (obj.has(key, null)) {
-            final Object value = obj.get(key, null);
-            return value instanceof String ? (String) value : defaultValue;
-        }
-        return defaultValue;
-    }
-
     private final List<RhinoAttachment> attachments = new ArrayList<RhinoAttachment>();
 
     private final List<RhinoField> fields = new ArrayList<RhinoField>();
