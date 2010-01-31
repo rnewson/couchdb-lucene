@@ -167,4 +167,5 @@ public final class RhinoDocument extends ScriptableObject {
         final FieldType type = settings.getFieldType();
         out.add(type.toField(settings.getField(), field.value.toString(), settings));
     }
+
 }
