@@ -54,7 +54,6 @@ import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
-import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
 
 public final class ViewIndexer implements Runnable {
@@ -82,7 +81,7 @@ public final class ViewIndexer implements Runnable {
         public ViewChangesHandler(final UUID uuid, final View view, final long latchThreshold) throws IOException {
             this.latchThreshold = latchThreshold;
             this.view = view;
-            this.converter = new DocumentConverter(context, null, view.getFunction());
+            this.converter = new DocumentConverter(context, view);
             lucene.createWriter(path, uuid, view);
 
             lucene.withReader(path, false, new ReaderCallback() {
@@ -337,33 +336,6 @@ public final class ViewIndexer implements Runnable {
         }
     }
 
-    private JSONObject defaults() {
-        final JSONObject result = new JSONObject();
-        result.put("field", Constants.DEFAULT_FIELD);
-        result.put("store", "no");
-        result.put("index", "analyzed");
-        result.put("type", "string");
-        return result;
-    }
-
-    private String extractFunction(final JSONObject view) {
-        if (!view.has("index")) {
-            return null;
-        }
-        return view.getString("index");
-    }
-
-    private JSONObject extractView(final JSONObject ddoc) {
-        if (!ddoc.has("fulltext")) {
-            return null;
-        }
-        final JSONObject fulltext = ddoc.getJSONObject("fulltext");
-        if (!fulltext.has(path.getViewName())) {
-            return null;
-        }
-        return fulltext.getJSONObject(path.getViewName());
-    }
-
     private void index() throws IOException {
         UUID uuid = null;
         try {
@@ -400,10 +372,6 @@ public final class ViewIndexer implements Runnable {
         logger.info("Stopping.");
         client.getConnectionManager().shutdown();
         Context.exit();
-    }
-
-    private long now() {
-        return System.nanoTime();
     }
 
 }

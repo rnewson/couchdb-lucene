@@ -19,7 +19,6 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.mozilla.javascript.Context;
@@ -31,6 +30,7 @@ import org.mozilla.javascript.Undefined;
 
 import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
+import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.couchdb.ViewSettings;
 import com.github.rnewson.couchdb.rhino.JSLog;
 import com.github.rnewson.couchdb.rhino.JsonToRhinoConverter;
@@ -45,7 +45,7 @@ public final class DocumentConverter {
     private final Function viewFun;
     private final ScriptableObject scope;
 
-    public DocumentConverter(final Context context, final String functionName, final String function) throws IOException {
+    public DocumentConverter(final Context context, final View view) throws IOException {
         this.context = context;
         scope = context.initStandardObjects();
 
@@ -64,7 +64,7 @@ public final class DocumentConverter {
         ScriptableObject.putProperty(scope, "log", new JSLog());
 
         // Compile user-specified function
-        viewFun = context.compileFunction(scope, trim(function), functionName, 0, null);
+        viewFun = view.compileFunction(context, scope);
     }
 
     public Document[] convert(final CouchDocument doc, final ViewSettings defaults, final Database database) throws IOException {
@@ -102,14 +102,6 @@ public final class DocumentConverter {
         }
 
         return null;
-    }
-
-    private String trim(final String fun) {
-        String result = fun;
-        result = StringUtils.trim(result);
-        result = StringUtils.removeStart(result, "\"");
-        result = StringUtils.removeEnd(result, "\"");
-        return result;
     }
 
 }
