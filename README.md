@@ -540,3 +540,9 @@ If you just want to expunge pending deletes, then call;
 <pre>
 curl -X POST http://localhost:5984/&lt;db>/_fti/&lt;ddoc>/&lt;index>/_expunge
 </pre>
+
+If you recreate databases or frequently change your fulltext functions, you will probably have old indexes lying around on disk. To remove all of them, call;
+
+<pre>
+curl -X POST http://localhost:5984/&lt;db>/_fti/_cleanup
+</pre>

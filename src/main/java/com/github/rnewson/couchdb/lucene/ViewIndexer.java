@@ -368,30 +368,15 @@ public final class ViewIndexer implements Runnable {
         return fulltext.getJSONObject(path.getViewName());
     }
 
-    private UUID getDatabaseUuid() throws IOException {
-        try {
-            final JSONObject local = database.getDocument("_local/lucene");
-            final UUID uuid = UUID.fromString(local.getString("uuid"));
-            logger.trace("Database has uuid " + uuid);
-            return uuid;
-        } catch (final HttpResponseException e) {
-            switch (e.getStatusCode()) {
-            case HttpStatus.SC_NOT_FOUND:
-                final JSONObject err = JSONObject.fromObject(e.getMessage());
-                if ("no_db_file".equals(err.getString("reason"))) {
-                    throw e;
-                }
-                final UUID uuid = UUID.randomUUID();
-                database.saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
-                return getDatabaseUuid();
-            default:
-                throw e;
-            }
-        }
-    }
-
     private void index() throws IOException {
-        final UUID uuid = getDatabaseUuid();
+        UUID uuid = null;
+        try {
+            uuid = database.getUuid();
+        } catch (final IOException e) {
+            database.createUuid();
+            uuid = database.getUuid();
+        }
+
         final JSONObject ddoc = database.getDocument("_design/" + path.getDesignDocumentName());
         final JSONObject view = extractView(ddoc);
         if (view == null) {

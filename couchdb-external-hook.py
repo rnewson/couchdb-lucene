@@ -69,10 +69,8 @@ def respond(res, req, key):
             path = '/'.join(['', 'search', key] + path)
             params = urllib.urlencode(dict([k, v.encode('utf-8')] for k, v in req["query"].items()))
             path = '?'.join([path, params])
-    elif len(path) == 4:
-        path = '/'.join(['', 'admin', key] + path)
     else:
-        return mkresp(400, "Invalid path\n" + str(len(req)), {"Content-Type":"text/plain"})
+        path = '/'.join(['', 'admin', key] + path)
 
     req_headers = {}
     for h in req.get("headers", []):
@@ -84,7 +82,7 @@ def respond(res, req, key):
         method = req["method"]
     else:
         method = req["verb"]
-
+    sys.stderr.write(path)
     res.request(method, path, headers=req_headers)
     resp = res.getresponse()
 

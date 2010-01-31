@@ -24,13 +24,22 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 public final class IndexPath {
 
     public static IndexPath parse(final HierarchicalINIConfiguration configuration, final HttpServletRequest req) {
-        final String uri = req.getRequestURI().replaceFirst("^/\\w+/", "");
-        final String[] parts = uri.split("/");
+        final String[] parts = parts(req);
         if (parts.length < 4) {
             return null;
         }
-        final Configuration section = configuration.getSection(parts[0]);
-        return section.containsKey("url") ? new IndexPath(section.getString("url"), parts[1], parts[2], parts[3]) : null;
+        final String url = url(configuration, parts[0]);
+        return url == null ? null : new IndexPath(url, parts[1], parts[2], parts[3]);
+    }
+
+    public static String[] parts(final HttpServletRequest req) {
+        final String uri = req.getRequestURI().replaceFirst("^/\\w+/", "");
+        return uri.split("/");
+    }
+
+    public static String url(final HierarchicalINIConfiguration configuration, final String key) {
+        final Configuration section = configuration.getSection(key);
+        return section.containsKey("url") ? section.getString("url") : null;
     }
 
     private final String database;

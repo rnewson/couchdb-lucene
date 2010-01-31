@@ -17,6 +17,7 @@ package com.github.rnewson.couchdb.lucene.couchdb;
  */
 
 import java.io.IOException;
+import java.util.UUID;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -89,6 +90,16 @@ public final class Database {
 
     public boolean saveDocument(final String id, final String body) throws IOException {
         return HttpUtils.put(httpClient, url + Utils.urlEncode(id), body) == 201;
+    }
+
+    public UUID getUuid() throws IOException {
+        final JSONObject local = getDocument("_local/lucene");
+        return UUID.fromString(local.getString("uuid"));
+    }
+
+    public void createUuid() throws IOException {
+        final UUID uuid = UUID.randomUUID();
+        saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
     }
 
 }

@@ -170,7 +170,7 @@ public final class Lucene {
 
     public void createWriter(final IndexPath path, final UUID uuid, final JSONObject view) throws IOException {
         final String digest = digest(view);
-        final File dir = new File(new File(root, uuid.toString()), digest);
+        final File dir = new File(getUuidDir(uuid), digest);
         dir.mkdirs();
 
         synchronized (map) {
@@ -182,6 +182,14 @@ public final class Lucene {
             tuple = new Tuple(newWriter(d));
             map.put(path, tuple);
         }
+    }
+
+    public File getRootDir() {
+        return root;
+    }
+
+    public File getUuidDir(final UUID uuid) {
+        return new File(getRootDir(), uuid.toString());
     }
 
     public void close() {
