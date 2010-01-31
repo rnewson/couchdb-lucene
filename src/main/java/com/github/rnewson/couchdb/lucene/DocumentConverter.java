@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.queryParser.ParseException;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.JavaScriptException;
@@ -67,7 +68,8 @@ public final class DocumentConverter {
         viewFun = view.compileFunction(context, scope);
     }
 
-    public Document[] convert(final CouchDocument doc, final ViewSettings defaults, final Database database) throws IOException {
+    public Document[] convert(final CouchDocument doc, final ViewSettings defaults, final Database database) throws IOException,
+            ParseException {
         final Object result;
         final ScriptableObject scriptableObject = JsonToRhinoConverter.convertObject(doc.asJson());
 

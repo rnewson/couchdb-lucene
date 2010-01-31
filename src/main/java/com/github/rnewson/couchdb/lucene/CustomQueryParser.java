@@ -19,12 +19,9 @@ package com.github.rnewson.couchdb.lucene;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.apache.http.impl.cookie.DateParseException;
-import org.apache.http.impl.cookie.DateUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
@@ -37,9 +34,6 @@ import org.apache.lucene.util.Version;
  * 
  */
 public final class CustomQueryParser extends QueryParser {
-
-    private static String[] DATE_PATTERNS = new String[] { "yyyy-MM-dd'T'HH:mm:ssZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZZ",
-            "yyyy-MM-dd" };
 
     public CustomQueryParser(final Version matchVersion, final String f, final Analyzer a) {
         super(matchVersion, f, a);
@@ -60,7 +54,7 @@ public final class CustomQueryParser extends QueryParser {
                 }
 
                 final TypedField typedField = new TypedField(tmp);
-                sort_fields[i] = new SortField(typedField.getName(), typedField.getType().asSortField(), reverse);
+                sort_fields[i] = new SortField(typedField.getName(), typedField.toSortField(), reverse);
             }
             return new Sort(sort_fields);
         }
@@ -116,36 +110,9 @@ public final class CustomQueryParser extends QueryParser {
     }
 
     @Override
-    protected Query getRangeQuery(final String field, final String part1, final String part2, final boolean inclusive)
+    protected Query getRangeQuery(final String field, final String lower, final String upper, final boolean inclusive)
             throws ParseException {
-        final TypedField typedField = new TypedField(field);
-
-        switch (typedField.getType()) {
-        case STRING:
-            return newRangeQuery(field, part1, part2, inclusive);
-        case INT:
-            return NumericRangeQuery.newIntRange(typedField.getName(), 4, Integer.parseInt(part1), Integer.parseInt(part2), inclusive, inclusive);
-        case LONG:
-            return NumericRangeQuery.newLongRange(typedField.getName(), 4, Long.parseLong(part1), Long.parseLong(part2), inclusive, inclusive);
-        case FLOAT:
-            return NumericRangeQuery
-                    .newFloatRange(typedField.getName(), 4, Float.parseFloat(part1), Float.parseFloat(part2), inclusive, inclusive);
-        case DOUBLE:
-            return NumericRangeQuery.newDoubleRange(typedField.getName(), 4, Double.parseDouble(part1), Double.parseDouble(part2), inclusive,
-                    inclusive);
-        case DATE:
-            return NumericRangeQuery.newLongRange(typedField.getName(), 8, date(part1), date(part2), inclusive, inclusive);
-        default:
-            throw new ParseException("Unknown type " + typedField);
-        }
-    }
-
-    private long date(final String str) throws ParseException {
-        try {
-            return DateUtils.parseDate(str.toUpperCase(), DATE_PATTERNS).getTime();
-        } catch (DateParseException e) {
-            throw new ParseException(e.getMessage());
-        }
+        return new TypedField(field).toRangeQuery(lower, upper, inclusive);
     }
 
 }

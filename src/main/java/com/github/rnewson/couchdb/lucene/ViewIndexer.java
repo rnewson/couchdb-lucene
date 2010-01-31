@@ -45,7 +45,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.RhinoException;
 
 import com.github.rnewson.couchdb.lucene.Lucene.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
@@ -183,7 +182,7 @@ public final class ViewIndexer implements Runnable {
                         final Document[] docs;
                         try {
                             docs = converter.convert(doc, view.getDefaultSettings(), database);
-                        } catch (final RhinoException e) {
+                        } catch (final Exception e) {
                             logger.warn(id + " caused " + e.getMessage());
                             continue loop;
                         }

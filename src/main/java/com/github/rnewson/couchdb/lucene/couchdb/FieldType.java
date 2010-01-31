@@ -1,97 +1,154 @@
 package com.github.rnewson.couchdb.lucene.couchdb;
 
-import java.util.Date;
+/**
+ * Copyright 2010 Robert Newson
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import org.apache.http.impl.cookie.DateParseException;
-import org.apache.http.impl.cookie.DateUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.lucene.document.AbstractField;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericField;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.search.MultiTermQuery;
+import org.apache.lucene.search.NumericRangeQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.TermRangeQuery;
 
 public enum FieldType {
 
-    DATE {
-        private String[] patterns = new String[] { "yyyy-MM-dd'T'HH:mm:ssZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZZ", "yyyy-MM-dd" };
+    DATE(8, SortField.LONG) {
+        private final String[] patterns = new String[] { "yyyy-MM-dd'T'HH:mm:ssZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZZ",
+                "yyyy-MM-dd" };
 
         @Override
-        public NumericField asField(String name, String value, ViewSettings settings) {
-            Date date;
+        public NumericField toField(final String name, final String value, final ViewSettings settings) throws ParseException {
+            return field(name, precisionStep, settings).setLongValue(toDate(value));
+        }
+
+        @Override
+        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive)
+                throws ParseException {
+            return NumericRangeQuery.newLongRange(name, precisionStep, toDate(lower), toDate(upper), inclusive, inclusive);
+        }
+
+        private long toDate(final String str) throws ParseException {
             try {
-                date = DateUtils.parseDate(value.toUpperCase(), patterns);
-            } catch (final DateParseException e) {
-                throw new NumberFormatException();
+                return DateUtils.parseDate(str.toUpperCase(), patterns).getTime();
+            } catch (final java.text.ParseException e) {
+                throw new ParseException(e.getMessage());
             }
-            return field(name, 8, settings).setLongValue(date.getTime());
+        }
+    },
+    DOUBLE(8, SortField.DOUBLE) {
+        @Override
+        public NumericField toField(final String name, final String value, final ViewSettings settings) {
+            return field(name, precisionStep, settings).setDoubleValue(toDouble(value));
         }
 
         @Override
-        public int asSortField() {
-            return SortField.LONG;
+        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
+            return NumericRangeQuery.newDoubleRange(name, precisionStep, toDouble(lower), toDouble(upper), inclusive, inclusive);
         }
+
+        private double toDouble(final String str) {
+            return Double.parseDouble(str);
+        }
+
     },
-    DOUBLE {
+    FLOAT(4, SortField.FLOAT) {
         @Override
-        public NumericField asField(String name, String value, ViewSettings settings) {
-            return field(name, 8, settings).setDoubleValue(Double.parseDouble(value));
+        public NumericField toField(final String name, final String value, final ViewSettings settings) {
+            return field(name, 4, settings).setFloatValue(toFloat(value));
         }
 
         @Override
-        public int asSortField() {
-            return SortField.DOUBLE;
+        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
+            return NumericRangeQuery.newFloatRange(name, precisionStep, toFloat(lower), toFloat(upper), inclusive, inclusive);
+        }
+
+        private float toFloat(final String str) {
+            return Float.parseFloat(str);
         }
     },
-    FLOAT {
+    INT(4, SortField.INT) {
         @Override
-        public NumericField asField(String name, String value, ViewSettings settings) {
-            return field(name, 4, settings).setFloatValue(Float.parseFloat(value));
+        public NumericField toField(final String name, final String value, final ViewSettings settings) {
+            return field(name, 4, settings).setIntValue(toInt(value));
         }
 
         @Override
-        public int asSortField() {
-            return SortField.FLOAT;
+        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
+            return NumericRangeQuery.newIntRange(name, precisionStep, toInt(lower), toInt(upper), inclusive, inclusive);
         }
+
+        private int toInt(final String str) {
+            return Integer.parseInt(str);
+        }
+
     },
-    INT {
+    LONG(8, SortField.LONG) {
         @Override
-        public NumericField asField(String name, String value, ViewSettings settings) {
-            return field(name, 4, settings).setIntValue(Integer.parseInt(value));
+        public NumericField toField(final String name, final String value, final ViewSettings settings) {
+            return field(name, precisionStep, settings).setLongValue(toLong(value));
         }
 
         @Override
-        public int asSortField() {
-            return SortField.INT;
-        }
-    },
-    LONG {
-        @Override
-        public NumericField asField(String name, String value, ViewSettings settings) {
-            return field(name, 8, settings).setLongValue(Long.parseLong(value));
+        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
+            return NumericRangeQuery.newLongRange(name, precisionStep, toLong(lower), toLong(upper), inclusive, inclusive);
         }
 
-        @Override
-        public int asSortField() {
-            return SortField.LONG;
+        private long toLong(final String str) {
+            return Long.parseLong(str);
         }
+
     },
-    STRING {
+    STRING(0, SortField.STRING) {
         @Override
-        public Field asField(String name, String value, ViewSettings settings) {
+        public Field toField(final String name, final String value, final ViewSettings settings) {
             return new Field(name, value, settings.getStore(), settings.getIndex());
         }
 
         @Override
-        public int asSortField() {
-            return SortField.STRING;
+        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
+            final TermRangeQuery result = new TermRangeQuery(name, lower, upper, inclusive, inclusive);
+            result.setRewriteMethod(MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT);
+            return result;
         }
     };
 
-    public abstract int asSortField();
-
-    public abstract AbstractField asField(final String name, final String value, final ViewSettings settings);
-
     private static NumericField field(final String name, final int precisionStep, final ViewSettings settings) {
         return new NumericField(name, precisionStep, settings.getStore(), settings.getIndex().isIndexed());
+    }
+
+    private final int sortField;
+
+    protected final int precisionStep;
+
+    private FieldType(final int precisionStep, final int sortField) {
+        this.precisionStep = precisionStep;
+        this.sortField = sortField;
+    }
+
+    public abstract AbstractField toField(final String name, final String value, final ViewSettings settings) throws ParseException;
+
+    public abstract Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive)
+            throws ParseException;
+
+    public final int toSortField() {
+        return sortField;
     }
 
 }

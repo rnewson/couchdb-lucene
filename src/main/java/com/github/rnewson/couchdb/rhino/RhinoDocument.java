@@ -28,6 +28,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.queryParser.ParseException;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
@@ -151,7 +152,8 @@ public final class RhinoDocument extends ScriptableObject {
     public RhinoDocument() {
     }
 
-    public Document toDocument(final String id, final ViewSettings defaults, final Database database) throws IOException {
+    public Document toDocument(final String id, final ViewSettings defaults, final Database database) throws IOException,
+            ParseException {
         final Document result = new Document();
 
         // Add id.
@@ -189,10 +191,9 @@ public final class RhinoDocument extends ScriptableObject {
         database.handleAttachment(id, attachment.attachmentName, handler);
     }
 
-    private void addField(final RhinoField field, final ViewSettings defaults, final Document out) {
+    private void addField(final RhinoField field, final ViewSettings defaults, final Document out) throws ParseException {
         final ViewSettings settings = new ViewSettings(field.settings, defaults);
-
         final FieldType type = settings.getFieldType();
-        out.add(type.asField(settings.getField(), field.value.toString(), settings));
+        out.add(type.toField(settings.getField(), field.value.toString(), settings));
     }
 }
