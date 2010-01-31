@@ -24,6 +24,7 @@ import static java.lang.Math.min;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.ServletException;
@@ -52,6 +53,7 @@ import org.apache.lucene.util.Version;
 
 import com.github.rnewson.couchdb.lucene.Lucene.SearcherCallback;
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
+import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
@@ -255,9 +257,9 @@ public final class SearchServlet extends HttpServlet {
                         try {
                             final Couch couch = Couch.getInstance(httpClient, path.getUrl());
                             final Database database = couch.getDatabase(path.getDatabase());
-                            final JSONArray fetched_docs = database.getDocuments(fetch_ids).getJSONArray("rows");
+                            final List<CouchDocument> fetched_docs = database.getDocuments(fetch_ids);
                             for (int i = 0; i < max; i++) {
-                                rows.getJSONObject(i).put("doc", fetched_docs.getJSONObject(i).getJSONObject("doc"));
+                                rows.getJSONObject(i).put("doc", fetched_docs.get(i).asJson());
                             }
                         } finally {
                             httpClient.getConnectionManager().shutdown();

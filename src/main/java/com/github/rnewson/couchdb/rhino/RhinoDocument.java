@@ -17,24 +17,17 @@ package com.github.rnewson.couchdb.rhino;
  */
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.sf.json.JSONObject;
-
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericField;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
@@ -44,8 +37,8 @@ import org.mozilla.javascript.Undefined;
 
 import com.github.rnewson.couchdb.lucene.Tika;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
-import com.github.rnewson.couchdb.lucene.util.Constants;
-import com.github.rnewson.couchdb.lucene.util.Conversion;
+import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
+import com.github.rnewson.couchdb.lucene.couchdb.ViewSettings;
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
 /**
@@ -158,7 +151,7 @@ public final class RhinoDocument extends ScriptableObject {
     public RhinoDocument() {
     }
 
-    public Document toDocument(final String id, final JSONObject defaults, final Database database) throws IOException {
+    public Document toDocument(final String id, final ViewSettings defaults, final Database database) throws IOException {
         final Document result = new Document();
 
         // Add id.
@@ -196,35 +189,10 @@ public final class RhinoDocument extends ScriptableObject {
         database.handleAttachment(id, attachment.attachmentName, handler);
     }
 
-    private void addField(final RhinoField field, final JSONObject defaults, final Document out) {
-        String fieldName = defaults.optString("field", Constants.DEFAULT_FIELD);
-        String store = defaults.optString("store", "no");
-        String index = defaults.optString("index", "analyzed");
-        String type = defaults.optString("type", "string");
+    private void addField(final RhinoField field, final ViewSettings defaults, final Document out) {
+        final ViewSettings settings = new ViewSettings(field.settings, defaults);
 
-        // Check for local settings.
-        if (field.settings != null) {
-            fieldName = optString(field.settings, "field", fieldName);
-            store = optString(field.settings, "store", store);
-            index = optString(field.settings, "index", index);
-            type = optString(field.settings, "type", type);
-        }
-
-        final Field.Store storeObj = Store.get(store);
-        if ("int".equals(type)) {
-            out.add(new NumericField(fieldName, 4, storeObj, true).setIntValue(Conversion.convert(field.value, Integer.class)));
-        } else if ("float".equals(type)) {
-            out.add(new NumericField(fieldName, 4, storeObj, true).setFloatValue(Conversion.convert(field.value, Float.class)));
-        } else if ("double".equals(type)) {
-            out.add(new NumericField(fieldName, 8, storeObj, true).setDoubleValue(Conversion.convert(field.value, Double.class)));
-        } else if ("long".equals(type)) {
-            out.add(new NumericField(fieldName, 8, storeObj, true).setLongValue(Conversion.convert(field.value, Long.class)));
-        } else if ("date".equals(type)) {
-            final Date date = DateUtils.round(Conversion.convert(field.value, Date.class), Calendar.SECOND);
-            out.add(new NumericField(fieldName, 8, storeObj, true).setLongValue(date.getTime()));
-        } else if ("string".equals(type)) {
-            out.add(new Field(fieldName, Conversion.convert(field.value).toString(), storeObj, Index.get(index)));
-        }
+        final FieldType type = settings.getFieldType();
+        out.add(type.asField(settings.getField(), field.value.toString(), settings));
     }
-
 }

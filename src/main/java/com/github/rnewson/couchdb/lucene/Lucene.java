@@ -35,6 +35,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
+import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
 
@@ -168,9 +169,8 @@ public final class Lucene {
         }
     }
 
-    public void createWriter(final IndexPath path, final UUID uuid, final JSONObject view) throws IOException {
-        final String digest = digest(view);
-        final File dir = new File(getUuidDir(uuid), digest);
+    public void createWriter(final IndexPath path, final UUID uuid, final View view) throws IOException {
+        final File dir = new File(getUuidDir(uuid), view.getDigest());
         dir.mkdirs();
 
         synchronized (map) {

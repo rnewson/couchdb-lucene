@@ -19,8 +19,6 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
-import net.sf.json.JSONObject;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -31,7 +29,9 @@ import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
+import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
+import com.github.rnewson.couchdb.lucene.couchdb.ViewSettings;
 import com.github.rnewson.couchdb.rhino.JSLog;
 import com.github.rnewson.couchdb.rhino.JsonToRhinoConverter;
 import com.github.rnewson.couchdb.rhino.RhinoDocument;
@@ -67,9 +67,9 @@ public final class DocumentConverter {
         viewFun = context.compileFunction(scope, trim(function), functionName, 0, null);
     }
 
-    public Document[] convert(final JSONObject doc, final JSONObject defaults, final Database database) throws IOException {
+    public Document[] convert(final CouchDocument doc, final ViewSettings defaults, final Database database) throws IOException {
         final Object result;
-        final ScriptableObject scriptableObject = JsonToRhinoConverter.convertObject(doc);
+        final ScriptableObject scriptableObject = JsonToRhinoConverter.convertObject(doc.asJson());
 
         try {
             result = viewFun.call(context, scope, null, new Object[] { scriptableObject });
@@ -84,7 +84,7 @@ public final class DocumentConverter {
 
         if (result instanceof RhinoDocument) {
             final RhinoDocument rhinoDocument = (RhinoDocument) result;
-            final Document document = rhinoDocument.toDocument(doc.getString("_id"), defaults, database);
+            final Document document = rhinoDocument.toDocument(doc.getId(), defaults, database);
             return new Document[] { document };
         }
 
@@ -94,7 +94,7 @@ public final class DocumentConverter {
             for (int i = 0; i < (int) nativeArray.getLength(); i++) {
                 if (nativeArray.get(i, null) instanceof RhinoDocument) {
                     final RhinoDocument rhinoDocument = (RhinoDocument) nativeArray.get(i, null);
-                    final Document document = rhinoDocument.toDocument(doc.getString("_id"), defaults, database);
+                    final Document document = rhinoDocument.toDocument(doc.getId(), defaults, database);
                     arrayResult[i] = document;
                 }
             }

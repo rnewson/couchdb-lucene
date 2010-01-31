@@ -50,8 +50,10 @@ import org.mozilla.javascript.RhinoException;
 import com.github.rnewson.couchdb.lucene.Lucene.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
+import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
-import com.github.rnewson.couchdb.lucene.util.Analyzers;
+import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
+import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
 
@@ -65,10 +67,8 @@ public final class ViewIndexer implements Runnable {
 
     private class ViewChangesHandler implements ResponseHandler<Void> {
 
-        private final Analyzer analyzer;
+        private final View view;
         private final DocumentConverter converter;
-        private final JSONObject defaults;
-        private final String digest;
         private HttpUriRequest request;
         private final long latchThreshold;
         private boolean pendingCommit;
@@ -79,14 +79,12 @@ public final class ViewIndexer implements Runnable {
         private long lastUpdate = -1;
         private long updateCount;
 
-        public ViewChangesHandler(final UUID uuid, final JSONObject view, final long latchThreshold) throws IOException {
+        public ViewChangesHandler(final UUID uuid, final View view, final long latchThreshold) throws IOException {
             this.latchThreshold = latchThreshold;
-            this.defaults = view.has("defaults") ? view.getJSONObject("defaults") : defaults();
-            this.analyzer = Analyzers.getAnalyzer(view.optString("analyzer", "standard"));
-            final String function = extractFunction(view);
-            this.converter = new DocumentConverter(context, null, function);
+            this.view = view;
+            this.converter = new DocumentConverter(context, null, view.getFunction());
             lucene.createWriter(path, uuid, view);
-            this.digest = Lucene.digest(view);
+
             lucene.withReader(path, false, new ReaderCallback() {
                 public void callback(final IndexReader reader) throws IOException {
                     final Map<String, String> commit = reader.getCommitUserData();
@@ -129,9 +127,9 @@ public final class ViewIndexer implements Runnable {
                     }
 
                     final String id = json.getString("id");
-                    JSONObject doc;
+                    CouchDocument doc;
                     if (json.has("doc")) {
-                        doc = json.getJSONObject("doc");
+                        doc = new CouchDocument(json.getJSONObject("doc"));
                     } else {
                         // include_docs=true doesn't work prior to 0.11.
                         try {
@@ -139,7 +137,7 @@ public final class ViewIndexer implements Runnable {
                         } catch (final HttpResponseException e) {
                             switch (e.getStatusCode()) {
                             case HttpStatus.SC_NOT_FOUND:
-                                doc = JSONObject.fromObject("{_deleted:true}");
+                                doc = CouchDocument.deletedDocument(id);
                                 break;
                             default:
                                 logger.warn("Failed to fetch " + id);
@@ -149,28 +147,25 @@ public final class ViewIndexer implements Runnable {
                     }
 
                     if (id.equals("_design/" + path.getDesignDocumentName())) {
-                        if (doc.optBoolean("_deleted")) {
+                        final DesignDocument ddoc = new DesignDocument(doc);
+                        if (ddoc.isDeleted()) {
                             logger.info("Design document for this view was deleted.");
                             break loop;
                         }
-                        final JSONObject view = extractView(doc);
+
+                        final View view = ddoc.getView(path.getViewName());
                         if (view == null) {
                             logger.info("View was deleted.");
                             break loop;
                         }
-                        final String fun = extractFunction(view);
-                        if (fun == null) {
-                            logger.warn("View has no index function.");
-                            break loop;
-                        }
-                        final String newDigest = Lucene.digest(view);
-                        if (!digest.equals(newDigest)) {
-                            logger.info("Digest of function changed.");
+
+                        if (!this.view.equals(view)) {
+                            logger.info("View changed.");
                             break loop;
                         }
                     } else if (id.startsWith("_design")) {
                         // Ignore other design document changes.
-                    } else if (doc.optBoolean("_deleted")) {
+                    } else if (doc.isDeleted()) {
                         logger.trace(id + " deleted.");
                         lucene.withWriter(path, new WriterCallback() {
 
@@ -188,7 +183,7 @@ public final class ViewIndexer implements Runnable {
                         logger.trace(id + " updated.");
                         final Document[] docs;
                         try {
-                            docs = converter.convert(doc, defaults, database);
+                            docs = converter.convert(doc, view.getDefaultSettings(), database);
                         } catch (final RhinoException e) {
                             logger.warn(id + " caused " + e.getMessage());
                             continue loop;
@@ -202,7 +197,7 @@ public final class ViewIndexer implements Runnable {
                                     if (logger.isTraceEnabled()) {
                                         logger.trace(id + " -> " + doc);
                                     }
-                                    writer.addDocument(doc, analyzer);
+                                    writer.addDocument(doc, view.getAnalyzer());
                                 }
                                 return true;
                             }
@@ -320,7 +315,8 @@ public final class ViewIndexer implements Runnable {
     }
 
     public Analyzer getAnalyzer() {
-        return handler.analyzer;
+        // Demeter will not be pleased.
+        return handler.view.getAnalyzer();
     }
 
     public void run() {
@@ -377,13 +373,11 @@ public final class ViewIndexer implements Runnable {
             uuid = database.getUuid();
         }
 
-        final JSONObject ddoc = database.getDocument("_design/" + path.getDesignDocumentName());
-        final JSONObject view = extractView(ddoc);
+        final DesignDocument ddoc = database.getDesignDocument(path.getDesignDocumentName());
+        final View view = ddoc.getView(path.getViewName());
         if (view == null) {
             return;
         }
-        if (extractFunction(view) == null)
-            return;
 
         final JSONObject info = database.getInfo();
         final long seqThreshhold = staleOk ? 0 : info.getLong("update_seq");

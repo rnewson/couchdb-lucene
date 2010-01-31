@@ -26,7 +26,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -37,6 +36,8 @@ import org.apache.lucene.index.IndexWriter;
 import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
+import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
+import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.Utils;
@@ -143,18 +144,10 @@ public final class AdminServlet extends HttpServlet {
             final Database db = couch.getDatabase(dbname);
             dbKeep.add(db.getUuid().toString());
 
-            // TODO create DesignDocument, Fulltext, View classes.
-
-            final JSONArray arr = db.getAllDesignDocuments();
             final Set<String> viewKeep = new HashSet<String>();
-            for (int i = 0; i < arr.size(); i++) {
-                final JSONObject ddoc = arr.getJSONObject(i).getJSONObject("doc");
-                if (ddoc.has("fulltext")) {
-                    final JSONObject fulltext = ddoc.getJSONObject("fulltext");
-                    for (final Object name : fulltext.keySet()) {
-                        final JSONObject view = fulltext.getJSONObject((String) name);
-                        viewKeep.add(Lucene.digest(view));
-                    }
+            for (final DesignDocument ddoc : db.getAllDesignDocuments()) {
+                for (final View view : ddoc.getAllViews()) {
+                    viewKeep.add(view.getDigest());
                 }
             }
             // Delete all indexes except the keepers.

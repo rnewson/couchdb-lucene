@@ -17,6 +17,8 @@ package com.github.rnewson.couchdb.lucene.couchdb;
  */
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import net.sf.json.JSONArray;
@@ -48,16 +50,24 @@ public final class Database {
         return HttpUtils.delete(httpClient, url) == 200;
     }
 
-    public JSONArray getAllDesignDocuments() throws IOException {
-        return getDocuments("_design", "_design0").getJSONArray("rows");
+    public List<DesignDocument> getAllDesignDocuments() throws IOException {
+        final String body = HttpUtils.get(httpClient, url
+                + "_all_docs?startkey=%%22_design%%22&endkey=%%22_design9%%22&include_docs=true");
+        final JSONObject json = JSONObject.fromObject(body);
+        return toDesignDocuments(json);
     }
 
-    public JSONObject getDocument(final String id) throws IOException {
+    public CouchDocument getDocument(final String id) throws IOException {
         final String response = HttpUtils.get(httpClient, url + Utils.urlEncode(id));
-        return JSONObject.fromObject(response);
+        return new CouchDocument(JSONObject.fromObject(response));
     }
 
-    public JSONObject getDocuments(final String... ids) throws IOException {
+    public DesignDocument getDesignDocument(final String id) throws IOException {
+        final String response = HttpUtils.get(httpClient, url + "_design/" + Utils.urlEncode(id));
+        return new DesignDocument(JSONObject.fromObject(response));
+    }
+
+    public List<CouchDocument> getDocuments(final String... ids) throws IOException {
         final JSONArray keys = new JSONArray();
         for (final String id : ids) {
             keys.add(id);
@@ -65,14 +75,9 @@ public final class Database {
         final JSONObject req = new JSONObject();
         req.element("keys", keys);
 
-        final String response = HttpUtils.post(httpClient, url + "_all_docs?include_docs=true", req.toString());
-        return JSONObject.fromObject(response);
-    }
-
-    public JSONObject getDocuments(final String startkey, final String endkey) throws IOException {
-        return JSONObject.fromObject(HttpUtils.get(httpClient, String.format(
-                "%s_all_docs?startkey=%%22%s%%22&endkey=%%22%s%%22&include_docs=true", url, Utils.urlEncode(startkey), Utils
-                        .urlEncode(endkey))));
+        final String body = HttpUtils.post(httpClient, url + "_all_docs?include_docs=true", req.toString());
+        final JSONObject json = JSONObject.fromObject(body);
+        return toDocuments(json);
     }
 
     public JSONObject getInfo() throws IOException {
@@ -93,13 +98,38 @@ public final class Database {
     }
 
     public UUID getUuid() throws IOException {
-        final JSONObject local = getDocument("_local/lucene");
-        return UUID.fromString(local.getString("uuid"));
+        final CouchDocument local = getDocument("_local/lucene");
+        return UUID.fromString(local.asJson().getString("uuid"));
     }
 
     public void createUuid() throws IOException {
         final UUID uuid = UUID.randomUUID();
         saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
+    }
+
+    private List<DesignDocument> toDesignDocuments(final JSONObject json) {
+        final List<DesignDocument> result = new ArrayList<DesignDocument>();
+        for (final JSONObject doc : rows(json)) {
+            result.add(new DesignDocument(doc));
+        }
+        return result;
+    }
+
+    private List<CouchDocument> toDocuments(final JSONObject json) {
+        final List<CouchDocument> result = new ArrayList<CouchDocument>();
+        for (final JSONObject doc : rows(json)) {
+            result.add(new CouchDocument(doc));
+        }
+        return result;
+    }
+
+    private List<JSONObject> rows(final JSONObject json) {
+        final List<JSONObject> result = new ArrayList<JSONObject>();
+        final JSONArray rows = json.getJSONArray("rows");
+        for (int i = 0; i < rows.size(); i++) {
+            result.add(rows.getJSONObject(i).getJSONObject("doc"));
+        }
+        return result;
     }
 
 }
