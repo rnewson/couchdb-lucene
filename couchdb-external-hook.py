@@ -82,7 +82,7 @@ def respond(res, req, key):
         method = req["method"]
     else:
         method = req["verb"]
-    sys.stderr.write(path)
+
     res.request(method, path, headers=req_headers)
     resp = res.getresponse()
 

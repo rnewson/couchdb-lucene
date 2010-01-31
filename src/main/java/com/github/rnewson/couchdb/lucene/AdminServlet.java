@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -31,6 +32,7 @@ import net.sf.json.JSONObject;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.HttpClient;
+import org.apache.log4j.Logger;
 import org.apache.lucene.index.IndexWriter;
 
 import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
@@ -61,6 +63,8 @@ public final class AdminServlet extends HttpServlet {
 
     private static final JSONObject JSON_SUCCESS = JSONObject.fromObject("{\"ok\":true}");
 
+    private static final Logger LOG = Logger.getLogger(AdminServlet.class);
+
     private Lucene lucene;
 
     private HierarchicalINIConfiguration configuration;
@@ -78,11 +82,9 @@ public final class AdminServlet extends HttpServlet {
         final IndexPath path = IndexPath.parse(configuration, req);
         String command = req.getPathInfo();
         command = command.substring(command.lastIndexOf("/") + 1);
-
         if (path == null) {
-            // generalize path handling.
             final String[] parts = IndexPath.parts(req);
-            if (parts.length == 2) {
+            if (parts.length == 3) {
                 if ("_cleanup".equals(command)) {
                     cleanup(parts[0]);
                     resp.setStatus(202);
@@ -97,6 +99,7 @@ public final class AdminServlet extends HttpServlet {
         lucene.startIndexing(path, true);
 
         if ("_expunge".equals(command)) {
+            LOG.info("Expunging deletes from " + path);
             lucene.withWriter(path, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.expungeDeletes(false);
@@ -114,6 +117,7 @@ public final class AdminServlet extends HttpServlet {
         }
 
         if ("_optimize".equals(command)) {
+            LOG.info("Optimizing " + path);
             lucene.withWriter(path, new WriterCallback() {
                 public boolean callback(final IndexWriter writer) throws IOException {
                     writer.optimize(false);
@@ -134,7 +138,6 @@ public final class AdminServlet extends HttpServlet {
     }
 
     private void cleanup(final String key) throws IOException {
-        // TODO tidy this.
         final HttpClient client = HttpClientFactory.getInstance();
         final Couch couch = Couch.getInstance(client, IndexPath.url(configuration, key));
 
@@ -142,7 +145,12 @@ public final class AdminServlet extends HttpServlet {
 
         for (final String dbname : couch.getAllDatabases()) {
             final Database db = couch.getDatabase(dbname);
-            dbKeep.add(db.getUuid().toString());
+            final UUID uuid = db.getUuid();
+            if (uuid == null) {
+                continue;
+            }
+
+            dbKeep.add(uuid.toString());
 
             final Set<String> viewKeep = new HashSet<String>();
             for (final DesignDocument ddoc : db.getAllDesignDocuments()) {
@@ -153,6 +161,7 @@ public final class AdminServlet extends HttpServlet {
             // Delete all indexes except the keepers.
             for (final File dir : lucene.getUuidDir(db.getUuid()).listFiles()) {
                 if (!viewKeep.contains(dir.getName())) {
+                    LOG.info("Cleaning old index at " + dir);
                     FileUtils.deleteDirectory(dir);
                 }
             }
@@ -161,6 +170,7 @@ public final class AdminServlet extends HttpServlet {
         // Delete all directories except the keepers.
         for (final File dir : lucene.getRootDir().listFiles()) {
             if (!dbKeep.contains(dir.getName())) {
+                LOG.info("Cleaning old index at " + dir);
                 FileUtils.deleteDirectory(dir);
             }
         }

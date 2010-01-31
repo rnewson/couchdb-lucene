@@ -24,7 +24,9 @@ import java.util.UUID;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -51,8 +53,8 @@ public final class Database {
     }
 
     public List<DesignDocument> getAllDesignDocuments() throws IOException {
-        final String body = HttpUtils.get(httpClient, url
-                + "_all_docs?startkey=%%22_design%%22&endkey=%%22_design9%%22&include_docs=true");
+        final String body = HttpUtils.get(httpClient, String.format("%s_all_docs?startkey=%s&endkey=%s&include_docs=true", url,
+                Utils.urlEncode("\"_design\""), Utils.urlEncode("\"_design0\"")));
         final JSONObject json = JSONObject.fromObject(body);
         return toDesignDocuments(json);
     }
@@ -98,8 +100,17 @@ public final class Database {
     }
 
     public UUID getUuid() throws IOException {
-        final CouchDocument local = getDocument("_local/lucene");
-        return UUID.fromString(local.asJson().getString("uuid"));
+        try {
+            final CouchDocument local = getDocument("_local/lucene");
+            return UUID.fromString(local.asJson().getString("uuid"));
+        } catch (final HttpResponseException e) {
+            switch (e.getStatusCode()) {
+            case HttpStatus.SC_NOT_FOUND:
+                return null;
+            default:
+                throw e;
+            }
+        }
     }
 
     public void createUuid() throws IOException {

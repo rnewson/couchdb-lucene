@@ -336,10 +336,8 @@ public final class ViewIndexer implements Runnable {
     }
 
     private void index() throws IOException {
-        UUID uuid = null;
-        try {
-            uuid = database.getUuid();
-        } catch (final IOException e) {
+        UUID uuid = database.getUuid();
+        if (uuid == null) {
             database.createUuid();
             uuid = database.getUuid();
         }
