@@ -30,8 +30,6 @@ import org.apache.lucene.search.TermRangeQuery;
 public enum FieldType {
 
     DATE(8, SortField.LONG) {
-        private final String[] patterns = new String[] { "yyyy-MM-dd'T'HH:mm:ssZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZZ",
-                "yyyy-MM-dd" };
 
         @Override
         public NumericField toField(final String name, final String value, final ViewSettings settings) throws ParseException {
@@ -44,13 +42,6 @@ public enum FieldType {
             return NumericRangeQuery.newLongRange(name, precisionStep, toDate(lower), toDate(upper), inclusive, inclusive);
         }
 
-        private long toDate(final String str) throws ParseException {
-            try {
-                return DateUtils.parseDate(str.toUpperCase(), patterns).getTime();
-            } catch (final java.text.ParseException e) {
-                throw new ParseException(e.getMessage());
-            }
-        }
     },
     DOUBLE(8, SortField.DOUBLE) {
         @Override
@@ -133,6 +124,9 @@ public enum FieldType {
         return new NumericField(name, precisionStep, settings.getStore(), settings.getIndex().isIndexed());
     }
 
+    public static final String[] DATE_PATTERNS = new String[] { "yyyy-MM-dd'T'HH:mm:ssZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZZ",
+            "yyyy-MM-dd" };
+
     private final int sortField;
 
     protected final int precisionStep;
@@ -149,6 +143,14 @@ public enum FieldType {
 
     public final int toSortField() {
         return sortField;
+    }
+
+    public static long toDate(final String str) throws ParseException {
+        try {
+            return DateUtils.parseDate(str.toUpperCase(), DATE_PATTERNS).getTime();
+        } catch (final java.text.ParseException e) {
+            throw new ParseException(e.getMessage());
+        }
     }
 
 }
