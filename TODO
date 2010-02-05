@@ -16,6 +16,8 @@ OPTIMIZE
 
 * make attachment call support "store":"yes|no"
 
+* configure osxappbundle:bundle to make one-click OSX install.
+
 0.6
 
 * distributed search.
