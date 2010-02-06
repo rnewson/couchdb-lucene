@@ -96,18 +96,6 @@
     <tika-version>0.6</tika-version>
     <jetty-version>6.1.20</jetty-version>
   </properties>
-  <repositories>
-    <repository>
-      <id>lucene</id>
-      <url>http://people.apache.org/maven-snapshot-repository</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-    </repository>
-  </repositories>
   <issueManagement>
     <system>github</system>
     <url>http://github.com/rnewson/couchdb-lucene/issues</url>
