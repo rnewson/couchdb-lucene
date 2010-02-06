@@ -132,7 +132,7 @@
 	  <showPackage>false</showPackage>
 	  <links>
 	    <link>http://java.sun.com/javase/6/docs/api/</link>
-	    <link>http://lucene.apache.org/java/2_9_0/api/core/</link>
+	    <link>http://lucene.apache.org/java/3_0_0/api/core/</link>
 	  </links>
 	</configuration>
       </plugin>
@@ -150,6 +150,25 @@
           <descriptors>
 	    <descriptor>src/main/assembly/dist.xml</descriptor>
 	  </descriptors>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>osxappbundle-maven-plugin</artifactId>
+        <version>1.0-alpha-2</version>
+        <configuration>
+          <mainClass>com.github.rnewson.couchdb.lucene.Main</mainClass>
+	  <jvmVersion>1.5+</jvmVersion>
+	  <vmOptions>-server -Xmx1g</vmOptions>
+	  <additionalResources>
+            <fileSet>
+              <directory>${basedir}</directory>
+              <includes>
+                <include>README.md</include>
+                <include>LICENSE</include>
+              </includes>
+            </fileSet>
+          </additionalResources>
         </configuration>
       </plugin>
     </plugins>
