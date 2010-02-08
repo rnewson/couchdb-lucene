@@ -26,6 +26,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
@@ -68,13 +69,16 @@ public final class DocumentConverter {
         viewFun = view.compileFunction(context, scope);
     }
 
-    public Document[] convert(final CouchDocument doc, final ViewSettings defaults, final Database database) throws IOException,
-            ParseException {
+    public Document[] convert(
+            final CouchDocument doc,
+            final ViewSettings defaults,
+            final Database database) throws IOException, ParseException {
         final Object result;
-        final ScriptableObject scriptableObject = JsonToRhinoConverter.convertObject(doc.asJson());
+        final Scriptable scriptable = JsonToRhinoConverter.convertObject(context, scope, doc
+                .asJson());
 
         try {
-            result = viewFun.call(context, scope, null, new Object[] { scriptableObject });
+            result = viewFun.call(context, scope, null, new Object[]{scriptable});
         } catch (final JavaScriptException e) {
             LOG.warn(doc + " caused exception during conversion.", e);
             return NO_DOCUMENTS;
@@ -87,7 +91,7 @@ public final class DocumentConverter {
         if (result instanceof RhinoDocument) {
             final RhinoDocument rhinoDocument = (RhinoDocument) result;
             final Document document = rhinoDocument.toDocument(doc.getId(), defaults, database);
-            return new Document[] { document };
+            return new Document[]{document};
         }
 
         if (result instanceof NativeArray) {
@@ -96,7 +100,10 @@ public final class DocumentConverter {
             for (int i = 0; i < (int) nativeArray.getLength(); i++) {
                 if (nativeArray.get(i, null) instanceof RhinoDocument) {
                     final RhinoDocument rhinoDocument = (RhinoDocument) nativeArray.get(i, null);
-                    final Document document = rhinoDocument.toDocument(doc.getId(), defaults, database);
+                    final Document document = rhinoDocument.toDocument(
+                            doc.getId(),
+                            defaults,
+                            database);
                     arrayResult[i] = document;
                 }
             }

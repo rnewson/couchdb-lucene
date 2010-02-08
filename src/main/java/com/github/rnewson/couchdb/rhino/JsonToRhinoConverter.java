@@ -19,51 +19,50 @@ package com.github.rnewson.couchdb.rhino;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 /**
- * Converts JSONObjects to ScriptableObjects, avoid json2.js overhead.
+ * Converts JSONObjects to Scriptables, avoid json2.js overhead.
  * 
  * @author rnewson
  * 
  */
 public final class JsonToRhinoConverter {
 
-    public static class ScriptableObjectAdapter extends ScriptableObject {
-
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public String getClassName() {
-            return "ScriptableObjectAdapter";
-        }
-
-    }
-
-    public static Object convert(final Object obj) {
+    public static Object convert(
+            final Context context,
+            final ScriptableObject scope,
+            final Object obj) {
         if (obj instanceof JSONArray) {
-            return convertArray((JSONArray) obj);
+            return convertArray(context, scope, (JSONArray) obj);
         } else if (obj instanceof JSONObject) {
-            return convertObject((JSONObject) obj);
+            return convertObject(context, scope, (JSONObject) obj);
         } else {
             return obj;
         }
     }
 
-    public static ScriptableObject convertArray(final JSONArray array) {
-        final NativeArray result = new NativeArray(array.size());
+    public static Scriptable convertArray(
+            final Context context,
+            final ScriptableObject scope,
+            final JSONArray array) {
+        final Scriptable result = context.newArray(scope, array.size());
         for (int i = 0, max = array.size(); i < max; i++) {
-            ScriptableObject.putProperty(result, i, convert(array.get(i)));
+            ScriptableObject.putProperty(result, i, convert(context, scope, array.get(i)));
         }
         return result;
     }
 
-    public static ScriptableObject convertObject(final JSONObject obj) {
-        final ScriptableObject result = new ScriptableObjectAdapter();
+    public static Scriptable convertObject(
+            final Context context,
+            final ScriptableObject scope,
+            final JSONObject obj) {
+        final Scriptable result = context.newObject(scope);
         for (final Object key : obj.keySet()) {
             final Object value = obj.get(key);
-            ScriptableObject.putProperty(result, (String) key, convert(value));
+            ScriptableObject.putProperty(result, (String) key, convert(context, scope, value));
         }
         return result;
     }
