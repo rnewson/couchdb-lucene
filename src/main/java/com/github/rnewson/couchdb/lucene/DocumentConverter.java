@@ -19,6 +19,9 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.ParseException;
@@ -35,7 +38,6 @@ import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.couchdb.ViewSettings;
 import com.github.rnewson.couchdb.rhino.JSLog;
-import com.github.rnewson.couchdb.rhino.JsonToRhinoConverter;
 import com.github.rnewson.couchdb.rhino.RhinoDocument;
 
 public final class DocumentConverter {
@@ -74,8 +76,7 @@ public final class DocumentConverter {
             final ViewSettings defaults,
             final Database database) throws IOException, ParseException {
         final Object result;
-        final Scriptable scriptable = JsonToRhinoConverter.convertObject(context, scope, doc
-                .asJson());
+        final Scriptable scriptable = convertObject(doc.asJson());
 
         try {
             result = viewFun.call(context, scope, null, new Object[]{scriptable});
@@ -111,6 +112,33 @@ public final class DocumentConverter {
         }
 
         return null;
+    }
+
+    private Object convert(final Object obj) {
+        if (obj instanceof JSONArray) {
+            return convertArray((JSONArray) obj);
+        } else if (obj instanceof JSONObject) {
+            return convertObject((JSONObject) obj);
+        } else {
+            return obj;
+        }
+    }
+
+    private Scriptable convertArray(final JSONArray array) {
+        final Scriptable result = context.newArray(scope, array.size());
+        for (int i = 0, max = array.size(); i < max; i++) {
+            ScriptableObject.putProperty(result, i, convert(array.get(i)));
+        }
+        return result;
+    }
+
+    private Scriptable convertObject(final JSONObject obj) {
+        final Scriptable result = context.newObject(scope);
+        for (final Object key : obj.keySet()) {
+            final Object value = obj.get(key);
+            ScriptableObject.putProperty(result, (String) key, convert(value));
+        }
+        return result;
     }
 
 }
