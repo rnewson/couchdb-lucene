@@ -40,7 +40,7 @@ public final class ViewSettings {
     }
 
     public ViewSettings(final JSONObject json, final ViewSettings defaults) {
-        this(json.optString("field"), json.optString("index"), json.optString("store"), json.optString("type"), defaults);
+        this(json.optString("field", null), json.optString("index", null), json.optString("store", null), json.optString("type", null), defaults);
     }
 
     public ViewSettings(final NativeObject obj) {
