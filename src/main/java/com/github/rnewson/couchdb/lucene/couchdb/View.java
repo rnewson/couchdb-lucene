@@ -1,7 +1,3 @@
-/*
- (C) 2010 Iron Mountain Digital
- ----------------------------
- */
 package com.github.rnewson.couchdb.lucene.couchdb;
 
 /**
@@ -54,7 +50,8 @@ public final class View {
     }
 
     public ViewSettings getDefaultSettings() {
-        return json.has(DEFAULTS) ? new ViewSettings(json.getJSONObject(DEFAULTS)) : ViewSettings.getDefaultSettings();
+        return json.has(DEFAULTS) ? new ViewSettings(json.getJSONObject(DEFAULTS)) : ViewSettings
+                .getDefaultSettings();
     }
 
     public String getFunction() {
