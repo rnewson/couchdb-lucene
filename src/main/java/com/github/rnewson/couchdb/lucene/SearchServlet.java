@@ -49,7 +49,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
-import org.apache.lucene.util.Version;
 
 import com.github.rnewson.couchdb.lucene.Lucene.SearcherCallback;
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
@@ -115,7 +114,7 @@ public final class SearchServlet extends HttpServlet {
 
                 // Parse query.
                 final Analyzer analyzer = indexer.getAnalyzer();
-                final CustomQueryParser parser = new CustomQueryParser(Version.LUCENE_CURRENT, Constants.DEFAULT_FIELD, analyzer);
+                final CustomQueryParser parser = new CustomQueryParser(Constants.VERSION, Constants.DEFAULT_FIELD, analyzer);
 
                 final String[] queries = req.getParameterValues("q");
                 final JSONArray arr = new JSONArray();

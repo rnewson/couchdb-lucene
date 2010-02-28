@@ -7,11 +7,11 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.util.Version;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
+import com.github.rnewson.couchdb.lucene.util.Constants;
 
 public class CustomQueryParserTest {
 
@@ -19,7 +19,7 @@ public class CustomQueryParserTest {
 
     @Before
     public void setup() {
-        parser = new CustomQueryParser(Version.LUCENE_CURRENT, "default", new StandardAnalyzer(Version.LUCENE_CURRENT));
+        parser = new CustomQueryParser(Constants.VERSION, "default", new StandardAnalyzer(Constants.VERSION));
     }
 
     @Test

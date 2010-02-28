@@ -21,8 +21,10 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.util.Version;
 
 public final class Constants {
+    
+    public static final Version VERSION = Version.LUCENE_30;
 
-    public static final Analyzer ANALYZER = new StandardAnalyzer(Version.LUCENE_CURRENT);
+    public static final Analyzer ANALYZER = new StandardAnalyzer(VERSION);
 
     public static final String CONTENT_TYPE = "application/json";
 

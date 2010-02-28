@@ -37,14 +37,13 @@ import org.apache.lucene.analysis.nl.DutchAnalyzer;
 import org.apache.lucene.analysis.ru.RussianAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
-import org.apache.lucene.util.Version;
 
 public enum Analyzers {
 
     BRAZILIAN {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new BrazilianAnalyzer(VERSION);
+            return new BrazilianAnalyzer(Constants.VERSION);
         }
     },
     CHINESE {
@@ -56,37 +55,37 @@ public enum Analyzers {
     CJK {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new CJKAnalyzer(VERSION);
+            return new CJKAnalyzer(Constants.VERSION);
         }
     },
     CZECH {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new CzechAnalyzer(VERSION);
+            return new CzechAnalyzer(Constants.VERSION);
         }
     },
     DUTCH {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new DutchAnalyzer(VERSION);
+            return new DutchAnalyzer(Constants.VERSION);
         }
     },
     ENGLISH {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new StandardAnalyzer(VERSION);
+            return new StandardAnalyzer(Constants.VERSION);
         }
     },
     FRENCH {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new FrenchAnalyzer(VERSION);
+            return new FrenchAnalyzer(Constants.VERSION);
         }
     },
     GERMAN {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new GermanAnalyzer(VERSION);
+            return new GermanAnalyzer(Constants.VERSION);
         }
     },
     KEYWORD {
@@ -119,7 +118,7 @@ public enum Analyzers {
     RUSSIAN {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new RussianAnalyzer(VERSION);
+            return new RussianAnalyzer(Constants.VERSION);
         }
     },
     SIMPLE {
@@ -131,17 +130,15 @@ public enum Analyzers {
     STANDARD {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new StandardAnalyzer(Version.LUCENE_CURRENT);
+            return new StandardAnalyzer(Constants.VERSION);
         }
     },
     THAI {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new ThaiAnalyzer(VERSION);
+            return new ThaiAnalyzer(Constants.VERSION);
         }
     };
-
-    private static final Version VERSION = Version.LUCENE_30;
 
     private static final class PorterStemAnalyzer extends Analyzer {
         @Override
