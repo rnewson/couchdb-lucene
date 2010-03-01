@@ -16,8 +16,8 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -286,7 +286,7 @@ public final class ViewIndexer implements Runnable {
 
     }
 
-    private static final long COMMIT_INTERVAL = MINUTES.toNanos(1);
+    private static final long COMMIT_INTERVAL = SECONDS.toNanos(60);
     private HttpClient client;
     private Context context;
     private Database database;
