@@ -7,10 +7,10 @@
     </layout>
   </appender>
   <logger name="com.github">
-  	<level value="INFO"/>
+  	<level value="ERROR"/>
   </logger>
   <root>
-    <priority value="WARN"/>
+    <priority value="ERROR"/>
     <appender-ref ref="ConsoleAppender"/>
   </root>
 </log4j:configuration>
