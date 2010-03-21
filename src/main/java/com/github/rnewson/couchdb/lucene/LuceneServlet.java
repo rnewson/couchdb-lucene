@@ -101,7 +101,7 @@ public final class LuceneServlet extends HttpServlet {
 		if (path != null) {
 			lucene.startIndexing(path, true);
 		}
-		Utils.setResponseContentTypeAndEncoding(req, resp);
+		ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 
 		switch (pathParts.length) {
 		case 0:
@@ -127,7 +127,7 @@ public final class LuceneServlet extends HttpServlet {
 		if (path != null) {
 			lucene.startIndexing(path, true);
 		}
-		Utils.setResponseContentTypeAndEncoding(req, resp);
+		ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 
 		switch (pathParts.length) {
 		case 3:
@@ -149,7 +149,7 @@ public final class LuceneServlet extends HttpServlet {
 		final JSONObject welcome = new JSONObject();
 		welcome.put("couchdb-lucene", "Welcome");
 		welcome.put("version", "0.5.0");
-		Utils.writeJSON(resp, welcome);
+		ServletUtils.writeJSON(resp, welcome);
 	}
 
 	private void handleSearchReq(final HttpServletRequest req,
@@ -192,7 +192,7 @@ public final class LuceneServlet extends HttpServlet {
 					}
 				}
 
-				Utils.setResponseContentTypeAndEncoding(req, resp);
+				ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 
 				// Cache-related headers.
 				resp.setHeader("ETag", version);
@@ -397,7 +397,7 @@ public final class LuceneServlet extends HttpServlet {
 				info.put("code", 200);
 				info.put("json", result);
 
-				Utils.setResponseContentTypeAndEncoding(req, resp);
+				ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 				final Writer writer = resp.getWriter();
 				try {
 					writer.write(result.toString());
@@ -453,7 +453,7 @@ public final class LuceneServlet extends HttpServlet {
 		}
 
 		resp.setStatus(202);
-		Utils.writeJSON(resp, JSON_SUCCESS);
+		ServletUtils.writeJSON(resp, JSON_SUCCESS);
 	}
 
 	private void handleAdminReq(final String command, final IndexPath path,
@@ -472,9 +472,9 @@ public final class LuceneServlet extends HttpServlet {
 					resp.sendError(404);
 				}
 			});
-			Utils.setResponseContentTypeAndEncoding(req, resp);
+			ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 			resp.setStatus(202);
-			Utils.writeJSON(resp, JSON_SUCCESS);
+			ServletUtils.writeJSON(resp, JSON_SUCCESS);
 			return;
 		}
 
@@ -491,9 +491,9 @@ public final class LuceneServlet extends HttpServlet {
 					resp.sendError(404);
 				}
 			});
-			Utils.setResponseContentTypeAndEncoding(req, resp);
+			ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 			resp.setStatus(202);
-			Utils.writeJSON(resp, JSON_SUCCESS);
+			ServletUtils.writeJSON(resp, JSON_SUCCESS);
 			return;
 		}
 	}

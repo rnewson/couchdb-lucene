@@ -16,17 +16,13 @@ package com.github.rnewson.couchdb.lucene.util;
  * limitations under the License.
  */
 
-import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanParameter;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.net.URLEncoder;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
@@ -37,16 +33,6 @@ public class Utils {
 
     public static Logger getLogger(final Class<?> clazz, final String suffix) {
         return Logger.getLogger(clazz.getCanonicalName() + "." + suffix);
-    }
-
-    public static void setResponseContentTypeAndEncoding(final HttpServletRequest req, final HttpServletResponse resp) {
-        final String accept = req.getHeader("Accept");
-        if (getBooleanParameter(req, "force_json") || (accept != null && accept.contains("application/json"))) {
-            resp.setContentType("application/json");
-        } else {
-            resp.setContentType("text/plain");
-        }
-        resp.setCharacterEncoding("utf-8");
     }
 
     public static boolean getStaleOk(final HttpServletRequest req) {
@@ -75,15 +61,6 @@ public class Utils {
             result += dir.fileLength(name);
         }
         return result;
-    }
-
-    public static void writeJSON(final HttpServletResponse resp, final JSONObject json) throws IOException {
-        final Writer writer = resp.getWriter();
-        try {
-            writer.write(json.toString() + "\r\n");
-        } finally {
-            writer.close();
-        }
     }
 
 }

@@ -16,6 +16,8 @@ package com.github.rnewson.couchdb.lucene.util;
  * limitations under the License.
  */
 
+import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanParameter;
+
 import java.io.IOException;
 import java.io.Writer;
 
@@ -53,7 +55,7 @@ public final class ServletUtils {
         obj.put("code", code);
         obj.put("reason", reason);
 
-        Utils.setResponseContentTypeAndEncoding(request, response);
+        setResponseContentTypeAndEncoding(request, response);
         response.setHeader(HttpHeaders.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
         response.setStatus(code);
         
@@ -64,5 +66,27 @@ public final class ServletUtils {
             writer.close();
         }
     }
+
+	public static void setResponseContentTypeAndEncoding(final HttpServletRequest req, final HttpServletResponse resp) {
+	    final String accept = req.getHeader("Accept");
+	    if (getBooleanParameter(req, "force_json") || (accept != null && accept.contains("application/json"))) {
+	        resp.setContentType("application/json");
+	    } else {
+	        resp.setContentType("text/plain");
+	    }
+	    if (!resp.containsHeader("Vary")) {
+	    	resp.addHeader("Vary", "Accept");
+	    }
+	    resp.setCharacterEncoding("utf-8");
+	}
+
+	public static void writeJSON(final HttpServletResponse resp, final JSONObject json) throws IOException {
+	    final Writer writer = resp.getWriter();
+	    try {
+	        writer.write(json.toString() + "\r\n");
+	    } finally {
+	        writer.close();
+	    }
+	}
 
 }
