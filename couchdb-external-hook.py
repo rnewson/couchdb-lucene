@@ -58,19 +58,14 @@ def respond(res, req, key):
 
     # Drop name of external hook.
     del path[1]
+
     # URL-escape each part
     for index, item in enumerate(path):
         path[index] = urllib.quote(path[index], "")
 
-    if len(path) == 3:
-        if req["query"] == {}:
-            path = '/'.join(['', 'info', key] + path)
-        else:
-            path = '/'.join(['', 'search', key] + path)
-            params = urllib.urlencode(dict([k, v.encode('utf-8')] for k, v in req["query"].items()))
-            path = '?'.join([path, params])
-    else:
-        path = '/'.join(['', 'admin', key] + path)
+    path = '/'.join(['', key] + path)
+    params = urllib.urlencode(dict([k, v.encode('utf-8')] for k, v in req["query"].items()))
+    path = '?'.join([path, params])
 
     req_headers = {}
     for h in req.get("headers", []):

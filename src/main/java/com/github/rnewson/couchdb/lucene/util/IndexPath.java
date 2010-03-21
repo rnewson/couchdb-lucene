@@ -33,8 +33,7 @@ public final class IndexPath {
     }
 
     public static String[] parts(final HttpServletRequest req) {
-        final String uri = req.getRequestURI().replaceFirst("^/\\w+/", "");
-        return uri.split("/");
+        return req.getRequestURI().replaceFirst("/", "").split("/");
     }
 
     public static String url(final HierarchicalINIConfiguration configuration, final String key) {
