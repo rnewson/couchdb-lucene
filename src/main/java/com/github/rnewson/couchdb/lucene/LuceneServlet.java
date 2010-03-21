@@ -24,7 +24,6 @@ import static java.lang.Math.min;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
