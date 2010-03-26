@@ -206,7 +206,10 @@ doc.add("value", {"store":"yes"});
 // Add but don't analyze.
 doc.add("don't analyze me", {"index":"not_analyzed"});
 
-// Extract text from the named attachment and index it (but not store it).
+// Extract text from the named attachment and index it.
+doc.attachment("attachment name");
+
+// Extract text from the named attachment and index it to a separate field
 doc.attachment("attachment name", {"field":"attachments"});
 </pre>
 
