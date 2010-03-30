@@ -9,9 +9,9 @@
     </layout>
   </appender>
 
-  <!-- Output to file, adjust path to taste. -->
+  <!-- Output to file -->
   <appender name="FILE" class="org.apache.log4j.RollingFileAppender">
-    <param name="file" value="/please/set/me/"/>
+    <param name="file" value="logs/couchdb-lucene.log"/>
     <param name="MaxFileSize" value="100KB"/>
     <!-- Keep one backup file -->
     <param name="MaxBackupIndex" value="1"/>
@@ -27,10 +27,6 @@
   <root>
     <priority value="WARN"/>
     <appender-ref ref="CONSOLE"/>
-
-    <!-- Uncomment to get a log file -->
-    <!--
     <appender-ref ref="FILE"/>
-    -->
   </root>
 </log4j:configuration>
