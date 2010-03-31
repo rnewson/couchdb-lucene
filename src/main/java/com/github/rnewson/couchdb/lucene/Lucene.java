@@ -48,12 +48,8 @@ public final class Lucene {
     private static class Tuple {
         private String version;
         private boolean dirty;
-        private final IndexWriter writer;
+        private IndexWriter writer;
         private IndexReader reader;
-
-        public Tuple(final IndexWriter writer) {
-            this.writer = writer;
-        }
 
         public void close() throws IOException {
             if (reader != null)
@@ -179,7 +175,8 @@ public final class Lucene {
                 tuple.close();
             }
             final Directory d = FSDirectory.open(dir);
-            tuple = new Tuple(newWriter(d));
+            tuple = new Tuple();
+            tuple.writer = newWriter(d);
             map.put(path, tuple);
         }
     }
