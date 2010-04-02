@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import net.sf.json.JSONObject;
 
+import org.apache.http.client.HttpClient;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -36,6 +37,9 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
+import com.github.rnewson.couchdb.lucene.couchdb.Couch;
+import com.github.rnewson.couchdb.lucene.couchdb.Database;
+import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
@@ -43,9 +47,11 @@ import com.github.rnewson.couchdb.lucene.util.IndexPath;
 public final class Lucene {
 
     private final File root;
-    private final IdempotentExecutor<IndexPath, ViewIndexer> executor = new IdempotentExecutor<IndexPath, ViewIndexer>();
-    private final Map<IndexPath, Tuple> map = new HashMap<IndexPath, Tuple>();
-
+    private final HttpClient client = HttpClientFactory.getInstance();
+    private final IdempotentExecutor<ViewKey, ViewIndexer> executor = new IdempotentExecutor<ViewKey, ViewIndexer>();
+    private final Map<IndexPath, ViewKey> keys = new HashMap<IndexPath, ViewKey>();
+    private final Map<ViewKey, Tuple> tuples = new HashMap<ViewKey, Tuple>();
+    
     private static class Tuple {
         private String version;
         private boolean dirty;
@@ -87,8 +93,9 @@ public final class Lucene {
         this.root = root;
     }
 
-    public ViewIndexer startIndexing(final IndexPath path, final boolean staleOk) {
-        final ViewIndexer result = executor.submit(path, new ViewIndexer(this, path, staleOk));
+    public ViewIndexer startIndexing(final IndexPath path, final boolean staleOk) throws IOException {
+    	final ViewKey viewKey = getViewKey(path);    	
+        final ViewIndexer result = executor.submit(viewKey, new ViewIndexer(this, path, staleOk));
         result.awaitInitialIndexing();
         return result;
     }
@@ -227,22 +234,56 @@ public final class Lucene {
         return Long.toHexString(System.nanoTime());
     }
 
-	private Tuple getTuple(final IndexPath path) {
-		synchronized (map) {
-			return map.get(path);
+	private Tuple getTuple(final IndexPath path) throws IOException {
+		final ViewKey viewKey = getViewKey(path);
+		synchronized (tuples) {
+			return tuples.get(viewKey);
 		}
 	}
 	
-	private Tuple removeTuple(final IndexPath path) {
-		synchronized(map) {
-			return map.remove(path);
+	private Tuple removeTuple(final IndexPath path) throws IOException {
+		final ViewKey viewKey = getViewKey(path);
+		synchronized (tuples) {
+			return tuples.remove(viewKey);
 		}
 	}
 	
-	private Tuple putTuple(final IndexPath path, final Tuple tuple) {
-		synchronized(map) {
-			return map.put(path, tuple);
+	private Tuple putTuple(final IndexPath path, final Tuple tuple) throws IOException {
+		final ViewKey viewKey = getViewKey(path);
+		synchronized (tuples) {
+			return tuples.put(viewKey, tuple);
 		}
 	}
+
+	private ViewKey getViewKey(final IndexPath path) throws IOException {
+		ViewKey result;
+		synchronized (keys) {
+			result = keys.get(path);
+		}
+		if (result != null) {
+			return result;
+		}
+		
+        final Couch couch = Couch.getInstance(client, path.getUrl());
+        final Database database = couch.getDatabase(path.getDatabase());		
+		final DesignDocument ddoc = database.getDesignDocument(path.getDesignDocumentName());
+        final View view = ddoc.getView(path.getViewName());
+        result = new ViewKey(newOrCurrentUuid(database), view);
+        
+        synchronized (keys) {
+        	keys.put(path, result);
+        }
+        
+        return result;
+	}
+	
+    private UUID newOrCurrentUuid(final Database database) throws IOException {
+        UUID result = database.getUuid();
+        if (result == null) {
+                database.createUuid();
+                result = database.getUuid();
+        }
+        return result;
+    }
 
 }
