@@ -1,4 +1,4 @@
-package com.github.rnewson.couchdb.rhino;
+package com.github.rnewson.couchdb.lucene.rhino;
 
 /**
  * Copyright 2009 Robert Newson, Paul Davis

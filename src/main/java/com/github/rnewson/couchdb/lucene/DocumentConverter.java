@@ -37,8 +37,8 @@ import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.couchdb.ViewSettings;
-import com.github.rnewson.couchdb.rhino.JSLog;
-import com.github.rnewson.couchdb.rhino.RhinoDocument;
+import com.github.rnewson.couchdb.lucene.rhino.JSLog;
+import com.github.rnewson.couchdb.lucene.rhino.RhinoDocument;
 
 public final class DocumentConverter {
 
