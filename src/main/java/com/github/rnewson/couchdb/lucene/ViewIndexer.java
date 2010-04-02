@@ -312,11 +312,6 @@ public final class ViewIndexer implements Runnable {
         }
     }
 
-    public Analyzer getAnalyzer() {
-        // Demeter will not be pleased.
-        return handler.view.getAnalyzer();
-    }
-
     public void run() {
         try {
             try {

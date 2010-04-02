@@ -42,7 +42,6 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexReader;
@@ -50,6 +49,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -65,7 +65,6 @@ import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
-import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
@@ -166,6 +165,7 @@ public final class LuceneServlet extends HttpServlet {
 		final SearcherCallback callback = new SearcherCallback() {
 
 			public void callback(final IndexSearcher searcher,
+					final QueryParser parser,
 					final String version) throws IOException {
 				// Check for 304 - Not Modified.
 				if (!debug && version.equals(req.getHeader("If-None-Match"))) {
@@ -174,10 +174,6 @@ public final class LuceneServlet extends HttpServlet {
 				}
 
 				// Parse query.
-				final Analyzer analyzer = indexer.getAnalyzer();
-				final CustomQueryParser parser = new CustomQueryParser(
-						Constants.VERSION, Constants.DEFAULT_FIELD, analyzer);
-
 				final String[] queries = req.getParameterValues("q");
 				final JSONArray arr = new JSONArray();
 
@@ -224,8 +220,6 @@ public final class LuceneServlet extends HttpServlet {
 				final JSONObject result = new JSONObject();
 				result.put("q", q.toString());
 				if (debug) {
-					result.put("analyzer", indexer.getAnalyzer().getClass()
-							.getSimpleName());
 					result.put("plan", QueryPlan.toPlan(q));
 				}
 				result.put("etag", version);
