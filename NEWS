@@ -3,7 +3,8 @@ Version 0.5
 
 * c-l now runs as a standalone server.
 * Compatibility with CouchDB 0.10.0, 0.10.1 and 0.11.
-* Upgraded to use Lucene 3.0.1
-* Upgraded to use Tika 0.6
+* Upgraded to use Lucene 3.0.1.
+* Upgraded to use Tika 0.6.
 * Efficient numeric range queries.
 * Near-realtime indexing updates.
+* Added ability to set multiple q parameters to perform several queries in one call.
