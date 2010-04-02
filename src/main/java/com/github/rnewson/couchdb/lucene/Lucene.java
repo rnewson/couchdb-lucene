@@ -92,10 +92,8 @@ public final class Lucene {
     }
 
     public void withReader(final IndexPath path, final boolean staleOk, final ReaderCallback callback) throws IOException {
-        final Tuple tuple;
-        synchronized (map) {
-            tuple = map.get(path);
-        }
+        final Tuple tuple = getTuple(path);
+
         if (tuple == null) {
             callback.onMissing();
             return;
@@ -134,7 +132,7 @@ public final class Lucene {
         withReader(path, staleOk, new ReaderCallback() {
 
             public void callback(final IndexReader reader) throws IOException {
-                callback.callback(new IndexSearcher(reader), map.get(path).version);
+                callback.callback(new IndexSearcher(reader), getTuple(path).version);
             }
 
             public void onMissing() throws IOException {
@@ -144,10 +142,7 @@ public final class Lucene {
     }
 
     public void withWriter(final IndexPath path, final WriterCallback callback) throws IOException {
-        final Tuple tuple;
-        synchronized (map) {
-            tuple = map.get(path);
-        }
+        final Tuple tuple = getTuple(path);
 
         if (tuple == null) {
             callback.onMissing();
@@ -160,7 +155,7 @@ public final class Lucene {
                 tuple.dirty = dirty;
             }
         } catch (final OutOfMemoryError e) {
-            map.remove(path).writer.rollback();
+            removeTuple(path).writer.rollback();
             throw e;
         }
     }
@@ -169,16 +164,15 @@ public final class Lucene {
         final File dir = new File(getUuidDir(uuid), view.getDigest());
         dir.mkdirs();
 
-        synchronized (map) {
-            Tuple tuple = map.remove(path);
-            if (tuple != null) {
-                tuple.close();
-            }
-            final Directory d = FSDirectory.open(dir);
-            tuple = new Tuple();
-            tuple.writer = newWriter(d);
-            map.put(path, tuple);
+        Tuple tuple = removeTuple(path);
+        if (tuple != null) {
+           tuple.close();
         }
+        final Directory d = FSDirectory.open(dir);
+        tuple = new Tuple();
+        tuple.writer = newWriter(d);
+        
+        putTuple(path, tuple);
     }
 
     public File getRootDir() {
@@ -226,5 +220,23 @@ public final class Lucene {
     private String newVersion() {
         return Long.toHexString(System.nanoTime());
     }
+
+	private Tuple getTuple(final IndexPath path) {
+		synchronized (map) {
+			return map.get(path);
+		}
+	}
+	
+	private Tuple removeTuple(final IndexPath path) {
+		synchronized(map) {
+			return map.remove(path);
+		}
+	}
+	
+	private Tuple putTuple(final IndexPath path, final Tuple tuple) {
+		synchronized(map) {
+			return map.put(path, tuple);
+		}
+	}
 
 }
