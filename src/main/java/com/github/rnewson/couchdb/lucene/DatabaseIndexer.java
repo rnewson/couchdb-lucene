@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import net.sf.json.JSONObject;
 
@@ -29,6 +31,8 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.mozilla.javascript.ClassShutter;
@@ -49,7 +53,22 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		final Database db = couch.getDatabase("db1");
 		final DatabaseIndexer indexer = new DatabaseIndexer(client, new File(
 				"target/tmp"), db);
-		indexer.index();
+		new Thread(new Runnable() {
+
+			public void run() {
+				try {
+					indexer.index();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}).start();
+		Thread.sleep(5000);
+		final IndexSearcher searcher = indexer.borrowSearcher(indexer.states
+				.keySet().iterator().next(), false);
+		System.out
+				.println(searcher.search(new MatchAllDocsQuery(), 50).totalHits);
+		indexer.returnSearcher(searcher);
 	}
 
 	private final class RestrictiveClassShutter implements ClassShutter {
@@ -59,7 +78,8 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 	}
 
 	private static class IndexState {
-		private long seq;
+		private long pending_seq;
+		private String readerEtag;
 		private DocumentConverter converter;
 		private IndexWriter writer;
 		private IndexReader reader;
@@ -82,7 +102,7 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 
 	private Logger logger;
 
-	private final Map<View, IndexState> states = new HashMap<View, IndexState>();
+	private final ConcurrentMap<View, IndexState> states = new ConcurrentHashMap<View, IndexState>();
 
 	private final File root;
 
@@ -165,7 +185,7 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 			if (doc.isDeleted()) {
 				for (final IndexState state : states.values()) {
 					state.writer.deleteDocuments(new Term("_id", id));
-					state.seq = seq;
+					state.pending_seq = seq;
 				}
 			} else {
 				for (final Entry<View, IndexState> entry : states.entrySet()) {
@@ -185,7 +205,7 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 					for (final Document d : docs) {
 						state.writer.addDocument(d, view.getAnalyzer());
 					}
-					state.seq = seq;
+					state.pending_seq = seq;
 				}
 			}
 		}
@@ -201,6 +221,30 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		} finally {
 			close();
 		}
+	}
+
+	public IndexSearcher borrowSearcher(final View view, final boolean staleOk)
+			throws IOException {
+		final IndexState state = states.get(view);
+		if (state.reader == null) {
+			state.reader = state.writer.getReader();
+			state.readerEtag = newVersion();
+			state.reader.incRef();
+		}
+		if (!staleOk) {
+			final IndexReader newReader = state.reader.reopen();
+			if (newReader != state.reader) {
+				state.reader.decRef();
+				state.reader = newReader;
+				state.readerEtag = newVersion();
+			}
+		}
+		state.reader.incRef();
+		return new IndexSearcher(state.reader);
+	}
+
+	public void returnSearcher(final IndexSearcher searcher) throws IOException {
+		searcher.getIndexReader().decRef();
 	}
 
 	private void init() throws IOException {
@@ -288,11 +332,11 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 			final View view = entry.getKey();
 			final IndexState state = entry.getValue();
 
-			if (state.seq > getUpdateSequence(state.writer)) {
+			if (state.pending_seq > getUpdateSequence(state.writer)) {
 				final Map<String, String> userData = new HashMap<String, String>();
-				userData.put("last_seq", Long.toString(state.seq));
+				userData.put("last_seq", Long.toString(state.pending_seq));
 				state.writer.commit(userData);
-				logger.info(view + " now at update_seq " + state.seq);
+				logger.info(view + " now at update_seq " + state.pending_seq);
 			}
 		}
 		lastCommit = now();
@@ -300,6 +344,10 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 
 	private long now() {
 		return System.nanoTime();
+	}
+
+	private String newVersion() {
+		return Long.toHexString(now());
 	}
 
 }
