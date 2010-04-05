@@ -1,12 +1,13 @@
 package com.github.rnewson.couchdb.lucene;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -23,11 +24,15 @@ import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.mozilla.javascript.ClassShutter;
+import org.mozilla.javascript.Context;
 
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
@@ -47,13 +52,31 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		indexer.index();
 	}
 
-	private static class IndexState {
-		private long seq;
-		private IndexWriter writer;
-		private IndexReader reader;
+	private final class RestrictiveClassShutter implements ClassShutter {
+		public boolean visibleToScripts(final String fullClassName) {
+			return false;
+		}
 	}
 
+	private static class IndexState {
+		private long seq;
+		private DocumentConverter converter;
+		private IndexWriter writer;
+		private IndexReader reader;
+
+		private void close() throws IOException {
+			if (reader != null)
+				reader.close();
+			if (writer != null)
+				writer.rollback();
+		}
+	}
+
+	private static final long COMMIT_INTERVAL = SECONDS.toNanos(5);
+
 	private final HttpClient client;
+
+	private Context context;
 
 	private final Database database;
 
@@ -64,8 +87,12 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 	private final File root;
 
 	private long since;
+	
+	private long ddoc_seq;
 
 	private UUID uuid;
+
+	private long lastCommit;
 
 	public DatabaseIndexer(final HttpClient client, final File root,
 			final Database database) throws IOException {
@@ -109,6 +136,7 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 				break loop;
 			}
 
+			final long seq = json.getLong("seq");
 			final String id = json.getString("id");
 			CouchDocument doc;
 			if (json.has("doc")) {
@@ -129,60 +157,65 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 				}
 			}
 
-			if (id.startsWith("_design")) {
-				refresh();
+			if (id.startsWith("_design") && seq > ddoc_seq) {
+				logger.info("Exiting due to design document change.");
+				break loop;
+			}
+
+			if (doc.isDeleted()) {
+				for (final IndexState state : states.values()) {
+					state.writer.deleteDocuments(new Term("_id", id));
+					state.seq = seq;
+				}
+			} else {
+				for (final Entry<View, IndexState> entry : states.entrySet()) {
+					final View view = entry.getKey();
+					final IndexState state = entry.getValue();
+
+					final Document[] docs;
+					try {
+						docs = state.converter.convert(doc, view
+								.getDefaultSettings(), database);
+					} catch (final Exception e) {
+						logger.warn(id + " caused " + e.getMessage());
+						continue loop;
+					}
+
+					state.writer.deleteDocuments(new Term("_id", id));
+					for (final Document d : docs) {
+						state.writer.addDocument(d, view.getAnalyzer());
+					}
+					state.seq = seq;
+				}
 			}
 		}
 		return null;
 	}
 
 	public void index() throws IOException {
+		init();
+		try {
+			final HttpUriRequest req = database.getChangesRequest(since);
+			logger.info("Indexing from update_seq " + since);
+			client.execute(req, this);
+		} finally {
+			close();
+		}
+	}
+
+	private void init() throws IOException {
 		this.logger = Logger.getLogger(DatabaseIndexer.class.getName() + "."
 				+ database.getInfo().getName());
 		this.uuid = database.getOrCreateUuid();
-		refresh();
-		final HttpUriRequest req = database.getChangesRequest(since);
-		logger.info("Indexing from update_seq " + since);
-		client.execute(req, this);
-	}
 
-	private void maybeCommit() {
+		this.context = Context.enter();
+		context.setClassShutter(new RestrictiveClassShutter());
+		context.setOptimizationLevel(9);
+		
+		this.ddoc_seq = database.getInfo().getUpdateSequence();
 
-	}
-
-	/**
-	 * A design document has changed therefore we must refresh our view of the
-	 * database. This includes;
-	 * <ul>
-	 * <li>calculating the lowest update_seq of any fulltext view
-	 * <li>closing any index reader and writer that cannot be reached
-	 * <li>open an index writer for all views
-	 * </ul>
-	 * 
-	 * @throws IOException
-	 */
-	private void refresh() throws IOException {
-		since = 0;
-
-		final Set<View> currentViews = getCurrentViews();
-
-		// Close index state for any non-current view.
-		final Iterator<Entry<View, IndexState>> it = states.entrySet()
-				.iterator();
-		while (it.hasNext()) {
-			final Entry<View, IndexState> entry = it.next();
-			final View view = entry.getKey();
-			final IndexState state = entry.getValue();
-
-			if (!currentViews.contains(view)) {
-				it.remove();
-				state.reader.close();
-				state.writer.rollback();
-			}
-		}
-
-		// Ensure we have index state for every current view.
-		for (final View view : currentViews) {
+		this.since = 0;
+		for (final View view : getCurrentViews()) {
 			final Directory dir = viewDir(view);
 			final long seq = getUpdateSequence(dir);
 			if (since == 0) {
@@ -194,12 +227,27 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 
 			if (!states.containsKey(view)) {
 				final IndexState state = new IndexState();
+				state.converter = new DocumentConverter(context, view);
 				state.writer = newWriter(dir);
-				state.seq = seq;
 				states.put(view, state);
 			}
 		}
 
+		this.lastCommit = now();
+	}
+
+	private void close() throws IOException {
+		for (IndexState state : states.values()) {
+			state.close();
+		}
+		states.clear();
+		Context.exit();
+	}
+
+	private void maybeCommit() throws IOException {
+		if (now() - lastCommit >= COMMIT_INTERVAL) {
+			commitAll();
+		}
 	}
 
 	private Directory viewDir(final View view) throws IOException {
@@ -213,8 +261,14 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		if (!IndexReader.indexExists(dir)) {
 			return 0L;
 		}
+		return getUpdateSequence(IndexReader.getCommitUserData(dir));
+	}
 
-		final Map<String, String> userData = IndexReader.getCommitUserData(dir);
+	private long getUpdateSequence(final IndexWriter writer) throws IOException {
+		return getUpdateSequence(writer.getDirectory());
+	}
+
+	private long getUpdateSequence(final Map<String, String> userData) {
 		if (userData != null && userData.containsKey("last_seq")) {
 			return Long.parseLong(userData.get("last_seq"));
 		}
@@ -227,6 +281,22 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		result.setMergeFactor(5);
 		result.setUseCompoundFile(false);
 		return result;
+	}
+
+	private void commitAll() throws IOException {
+		logger.info("Committing recent changes to disk.");
+		for (final IndexState state : states.values()) {
+			if (state.seq > getUpdateSequence(state.writer)) {
+				final Map<String, String> userData = new HashMap<String, String>();
+				userData.put("last_seq", Long.toString(state.seq));
+				state.writer.commit(userData);
+			}
+		}
+		lastCommit = now();
+	}
+
+	private long now() {
+		return System.nanoTime();
 	}
 
 }
