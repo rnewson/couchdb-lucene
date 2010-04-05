@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-
+@Deprecated
 public final class IndexPath {
 
     public static IndexPath parse(final HierarchicalINIConfiguration configuration, final HttpServletRequest req) {

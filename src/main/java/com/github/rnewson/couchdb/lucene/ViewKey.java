@@ -3,7 +3,7 @@ package com.github.rnewson.couchdb.lucene;
 import java.util.UUID;
 
 import com.github.rnewson.couchdb.lucene.couchdb.View;
-
+@Deprecated
 public class ViewKey {
 
 	private final UUID uuid;

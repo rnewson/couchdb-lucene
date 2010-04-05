@@ -54,7 +54,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.DatabaseInfo;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
-
+@Deprecated
 public final class ViewIndexer implements Runnable {
 
     private final class RestrictiveClassShutter implements ClassShutter {

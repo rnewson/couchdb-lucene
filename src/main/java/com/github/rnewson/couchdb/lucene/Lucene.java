@@ -43,7 +43,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
-
+@Deprecated
 public final class Lucene {
 
     private final File root;

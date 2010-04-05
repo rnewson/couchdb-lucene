@@ -15,6 +15,11 @@ package com.github.rnewson.couchdb.lucene.couchdb;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
@@ -23,7 +28,6 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ScriptableObject;
 
-import com.github.rnewson.couchdb.lucene.Lucene;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 
 public final class View {
@@ -65,7 +69,26 @@ public final class View {
 	}
 
 	public String getDigest() {
-		return Lucene.digest(json);
+		try {
+			final MessageDigest md = MessageDigest.getInstance("MD5");
+			md.update(toBytes(json.optString("analyzer")));
+			md.update(toBytes(json.optString("defaults")));
+			md.update(toBytes(json.optString("index")));
+			return new BigInteger(1, md.digest()).toString(Character.MAX_RADIX);
+		} catch (final NoSuchAlgorithmException e) {
+			throw new Error("MD5 support missing.");
+		}
+	}
+
+	private static byte[] toBytes(final String str) {
+		if (str == null) {
+			return new byte[0];
+		}
+		try {
+			return str.getBytes("UTF-8");
+		} catch (final UnsupportedEncodingException e) {
+			throw new Error("UTF-8 support missing.");
+		}
 	}
 
 	private String trim(final String fun) {

@@ -49,7 +49,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -57,9 +56,8 @@ import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 
+import com.github.rnewson.couchdb.lucene.DatabaseIndexer.IndexState;
 import com.github.rnewson.couchdb.lucene.Lucene.ReaderCallback;
-import com.github.rnewson.couchdb.lucene.Lucene.SearcherCallback;
-import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
@@ -81,10 +79,12 @@ public final class LuceneServlet extends HttpServlet {
 
 	private Lucene lucene;
 
+	private Lucene2 lucene2;
+
 	private HierarchicalINIConfiguration ini;
 
-	public void setLucene(final Lucene lucene) {
-		this.lucene = lucene;
+	public void setLucene2(final Lucene2 lucene) {
+		this.lucene2 = lucene;
 	}
 
 	public void setConfiguration(final HierarchicalINIConfiguration ini) {
@@ -95,37 +95,19 @@ public final class LuceneServlet extends HttpServlet {
 	protected void doGet(final HttpServletRequest req,
 			final HttpServletResponse resp) throws ServletException,
 			IOException {
-		final String[] pathParts = IndexPath.parts(req);
-		final IndexPath path = IndexPath.parse(ini, req);
-		if (path != null) {
-			lucene.startIndexing(path, true);
-		}
 		ServletUtils.setResponseContentTypeAndEncoding(req, resp);
-
-		switch (pathParts.length) {
-		case 0:
+		if (req.getPathInfo().isEmpty()) {
 			handleWelcomeReq(req, resp);
-			return;
-		case 4:
-			if (req.getParameter("q") == null) {
-				handleInfoReq(req, resp);
-			} else {
-				handleSearchReq(req, resp);
-			}
-			return;
+		} else if (req.getParameter("q") == null) {
+			handleInfoReq(req, resp);
+		} else {
+			handleSearchReq(req, resp);
 		}
-
-		ServletUtils.sendJSONError(req, resp, 400, "bad_request");
 	}
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		final String[] pathParts = IndexPath.parts(req);
-		final IndexPath path = IndexPath.parse(ini, req);
-		if (path != null) {
-			lucene.startIndexing(path, true);
-		}
 		ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 
 		switch (pathParts.length) {
@@ -155,209 +137,185 @@ public final class LuceneServlet extends HttpServlet {
 			final HttpServletResponse resp) throws ServletException,
 			IOException {
 		final boolean debug = getBooleanParameter(req, "debug");
-		final boolean rewrite_query = getBooleanParameter(req, "rewrite");
 		final boolean staleOk = Utils.getStaleOk(req);
+		final IndexState state = lucene2.getState(req);
+		final IndexSearcher searcher = state.borrowSearcher(staleOk);
+		try {
+			// Check for 304 - Not Modified.
+			if (!debug && state.notModified(req)) {
+				resp.setStatus(304);
+				return;
+			}
 
-		final IndexPath path = IndexPath.parse(ini, req);
+			final String[] queries = req.getParameterValues("q");
+			final JSONArray arr = new JSONArray();
 
-		final ViewIndexer indexer = lucene.startIndexing(path, staleOk);
-
-		final SearcherCallback callback = new SearcherCallback() {
-
-			public void callback(final IndexSearcher searcher,
-					final QueryParser parser,
-					final String version) throws IOException {
-				// Check for 304 - Not Modified.
-				if (!debug && version.equals(req.getHeader("If-None-Match"))) {
-					resp.setStatus(304);
-					return;
-				}
-
-				// Parse query.
-				final String[] queries = req.getParameterValues("q");
-				final JSONArray arr = new JSONArray();
-
-				for (final String query : queries) {
-					try {
-						arr.add(performQuery(debug, rewrite_query, searcher,
-								version, parser.parse(query)));
-					} catch (final ParseException e) {
-						ServletUtils.sendJSONError(req, resp, 400,
-								"Bad query syntax: " + e.getMessage());
-						return;
-					}
-				}
-
-				ServletUtils.setResponseContentTypeAndEncoding(req, resp);
-
-				// Cache-related headers.
-				resp.setHeader("ETag", version);
-				resp.setHeader("Cache-Control", "must-revalidate");
-
-				final JSON json = arr.size() > 1 ? arr : arr.getJSONObject(0);
-
-				// Format response body.
-				final String callback = req.getParameter("callback");
-				final String body;
-				if (callback != null) {
-					body = String.format("%s(%s)", callback, json);
-				} else {
-					body = json.toString(debug ? 2 : 0);
-				}
-
-				final Writer writer = resp.getWriter();
+			for (final String query : queries) {
 				try {
-					writer.write(body);
-				} finally {
-					writer.close();
+					arr.add(performQuery(req, state, searcher, query));
+				} catch (final ParseException e) {
+					ServletUtils.sendJSONError(req, resp, 400,
+							"Bad query syntax: " + e.getMessage());
+					return;
 				}
 			}
 
-			private JSONObject performQuery(final boolean debug,
-					final boolean rewrite_query, final IndexSearcher searcher,
-					final String version, final Query q) throws IOException,
-					ParseException {
-				final JSONObject result = new JSONObject();
-				result.put("q", q.toString());
-				if (debug) {
-					result.put("plan", QueryPlan.toPlan(q));
-				}
-				result.put("etag", version);
+			ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 
-				if (rewrite_query) {
-					final Query rewritten_q = q.rewrite(searcher
-							.getIndexReader());
-					result.put("rewritten_q", rewritten_q.toString());
+			// Cache-related headers.
+			resp.setHeader("ETag", state.getEtag());
+			resp.setHeader("Cache-Control", "must-revalidate");
 
-					final JSONObject freqs = new JSONObject();
+			final JSON json = arr.size() > 1 ? arr : arr.getJSONObject(0);
 
-					final Set<Term> terms = new HashSet<Term>();
-					rewritten_q.extractTerms(terms);
-					for (final Object term : terms) {
-						final int freq = searcher.docFreq((Term) term);
-						freqs.put(term, freq);
+			// Format response body.
+			final String callback = req.getParameter("callback");
+			final String body;
+			if (callback != null) {
+				body = String.format("%s(%s)", callback, json);
+			} else {
+				body = json.toString(debug ? 2 : 0);
+			}
+
+			final Writer writer = resp.getWriter();
+			try {
+				writer.write(body);
+			} finally {
+				writer.close();
+			}
+		} finally {
+			state.returnSearcher(searcher);
+		}
+	}
+
+	private JSONObject performQuery(final HttpServletRequest req,
+			final IndexState state, final IndexSearcher searcher,
+			final String query) throws IOException, ParseException {
+		final boolean debug = getBooleanParameter(req, "debug");
+		final boolean rewrite_query = getBooleanParameter(req, "rewrite");
+		final Query q = state.getParser().parse(query);
+
+		final JSONObject result = new JSONObject();
+		result.put("q", q.toString());
+		if (debug) {
+			result.put("plan", QueryPlan.toPlan(q));
+		}
+		result.put("etag", state.getEtag());
+
+		if (rewrite_query) {
+			final Query rewritten_q = q.rewrite(searcher.getIndexReader());
+			result.put("rewritten_q", rewritten_q.toString());
+
+			final JSONObject freqs = new JSONObject();
+
+			final Set<Term> terms = new HashSet<Term>();
+			rewritten_q.extractTerms(terms);
+			for (final Object term : terms) {
+				final int freq = searcher.docFreq((Term) term);
+				freqs.put(term, freq);
+			}
+			result.put("freqs", freqs);
+		} else {
+			// Perform the search.
+			final TopDocs td;
+			final StopWatch stopWatch = new StopWatch();
+
+			final boolean include_docs = getBooleanParameter(req,
+					"include_docs");
+			final int limit = getIntParameter(req, "limit", 25);
+			final Sort sort = CustomQueryParser
+					.toSort(req.getParameter("sort"));
+			final int skip = getIntParameter(req, "skip", 0);
+
+			if (sort == null) {
+				td = searcher.search(q, null, skip + limit);
+			} else {
+				td = searcher.search(q, null, skip + limit, sort);
+			}
+			stopWatch.lap("search");
+
+			// Fetch matches (if any).
+			final int max = max(0, min(td.totalHits - skip, limit));
+			final JSONArray rows = new JSONArray();
+			final String[] fetch_ids = new String[max];
+			for (int i = skip; i < skip + max; i++) {
+				final Document doc = searcher.doc(td.scoreDocs[i].doc);
+				final JSONObject row = new JSONObject();
+				final JSONObject fields = new JSONObject();
+
+				// Include stored fields.
+				for (final Object f : doc.getFields()) {
+					final Field fld = (Field) f;
+
+					if (!fld.isStored()) {
+						continue;
 					}
-					result.put("freqs", freqs);
-				} else {
-					// Perform the search.
-					final TopDocs td;
-					final StopWatch stopWatch = new StopWatch();
-
-					final boolean include_docs = getBooleanParameter(req,
-							"include_docs");
-					final int limit = getIntParameter(req, "limit", 25);
-					final Sort sort = CustomQueryParser.toSort(req
-							.getParameter("sort"));
-					final int skip = getIntParameter(req, "skip", 0);
-
-					if (sort == null) {
-						td = searcher.search(q, null, skip + limit);
-					} else {
-						td = searcher.search(q, null, skip + limit, sort);
-					}
-					stopWatch.lap("search");
-
-					// Fetch matches (if any).
-					final int max = max(0, min(td.totalHits - skip, limit));
-					final JSONArray rows = new JSONArray();
-					final String[] fetch_ids = new String[max];
-					for (int i = skip; i < skip + max; i++) {
-						final Document doc = searcher.doc(td.scoreDocs[i].doc);
-						final JSONObject row = new JSONObject();
-						final JSONObject fields = new JSONObject();
-
-						// Include stored fields.
-						for (final Object f : doc.getFields()) {
-							final Field fld = (Field) f;
-
-							if (!fld.isStored()) {
-								continue;
-							}
-							final String name = fld.name();
-							final String value = fld.stringValue();
-							if (value != null) {
-								if ("_id".equals(name)) {
-									row.put("id", value);
+					final String name = fld.name();
+					final String value = fld.stringValue();
+					if (value != null) {
+						if ("_id".equals(name)) {
+							row.put("id", value);
+						} else {
+							if (!fields.has(name)) {
+								fields.put(name, value);
+							} else {
+								final Object obj = fields.get(name);
+								if (obj instanceof String) {
+									final JSONArray arr = new JSONArray();
+									arr.add(obj);
+									arr.add(value);
+									fields.put(name, arr);
 								} else {
-									if (!fields.has(name)) {
-										fields.put(name, value);
-									} else {
-										final Object obj = fields.get(name);
-										if (obj instanceof String) {
-											final JSONArray arr = new JSONArray();
-											arr.add(obj);
-											arr.add(value);
-											fields.put(name, arr);
-										} else {
-											assert obj instanceof JSONArray;
-											((JSONArray) obj).add(value);
-										}
-									}
+									assert obj instanceof JSONArray;
+									((JSONArray) obj).add(value);
 								}
 							}
 						}
-
-						if (!Float.isNaN(td.scoreDocs[i].score)) {
-							row.put("score", td.scoreDocs[i].score);
-						}
-						// Include sort order (if any).
-						if (td instanceof TopFieldDocs) {
-							final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
-							row.put("sort_order", fd.fields);
-						}
-						// Fetch document (if requested).
-						if (include_docs) {
-							fetch_ids[i - skip] = doc.get("_id");
-						}
-						if (fields.size() > 0) {
-							row.put("fields", fields);
-						}
-						rows.add(row);
 					}
-					// Fetch documents (if requested).
-					if (include_docs && fetch_ids.length > 0) {
-						final HttpClient httpClient = HttpClientFactory
-								.getInstance();
-						try {
-							final Couch couch = Couch.getInstance(httpClient,
-									path.getUrl());
-							final Database database = couch.getDatabase(path
-									.getDatabase());
-							final List<CouchDocument> fetched_docs = database
-									.getDocuments(fetch_ids);
-							for (int i = 0; i < max; i++) {
-								rows.getJSONObject(i).put("doc",
-										fetched_docs.get(i).asJson());
-							}
-						} finally {
-							httpClient.getConnectionManager().shutdown();
-						}
-					}
-					stopWatch.lap("fetch");
-
-					result.put("skip", skip);
-					result.put("limit", limit);
-					result.put("total_rows", td.totalHits);
-					result.put("search_duration", stopWatch
-							.getElapsed("search"));
-					result.put("fetch_duration", stopWatch.getElapsed("fetch"));
-					// Include sort info (if requested).
-					if (td instanceof TopFieldDocs) {
-						result.put("sort_order", CustomQueryParser
-								.toString(((TopFieldDocs) td).fields));
-					}
-					result.put("rows", rows);
 				}
-				return result;
-			}
 
-			public void onMissing() throws IOException {
-				ServletUtils.sendJSONError(req, resp, 404, "Index for " + path
-						+ " is missing.");
+				if (!Float.isNaN(td.scoreDocs[i].score)) {
+					row.put("score", td.scoreDocs[i].score);
+				}
+				// Include sort order (if any).
+				if (td instanceof TopFieldDocs) {
+					final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
+					row.put("sort_order", fd.fields);
+				}
+				// Fetch document (if requested).
+				if (include_docs) {
+					fetch_ids[i - skip] = doc.get("_id");
+				}
+				if (fields.size() > 0) {
+					row.put("fields", fields);
+				}
+				rows.add(row);
 			}
-		};
+			// Fetch documents (if requested).
+			if (include_docs) {
+				final Database database = state.getDatabase();
+				final List<CouchDocument> fetched_docs = database
+						.getDocuments(fetch_ids);
+				for (int i = 0; i < max; i++) {
+					rows.getJSONObject(i).put("doc",
+							fetched_docs.get(i).asJson());
+				}
+			}
+			stopWatch.lap("fetch");
 
-		lucene.withSearcher(path, staleOk, callback);
+			result.put("skip", skip);
+			result.put("limit", limit);
+			result.put("total_rows", td.totalHits);
+			result.put("search_duration", stopWatch.getElapsed("search"));
+			result.put("fetch_duration", stopWatch.getElapsed("fetch"));
+			// Include sort info (if requested).
+			if (td instanceof TopFieldDocs) {
+				result.put("sort_order", CustomQueryParser
+						.toString(((TopFieldDocs) td).fields));
+			}
+			result.put("rows", rows);
+		}
+		return result;
 	}
 
 	private void handleInfoReq(final HttpServletRequest req,

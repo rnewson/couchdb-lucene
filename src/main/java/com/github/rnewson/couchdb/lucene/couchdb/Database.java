@@ -18,6 +18,7 @@ package com.github.rnewson.couchdb.lucene.couchdb;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,121 +36,169 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
 
 public final class Database {
 
-    private final HttpClient httpClient;
+	private final HttpClient httpClient;
 
-    private final String url;
+	private final String url;
 
-    public Database(final HttpClient httpClient, final String url) {
-        this.httpClient = httpClient;
-        this.url = url.endsWith("/") ? url : url + "/";
-    }
+	public Database(final HttpClient httpClient, final String url) {
+		this.httpClient = httpClient;
+		this.url = url.endsWith("/") ? url : url + "/";
+	}
 
-    public boolean create() throws IOException {
-        return HttpUtils.put(httpClient, url, null) == 201;
-    }
+	public boolean create() throws IOException {
+		return HttpUtils.put(httpClient, url, null) == 201;
+	}
 
-    public boolean delete() throws IOException {
-        return HttpUtils.delete(httpClient, url) == 200;
-    }
+	public boolean delete() throws IOException {
+		return HttpUtils.delete(httpClient, url) == 200;
+	}
 
-    public List<DesignDocument> getAllDesignDocuments() throws IOException {
-        final String body = HttpUtils.get(httpClient, String.format("%s_all_docs?startkey=%s&endkey=%s&include_docs=true", url,
-                Utils.urlEncode("\"_design\""), Utils.urlEncode("\"_design0\"")));
-        final JSONObject json = JSONObject.fromObject(body);
-        return toDesignDocuments(json);
-    }
+	public List<DesignDocument> getAllDesignDocuments() throws IOException {
+		final String body = HttpUtils.get(httpClient, String
+				.format("%s_all_docs?startkey=%s&endkey=%s&include_docs=true",
+						url, Utils.urlEncode("\"_design\""), Utils
+								.urlEncode("\"_design0\"")));
+		final JSONObject json = JSONObject.fromObject(body);
+		return toDesignDocuments(json);
+	}
 
-    public CouchDocument getDocument(final String id) throws IOException {
-        final String response = HttpUtils.get(httpClient, url + Utils.urlEncode(id));
-        return new CouchDocument(JSONObject.fromObject(response));
-    }
+	public CouchDocument getDocument(final String id) throws IOException {
+		final String response = HttpUtils.get(httpClient, url
+				+ Utils.urlEncode(id));
+		return new CouchDocument(JSONObject.fromObject(response));
+	}
 
-    public DesignDocument getDesignDocument(final String id) throws IOException {
-        final String response = HttpUtils.get(httpClient, url + "_design/" + Utils.urlEncode(id));
-        return new DesignDocument(JSONObject.fromObject(response));
-    }
+	public DesignDocument getDesignDocument(final String id) throws IOException {
+		final String response = HttpUtils.get(httpClient, url + "_design/"
+				+ Utils.urlEncode(id));
+		return new DesignDocument(JSONObject.fromObject(response));
+	}
 
-    public List<CouchDocument> getDocuments(final String... ids) throws IOException {
-        final JSONArray keys = new JSONArray();
-        for (final String id : ids) {
-            keys.add(id);
-        }
-        final JSONObject req = new JSONObject();
-        req.element("keys", keys);
+	public List<CouchDocument> getDocuments(final String... ids)
+			throws IOException {
+		if (ids.length == 0) {
+			return Collections.emptyList();
+		}
 
-        final String body = HttpUtils.post(httpClient, url + "_all_docs?include_docs=true", req.toString());
-        final JSONObject json = JSONObject.fromObject(body);
-        return toDocuments(json);
-    }
+		final JSONArray keys = new JSONArray();
+		for (final String id : ids) {
+			keys.add(id);
+		}
+		final JSONObject req = new JSONObject();
+		req.element("keys", keys);
 
-    public DatabaseInfo getInfo() throws IOException {
-        return new DatabaseInfo(JSONObject.fromObject(HttpUtils.get(httpClient, url)));
-    }
+		final String body = HttpUtils.post(httpClient, url
+				+ "_all_docs?include_docs=true", req.toString());
+		final JSONObject json = JSONObject.fromObject(body);
+		return toDocuments(json);
+	}
 
-    public <T> T handleAttachment(final String doc, final String att, final ResponseHandler<T> handler) throws IOException {
-        final HttpGet get = new HttpGet(url + "/" + Utils.urlEncode(doc) + "/" + Utils.urlEncode(att));
-        return httpClient.execute(get, handler);
-    }
+	public DatabaseInfo getInfo() throws IOException {
+		return new DatabaseInfo(JSONObject.fromObject(HttpUtils.get(httpClient,
+				url)));
+	}
 
-    public HttpUriRequest getChangesRequest(final long since) throws IOException {
-        return new HttpGet(url + "_changes?feed=continuous&heartbeat=15000&include_docs=true&since=" + since);
-    }
+	public <T> T handleAttachment(final String doc, final String att,
+			final ResponseHandler<T> handler) throws IOException {
+		final HttpGet get = new HttpGet(url + "/" + Utils.urlEncode(doc) + "/"
+				+ Utils.urlEncode(att));
+		return httpClient.execute(get, handler);
+	}
 
-    public boolean saveDocument(final String id, final String body) throws IOException {
-        return HttpUtils.put(httpClient, url + Utils.urlEncode(id), body) == 201;
-    }
+	public HttpUriRequest getChangesRequest(final long since)
+			throws IOException {
+		return new HttpGet(
+				url
+						+ "_changes?feed=continuous&heartbeat=15000&include_docs=true&since="
+						+ since);
+	}
 
-    public UUID getUuid() throws IOException {
-        try {
-            final CouchDocument local = getDocument("_local/lucene");
-            return UUID.fromString(local.asJson().getString("uuid"));
-        } catch (final HttpResponseException e) {
-            switch (e.getStatusCode()) {
-            case HttpStatus.SC_NOT_FOUND:
-                return null;
-            default:
-                throw e;
-            }
-        }
-    }
+	public boolean saveDocument(final String id, final String body)
+			throws IOException {
+		return HttpUtils.put(httpClient, url + Utils.urlEncode(id), body) == 201;
+	}
 
-    public void createUuid() throws IOException {
-        final UUID uuid = UUID.randomUUID();
-        saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
-    }
-    
-    public UUID getOrCreateUuid() throws IOException {
-    	final UUID result = getUuid();
-    	if (result != null) {
-    		return result;
-    	}
-    	createUuid();
-    	return getUuid();
-    }
-    
-    private List<DesignDocument> toDesignDocuments(final JSONObject json) {
-        final List<DesignDocument> result = new ArrayList<DesignDocument>();
-        for (final JSONObject doc : rows(json)) {
-            result.add(new DesignDocument(doc));
-        }
-        return result;
-    }
+	public UUID getUuid() throws IOException {
+		try {
+			final CouchDocument local = getDocument("_local/lucene");
+			return UUID.fromString(local.asJson().getString("uuid"));
+		} catch (final HttpResponseException e) {
+			switch (e.getStatusCode()) {
+			case HttpStatus.SC_NOT_FOUND:
+				return null;
+			default:
+				throw e;
+			}
+		}
+	}
 
-    private List<CouchDocument> toDocuments(final JSONObject json) {
-        final List<CouchDocument> result = new ArrayList<CouchDocument>();
-        for (final JSONObject doc : rows(json)) {
-            result.add(new CouchDocument(doc));
-        }
-        return result;
-    }
+	public void createUuid() throws IOException {
+		final UUID uuid = UUID.randomUUID();
+		saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
+	}
 
-    private List<JSONObject> rows(final JSONObject json) {
-        final List<JSONObject> result = new ArrayList<JSONObject>();
-        final JSONArray rows = json.getJSONArray("rows");
-        for (int i = 0; i < rows.size(); i++) {
-            result.add(rows.getJSONObject(i).getJSONObject("doc"));
-        }
-        return result;
-    }
+	public UUID getOrCreateUuid() throws IOException {
+		final UUID result = getUuid();
+		if (result != null) {
+			return result;
+		}
+		createUuid();
+		return getUuid();
+	}
+
+	private List<DesignDocument> toDesignDocuments(final JSONObject json) {
+		final List<DesignDocument> result = new ArrayList<DesignDocument>();
+		for (final JSONObject doc : rows(json)) {
+			result.add(new DesignDocument(doc));
+		}
+		return result;
+	}
+
+	private List<CouchDocument> toDocuments(final JSONObject json) {
+		final List<CouchDocument> result = new ArrayList<CouchDocument>();
+		for (final JSONObject doc : rows(json)) {
+			result.add(new CouchDocument(doc));
+		}
+		return result;
+	}
+
+	private List<JSONObject> rows(final JSONObject json) {
+		final List<JSONObject> result = new ArrayList<JSONObject>();
+		final JSONArray rows = json.getJSONArray("rows");
+		for (int i = 0; i < rows.size(); i++) {
+			result.add(rows.getJSONObject(i).getJSONObject("doc"));
+		}
+		return result;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((url == null) ? 0 : url.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Database other = (Database) obj;
+		if (url == null) {
+			if (other.url != null)
+				return false;
+		} else if (!url.equals(other.url))
+			return false;
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "Database [url=" + url + "]";
+	}
 
 }

@@ -6,14 +6,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+
+import javax.servlet.http.HttpServletRequest;
 
 import net.sf.json.JSONObject;
 
@@ -31,8 +30,8 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.mozilla.javascript.ClassShutter;
@@ -45,7 +44,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 
-public final class DatabaseIndexer implements ResponseHandler<Void> {
+public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	public static void main(String[] args) throws Exception {
 		final HttpClient client = HttpClientFactory.getInstance();
@@ -53,22 +52,7 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		final Database db = couch.getDatabase("db1");
 		final DatabaseIndexer indexer = new DatabaseIndexer(client, new File(
 				"target/tmp"), db);
-		new Thread(new Runnable() {
-
-			public void run() {
-				try {
-					indexer.index();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}).start();
-		Thread.sleep(5000);
-		final IndexSearcher searcher = indexer.borrowSearcher(indexer.states
-				.keySet().iterator().next(), false);
-		System.out
-				.println(searcher.search(new MatchAllDocsQuery(), 50).totalHits);
-		indexer.returnSearcher(searcher);
+		indexer.init();
 	}
 
 	private final class RestrictiveClassShutter implements ClassShutter {
@@ -77,22 +61,81 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		}
 	}
 
-	private static class IndexState {
+	public static class IndexState {
+
+		private final DocumentConverter converter;
+		private final IndexWriter writer;
+		private final QueryParser parser;
+		private final Database database;
+
 		private long pending_seq;
-		private String readerEtag;
-		private DocumentConverter converter;
-		private IndexWriter writer;
+		private String etag;
 		private IndexReader reader;
 
-		private void close() throws IOException {
+		public IndexState(final DocumentConverter converter,
+				final IndexWriter writer, final QueryParser parser,
+				final Database database) {
+			this.converter = converter;
+			this.writer = writer;
+			this.parser = parser;
+			this.database = database;
+		}
+
+		public synchronized boolean notModified(final HttpServletRequest req) {
+			return etag.equals(req.getHeader("If-None-Match"));
+		}
+
+		public synchronized String getEtag() {
+			return etag;
+		}
+
+		public QueryParser getParser() {
+			return parser;
+		}
+		
+		public Database getDatabase() {
+			return database;
+		}
+
+		private synchronized void close() throws IOException {
 			if (reader != null)
 				reader.close();
 			if (writer != null)
 				writer.rollback();
 		}
+
+		public synchronized IndexSearcher borrowSearcher(final boolean staleOk)
+				throws IOException {
+			if (reader == null) {
+				reader = writer.getReader();
+				etag = newEtag();
+				reader.incRef();
+			}
+			if (!staleOk) {
+				final IndexReader newReader = reader.reopen();
+				if (newReader != reader) {
+					reader.decRef();
+					reader = newReader;
+					etag = newEtag();
+				}
+			}
+			reader.incRef();
+			return new IndexSearcher(reader);
+		}
+
+		public void returnSearcher(final IndexSearcher searcher)
+				throws IOException {
+			searcher.getIndexReader().decRef();
+		}
+
+		private String newEtag() {
+			return Long.toHexString(now());
+		}
 	}
 
 	private static final long COMMIT_INTERVAL = SECONDS.toNanos(5);
+
+	private boolean initialized, closed;
 
 	private final HttpClient client;
 
@@ -102,7 +145,10 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 
 	private Logger logger;
 
-	private final ConcurrentMap<View, IndexState> states = new ConcurrentHashMap<View, IndexState>();
+	private final Map<String, View> paths = new HashMap<String, View>();
+
+	private final Map<View, IndexState> states = Collections
+			.synchronizedMap(new HashMap<View, IndexState>());
 
 	private final File root;
 
@@ -119,14 +165,6 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		this.client = client;
 		this.root = root;
 		this.database = database;
-	}
-
-	private Set<View> getCurrentViews() throws IOException {
-		final Set<View> result = new HashSet<View>();
-		for (final DesignDocument ddoc : database.getAllDesignDocuments()) {
-			result.addAll(ddoc.getAllViews());
-		}
-		return result;
 	}
 
 	public Void handleResponse(final HttpResponse response)
@@ -212,42 +250,39 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		return null;
 	}
 
-	public void index() throws IOException {
-		init();
+	public void run() {
+		if (!initialized) {
+			throw new IllegalStateException("not initialized.");
+		}
+
+		if (closed) {
+			throw new IllegalStateException("closed!");
+		}
+
 		try {
-			final HttpUriRequest req = database.getChangesRequest(since);
-			logger.info("Indexing from update_seq " + since);
-			client.execute(req, this);
-		} finally {
-			close();
-		}
-	}
-
-	public IndexSearcher borrowSearcher(final View view, final boolean staleOk)
-			throws IOException {
-		final IndexState state = states.get(view);
-		if (state.reader == null) {
-			state.reader = state.writer.getReader();
-			state.readerEtag = newVersion();
-			state.reader.incRef();
-		}
-		if (!staleOk) {
-			final IndexReader newReader = state.reader.reopen();
-			if (newReader != state.reader) {
-				state.reader.decRef();
-				state.reader = newReader;
-				state.readerEtag = newVersion();
+			try {
+				final HttpUriRequest req = database.getChangesRequest(since);
+				logger.info("Indexing from update_seq " + since);
+				client.execute(req, this);
+			} finally {
+				close();
 			}
+		} catch (final IOException e) {
+			logger.warn("Exiting due to I/O exception.", e);
 		}
-		state.reader.incRef();
-		return new IndexSearcher(state.reader);
 	}
 
-	public void returnSearcher(final IndexSearcher searcher) throws IOException {
-		searcher.getIndexReader().decRef();
+	public IndexState getState(final String ddocName, final String viewName)
+			throws IOException {
+		final String path = ddocName + "/" + viewName;
+		final View view = paths.get(path);
+		if (view == null) {
+			return null;
+		}
+		return states.get(view);
 	}
 
-	private void init() throws IOException {
+	public void init() throws IOException {
 		this.logger = Logger.getLogger(DatabaseIndexer.class.getName() + "."
 				+ database.getInfo().getName());
 		this.uuid = database.getOrCreateUuid();
@@ -257,30 +292,45 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		context.setOptimizationLevel(9);
 
 		this.ddoc_seq = database.getInfo().getUpdateSequence();
-
 		this.since = 0;
-		for (final View view : getCurrentViews()) {
-			final Directory dir = viewDir(view);
-			final long seq = getUpdateSequence(dir);
-			if (since == 0) {
-				since = seq;
-			}
-			if (seq != -1L) {
-				since = Math.min(since, seq);
-			}
 
-			if (!states.containsKey(view)) {
-				final IndexState state = new IndexState();
-				state.converter = new DocumentConverter(context, view);
-				state.writer = newWriter(dir);
-				states.put(view, state);
+		for (final DesignDocument ddoc : database.getAllDesignDocuments()) {
+			for (final Entry<String, View> entry : ddoc.getAllViews()
+					.entrySet()) {
+				final String name = entry.getKey();
+				final View view = entry.getValue();
+				paths.put(ddoc.getId().substring(8) + "/" + name, view);
+
+				if (!states.containsKey(view)) {
+					final Directory dir = viewDir(view);
+					final long seq = getUpdateSequence(dir);
+					if (since == 0) {
+						since = seq;
+					}
+					if (seq != -1L) {
+						since = Math.min(since, seq);
+					}
+
+					final DocumentConverter converter = new DocumentConverter(
+							context, view);
+					final IndexWriter writer = newWriter(dir);
+					final QueryParser parser = new CustomQueryParser(
+							Constants.VERSION, Constants.DEFAULT_FIELD, view
+									.getAnalyzer());
+
+					states.put(view, new IndexState(converter, writer, parser, database));
+				}
 			}
 		}
+		logger.debug("paths: " + paths);
 
 		this.lastCommit = now();
+		this.initialized = true;
 	}
 
 	private void close() throws IOException {
+		this.closed = true;
+
 		for (IndexState state : states.values()) {
 			state.close();
 		}
@@ -342,12 +392,8 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		lastCommit = now();
 	}
 
-	private long now() {
+	private static long now() {
 		return System.nanoTime();
-	}
-
-	private String newVersion() {
-		return Long.toHexString(now());
 	}
 
 }

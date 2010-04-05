@@ -16,43 +16,45 @@ package com.github.rnewson.couchdb.lucene.couchdb;
  * limitations under the License.
  */
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.sf.json.JSONObject;
 
 public class DesignDocument extends CouchDocument {
 
-    private final JSONObject fulltext;
+	private final JSONObject fulltext;
 
-    public DesignDocument(final JSONObject json) {
-        super(json);
-        if (!getId().startsWith("_design/")) {
-            throw new IllegalArgumentException(json + " is not a design document");
-        }
-        fulltext = json.optJSONObject("fulltext");
-    }
+	public DesignDocument(final JSONObject json) {
+		super(json);
+		if (!getId().startsWith("_design/")) {
+			throw new IllegalArgumentException(json
+					+ " is not a design document");
+		}
+		fulltext = json.optJSONObject("fulltext");
+	}
 
-    public DesignDocument(final CouchDocument doc) {
-        this(doc.json);
-    }
+	public DesignDocument(final CouchDocument doc) {
+		this(doc.json);
+	}
 
-    public View getView(final String name) {
-        if (fulltext == null)
-            return null;
-        final JSONObject json = fulltext.optJSONObject(name);
-        return json == null ? null : new View(json);
-    }
+	public View getView(final String name) {
+		if (fulltext == null)
+			return null;
+		final JSONObject json = fulltext.optJSONObject(name);
+		return json == null ? null : new View(json);
+	}
 
-    public Collection<View> getAllViews() {
-        if (fulltext == null)
-            return Collections.emptySet();
-        final Collection<View> result = new HashSet<View>();
-        for (final Object name : fulltext.keySet()) {
-            result.add(getView((String) name));
-        }
-        return result;
-    }
+	public Map<String, View> getAllViews() {
+		if (fulltext == null)
+			return Collections.emptyMap();
+		final Map<String, View> result = new HashMap<String, View>();
+		for (final Object key : fulltext.keySet()) {
+			final String name = (String) key;
+			result.put(name, getView(name));
+		}
+		return result;
+	}
 
 }
