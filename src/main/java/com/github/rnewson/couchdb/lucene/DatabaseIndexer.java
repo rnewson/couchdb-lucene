@@ -87,7 +87,7 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 	private final File root;
 
 	private long since;
-	
+
 	private long ddoc_seq;
 
 	private UUID uuid;
@@ -211,7 +211,7 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 		this.context = Context.enter();
 		context.setClassShutter(new RestrictiveClassShutter());
 		context.setOptimizationLevel(9);
-		
+
 		this.ddoc_seq = database.getInfo().getUpdateSequence();
 
 		this.since = 0;
@@ -284,12 +284,15 @@ public final class DatabaseIndexer implements ResponseHandler<Void> {
 	}
 
 	private void commitAll() throws IOException {
-		logger.info("Committing recent changes to disk.");
-		for (final IndexState state : states.values()) {
+		for (final Entry<View, IndexState> entry : states.entrySet()) {
+			final View view = entry.getKey();
+			final IndexState state = entry.getValue();
+
 			if (state.seq > getUpdateSequence(state.writer)) {
 				final Map<String, String> userData = new HashMap<String, String>();
 				userData.put("last_seq", Long.toString(state.seq));
 				state.writer.commit(userData);
+				logger.info(view + " now at update_seq " + state.seq);
 			}
 		}
 		lastCommit = now();
