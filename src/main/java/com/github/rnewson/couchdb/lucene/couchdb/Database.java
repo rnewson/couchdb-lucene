@@ -82,8 +82,8 @@ public final class Database {
         return toDocuments(json);
     }
 
-    public JSONObject getInfo() throws IOException {
-        return JSONObject.fromObject(HttpUtils.get(httpClient, url));
+    public DatabaseInfo getInfo() throws IOException {
+        return new DatabaseInfo(JSONObject.fromObject(HttpUtils.get(httpClient, url)));
     }
 
     public <T> T handleAttachment(final String doc, final String att, final ResponseHandler<T> handler) throws IOException {
