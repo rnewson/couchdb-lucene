@@ -28,73 +28,77 @@ import com.github.rnewson.couchdb.lucene.util.Analyzers;
 
 public final class View {
 
-    private static final String DEFAULT_ANALYZER = "standard";
+	private static final String DEFAULT_ANALYZER = "standard";
 
-    private static final String ANALYZER = "analyzer";
+	private static final String ANALYZER = "analyzer";
 
-    private static final String INDEX = "index";
+	private static final String INDEX = "index";
 
-    private static final String DEFAULTS = "defaults";
+	private static final String DEFAULTS = "defaults";
 
-    private final JSONObject json;
+	private final JSONObject json;
 
-    public View(final JSONObject json) {
-        if (!json.has(INDEX)) {
-            throw new IllegalArgumentException(json + " is not an index");
-        }
-        this.json = json;
-    }
+	public View(final JSONObject json) {
+		if (!json.has(INDEX)) {
+			throw new IllegalArgumentException(json + " is not an index");
+		}
+		this.json = json;
+	}
 
-    public Analyzer getAnalyzer() {
-        return Analyzers.getAnalyzer(json.optString(ANALYZER, DEFAULT_ANALYZER));
-    }
+	public Analyzer getAnalyzer() {
+		return Analyzers
+				.getAnalyzer(json.optString(ANALYZER, DEFAULT_ANALYZER));
+	}
 
-    public ViewSettings getDefaultSettings() {
-        return json.has(DEFAULTS) ? new ViewSettings(json.getJSONObject(DEFAULTS)) : ViewSettings
-                .getDefaultSettings();
-    }
+	public ViewSettings getDefaultSettings() {
+		return json.has(DEFAULTS) ? new ViewSettings(json
+				.getJSONObject(DEFAULTS)) : ViewSettings.getDefaultSettings();
+	}
 
-    public String getFunction() {
-        return trim(json.getString(INDEX));
-    }
+	public String getFunction() {
+		return trim(json.getString(INDEX));
+	}
 
-    public Function compileFunction(final Context context, ScriptableObject scope) {
-        return context.compileFunction(scope, getFunction(), null, 0, null);
-    }
+	public Function compileFunction(final Context context,
+			ScriptableObject scope) {
+		return context.compileFunction(scope, getFunction(), null, 0, null);
+	}
 
-    public String getDigest() {
-        return Lucene.digest(json);
-    }
+	public String getDigest() {
+		return Lucene.digest(json);
+	}
 
-    private String trim(final String fun) {
-        String result = fun;
-        result = StringUtils.trim(result);
-        result = StringUtils.removeStart(result, "\"");
-        result = StringUtils.removeEnd(result, "\"");
-        return result;
-    }
+	private String trim(final String fun) {
+		String result = fun;
+		result = StringUtils.trim(result);
+		result = StringUtils.removeStart(result, "\"");
+		result = StringUtils.removeEnd(result, "\"");
+		return result;
+	}
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((json == null) ? 0 : json.hashCode());
-        return result;
-    }
+	@Override
+	public int hashCode() {
+		return getDigest().hashCode();
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof View)) {
-            return false;
-        }
-        View other = (View) obj;
-        return getDigest().equals(other.getDigest());
-    }
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof View)) {
+			return false;
+		}
+		View other = (View) obj;
+		return getDigest().equals(other.getDigest());
+	}
+
+	@Override
+	public String toString() {
+		return String.format("View[digest=%s]", getDigest());
+	}
 
 }

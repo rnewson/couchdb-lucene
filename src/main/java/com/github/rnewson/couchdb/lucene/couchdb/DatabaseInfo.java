@@ -14,4 +14,8 @@ public class DatabaseInfo {
 		return json.getLong("update_seq");
 	}
 
+	public String getName() {
+		return json.getString("db_name");
+	}
+
 }

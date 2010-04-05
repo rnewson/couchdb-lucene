@@ -117,7 +117,16 @@ public final class Database {
         final UUID uuid = UUID.randomUUID();
         saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
     }
-
+    
+    public UUID getOrCreateUuid() throws IOException {
+    	final UUID result = getUuid();
+    	if (result != null) {
+    		return result;
+    	}
+    	createUuid();
+    	return getUuid();
+    }
+    
     private List<DesignDocument> toDesignDocuments(final JSONObject json) {
         final List<DesignDocument> result = new ArrayList<DesignDocument>();
         for (final JSONObject doc : rows(json)) {

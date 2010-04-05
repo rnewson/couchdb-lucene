@@ -38,7 +38,6 @@ import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -51,6 +50,7 @@ import com.github.rnewson.couchdb.lucene.Lucene.WriterCallback;
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
+import com.github.rnewson.couchdb.lucene.couchdb.DatabaseInfo;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.IndexPath;
@@ -343,8 +343,8 @@ public final class ViewIndexer implements Runnable {
             return;
         }
 
-        final JSONObject info = database.getInfo();
-        final long seqThreshhold = staleOk ? 0 : info.getLong("update_seq");
+        final DatabaseInfo info = database.getInfo();
+        final long seqThreshhold = staleOk ? 0 : info.getUpdateSequence();
         this.handler = new ViewChangesHandler(uuid, view, seqThreshhold);
         handler.start();
     }
