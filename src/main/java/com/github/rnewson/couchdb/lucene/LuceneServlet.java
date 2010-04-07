@@ -57,13 +57,11 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 
 import com.github.rnewson.couchdb.lucene.DatabaseIndexer.IndexState;
-import com.github.rnewson.couchdb.lucene.Lucene.ReaderCallback;
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
-import com.github.rnewson.couchdb.lucene.util.IndexPath;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
 import com.github.rnewson.couchdb.lucene.util.Utils;
@@ -79,12 +77,10 @@ public final class LuceneServlet extends HttpServlet {
 
 	private Lucene lucene;
 
-	private Lucene2 lucene2;
-
 	private HierarchicalINIConfiguration ini;
 
-	public void setLucene2(final Lucene2 lucene) {
-		this.lucene2 = lucene;
+	public void setLucene(final Lucene lucene) {
+		this.lucene = lucene;
 	}
 
 	public void setConfiguration(final HierarchicalINIConfiguration ini) {
