@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
+import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -282,6 +283,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			} finally {
 				close();
 			}
+		} catch (final SocketException e) {
+			// Ignored because req.abort() does this.
 		} catch (final IOException e) {
 			logger.warn("Exiting due to I/O exception.", e);
 		}
