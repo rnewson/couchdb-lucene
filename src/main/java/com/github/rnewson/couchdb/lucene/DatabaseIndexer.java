@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -75,7 +76,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		private final DocumentConverter converter;
 		private final IndexWriter writer;
 		private final QueryParser parser;
-		private final Database database;
+		private final CountDownLatch latch = new CountDownLatch(1);
 
 		private long pending_seq;
 		private boolean dirty;
@@ -83,12 +84,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		private IndexReader reader;
 
 		public IndexState(final DocumentConverter converter,
-				final IndexWriter writer, final QueryParser parser,
-				final Database database) {
+				final IndexWriter writer, final QueryParser parser, final long pending_seq) {
 			this.converter = converter;
 			this.writer = writer;
 			this.parser = parser;
-			this.database = database;
+			this.pending_seq = pending_seq;
 		}
 
 		private synchronized String getEtag() {
@@ -118,6 +118,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		public synchronized IndexReader borrowReader(final boolean staleOk)
 				throws IOException {
+			try {
+				latch.await();
+			} catch (final InterruptedException e) {
+				// Ignored.
+			}
+
 			if (reader == null) {
 				reader = writer.getReader();
 				etag = newEtag();
@@ -172,6 +178,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	private long lastCommit;
 
 	private HttpUriRequest req;
+	
+	private final CountDownLatch latch = new CountDownLatch(1);
 
 	public DatabaseIndexer(final HttpClient client, final File root,
 			final Database database) throws IOException {
@@ -259,10 +267,19 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					state.pending_seq = seq;
 					state.dirty = true;
 				}
+				releaseLatches();
 			}
 		}
 		req.abort();
 		return null;
+	}
+
+	private void releaseLatches() {
+		for (final IndexState state : states.values()) {
+			if (state.pending_seq >= ddoc_seq) {
+				state.latch.countDown();
+			}
+		}
 	}
 
 	public void run() {
@@ -543,14 +560,23 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 							Constants.VERSION, Constants.DEFAULT_FIELD, view
 									.getAnalyzer());
 
-					states.put(view, new IndexState(converter, writer, parser,
-							database));
+					states.put(view, new IndexState(converter, writer, parser, seq));
 				}
 			}
 		}
 		logger.debug("paths: " + paths);
 
 		this.lastCommit = now();
+		releaseLatches();
+		latch.countDown();
+	}
+	
+	public void awaitInitialization()  {
+		try {
+			latch.await();
+		} catch (final InterruptedException e) {
+			// Ignore.
+		}
 	}
 
 	private void close() throws IOException {

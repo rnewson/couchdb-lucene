@@ -185,7 +185,9 @@ public final class LuceneServlet extends HttpServlet {
 			thread = new Thread(result);
 			threads.put(database, thread);
 			thread.start();
+			result.awaitInitialization();
 		} 
+				
 		return result;
 	}
 
