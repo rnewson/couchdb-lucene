@@ -6,14 +6,21 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Writer;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import net.sf.json.JSON;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.http.HttpEntity;
@@ -26,34 +33,35 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 
-import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.Constants;
+import com.github.rnewson.couchdb.lucene.util.ServletUtils;
+import com.github.rnewson.couchdb.lucene.util.StopWatch;
+import com.github.rnewson.couchdb.lucene.util.Utils;
 
 public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
-
-	public static void main(String[] args) throws Exception {
-		final HttpClient client = HttpClientFactory.getInstance();
-		final Couch couch = Couch.getInstance(client, "http://localhost:5984");
-		final Database db = couch.getDatabase("db1");
-		final DatabaseIndexer indexer = new DatabaseIndexer(client, new File(
-				"target/tmp"), db);
-		indexer.init();
-	}
 
 	private final class RestrictiveClassShutter implements ClassShutter {
 		public boolean visibleToScripts(final String fullClassName) {
@@ -61,7 +69,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		}
 	}
 
-	public static class IndexState {
+	private static class IndexState {
 
 		private final DocumentConverter converter;
 		private final IndexWriter writer;
@@ -81,20 +89,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			this.database = database;
 		}
 
-		public synchronized boolean notModified(final HttpServletRequest req) {
-			return etag.equals(req.getHeader("If-None-Match"));
-		}
-
-		public synchronized String getEtag() {
+		private synchronized String getEtag() {
 			return etag;
 		}
 
-		public QueryParser getParser() {
-			return parser;
-		}
-		
-		public Database getDatabase() {
-			return database;
+		private synchronized boolean notModified(final HttpServletRequest req) {
+			return etag.equals(req.getHeader("If-None-Match"));
 		}
 
 		private synchronized void close() throws IOException {
@@ -104,7 +104,17 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				writer.rollback();
 		}
 
-		public synchronized IndexSearcher borrowSearcher(final boolean staleOk)
+		public IndexSearcher borrowSearcher(final boolean staleOk)
+				throws IOException {
+			return new IndexSearcher(borrowReader(staleOk));
+		}
+
+		public void returnSearcher(final IndexSearcher searcher)
+				throws IOException {
+			returnReader(searcher.getIndexReader());
+		}
+
+		public synchronized IndexReader borrowReader(final boolean staleOk)
 				throws IOException {
 			if (reader == null) {
 				reader = writer.getReader();
@@ -120,12 +130,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				}
 			}
 			reader.incRef();
-			return new IndexSearcher(reader);
+			return reader;
 		}
 
-		public void returnSearcher(final IndexSearcher searcher)
-				throws IOException {
-			searcher.getIndexReader().decRef();
+		public void returnReader(final IndexReader reader) throws IOException {
+			reader.decRef();
 		}
 
 		private String newEtag() {
@@ -272,9 +281,213 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		}
 	}
 
-	public IndexState getState(final String ddocName, final String viewName)
+	public void search(final HttpServletRequest req,
+			final HttpServletResponse resp) throws IOException {
+		final IndexState state = getState(req);
+		if (state.notModified(req)) {
+			resp.setStatus(304);
+			return;
+		}
+		final String etag = state.getEtag();
+		final IndexSearcher searcher = state.borrowSearcher(isStaleOk(req));
+		final JSONArray result = new JSONArray();
+		try {
+			for (final String queryString : req.getParameterValues("q")) {
+				final Query q = state.parser.parse(queryString);
+				final JSONObject queryRow = new JSONObject();
+				queryRow.put("q", q.toString());
+				if (getBooleanParameter(req, "debug")) {
+					queryRow.put("plan", QueryPlan.toPlan(q));
+				}
+
+				if (getBooleanParameter(req, "rewrite")) {
+					final Query rewritten_q = q.rewrite(searcher
+							.getIndexReader());
+					queryRow.put("rewritten_q", rewritten_q.toString());
+
+					final JSONObject freqs = new JSONObject();
+
+					final Set<Term> terms = new HashSet<Term>();
+					rewritten_q.extractTerms(terms);
+					for (final Object term : terms) {
+						final int freq = searcher.docFreq((Term) term);
+						freqs.put(term, freq);
+					}
+					queryRow.put("freqs", freqs);
+				} else {
+					// Perform the search.
+					final TopDocs td;
+					final StopWatch stopWatch = new StopWatch();
+
+					final boolean include_docs = getBooleanParameter(req,
+							"include_docs");
+					final int limit = getIntParameter(req, "limit", 25);
+					final Sort sort = CustomQueryParser.toSort(req
+							.getParameter("sort"));
+					final int skip = getIntParameter(req, "skip", 0);
+
+					if (sort == null) {
+						td = searcher.search(q, null, skip + limit);
+					} else {
+						td = searcher.search(q, null, skip + limit, sort);
+					}
+					stopWatch.lap("search");
+
+					// Fetch matches (if any).
+					final int max = Math.max(0, Math.min(td.totalHits - skip,
+							limit));
+					final JSONArray rows = new JSONArray();
+					final String[] fetch_ids = new String[max];
+					for (int i = skip; i < skip + max; i++) {
+						final Document doc = searcher.doc(td.scoreDocs[i].doc);
+						final JSONObject row = new JSONObject();
+						final JSONObject fields = new JSONObject();
+
+						// Include stored fields.
+						for (final Object f : doc.getFields()) {
+							final Field fld = (Field) f;
+
+							if (!fld.isStored()) {
+								continue;
+							}
+							final String name = fld.name();
+							final String value = fld.stringValue();
+							if (value != null) {
+								if ("_id".equals(name)) {
+									row.put("id", value);
+								} else {
+									if (!fields.has(name)) {
+										fields.put(name, value);
+									} else {
+										final Object obj = fields.get(name);
+										if (obj instanceof String) {
+											final JSONArray arr = new JSONArray();
+											arr.add(obj);
+											arr.add(value);
+											fields.put(name, arr);
+										} else {
+											assert obj instanceof JSONArray;
+											((JSONArray) obj).add(value);
+										}
+									}
+								}
+							}
+						}
+
+						if (!Float.isNaN(td.scoreDocs[i].score)) {
+							row.put("score", td.scoreDocs[i].score);
+						}// Include sort order (if any).
+						if (td instanceof TopFieldDocs) {
+							final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
+							row.put("sort_order", fd.fields);
+						}
+						// Fetch document (if requested).
+						if (include_docs) {
+							fetch_ids[i - skip] = doc.get("_id");
+						}
+						if (fields.size() > 0) {
+							row.put("fields", fields);
+						}
+						rows.add(row);
+						// Fetch documents (if requested).
+						if (include_docs && fetch_ids.length > 0) {
+							database.getDocuments(fetch_ids);
+							final List<CouchDocument> fetched_docs = database
+									.getDocuments(fetch_ids);
+							for (int j = 0; j < max; j++) {
+								rows.getJSONObject(j).put("doc",
+										fetched_docs.get(j).asJson());
+							}
+
+						}
+						stopWatch.lap("fetch");
+
+						queryRow.put("skip", skip);
+						queryRow.put("limit", limit);
+						queryRow.put("total_rows", td.totalHits);
+						queryRow.put("search_duration", stopWatch
+								.getElapsed("search"));
+						queryRow.put("fetch_duration", stopWatch
+								.getElapsed("fetch"));
+						// Include sort info (if requested).
+						if (td instanceof TopFieldDocs) {
+							queryRow.put("sort_order", CustomQueryParser
+									.toString(((TopFieldDocs) td).fields));
+						}
+					}
+					result.add(queryRow);
+				}
+			}
+		} catch (final ParseException e) {
+			ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax: "
+					+ e.getMessage());
+			return;
+		} finally {
+			state.returnSearcher(searcher);
+		}
+
+		resp.setHeader("ETag", etag);
+		resp.setHeader("Cache-Control", "must-revalidate");
+
+		final JSON json = result.size() > 1 ? result : result.getJSONObject(0);
+		final String callback = req.getParameter("callback");
+		final String body;
+		if (callback != null) {
+			body = String.format("%s(%s)", callback, json);
+		} else {
+			body = json.toString(getBooleanParameter(req, "debug") ? 2 : 0);
+		}
+
+		final Writer writer = resp.getWriter();
+		try {
+			writer.write(body);
+		} finally {
+			writer.close();
+		}
+	}
+
+	public void info(final HttpServletRequest req,
+			final HttpServletResponse resp) throws IOException {
+		final IndexState state = getState(req);
+		final IndexReader reader = state.borrowReader(isStaleOk(req));
+		try {
+			final JSONObject result = new JSONObject();
+			result.put("current", reader.isCurrent());
+			result.put("disk_size", Utils.directorySize(reader.directory()));
+			result.put("doc_count", reader.numDocs());
+			result.put("doc_del_count", reader.numDeletedDocs());
+			final JSONArray fields = new JSONArray();
+			for (final Object field : reader.getFieldNames(FieldOption.INDEXED)) {
+				if (((String) field).startsWith("_")) {
+					continue;
+				}
+				fields.add(field);
+			}
+			result.put("fields", fields);
+			result.put("last_modified", Long.toString(IndexReader
+					.lastModified(reader.directory())));
+			result.put("optimized", reader.isOptimized());
+			result.put("ref_count", reader.getRefCount());
+
+			final JSONObject info = new JSONObject();
+			info.put("code", 200);
+			info.put("json", result);
+
+			ServletUtils.setResponseContentTypeAndEncoding(req, resp);
+			final Writer writer = resp.getWriter();
+			try {
+				writer.write(result.toString());
+			} finally {
+				writer.close();
+			}
+		} finally {
+			state.returnReader(reader);
+		}
+	}
+
+	private IndexState getState(final HttpServletRequest req)
 			throws IOException {
-		final String path = ddocName + "/" + viewName;
+		final String path = pathParts(req)[2] + "/" + pathParts(req)[3];
 		final View view = paths.get(path);
 		if (view == null) {
 			return null;
@@ -318,7 +531,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 							Constants.VERSION, Constants.DEFAULT_FIELD, view
 									.getAnalyzer());
 
-					states.put(view, new IndexState(converter, writer, parser, database));
+					states.put(view, new IndexState(converter, writer, parser,
+							database));
 				}
 			}
 		}
@@ -392,8 +606,26 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		lastCommit = now();
 	}
 
+	private boolean getBooleanParameter(final HttpServletRequest req,
+			final String parameterName) {
+		return Boolean.parseBoolean(req.getParameter(parameterName));
+	}
+
+	private int getIntParameter(final HttpServletRequest req,
+			final String parameterName, final int defaultValue) {
+		final String result = req.getParameter(parameterName);
+		return result != null ? Integer.parseInt(result) : defaultValue;
+	}
+
 	private static long now() {
 		return System.nanoTime();
 	}
 
+	private String[] pathParts(final HttpServletRequest req) {
+		return req.getRequestURI().replaceFirst("/", "").split("/");
+	}
+
+	private boolean isStaleOk(final HttpServletRequest req) {
+		return "ok".equals(req.getParameter("stale"));
+	}
 }
