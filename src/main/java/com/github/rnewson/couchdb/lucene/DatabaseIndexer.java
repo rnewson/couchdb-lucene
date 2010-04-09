@@ -78,6 +78,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		private final Database database;
 
 		private long pending_seq;
+		private boolean dirty;
 		private String etag;
 		private IndexReader reader;
 
@@ -123,11 +124,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				reader.incRef();
 			}
 			if (!staleOk) {
-				final IndexReader newReader = reader.reopen();
-				if (newReader != reader) {
-					reader.decRef();
-					reader = newReader;
+				reader.decRef();
+				reader = writer.getReader();
+				if (dirty) {
 					etag = newEtag();
+					dirty = false;
 				}
 			}
 			reader.incRef();
@@ -256,6 +257,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 						state.writer.addDocument(d, view.getAnalyzer());
 					}
 					state.pending_seq = seq;
+					state.dirty = true;
 				}
 			}
 		}
