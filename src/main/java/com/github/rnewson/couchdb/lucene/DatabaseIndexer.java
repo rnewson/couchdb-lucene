@@ -143,7 +143,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		}
 	}
 
-	private static final long COMMIT_INTERVAL = SECONDS.toNanos(5);
+	private static final long COMMIT_INTERVAL = SECONDS.toNanos(60);
 
 	private boolean closed;
 
