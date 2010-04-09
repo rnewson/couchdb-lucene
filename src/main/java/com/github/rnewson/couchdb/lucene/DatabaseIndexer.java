@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,18 +34,9 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.FieldSelector;
-import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexCommit;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.StaleReaderException;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermDocs;
-import org.apache.lucene.index.TermEnum;
-import org.apache.lucene.index.TermFreqVector;
-import org.apache.lucene.index.TermPositions;
-import org.apache.lucene.index.TermVectorMapper;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.queryParser.ParseException;
@@ -59,7 +49,6 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.store.LockObtainFailedException;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 
@@ -79,7 +68,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			return false;
 		}
 	}
-	
+
 	private static class IndexState {
 
 		private final DocumentConverter converter;
@@ -155,7 +144,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private static final long COMMIT_INTERVAL = SECONDS.toNanos(5);
 
-	private boolean initialized, closed;
+	private boolean closed;
 
 	private final HttpClient client;
 
@@ -179,6 +168,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	private UUID uuid;
 
 	private long lastCommit;
+
+	private HttpUriRequest req;
 
 	public DatabaseIndexer(final HttpClient client, final File root,
 			final Database database) throws IOException {
@@ -267,21 +258,25 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				}
 			}
 		}
+		req.abort();
 		return null;
 	}
 
 	public void run() {
-		if (!initialized) {
-			throw new IllegalStateException("not initialized.");
-		}
-
 		if (closed) {
 			throw new IllegalStateException("closed!");
 		}
 
 		try {
+			init();
+		} catch (final IOException e) {
+			logger.warn("Exiting after init() raised I/O exception.", e);
+			return;
+		}
+
+		try {
 			try {
-				final HttpUriRequest req = database.getChangesRequest(since);
+				req = database.getChangesRequest(since);
 				logger.info("Indexing from update_seq " + since);
 				client.execute(req, this);
 			} finally {
@@ -507,7 +502,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		return states.get(view);
 	}
 
-	public void init() throws IOException {
+	private void init() throws IOException {
 		this.logger = Logger.getLogger(DatabaseIndexer.class.getName() + "."
 				+ database.getInfo().getName());
 		this.uuid = database.getOrCreateUuid();
@@ -551,7 +546,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		logger.debug("paths: " + paths);
 
 		this.lastCommit = now();
-		this.initialized = true;
 	}
 
 	private void close() throws IOException {
@@ -640,7 +634,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	private boolean isStaleOk(final HttpServletRequest req) {
 		return "ok".equals(req.getParameter("stale"));
 	}
-	
+
 	private void negotiateContentType(final HttpServletRequest req,
 			final HttpServletResponse resp) {
 		final String accept = req.getHeader("Accept");

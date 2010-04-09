@@ -172,34 +172,25 @@ public final class LuceneServlet extends HttpServlet {
 
 		final Couch couch = new Couch(client, url);
 		final Database database = couch.getDatabase(pathParts(req)[1]);
-		final DatabaseIndexer indexer = getIndexer(database);
-		ensureRunning(database, indexer);
-		return indexer;
+		return getIndexer(database);
 	}
 
 	private synchronized DatabaseIndexer getIndexer(final Database database)
 			throws IOException {
 		DatabaseIndexer result = indexers.get(database);
-		if (result == null) {
+		Thread thread = threads.get(database);
+		if (result == null || thread == null || !thread.isAlive()) {
 			result = new DatabaseIndexer(client, root, database);
-			result.init();
-		}
-		indexers.put(database, result);
+			indexers.put(database, result);
+			thread = new Thread(result);
+			threads.put(database, thread);
+			thread.start();
+		} 
 		return result;
 	}
 
 	private String[] pathParts(final HttpServletRequest req) {
 		return req.getRequestURI().replaceFirst("/", "").split("/");
-	}
-
-	private synchronized void ensureRunning(final Database database,
-			final DatabaseIndexer indexer) {
-		Thread thread = threads.get(database);
-		if (thread == null || !thread.isAlive()) {
-			thread = new Thread(indexer);
-			threads.put(database, thread);
-			thread.start();
-		}
 	}
 
 	private boolean isStaleOk(final HttpServletRequest req) {
