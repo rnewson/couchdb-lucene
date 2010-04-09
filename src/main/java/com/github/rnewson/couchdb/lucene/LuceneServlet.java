@@ -163,35 +163,6 @@ public final class LuceneServlet extends HttpServlet {
 	 * resp.setStatus(202); ServletUtils.writeJSON(resp, JSON_SUCCESS); return;
 	 * } }
 	 */
-	private void negotiateContentType(final HttpServletRequest req,
-			final HttpServletResponse resp) {
-		final String accept = req.getHeader("Accept");
-		if (getBooleanParameter(req, "force_json")
-				|| (accept != null && accept.contains("application/json"))) {
-			resp.setContentType("application/json");
-		} else {
-			resp.setContentType("text/plain");
-		}
-		if (!resp.containsHeader("Vary")) {
-			resp.addHeader("Vary", "Accept");
-		}
-		resp.setCharacterEncoding("utf-8");
-	}
-
-	private boolean getBooleanParameter(final HttpServletRequest req,
-			final String parameterName) {
-		return Boolean.parseBoolean(req.getParameter(parameterName));
-	}
-
-	private void writeJSON(final HttpServletResponse resp, final JSONObject json)
-			throws IOException {
-		final Writer writer = resp.getWriter();
-		try {
-			writer.write(json.toString() + "\r\n");
-		} finally {
-			writer.close();
-		}
-	}
 
 	private DatabaseIndexer getIndexer(final HttpServletRequest req)
 			throws IOException {

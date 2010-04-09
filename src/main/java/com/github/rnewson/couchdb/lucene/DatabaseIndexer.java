@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,9 +35,18 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldSelector;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexCommit;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.StaleReaderException;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermDocs;
+import org.apache.lucene.index.TermEnum;
+import org.apache.lucene.index.TermFreqVector;
+import org.apache.lucene.index.TermPositions;
+import org.apache.lucene.index.TermVectorMapper;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.queryParser.ParseException;
@@ -49,6 +59,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.LockObtainFailedException;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 
@@ -68,7 +79,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			return false;
 		}
 	}
-
+	
 	private static class IndexState {
 
 		private final DocumentConverter converter;
@@ -94,7 +105,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		}
 
 		private synchronized boolean notModified(final HttpServletRequest req) {
-			return etag.equals(req.getHeader("If-None-Match"));
+			return etag != null && etag.equals(req.getHeader("If-None-Match"));
 		}
 
 		private synchronized void close() throws IOException {
@@ -288,8 +299,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			resp.setStatus(304);
 			return;
 		}
-		final String etag = state.getEtag();
 		final IndexSearcher searcher = state.borrowSearcher(isStaleOk(req));
+		final String etag = state.getEtag();
 		final JSONArray result = new JSONArray();
 		try {
 			for (final String queryString : req.getParameterValues("q")) {
@@ -299,7 +310,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				if (getBooleanParameter(req, "debug")) {
 					queryRow.put("plan", QueryPlan.toPlan(q));
 				}
-
+				queryRow.put("etag", etag);
 				if (getBooleanParameter(req, "rewrite")) {
 					final Query rewritten_q = q.rewrite(searcher
 							.getIndexReader());
@@ -428,6 +439,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		resp.setHeader("ETag", etag);
 		resp.setHeader("Cache-Control", "must-revalidate");
+		negotiateContentType(req, resp);
 
 		final JSON json = result.size() > 1 ? result : result.getJSONObject(0);
 		final String callback = req.getParameter("callback");
@@ -627,5 +639,20 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private boolean isStaleOk(final HttpServletRequest req) {
 		return "ok".equals(req.getParameter("stale"));
+	}
+	
+	private void negotiateContentType(final HttpServletRequest req,
+			final HttpServletResponse resp) {
+		final String accept = req.getHeader("Accept");
+		if (getBooleanParameter(req, "force_json")
+				|| (accept != null && accept.contains("application/json"))) {
+			resp.setContentType("application/json");
+		} else {
+			resp.setContentType("text/plain");
+		}
+		if (!resp.containsHeader("Vary")) {
+			resp.addHeader("Vary", "Accept");
+		}
+		resp.setCharacterEncoding("utf-8");
 	}
 }
