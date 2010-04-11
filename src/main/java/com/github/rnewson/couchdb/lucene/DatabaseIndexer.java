@@ -233,7 +233,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	public void admin(final HttpServletRequest req,
 			final HttpServletResponse resp) throws IOException {
-		final IndexState state = getState(req);
+		final IndexState state = getState(req, resp);
+		if (state == null)
+			return;
 		final String command = pathParts(req)[4];
 
 		if ("_expunge".equals(command)) {
@@ -351,7 +353,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	public void info(final HttpServletRequest req,
 			final HttpServletResponse resp) throws IOException {
-		final IndexState state = getState(req);
+		final IndexState state = getState(req, resp);
+		if (state == null)
+			return;
 		final IndexReader reader = state.borrowReader(isStaleOk(req));
 		try {
 			final JSONObject result = new JSONObject();
@@ -417,7 +421,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	public void search(final HttpServletRequest req,
 			final HttpServletResponse resp) throws IOException {
-		final IndexState state = getState(req);
+		final IndexState state = getState(req, resp);
+		if (state == null)
+			return;
 		if (state.notModified(req)) {
 			resp.setStatus(304);
 			return;
@@ -618,14 +624,21 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		return result != null ? Integer.parseInt(result) : defaultValue;
 	}
 
-	private IndexState getState(final HttpServletRequest req)
-			throws IOException {
+	private IndexState getState(final HttpServletRequest req,
+			final HttpServletResponse resp) throws IOException {
 		final String path = pathParts(req)[2] + "/" + pathParts(req)[3];
+
 		final View view = paths.get(path);
 		if (view == null) {
+			ServletUtils.sendJSONError(req, resp, 400, "no_such_view");
 			return null;
 		}
-		return states.get(view);
+
+		final IndexState result = states.get(view);
+		if (result == null) {
+			ServletUtils.sendJSONError(req, resp, 400, "no_such_state");
+		}
+		return result;
 	}
 
 	private long getUpdateSequence(final Directory dir) throws IOException {
@@ -682,8 +695,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 							Constants.VERSION, Constants.DEFAULT_FIELD, view
 									.getAnalyzer());
 
-					final IndexState state = new IndexState(converter, writer, parser,
-							database);
+					final IndexState state = new IndexState(converter, writer,
+							parser, database);
 					state.setPendingSequence(seq);
 					states.put(view, state);
 				}
