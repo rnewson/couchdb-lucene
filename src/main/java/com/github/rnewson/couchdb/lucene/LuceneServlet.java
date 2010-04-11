@@ -125,8 +125,7 @@ public final class LuceneServlet extends HttpServlet {
 		DatabaseIndexer result = indexers.get(database);
 		Thread thread = threads.get(database);
 		if (result == null || thread == null || !thread.isAlive()) {
-			result = new DatabaseIndexer(client, root, database,
-					ini.getLong("lucene.timeout", 5000));
+			result = new DatabaseIndexer(client, root, database, ini);
 			indexers.put(database, result);
 			thread = new Thread(result);
 			threads.put(database, thread);

@@ -25,6 +25,7 @@ import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -147,7 +148,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			synchronized (this) {
 				while (pending_seq < latest) {
 					try {
-						wait(searchTimeout);
+						wait(getSearchTimeout());
 					} catch (final InterruptedException e) {
 						throw new IOException("Search timed out.");
 					}
@@ -223,15 +224,16 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			.synchronizedMap(new HashMap<View, IndexState>());
 
 	private UUID uuid;
-	
-	private final long searchTimeout;
+
+	private final HierarchicalINIConfiguration ini;
 
 	public DatabaseIndexer(final HttpClient client, final File root,
-			final Database database, final long searchTimeout) throws IOException {
+			final Database database, final HierarchicalINIConfiguration ini)
+			throws IOException {
 		this.client = client;
 		this.root = root;
 		this.database = database;
-		this.searchTimeout = searchTimeout;
+		this.ini = ini;
 	}
 
 	public void admin(final HttpServletRequest req,
@@ -737,4 +739,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			throws IOException {
 		return viewDir(root, uuid, view.getDigest(), mkdirs);
 	}
+
+	private long getSearchTimeout() {
+		return ini.getLong("lucene.timeout", 5000);
+	}
+
 }
