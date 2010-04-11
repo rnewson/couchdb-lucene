@@ -1,12 +1,13 @@
 0.5
 ----------------------
 
+REGRESSIONS
+1) restore stale != ok correctly
+
 OPTIMIZE
 1) use nio so we have one thread per core - not one thread per view
 2) use one connection per db not one connection per view
 
-* add _view_cleanup equivalent
-* add _compact equivalent
 * add radial searching (?q=pizza&location=51.1793;-0.1860&distance=2km ?)
 * pause/resume control over indexer?
 

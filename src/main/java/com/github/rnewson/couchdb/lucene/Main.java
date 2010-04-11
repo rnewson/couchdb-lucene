@@ -63,8 +63,6 @@ public class Main {
 		}
 		LOG.info("Index output goes to: " + dir.getCanonicalPath());
 
-		final Lucene lucene = new Lucene(dir);
-
 		final Server server = new Server();
 		final SelectChannelConnector connector = new SelectChannelConnector();
 		connector.setHost(configuration.getString("lucene.host", "localhost"));
@@ -76,10 +74,8 @@ public class Main {
 		server.setStopAtShutdown(true);
 		server.setSendServerVersion(false);
 
-		final LuceneServlet servlet = new LuceneServlet();
-		servlet.setLucene(lucene);
-		servlet.setConfiguration(configuration);
-
+		final LuceneServlet servlet = new LuceneServlet(HttpClientFactory.getInstance(), dir, configuration);
+		
 		final Context context = new Context(server, "/", Context.NO_SESSIONS
 				| Context.NO_SECURITY);
 		context.addServlet(new ServletHolder(servlet), "/*");

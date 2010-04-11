@@ -62,6 +62,7 @@ public final class ServletUtils {
         final Writer writer = response.getWriter();
         try {
             writer.write(obj.toString());
+            writer.write("\n");
         } finally {
             writer.close();
         }
