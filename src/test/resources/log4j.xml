@@ -7,7 +7,7 @@
     </layout>
   </appender>
   <logger name="com.github">
-  	<level value="INFO"/>
+  	<level value="ERROR"/>
   </logger>
   <root>
     <priority value="ERROR"/>
