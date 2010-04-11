@@ -70,30 +70,25 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		private final DocumentConverter converter;
 		private boolean dirty;
 		private String etag;
-		private final CountDownLatch latch = new CountDownLatch(1);
 
 		private final QueryParser parser;
 		private long pending_seq;
 		private IndexReader reader;
 		private final IndexWriter writer;
+		private final Database database;
 
 		public IndexState(final DocumentConverter converter,
 				final IndexWriter writer, final QueryParser parser,
-				final long pending_seq) {
+				final Database database) {
 			this.converter = converter;
 			this.writer = writer;
 			this.parser = parser;
-			this.pending_seq = pending_seq;
+			this.database = database;
 		}
 
 		public synchronized IndexReader borrowReader(final boolean staleOk)
 				throws IOException {
-			try {
-				latch.await();
-			} catch (final InterruptedException e) {
-				// Ignored.
-			}
-
+			blockForLatest(staleOk);
 			if (reader == null) {
 				reader = writer.getReader();
 				etag = newEtag();
@@ -143,7 +138,28 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		private synchronized boolean notModified(final HttpServletRequest req) {
 			return etag != null && etag.equals(req.getHeader("If-None-Match"));
 		}
-		
+
+		private void blockForLatest(final boolean staleOk) throws IOException {
+			if (staleOk) {
+				return;
+			}
+			final long latest = database.getInfo().getUpdateSequence();
+			synchronized (this) {
+				while (pending_seq < latest) {
+					try {
+						wait();
+					} catch (final InterruptedException e) {
+						// Ignored.
+					}
+				}
+			}
+		}
+
+		private synchronized void setPendingSequence(final long newSequence) {
+			pending_seq = newSequence;
+			notifyAll();
+		}
+
 		@Override
 		public String toString() {
 			return writer.getDirectory().toString();
@@ -221,7 +237,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		final String command = pathParts(req)[4];
 
 		if ("_expunge".equals(command)) {
-			logger.info("Expunging deletes from "+ state);
+			logger.info("Expunging deletes from " + state);
 			state.writer.expungeDeletes(false);
 			ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 			resp.setStatus(202);
@@ -304,7 +320,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			if (doc.isDeleted()) {
 				for (final IndexState state : states.values()) {
 					state.writer.deleteDocuments(new Term("_id", id));
-					state.pending_seq = seq;
+					state.setPendingSequence(seq);
 				}
 			} else {
 				for (final Entry<View, IndexState> entry : states.entrySet()) {
@@ -324,10 +340,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					for (final Document d : docs) {
 						state.writer.addDocument(d, view.getAnalyzer());
 					}
-					state.pending_seq = seq;
+					state.setPendingSequence(seq);
 					state.dirty = true;
 				}
-				releaseLatches();
 			}
 		}
 		req.abort();
@@ -667,15 +682,16 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 							Constants.VERSION, Constants.DEFAULT_FIELD, view
 									.getAnalyzer());
 
-					states.put(view, new IndexState(converter, writer, parser,
-							seq));
+					final IndexState state = new IndexState(converter, writer, parser,
+							database);
+					state.setPendingSequence(seq);
+					states.put(view, state);
 				}
 			}
 		}
 		logger.debug("paths: " + paths);
 
 		this.lastCommit = now();
-		releaseLatches();
 		latch.countDown();
 	}
 
@@ -699,14 +715,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private String[] pathParts(final HttpServletRequest req) {
 		return req.getRequestURI().replaceFirst("/", "").split("/");
-	}
-
-	private void releaseLatches() {
-		for (final IndexState state : states.values()) {
-			if (state.pending_seq >= ddoc_seq) {
-				state.latch.countDown();
-			}
-		}
 	}
 
 	private File viewDir(final View view, final boolean mkdirs)
