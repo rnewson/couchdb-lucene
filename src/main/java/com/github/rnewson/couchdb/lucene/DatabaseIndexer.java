@@ -65,7 +65,7 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
 
 public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
-	private static class IndexState {
+	private class IndexState {
 
 		private final DocumentConverter converter;
 		private boolean dirty;
@@ -147,9 +147,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			synchronized (this) {
 				while (pending_seq < latest) {
 					try {
-						wait();
+						wait(searchTimeout);
 					} catch (final InterruptedException e) {
-						// Ignored.
+						throw new IOException("Search timed out.");
 					}
 				}
 			}
@@ -223,12 +223,15 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			.synchronizedMap(new HashMap<View, IndexState>());
 
 	private UUID uuid;
+	
+	private final long searchTimeout;
 
 	public DatabaseIndexer(final HttpClient client, final File root,
-			final Database database) throws IOException {
+			final Database database, final long searchTimeout) throws IOException {
 		this.client = client;
 		this.root = root;
 		this.database = database;
+		this.searchTimeout = searchTimeout;
 	}
 
 	public void admin(final HttpServletRequest req,
