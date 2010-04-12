@@ -738,6 +738,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private File viewDir(final View view, final boolean mkdirs)
 			throws IOException {
+		assert root != null;
+		assert uuid != null;
+		assert view != null;
 		return viewDir(root, uuid, view.getDigest(), mkdirs);
 	}
 
