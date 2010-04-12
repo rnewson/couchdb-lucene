@@ -1,10 +1,11 @@
 package com.github.rnewson.couchdb.lucene;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import net.sf.json.JSONObject;
 
 import org.apache.lucene.document.Document;
+import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -167,7 +168,7 @@ public class DocumentConverterTest {
     }
 
     @Test
-    public void defaultValue() throws Exception {
+    public void testDefaultValue() throws Exception {
         final String fun = "function(doc) { var ret=new Document(); ret.add(doc['arr'].join(' '));  return ret; }";
         final DocumentConverter converter = new DocumentConverter(context, view(fun));
         final Document[] result = converter.convert(
@@ -176,6 +177,18 @@ public class DocumentConverterTest {
                 null);
         assertThat(result.length, is(1));
         assertThat(result[0].get("default"), is("1 2"));
+    }
+    
+    @Test
+    public void testNullValue() throws Exception {
+    	 final String fun = "function(doc) { var ret=new Document(); ret.add(doc.foo);  return ret; }";
+         final DocumentConverter converter = new DocumentConverter(context, view(fun));
+         final Document[] result = converter.convert(
+                 doc("{_id:\"hi\", foo:null}"),
+                 settings(),
+                 null);
+         assertThat(result.length, is(1));
+         assertThat(result[0].get("foo"), is(nullValue()));
     }
 
     private CouchDocument doc(final String json) {
