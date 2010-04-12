@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThat;
 import net.sf.json.JSONObject;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.NumericField;
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
@@ -190,6 +191,43 @@ public class DocumentConverterTest {
          assertThat(result.length, is(1));
          assertThat(result[0].get("foo"), is(nullValue()));
     }
+    
+    @Test
+    public void testLongValue() throws Exception {
+    	 final String fun = "function(doc) { var ret=new Document(); ret.add(12, {type:\"long\", field:\"num\"});  return ret; }";
+         final DocumentConverter converter = new DocumentConverter(context, view(fun));
+         final Document[] result = converter.convert(
+                 doc("{_id:\"hi\"}"),
+                 settings(),
+                 null);
+         assertThat(result.length, is(1));
+         assertThat(result[0].getFieldable("num"), is(NumericField.class));
+    }
+    
+    @Test
+    public void testDateString() throws Exception {
+    	 final String fun = "function(doc) { var ret=new Document(); ret.add(\"2009-01-01\", {type:\"date\", field:\"num\"});  return ret; }";
+         final DocumentConverter converter = new DocumentConverter(context, view(fun));
+         final Document[] result = converter.convert(
+                 doc("{_id:\"hi\"}"),
+                 settings(),
+                 null);
+         assertThat(result.length, is(1));
+         assertThat(result[0].getFieldable("num"), is(NumericField.class));
+    }
+    
+    @Test
+    public void testDateObject() throws Exception {
+    	 final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(), {type:\"date\", field:\"num\"});  return ret; }";
+         final DocumentConverter converter = new DocumentConverter(context, view(fun));
+         final Document[] result = converter.convert(
+                 doc("{_id:\"hi\"}"),
+                 settings(),
+                 null);
+         assertThat(result.length, is(1));
+         assertThat(result[0].getFieldable("num"), is(NumericField.class));
+    }
+
 
     private CouchDocument doc(final String json) {
         return new CouchDocument(JSONObject.fromObject(json));
