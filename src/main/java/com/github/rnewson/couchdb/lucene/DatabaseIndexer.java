@@ -91,18 +91,18 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				throws IOException {
 			blockForLatest(staleOk);
 			if (reader == null) {
-				reader = writer.getReader();
 				etag = newEtag();
-				reader.incRef();
 			}
-			if (!staleOk) {
+
+			if (reader != null) {
 				reader.decRef();
-				reader = writer.getReader();
-				if (dirty) {
-					etag = newEtag();
-					dirty = false;
-				}
 			}
+			reader = writer.getReader();
+			if (dirty) {
+				etag = newEtag();
+				dirty = false;
+			}
+
 			reader.incRef();
 			return reader;
 		}
@@ -727,8 +727,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER,
 				MaxFieldLength.UNLIMITED);
 		result.setMergeFactor(ini.getInt("lucene.mergeFactor", 5));
-		result.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile", false));
-		result.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB", IndexWriter.DEFAULT_RAM_BUFFER_SIZE_MB));
+		result.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
+				false));
+		result.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB",
+				IndexWriter.DEFAULT_RAM_BUFFER_SIZE_MB));
 		return result;
 	}
 
