@@ -726,7 +726,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	private IndexWriter newWriter(final Directory dir) throws IOException {
 		final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER,
 				MaxFieldLength.UNLIMITED);
-		result.setMergeFactor(ini.getInt("lucene.mergeFactor", 5));
+		result.setMergeFactor(ini.getInt("lucene.mergeFactor", 10));
 		result.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
 				false));
 		result.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB",
