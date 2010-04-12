@@ -16,6 +16,7 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -46,6 +47,13 @@ public class TikaTest {
     public void testXML() throws IOException {
         parse("example.xml", "text/xml", "bar");
         assertThat(doc.getField("bar"), not(nullValue()));
+    }
+    
+    @Test
+    public void testWord() throws IOException {
+        parse("example.doc", "application/msword", "bar");
+        assertThat(doc.getField("bar"), not(nullValue()));
+        assertThat(doc.get("bar"), containsString("576 dsf45 d56 dsgh"));
     }
 
     private void parse(final String resource, final String type, final String field) throws IOException {
