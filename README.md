@@ -7,7 +7,7 @@
 <table>
 <tr><th>CouchDB</th><th>couchdb-lucene</th></tr>
 <tr><td>0.9.1, 0.10</td><td>0.4</td></tr>
-<tr><td>0.11 (not yet released)</td><td>0.4-maint (0.4 with patch for trunk compatibility)</td></tr>
+<tr><td>0.11</td><td>0.4-maint (0.4 with patch for trunk compatibility)</td></tr>
 <tr><td>0.10.x and 0.11.x</td><td>0.5 (not yet released)</td></tr>
 </table>
 
