@@ -124,7 +124,7 @@ public enum FieldType {
         return new NumericField(name, precisionStep, settings.getStore(), settings.getIndex().isIndexed());
     }
 
-    public static final String[] DATE_PATTERNS = new String[] { "yyyy-MM-dd'T'HH:mm:ssZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZZ",
+    public static final String[] DATE_PATTERNS = new String[] { "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZ",
             "yyyy-MM-dd" };
 
     private final int sortField;

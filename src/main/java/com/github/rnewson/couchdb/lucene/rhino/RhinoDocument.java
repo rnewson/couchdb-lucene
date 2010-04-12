@@ -17,15 +17,15 @@ package com.github.rnewson.couchdb.lucene.rhino;
  */
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.impl.cookie.DateUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.ParseException;
 import org.mozilla.javascript.Context;
@@ -88,7 +88,7 @@ public final class RhinoDocument extends ScriptableObject {
         final String className = args[0].getClass().getName();
         
         if (className.equals("org.mozilla.javascript.NativeDate")) {
-        	args[0] = DateUtils.formatDate((Date) Context.jsToJava(args[0], Date.class),
+        	args[0] = DateFormatUtils.format((Date) Context.jsToJava(args[0], Date.class),
         			FieldType.DATE_PATTERNS[0]);
         }
 
