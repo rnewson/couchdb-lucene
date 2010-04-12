@@ -52,7 +52,10 @@ public class DesignDocument extends CouchDocument {
 		final Map<String, View> result = new HashMap<String, View>();
 		for (final Object key : fulltext.keySet()) {
 			final String name = (String) key;
-			result.put(name, getView(name));
+			final View view = getView(name);
+			if (view != null) {
+				result.put(name, view);
+			}
 		}
 		return result;
 	}
