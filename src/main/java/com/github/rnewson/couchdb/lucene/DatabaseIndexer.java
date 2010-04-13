@@ -534,35 +534,35 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 							row.put("fields", fields);
 						}
 						rows.add(row);
-						// Fetch documents (if requested).
-						if (include_docs && fetch_ids.length > 0) {
-							database.getDocuments(fetch_ids);
-							final List<CouchDocument> fetched_docs = database
-									.getDocuments(fetch_ids);
-							for (int j = 0; j < max; j++) {
-								rows.getJSONObject(j).put("doc",
-										fetched_docs.get(j).asJson());
-							}
-
-						}
-						stopWatch.lap("fetch");
-
-						queryRow.put("skip", skip);
-						queryRow.put("limit", limit);
-						queryRow.put("total_rows", td.totalHits);
-						queryRow.put("search_duration", stopWatch
-								.getElapsed("search"));
-						queryRow.put("fetch_duration", stopWatch
-								.getElapsed("fetch"));
-						// Include sort info (if requested).
-						if (td instanceof TopFieldDocs) {
-							queryRow.put("sort_order", CustomQueryParser
-									.toString(((TopFieldDocs) td).fields));
-						}
-						queryRow.put("rows", rows);
 					}
-					result.add(queryRow);
+					// Fetch documents (if requested).
+					if (include_docs && fetch_ids.length > 0) {
+						database.getDocuments(fetch_ids);
+						final List<CouchDocument> fetched_docs = database
+								.getDocuments(fetch_ids);
+						for (int j = 0; j < max; j++) {
+							rows.getJSONObject(j).put("doc",
+									fetched_docs.get(j).asJson());
+						}
+
+					}
+					stopWatch.lap("fetch");
+
+					queryRow.put("skip", skip);
+					queryRow.put("limit", limit);
+					queryRow.put("total_rows", td.totalHits);
+					queryRow.put("search_duration", stopWatch
+							.getElapsed("search"));
+					queryRow.put("fetch_duration", stopWatch
+							.getElapsed("fetch"));
+					// Include sort info (if requested).
+					if (td instanceof TopFieldDocs) {
+						queryRow.put("sort_order", CustomQueryParser
+								.toString(((TopFieldDocs) td).fields));
+					}
+					queryRow.put("rows", rows);
 				}
+				result.add(queryRow);
 			}
 		} catch (final ParseException e) {
 			ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax: "

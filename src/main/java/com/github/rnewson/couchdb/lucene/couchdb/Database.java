@@ -82,6 +82,7 @@ public final class Database {
 
 		final JSONArray keys = new JSONArray();
 		for (final String id : ids) {
+			assert id != null;
 			keys.add(id);
 		}
 		final JSONObject req = new JSONObject();
