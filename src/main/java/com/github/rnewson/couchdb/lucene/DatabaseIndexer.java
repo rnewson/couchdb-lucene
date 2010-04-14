@@ -687,9 +687,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					final long seq = getUpdateSequence(dir);
 					if (since == 0) {
 						since = seq;
+						logger.debug(dir + " bumped since to " + since);
 					}
 					if (seq != -1L) {
 						since = Math.min(since, seq);
+						logger.debug(dir + " bumped since to " + since);
 					}
 
 					final DocumentConverter converter = new DocumentConverter(
