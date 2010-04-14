@@ -1,5 +1,6 @@
 package com.github.rnewson.couchdb.lucene;
 
+import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.BufferedReader;
@@ -172,8 +173,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			return false;
 		}
 	}
-
-	private static final long COMMIT_INTERVAL = SECONDS.toNanos(60);
 
 	private static final JSONObject JSON_SUCCESS = JSONObject
 			.fromObject("{\"ok\":true}");
@@ -718,7 +717,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private void maybeCommit() throws IOException {
-		if (now() - lastCommit >= COMMIT_INTERVAL) {
+		if (now() - lastCommit >= getCommitInterval()) {
 			commitAll();
 		}
 	}
@@ -745,6 +744,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private long getSearchTimeout() {
 		return ini.getLong("lucene.timeout", 5000);
+	}
+
+	private long getCommitInterval() {
+		final long commitSeconds = max(1L, ini.getLong("lucene.commitEvery", 15));
+		return SECONDS.toNanos(commitSeconds);
 	}
 
 }
