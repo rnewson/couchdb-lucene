@@ -209,7 +209,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private final CountDownLatch latch = new CountDownLatch(1);
 
-	private Logger logger;
+	private final Logger logger;
 
 	private final Map<String, View> paths = new HashMap<String, View>();
 
@@ -233,6 +233,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		this.root = root;
 		this.database = database;
 		this.ini = ini;
+		this.logger = Logger.getLogger(DatabaseIndexer.class.getName() + "."
+				+ database.getInfo().getName());
 	}
 
 	public void admin(final HttpServletRequest req,
@@ -664,8 +666,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private void init() throws IOException {
-		this.logger = Logger.getLogger(DatabaseIndexer.class.getName() + "."
-				+ database.getInfo().getName());
 		this.uuid = database.getOrCreateUuid();
 
 		this.context = Context.enter();
