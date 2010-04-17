@@ -77,7 +77,7 @@ Here's an complete example of a design document with couchdb-lucene features:
 
 <pre>
 {
-    "_id":"_design/a_design_document_with_any_name_you_like",
+    "_id":"_design/foo",
     "fulltext": {
         "by_subject": {
             "index":"function(doc) { var ret=new Document(); ret.add(doc.subject); return ret }"
@@ -92,8 +92,8 @@ Here's an complete example of a design document with couchdb-lucene features:
 Here are some example URL's for the given design document;
 
 <pre>
-http://localhost:5984/database/_fti/lucene/by_subject?q=hello
-http://localhost:5984/database/_fti/lucene/by_content?q=hello
+http://localhost:5984/database/_fti/foo/by_subject?q=hello
+http://localhost:5984/database/_fti/foo/by_content?q=hello
 </pre>
 
 A fulltext object contains multiple index view declarations. An index view consists of;
