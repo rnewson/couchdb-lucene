@@ -227,7 +227,18 @@ public class DocumentConverterTest {
          assertThat(result.length, is(1));
          assertThat(result[0].getFieldable("num"), is(NumericField.class));
     }
-
+    
+    @Test
+    public void testParseInt() throws Exception {
+    	 final String fun = "function(doc) { var ret=new Document(); ret.add(parseInt(\"12.5\"), {type:\"int\", field:\"num\"});  return ret; }";
+         final DocumentConverter converter = new DocumentConverter(context, view(fun));
+         final Document[] result = converter.convert(
+                 doc("{_id:\"hi\"}"),
+                 settings(),
+                 null);
+         assertThat(result.length, is(1));
+         assertThat(result[0].getFieldable("num"), is(NumericField.class));
+    }
 
     private CouchDocument doc(final String json) {
         return new CouchDocument(JSONObject.fromObject(json));
