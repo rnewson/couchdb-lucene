@@ -331,6 +331,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				for (final IndexState state : states.values()) {
 					state.writer.deleteDocuments(new Term("_id", id));
 					state.setPendingSequence(seq);
+					state.dirty = true;
 				}
 			} else {
 				for (final Entry<View, IndexState> entry : states.entrySet()) {
