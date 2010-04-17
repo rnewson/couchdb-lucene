@@ -624,13 +624,13 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private Document forceDocument() {
 		final Document result = new Document();
-		result.add(new Field("_id", uuid.toString(), Store.NO,
+		result.add(new Field("_cl", uuid.toString(), Store.NO,
 				Index.NOT_ANALYZED_NO_NORMS));
 		return result;
 	}
 
 	private Term forceTerm() {
-		return new Term("_id", uuid.toString());
+		return new Term("_cl", uuid.toString());
 	}
 
 	private boolean getBooleanParameter(final HttpServletRequest req,
