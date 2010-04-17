@@ -1,12 +1,12 @@
 package com.github.rnewson.couchdb.lucene;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import net.sf.json.JSONObject;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.NumericField;
-import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

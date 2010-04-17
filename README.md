@@ -92,8 +92,8 @@ Here's an complete example of a design document with couchdb-lucene features:
 Here are some example URL's for the given design document;
 
 <pre>
-http://localhost:5984/database/_fti/foo/by_subject?q=hello
-http://localhost:5984/database/_fti/foo/by_content?q=hello
+http://localhost:5984/database/_fti/_design/foo/by_subject?q=hello
+http://localhost:5984/database/_fti/_design/foo/by_content?q=hello
 </pre>
 
 A fulltext object contains multiple index view declarations. An index view consists of;
@@ -396,9 +396,9 @@ All Dublin Core attributes are indexed and stored if detected in the attachment.
 <h2>Examples</h2>
 
 <pre>
-http://localhost:5984/dbname/_fti/design_doc/view_name?q=field_name:value
-http://localhost:5984/dbname/_fti/design_doc/view_name?q=field_name:value&sort=other_field
-http://localhost:5984/dbname/_fti/design_doc/view_name?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
+http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value
+http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value&sort=other_field
+http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
 </pre>
 
 <h2>Search Results Format</h2>
@@ -509,7 +509,7 @@ The Content-Type of the response is negotiated via the Accept request header lik
 Calling couchdb-lucene without arguments returns a JSON object with information about the index.
 
 <pre>
-http://127.0.0.1:5984/&lt;db>/_fti/&lt;ddoc>/&lt;index
+http://127.0.0.1:5984/&lt;db>/_fti/_design/foo/&lt;index
 </pre>
 
 returns;
@@ -525,13 +525,13 @@ returns;
 For optimal query speed you can optimize your indexes. This causes the index to be rewritten into a single segment.
 
 <pre>
-curl -X POST http://localhost:5984/&lt;db>/_fti/&lt;ddoc>/&lt;index>/_optimize
+curl -X POST http://localhost:5984/&lt;db>/_fti/_design/foo/&lt;index>/_optimize
 </pre>
 
 If you just want to expunge pending deletes, then call;
 
 <pre>
-curl -X POST http://localhost:5984/&lt;db>/_fti/&lt;ddoc>/&lt;index>/_expunge
+curl -X POST http://localhost:5984/&lt;db>/_fti/_design/foo/&lt;index>/_expunge
 </pre>
 
 If you recreate databases or frequently change your fulltext functions, you will probably have old indexes lying around on disk. To remove all of them, call;
