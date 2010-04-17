@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -88,8 +87,7 @@ public final class RhinoDocument extends ScriptableObject {
         final String className = args[0].getClass().getName();
         
         if (className.equals("org.mozilla.javascript.NativeDate")) {
-        	args[0] = DateFormatUtils.format((Date) Context.jsToJava(args[0], Date.class),
-        			FieldType.DATE_PATTERNS[0]);
+        	args[0] = (Date) Context.jsToJava(args[0], Date.class);
         }
 
         if (!className.startsWith("java.lang.") &&
@@ -180,7 +178,7 @@ public final class RhinoDocument extends ScriptableObject {
     private void addField(final RhinoField field, final ViewSettings defaults, final Document out) throws ParseException {
         final ViewSettings settings = new ViewSettings(field.settings, defaults);
         final FieldType type = settings.getFieldType();
-        out.add(type.toField(settings.getField(), field.value.toString(), settings));
+        out.add(type.toField(settings.getField(), field.value, settings));
     }
 
 }
