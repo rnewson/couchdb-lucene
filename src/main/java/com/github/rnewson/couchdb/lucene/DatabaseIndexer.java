@@ -435,14 +435,14 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		final IndexState state = getState(req, resp);
 		if (state == null)
 			return;
-		if (state.notModified(req)) {
-			resp.setStatus(304);
-			return;
-		}
 		final IndexSearcher searcher = state.borrowSearcher(isStaleOk(req));
 		final String etag = state.getEtag();
 		final JSONArray result = new JSONArray();
 		try {
+			if (state.notModified(req)) {
+				resp.setStatus(304);
+				return;
+			}
 			for (final String queryString : req.getParameterValues("q")) {
 				final Query q = state.parser.parse(queryString);
 				final JSONObject queryRow = new JSONObject();
@@ -618,7 +618,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				final Map<String, String> userData = new HashMap<String, String>();
 				userData.put("last_seq", Long.toString(state.pending_seq));
 				if (!state.writerDirty) {
-					logger.warn("Forcing additional document as nothing else was indexed since last commit.");
+					logger
+							.warn("Forcing additional document as nothing else was indexed since last commit.");
 					state.writer.updateDocument(forceTerm(), forceDocument());
 				}
 				state.writer.commit(userData);
