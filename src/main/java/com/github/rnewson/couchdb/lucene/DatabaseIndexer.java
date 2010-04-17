@@ -369,7 +369,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			final JSONObject result = new JSONObject();
 			result.put("current", reader.isCurrent());
 			result.put("disk_size", Utils.directorySize(reader.directory()));
-			result.put("doc_count", reader.numDocs() - 1);
+			result.put("doc_count", reader.numDocs());
 			result.put("doc_del_count", reader.numDeletedDocs());
 			final JSONArray fields = new JSONArray();
 			for (final Object field : reader.getFieldNames(FieldOption.INDEXED)) {
