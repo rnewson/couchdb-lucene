@@ -72,7 +72,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	private class IndexState {
 
 		private final DocumentConverter converter;
-		private boolean dirty;
+		private boolean readerDirty;
+		private boolean writerDirty;
 		private String etag;
 
 		private final QueryParser parser;
@@ -101,9 +102,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				reader.decRef();
 			}
 			reader = writer.getReader();
-			if (dirty) {
+			if (readerDirty) {
 				etag = newEtag();
-				dirty = false;
+				readerDirty = false;
 			}
 
 			reader.incRef();
@@ -331,7 +332,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				for (final IndexState state : states.values()) {
 					state.writer.deleteDocuments(new Term("_id", id));
 					state.setPendingSequence(seq);
-					state.dirty = true;
+					state.readerDirty = true;
 				}
 			} else {
 				for (final Entry<View, IndexState> entry : states.entrySet()) {
@@ -350,9 +351,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					state.writer.deleteDocuments(new Term("_id", id));
 					for (final Document d : docs) {
 						state.writer.addDocument(d, view.getAnalyzer());
+						state.writerDirty = true;
 					}
 					state.setPendingSequence(seq);
-					state.dirty = true;
+					state.readerDirty = true;
 				}
 			}
 		}
@@ -615,8 +617,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			if (state.pending_seq > getUpdateSequence(state.writer)) {
 				final Map<String, String> userData = new HashMap<String, String>();
 				userData.put("last_seq", Long.toString(state.pending_seq));
-				state.writer.updateDocument(forceTerm(), forceDocument());
+				if (!state.writerDirty) {
+					logger.warn("Forcing additional document as nothing else was indexed since last commit.");
+					state.writer.updateDocument(forceTerm(), forceDocument());
+				}
 				state.writer.commit(userData);
+				state.writerDirty = false;
 				logger.info(view + " now at update_seq " + state.pending_seq);
 			}
 		}
