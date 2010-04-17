@@ -114,7 +114,8 @@ public final class LuceneServlet extends HttpServlet {
 	}
 
 	private Couch getCouch(final HttpServletRequest req) throws IOException {
-		final Configuration section = ini.getSection(pathParts(req)[0]);
+		final Configuration section = ini.getSection(new PathParts(req)
+				.getKey());
 		final String url = section.containsKey("url") ? section
 				.getString("url") : null;
 		return new Couch(client, url);
@@ -139,7 +140,8 @@ public final class LuceneServlet extends HttpServlet {
 	private DatabaseIndexer getIndexer(final HttpServletRequest req)
 			throws IOException {
 		final Couch couch = getCouch(req);
-		final Database database = couch.getDatabase(pathParts(req)[1]);
+		final Database database = couch.getDatabase(new PathParts(req)
+				.getDatabaseName());
 		return getIndexer(database);
 	}
 
@@ -152,10 +154,6 @@ public final class LuceneServlet extends HttpServlet {
 		ServletUtils.writeJSON(resp, welcome);
 	}
 
-	private String[] pathParts(final HttpServletRequest req) {
-		return req.getRequestURI().replaceFirst("/", "").split("/");
-	}
-
 	@Override
 	protected void doGet(final HttpServletRequest req,
 			final HttpServletResponse resp) throws ServletException,
@@ -164,7 +162,7 @@ public final class LuceneServlet extends HttpServlet {
 		case 1:
 			handleWelcomeReq(req, resp);
 			return;
-		case 4:
+		case 5:
 			final DatabaseIndexer indexer = getIndexer(req);
 			if (req.getParameter("q") == null) {
 				indexer.info(req, resp);
@@ -188,7 +186,7 @@ public final class LuceneServlet extends HttpServlet {
 				return;
 			}
 			break;
-		case 5:
+		case 6:
 			final DatabaseIndexer indexer = getIndexer(req);
 			indexer.admin(req, resp);
 			return;

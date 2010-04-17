@@ -242,7 +242,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		final IndexState state = getState(req, resp);
 		if (state == null)
 			return;
-		final String command = pathParts(req)[4];
+		final String command = new PathParts(req).getCommand();
 
 		if ("_expunge".equals(command)) {
 			logger.info("Expunging deletes from " + state);
@@ -632,9 +632,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private IndexState getState(final HttpServletRequest req,
 			final HttpServletResponse resp) throws IOException {
-		final String path = pathParts(req)[2] + "/" + pathParts(req)[3];
-
-		final View view = paths.get(path);
+		final View view = paths.get(toPath(req));
 		if (view == null) {
 			ServletUtils.sendJSONError(req, resp, 400, "no_such_view");
 			return null;
@@ -680,7 +678,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					.entrySet()) {
 				final String name = entry.getKey();
 				final View view = entry.getValue();
-				paths.put(ddoc.getId().substring(8) + "/" + name, view);
+				paths.put(toPath(ddoc.getId(), name), view);
 
 				if (!states.containsKey(view)) {
 					final Directory dir = FSDirectory.open(viewDir(view, true));
@@ -734,10 +732,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		return result;
 	}
 
-	private String[] pathParts(final HttpServletRequest req) {
-		return req.getRequestURI().replaceFirst("/", "").split("/");
-	}
-
 	private File viewDir(final View view, final boolean mkdirs)
 			throws IOException {
 		return viewDir(root, uuid, view.getDigest(), mkdirs);
@@ -748,8 +742,18 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private long getCommitInterval() {
-		final long commitSeconds = max(1L, ini.getLong("lucene.commitEvery", 15));
+		final long commitSeconds = max(1L, ini
+				.getLong("lucene.commitEvery", 15));
 		return SECONDS.toNanos(commitSeconds);
+	}
+
+	private String toPath(final HttpServletRequest req) {
+		final PathParts parts = new PathParts(req);
+		return toPath(parts.getDesignDocumentName(), parts.getViewName());
+	}
+
+	private String toPath(final String ddoc, final String view) {
+		return ddoc + "/" + view;
 	}
 
 }

@@ -69,7 +69,7 @@ public final class Database {
 	}
 
 	public DesignDocument getDesignDocument(final String id) throws IOException {
-		final String response = HttpUtils.get(httpClient, url + "_design/"
+		final String response = HttpUtils.get(httpClient, url
 				+ Utils.urlEncode(id));
 		return new DesignDocument(JSONObject.fromObject(response));
 	}
