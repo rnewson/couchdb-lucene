@@ -11,6 +11,13 @@
 <tr><td>0.10.x and 0.11.x</td><td>0.5 (not yet released)</td></tr>
 </table>
 
+<h1>Breaking Changes</h1>
+
+<ul>
+<li>couchdb-lucene 0.5 runs as a standalone daemon (0.4 was run directly by couchdb).
+<li>URL's now require the full design document id (where you would say "foo", you must now say "_design/foo").
+</ul>
+
 <h1>Issue Tracking</h1>
 
 Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">github</a>.
