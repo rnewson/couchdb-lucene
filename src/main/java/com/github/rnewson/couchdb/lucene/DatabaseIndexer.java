@@ -38,6 +38,8 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
@@ -367,7 +369,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			final JSONObject result = new JSONObject();
 			result.put("current", reader.isCurrent());
 			result.put("disk_size", Utils.directorySize(reader.directory()));
-			result.put("doc_count", reader.numDocs());
+			result.put("doc_count", reader.numDocs() - 1);
 			result.put("doc_del_count", reader.numDeletedDocs());
 			final JSONArray fields = new JSONArray();
 			for (final Object field : reader.getFieldNames(FieldOption.INDEXED)) {
@@ -612,11 +614,23 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			if (state.pending_seq > getUpdateSequence(state.writer)) {
 				final Map<String, String> userData = new HashMap<String, String>();
 				userData.put("last_seq", Long.toString(state.pending_seq));
+				state.writer.updateDocument(forceTerm(), forceDocument());
 				state.writer.commit(userData);
 				logger.info(view + " now at update_seq " + state.pending_seq);
 			}
 		}
 		lastCommit = now();
+	}
+
+	private Document forceDocument() {
+		final Document result = new Document();
+		result.add(new Field("_id", uuid.toString(), Store.NO,
+				Index.NOT_ANALYZED_NO_NORMS));
+		return result;
+	}
+
+	private Term forceTerm() {
+		return new Term("_id", uuid.toString());
 	}
 
 	private boolean getBooleanParameter(final HttpServletRequest req,
