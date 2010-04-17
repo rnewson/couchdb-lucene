@@ -1,20 +1,16 @@
-<h1>WARNING</h1>
-
-0.5 is not yet released and may contain bugs and regressions. However, it is shaping up nicely so I recommend you try it first. 0.4 remains available if you hit insurmountable problems; but please take time to file a ticket at github if you do.
-
 <h1>Version Compatibility</h1>
 
 <table>
 <tr><th>CouchDB</th><th>couchdb-lucene</th></tr>
 <tr><td>0.9.1, 0.10</td><td>0.4</td></tr>
 <tr><td>0.11</td><td>0.4-maint (0.4 with patch for trunk compatibility)</td></tr>
-<tr><td>0.10.x and 0.11.x</td><td>0.5 (not yet released)</td></tr>
+<tr><td>0.10.x and 0.11.x</td><td>0.5.x</td></tr>
 </table>
 
 <h1>Breaking Changes</h1>
 
 <ul>
-<li>couchdb-lucene 0.5 runs as a standalone daemon (0.4 was run directly by couchdb).
+<li>couchdb-lucene 0.5.x runs as a standalone daemon (0.4 was run directly by couchdb).
 <li>URL's now require the full design document id (where you would say "foo", you must now say "_design/foo").
 </ul>
 
