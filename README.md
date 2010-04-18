@@ -334,7 +334,7 @@ You can perform all types of queries using Lucene's default <a href="http://luce
 
 <h2>Numeric range queries</h2>
 
-In addition to normal text-based range searches (using the "field:[lower TO upper]" syntax), couchdb-lucene all supports numeric range searches for the following types: int, long, float, double and date. The type is specified after the field name, as follows;
+In addition to normal text-based range searches (using the "field:[lower TO upper]" syntax), couchdb-lucene also supports numeric range searches for the following types: int, long, float, double and date. The type is specified after the field name, as follows;
 
 <table>
 <tr><td>type</td><td>example</td></tr>
