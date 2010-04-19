@@ -214,6 +214,11 @@ doc.attachment("attachment name");
 
 // Extract text from the named attachment and index it to a separate field
 doc.attachment("attachment name", {"field":"attachments"});
+
+// log an event (trace, debug, info, warn and error are available)
+if (doc.foo) {
+  log.info("doc has foo property!");
+}
 </pre>
 
 <h3>Example Transforms</h3>
