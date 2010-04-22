@@ -39,26 +39,34 @@ public final class CustomQueryParser extends QueryParser {
         super(matchVersion, f, a);
     }
 
-    public static Sort toSort(final String sort) throws ParseException {
-        if (sort == null) {
-            return null;
-        } else {
-            final String[] split = sort.split(",");
-            final SortField[] sort_fields = new SortField[split.length];
-            for (int i = 0; i < split.length; i++) {
-                String tmp = split[i];
-                final boolean reverse = tmp.charAt(0) == '\\';
-                // Strip sort order character.
-                if (tmp.charAt(0) == '\\' || tmp.charAt(0) == '/') {
-                    tmp = tmp.substring(1);
-                }
-
-                final TypedField typedField = new TypedField(tmp);
-                sort_fields[i] = new SortField(typedField.getName(), typedField.toSortField(), reverse);
-            }
-            return new Sort(sort_fields);
-        }
-    }
+	public static Sort toSort(final String sort) throws ParseException {
+		if (sort == null) {
+			return null;
+		} else {
+			final String[] split = sort.split(",");
+			final SortField[] sort_fields = new SortField[split.length];
+			for (int i = 0; i < split.length; i++) {
+				String tmp = split[i];
+				final boolean reverse = tmp.charAt(0) == '\\';
+				// Strip sort order character.
+				if (tmp.charAt(0) == '\\' || tmp.charAt(0) == '/') {
+					tmp = tmp.substring(1);
+				}
+				final SortField sortField;
+				if ("_score".equals(tmp)) {
+					sortField = new SortField(null, SortField.SCORE, reverse);
+				} else if ("_doc".equals(tmp)) {
+					sortField = new SortField(null, SortField.DOC, reverse);						
+				} else {
+					final TypedField typedField = new TypedField(tmp);
+					sortField = new SortField(typedField.getName(), typedField
+							.toSortField(), reverse);
+				}
+				sort_fields[i] = sortField;
+			}
+			return new Sort(sort_fields);
+		}
+	}
 
     public static String toString(final SortField[] sortFields) {
         final JSONArray result = new JSONArray();
