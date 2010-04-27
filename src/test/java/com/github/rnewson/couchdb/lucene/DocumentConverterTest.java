@@ -239,6 +239,16 @@ public class DocumentConverterTest {
          assertThat(result.length, is(1));
          assertThat(result[0].getFieldable("num"), is(NumericField.class));
     }
+    
+	@Test
+	public void testConditionalOnNulls() throws Exception {
+		final String fun = "function(doc) { if (doc.foo && doc.bar) { return new Document(); }; return null; }";
+		final DocumentConverter converter = new DocumentConverter(context,
+				view(fun));
+		final Document[] result = converter.convert(
+				doc("{_id:\"hi\", foo: null, bar: null}"), settings(), null);
+		assertThat(result.length, is(0));
+	}
 
     private CouchDocument doc(final String json) {
         return new CouchDocument(JSONObject.fromObject(json));
