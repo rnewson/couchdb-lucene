@@ -133,6 +133,9 @@ public final class DocumentConverter {
     }
 
     private Scriptable convertObject(final JSONObject obj) {
+    	if (obj.isNullObject()) {
+    		return null;
+    	}
         final Scriptable result = context.newObject(scope);
         for (final Object key : obj.keySet()) {
             final Object value = obj.get(key);
