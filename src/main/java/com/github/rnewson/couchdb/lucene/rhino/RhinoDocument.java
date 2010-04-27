@@ -76,7 +76,8 @@ public final class RhinoDocument extends ScriptableObject {
         }
 
         if (args[0] == null) {
-            throw Context.reportRuntimeError("first argument must be non-null.");
+        	// Ignore.
+            return;
         }
 
         if (args[0] instanceof Undefined) {
