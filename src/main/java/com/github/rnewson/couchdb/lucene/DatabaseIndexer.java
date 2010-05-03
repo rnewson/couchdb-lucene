@@ -449,6 +449,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				queryRow.put("q", q.toString());
 				if (getBooleanParameter(req, "debug")) {
 					queryRow.put("plan", QueryPlan.toPlan(q));
+					queryRow.put("analyzer", state.parser.getAnalyzer().getClass());
 				}
 				queryRow.put("etag", etag);
 				if (getBooleanParameter(req, "rewrite")) {
