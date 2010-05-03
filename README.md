@@ -142,6 +142,12 @@ The following indexing options can be defaulted;
     <td>analyzed, analyzed_no_norms, no, not_analyzed, not_analyzed_no_norms</td>
     <td>analyzed</td>
   </tr>
+  <tr>
+    <th>boost</th>
+    <td>Sets the boost factor hits on this field. This value will be multiplied into the score of all hits on this this field of this document.</td>
+    <td>floating-point value</td>
+    <td>1.0</td>
+  </tr>
 </table>
 
 <h3>The Analyzer Option</h3>

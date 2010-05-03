@@ -27,20 +27,21 @@ import com.github.rnewson.couchdb.lucene.util.Constants;
 public final class ViewSettings {
 
     public static ViewSettings getDefaultSettings() {
-        return new ViewSettings(Constants.DEFAULT_FIELD, "analyzed", "no", "string", null);
+        return new ViewSettings(Constants.DEFAULT_FIELD, "analyzed", "no", "string", "1.0", null);
     }
 
     private final Index index;
     private final Store store;
     private final String field;
     private final FieldType type;
+    private final float boost;
 
     public ViewSettings(final JSONObject json) {
         this(json, getDefaultSettings());
     }
 
     public ViewSettings(final JSONObject json, final ViewSettings defaults) {
-        this(json.optString("field", null), json.optString("index", null), json.optString("store", null), json.optString("type", null), defaults);
+        this(json.optString("field", null), json.optString("index", null), json.optString("store", null), json.optString("type", null), json.optString("boost", null), defaults);
     }
 
     public ViewSettings(final NativeObject obj) {
@@ -48,14 +49,19 @@ public final class ViewSettings {
     }
 
     public ViewSettings(final NativeObject obj, final ViewSettings defaults) {
-        this(get(obj, "field"), get(obj, "index"), get(obj, "store"), get(obj, "type"), defaults);
+        this(get(obj, "field"), get(obj, "index"), get(obj, "store"), get(obj, "type"), get(obj, "boost"), defaults);
     }
 
-    private ViewSettings(final String field, final String index, final String store, final String type, final ViewSettings defaults) {
+    private ViewSettings(final String field, final String index, final String store, final String type, final String boost, final ViewSettings defaults) {
         this.field = field != null ? field : defaults.getField();
         this.index = index != null ? Index.valueOf(index.toUpperCase()) : defaults.getIndex();
         this.store = store != null ? Store.valueOf(store.toUpperCase()) : defaults.getStore();
         this.type = type != null ? FieldType.valueOf(type.toUpperCase()) : defaults.getFieldType();
+        this.boost = boost != null ? Float.valueOf(boost) : defaults.getBoost();
+    }
+
+    public float getBoost() {
+        return boost;
     }
 
     public Index getIndex() {
@@ -75,7 +81,7 @@ public final class ViewSettings {
     }
 
     private static String get(final NativeObject obj, final String key) {
-        return obj == null ? null : obj.has(key, null) ? (String) obj.get(key, null) : null;
+        return obj == null ? null : obj.has(key, null) ? obj.get(key, null).toString() : null;
     }
 
 }
