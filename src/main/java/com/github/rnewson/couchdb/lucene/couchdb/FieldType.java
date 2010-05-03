@@ -123,7 +123,7 @@ public enum FieldType {
     STRING(0, SortField.STRING) {
         @Override
         public Field toField(final String name, final Object value, final ViewSettings settings) {
-            return new Field(name, value.toString(), settings.getStore(), settings.getIndex());
+            return field(name, value, settings);
         }
 
         @Override
@@ -135,7 +135,16 @@ public enum FieldType {
     };
 
     private static NumericField field(final String name, final int precisionStep, final ViewSettings settings) {
-        return new NumericField(name, precisionStep, settings.getStore(), settings.getIndex().isIndexed());
+        return boost(new NumericField(name, precisionStep, settings.getStore(), settings.getIndex().isIndexed()), settings);
+    }
+
+    private static Field field(final String name, final Object value, final ViewSettings settings) {
+        return boost(new Field(name, value.toString(), settings.getStore(), settings.getIndex()), settings);
+    }
+
+    private static <T extends AbstractField> T boost(final T field, final ViewSettings settings) {
+        field.setBoost(settings.getBoost());
+        return field;
     }
 
     public static final String[] DATE_PATTERNS = new String[] { "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZ",
