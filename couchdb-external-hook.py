@@ -72,16 +72,16 @@ def respond(res, req, line, key):
 
     # Use regexps to extract query arguments so we can tolerate duplicate keys.
     query = query_re.search(line)
+    if query is not None:
+        # Make 2-tuples
+        args = arg_re.findall(query.group(1))
 
-    # Make 2-tuples
-    args = arg_re.findall(query.group(1))
+        # unquote tuples
+        args = [(k.strip('"'), v.strip('"')) for (k, v) in args]
 
-    # unquote tuples
-    args = [(k.strip('"'), v.strip('"')) for (k, v) in args]
-
-    # urlencode the arguments
-    params = urllib.urlencode(args)
-    path = '?'.join([path, params])
+        # urlencode the arguments
+        params = urllib.urlencode(args)
+        path = '?'.join([path, params])
 
     req_headers = {}
     for h in req.get("headers", []):
