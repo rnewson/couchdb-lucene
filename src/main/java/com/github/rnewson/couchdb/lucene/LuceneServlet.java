@@ -150,7 +150,7 @@ public final class LuceneServlet extends HttpServlet {
 			IOException {
 		final JSONObject welcome = new JSONObject();
 		welcome.put("couchdb-lucene", "Welcome");
-		welcome.put("version", "0.5.0");
+		welcome.put("version", "0.6-SNAPSHOT");
 		ServletUtils.writeJSON(resp, welcome);
 	}
 
