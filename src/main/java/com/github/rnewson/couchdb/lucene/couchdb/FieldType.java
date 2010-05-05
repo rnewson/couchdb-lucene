@@ -139,7 +139,7 @@ public enum FieldType {
     }
 
     private static Field field(final String name, final Object value, final ViewSettings settings) {
-        return boost(new Field(name, value.toString(), settings.getStore(), settings.getIndex()), settings);
+        return boost(new Field(name, value.toString(), settings.getStore(), settings.getIndex(), settings.getTermVector()), settings);
     }
 
     private static <T extends AbstractField> T boost(final T field, final ViewSettings settings) {
