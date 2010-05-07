@@ -77,7 +77,7 @@ def respond(res, req, line, key):
         args = arg_re.findall(query.group(1))
 
         # unquote tuples
-        args = [(k.strip('"'), v.strip('"')) for (k, v) in args]
+        args = [(k.strip('"'), json.loads(v)) for (k, v) in args]
 
         # urlencode the arguments
         params = urllib.urlencode(args)
