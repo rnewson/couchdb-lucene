@@ -323,9 +323,15 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				}
 			}
 
-			if (id.startsWith("_design") && seq > ddoc_seq) {
-				logger.info("Exiting due to design document change.");
-				break loop;
+			if (id.startsWith("_design")) {
+			    if (seq > ddoc_seq) {
+			        logger.info("Exiting due to design document change.");
+			        break loop;
+			    }
+			    for (final IndexState state : states.values()) {
+			        state.setPendingSequence(seq);
+			    }
+			    continue loop;
 			}
 
 			if (doc.isDeleted()) {
