@@ -378,7 +378,7 @@ The following parameters can be passed for more sophisticated searches;
 <dt>limit</dt><dd>the maximum number of results to return</dd>
 <dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched. Multiple q parameters are permitted, the resulting JSON will be an array of responses.</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
-<dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified). Type-specific sorting is also available by appending the type between angle brackets (e.g, 'sort=amount<float>'). Supported types are 'float', 'double', 'int', 'long' and 'date'.</dd>
+<dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified). Type-specific sorting is also available by appending the type between angle brackets (e.g, sort=amount<float>). Supported types are 'float', 'double', 'int', 'long' and 'date'.</dd>
 <dt>stale=ok</dt><dd>If you set the <i>stale</i> option to <i>ok</i>, couchdb-lucene may not perform any refreshing on the index. Searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will use the latest data committed to the index.</dd>
 </dl>
 
