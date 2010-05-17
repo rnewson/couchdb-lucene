@@ -449,7 +449,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				resp.setStatus(304);
 				return;
 			}
-			for (final String queryString : req.getParameterValues("q")) {
+			for (final String queryString : getQueryStrings(req)) {
 				final Query q = state.parser.parse(queryString);
 				final JSONObject queryRow = new JSONObject();
 				queryRow.put("q", q.toString());
@@ -605,6 +605,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			writer.close();
 		}
 	}
+
+    private String[] getQueryStrings(final HttpServletRequest req) {
+        return req.getParameter("q").split(",");
+    }
 
 	private void close() throws IOException {
 		this.closed = true;
