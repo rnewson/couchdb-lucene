@@ -5,7 +5,6 @@ import optparse as op
 import sys
 import traceback
 import urllib
-import re
 
 try:
     import json
@@ -15,9 +14,6 @@ except:
 __usage__ = "%prog [OPTIONS]"
 
 httpdict = {"etag":"ETag", "content-type":"Content-Type"}
-
-query_re = re.compile('(?:"query":{)([^}]+)')
-arg_re = re.compile('("\w+"):("[^"]+")')
 
 def options():
     return [
@@ -38,11 +34,10 @@ def main():
 
     if len(args):
         parser.error("Unrecognized arguments: %s" % ' '.join(args))
-    for line in requests():
-        req = json.loads(line)
+    for req in requests():
         res = httplib.HTTPConnection(opts.remote_host, opts.remote_port)
         try:
-            resp = respond(res, req, line, opts.key)
+            resp = respond(res, req, opts.key)
         except Exception, e:
             body = traceback.format_exc()
             resp = mkresp(500, body, {"Content-Type": "text/plain"})
@@ -55,10 +50,10 @@ def main():
 def requests():
     line = sys.stdin.readline()
     while line:
-        yield line
+        yield json.loads(line)
         line = sys.stdin.readline()
 
-def respond(res, req, line, key):
+def respond(res, req, key):
     path = req.get("path", [])
 
     # Drop name of external hook.
@@ -69,19 +64,8 @@ def respond(res, req, line, key):
         path[index] = urllib.quote(path[index], "")
 
     path = '/'.join(['', key] + path)
-
-    # Use regexps to extract query arguments so we can tolerate duplicate keys.
-    query = query_re.search(line)
-    if query is not None:
-        # Make 2-tuples
-        args = arg_re.findall(query.group(1))
-
-        # unquote tuples
-        args = [(k.strip('"'), json.loads(v)) for (k, v) in args]
-
-        # urlencode the arguments
-        params = urllib.urlencode(args)
-        path = '?'.join([path, params])
+    params = urllib.urlencode(dict([k, v.encode('utf-8')] for k, v in req["query"].items()))
+    path = '?'.join([path, params])
 
     req_headers = {}
     for h in req.get("headers", []):
