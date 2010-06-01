@@ -36,6 +36,7 @@ import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
@@ -76,18 +77,18 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		private boolean writerDirty;
 		private String etag;
 
-		private final QueryParser parser;
+		private final Analyzer analyzer;
 		private long pending_seq;
 		private IndexReader reader;
 		private final IndexWriter writer;
 		private final Database database;
 
 		public IndexState(final DocumentConverter converter,
-				final IndexWriter writer, final QueryParser parser,
+				final IndexWriter writer, final Analyzer analyzer,
 				final Database database) {
 			this.converter = converter;
 			this.writer = writer;
-			this.parser = parser;
+			this.analyzer = analyzer;
 			this.database = database;
 		}
 
@@ -123,6 +124,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		public void returnSearcher(final IndexSearcher searcher)
 				throws IOException {
 			returnReader(searcher.getIndexReader());
+		}
+
+		public Query parse(final String query) throws ParseException {
+			final QueryParser parser = new CustomQueryParser(Constants.VERSION,
+					Constants.DEFAULT_FIELD, analyzer);
+			return parser.parse(query);
 		}
 
 		private synchronized void close() throws IOException {
@@ -172,6 +179,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private final class RestrictiveClassShutter implements ClassShutter {
+
 		public boolean visibleToScripts(final String fullClassName) {
 			return false;
 		}
@@ -324,14 +332,14 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			}
 
 			if (id.startsWith("_design")) {
-			    if (seq > ddoc_seq) {
-			        logger.info("Exiting due to design document change.");
-			        break loop;
-			    }
-			    for (final IndexState state : states.values()) {
-			        state.setPendingSequence(seq);
-			    }
-			    continue loop;
+				if (seq > ddoc_seq) {
+					logger.info("Exiting due to design document change.");
+					break loop;
+				}
+				for (final IndexState state : states.values()) {
+					state.setPendingSequence(seq);
+				}
+				continue loop;
 			}
 
 			if (doc.isDeleted()) {
@@ -450,7 +458,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				return;
 			}
 			for (final String queryString : getQueryStrings(req)) {
-				final Query q = state.parser.parse(queryString);
+				final Query q = state.parse(queryString);
 				final JSONObject queryRow = new JSONObject();
 				queryRow.put("q", q.toString());
 				if (getBooleanParameter(req, "debug")) {
@@ -605,9 +613,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		}
 	}
 
-    private String[] getQueryStrings(final HttpServletRequest req) {
-        return req.getParameter("q").split(",");
-    }
+	private String[] getQueryStrings(final HttpServletRequest req) {
+		return req.getParameter("q").split(",");
+	}
 
 	private void close() throws IOException {
 		this.closed = true;
@@ -726,12 +734,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					final DocumentConverter converter = new DocumentConverter(
 							context, view);
 					final IndexWriter writer = newWriter(dir);
-					final QueryParser parser = new CustomQueryParser(
-							Constants.VERSION, Constants.DEFAULT_FIELD, view
-									.getAnalyzer());
 
 					final IndexState state = new IndexState(converter, writer,
-							parser, database);
+							view.getAnalyzer(), database);
 					state.setPendingSequence(seq);
 					states.put(view, state);
 				}
