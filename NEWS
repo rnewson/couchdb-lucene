@@ -1,3 +1,18 @@
+Version 0.5.2
+-------------
+
+* Make searching thread-safe.
+
+
+Version 0.5.1
+-------------
+
+* Support multiple queries in a single call through the Python script.
+* Allow customization of field boost.
+* Improved handled for emitted null values.
+* Improved date handling.
+
+
 Version 0.5
 -----------
 
