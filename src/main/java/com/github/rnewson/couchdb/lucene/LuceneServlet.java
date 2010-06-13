@@ -158,7 +158,7 @@ public final class LuceneServlet extends HttpServlet {
 	protected void doGet(final HttpServletRequest req,
 			final HttpServletResponse resp) throws ServletException,
 			IOException {
-		switch (StringUtils.countMatches(req.getPathInfo(), "/")) {
+		switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
 		case 1:
 			handleWelcomeReq(req, resp);
 			return;
@@ -179,7 +179,7 @@ public final class LuceneServlet extends HttpServlet {
 	protected void doPost(final HttpServletRequest req,
 			final HttpServletResponse resp) throws ServletException,
 			IOException {
-		switch (StringUtils.countMatches(req.getPathInfo(), "/")) {
+		switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
 		case 3:
 			if (req.getPathInfo().endsWith("/_cleanup")) {
 				cleanup(req, resp);
