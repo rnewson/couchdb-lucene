@@ -221,11 +221,8 @@ doc.add("value", {"store":"yes"});
 // Add but don't analyze.
 doc.add("don't analyze me", {"index":"not_analyzed"});
 
-// Extract text from the named attachment and index it.
-doc.attachment("attachment name");
-
-// Extract text from the named attachment and index it to a separate field
-doc.attachment("attachment name", {"field":"attachments"});
+// Extract text from the named attachment and index it to a named field
+doc.attachment("attachment field", "attachment name");
 
 // log an event (trace, debug, info, warn and error are available)
 if (doc.foo) {
@@ -294,7 +291,7 @@ function(doc) {
 function(doc) {
   var result = new Document();
   for(var a in doc._attachments) {
-    result.attachment(a, {"field":"attachment"});
+    result.attachment("attachment", a);
   }
   return result;
 }
