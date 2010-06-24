@@ -1,22 +1,8 @@
-0.5
-----------------------
-
-OPTIMIZE
-1) use nio so we have one thread per core - not one thread per view
-2) use one connection per db not one connection per view
-
-* add radial searching (?q=pizza&location=51.1793;-0.1860&distance=2km ?)
-* pause/resume control over indexer?
-
-* allow c-l operations even if couchdb is down (except include_docs=true, of course)
-* correctly handle database deletion, view renames, view adds, deletes, etc.
-* add a /test/ endpoint to run test suite.
+* copy pom.version to the welcome message for accurate version reports.
 
 * make attachment call support "store":"yes|no"
 
 * configure osxappbundle:bundle to make one-click OSX install.
-
-0.6
 
 * distributed search.
 
