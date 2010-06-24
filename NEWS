@@ -1,3 +1,8 @@
+Version 0.5.3
+-------------
+
+* Permit url-escaped / character in database names.
+
 Version 0.5.2
 -------------
 
