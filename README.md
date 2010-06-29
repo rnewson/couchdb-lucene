@@ -365,6 +365,12 @@ An example numeric range query for spatial searching.
 ?q=pizza AND lat&lt;double>:[51.4707 TO 51.5224] AND long&lt;double>:[-0.6622 TO -0.5775]
 </pre>
 
+<h2>Numeric term queries</h2>
+
+Fields indexed with numeric types can still be queried as normal terms, couchdb-lucene just needs to know the type. For example, ?q=age<long>:12 will find all documents where the field called 'age' has a value of 12 (when the field was indexed as "type":"int".
+
+<h2>Search parameters</h2>
+
 The following parameters can be passed for more sophisticated searches;
 
 <dl>
