@@ -148,9 +148,10 @@ public final class LuceneServlet extends HttpServlet {
 	private void handleWelcomeReq(final HttpServletRequest req,
 			final HttpServletResponse resp) throws ServletException,
 			IOException {
+	    final Package p = this.getClass().getPackage();
 		final JSONObject welcome = new JSONObject();
 		welcome.put("couchdb-lucene", "Welcome");
-		welcome.put("version", "0.5.0");
+		welcome.put("version", p.getImplementationVersion());
 		ServletUtils.writeJSON(resp, welcome);
 	}
 
