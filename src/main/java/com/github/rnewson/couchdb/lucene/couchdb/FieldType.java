@@ -22,12 +22,15 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.lucene.document.AbstractField;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericField;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.util.NumericUtils;
 
 public enum FieldType {
 
@@ -43,6 +46,12 @@ public enum FieldType {
                 throws ParseException {
             return NumericRangeQuery.newLongRange(name, precisionStep, toDate(lower), toDate(upper), inclusive, inclusive);
         }
+        
+        @Override
+        public Query toTermQuery(final String name, final String text) throws ParseException {
+            final long date = toDate(text);
+            return new TermQuery(new Term(name, NumericUtils.longToPrefixCoded(date)));
+        }
 
     },
     DOUBLE(8, SortField.DOUBLE) {
@@ -54,6 +63,11 @@ public enum FieldType {
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
             return NumericRangeQuery.newDoubleRange(name, precisionStep, toDouble(lower), toDouble(upper), inclusive, inclusive);
+        }
+        
+        @Override
+        public Query toTermQuery(final String name, final String text) {
+            return new TermQuery(new Term(name, NumericUtils.doubleToPrefixCoded(toDouble(text))));
         }
 
         private double toDouble(final Object obj) {
@@ -74,6 +88,11 @@ public enum FieldType {
         public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
             return NumericRangeQuery.newFloatRange(name, precisionStep, toFloat(lower), toFloat(upper), inclusive, inclusive);
         }
+        
+        @Override
+        public Query toTermQuery(final String name, final String text) {
+            return new TermQuery(new Term(name, NumericUtils.floatToPrefixCoded(toFloat(text))));
+        }
 
         private float toFloat(final Object obj) {
         	if (obj instanceof Number) {
@@ -91,6 +110,11 @@ public enum FieldType {
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
             return NumericRangeQuery.newIntRange(name, precisionStep, toInt(lower), toInt(upper), inclusive, inclusive);
+        }
+        
+        @Override
+        public Query toTermQuery(final String name, final String text) {
+            return new TermQuery(new Term(name, NumericUtils.intToPrefixCoded(toInt(text))));
         }
 
         private int toInt(final Object obj) {
@@ -119,6 +143,11 @@ public enum FieldType {
             return Long.parseLong(obj.toString());
         }
 
+        @Override
+        public Query toTermQuery(final String name, final String text) {
+            return new TermQuery(new Term(name, NumericUtils.longToPrefixCoded(toLong(text))));
+        }
+
     },
     STRING(0, SortField.STRING) {
         @Override
@@ -131,6 +160,11 @@ public enum FieldType {
             final TermRangeQuery result = new TermRangeQuery(name, lower, upper, inclusive, inclusive);
             result.setRewriteMethod(MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT);
             return result;
+        }
+
+        @Override
+        public Query toTermQuery(String name, String text) {
+            return new TermQuery(new Term(name, text));
         }
     };
 
@@ -163,6 +197,8 @@ public enum FieldType {
 
     public abstract Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive)
             throws ParseException;
+    
+    public abstract Query toTermQuery(final String name, final String text) throws ParseException;
 
     public final int toSortField() {
         return sortField;

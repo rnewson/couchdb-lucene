@@ -26,6 +26,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.util.Version;
+import org.apache.lucene.index.Term;
 
 /**
  * Custom query parser that uses NumericFieldQuery where appropriate.
@@ -121,6 +122,11 @@ public final class CustomQueryParser extends QueryParser {
     protected Query getRangeQuery(final String field, final String lower, final String upper, final boolean inclusive)
             throws ParseException {
         return new TypedField(field).toRangeQuery(lower, upper, inclusive);
+    }
+
+    @Override
+    protected Query getFieldQuery(final String field, final String queryText) throws ParseException {
+        return new TypedField(field).toTermQuery(queryText);
     }
 
 }

@@ -58,6 +58,10 @@ public final class TypedField {
     public Query toRangeQuery(final String lower, final String upper, final boolean inclusive) throws ParseException {
         return type.toRangeQuery(name, lower, upper, inclusive);
     }
+    
+    public Query toTermQuery(final String text) throws ParseException {
+        return type.toTermQuery(name, text);
+    }
 
     @Override
     public String toString() {
