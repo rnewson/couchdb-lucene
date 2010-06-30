@@ -353,22 +353,24 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					final View view = entry.getKey();
 					final IndexState state = entry.getValue();
 
-					final Document[] docs;
-					try {
-						docs = state.converter.convert(doc, view
-								.getDefaultSettings(), database);
-					} catch (final Exception e) {
-						logger.warn(id + " caused " + e.getMessage());
-						continue loop;
-					}
+					if (seq > state.pending_seq) {
+						final Document[] docs;
+						try {
+							docs = state.converter.convert(doc, view
+									.getDefaultSettings(), database);
+						} catch (final Exception e) {
+							logger.warn(id + " caused " + e.getMessage());
+							continue loop;
+						}
 
-					state.writer.deleteDocuments(new Term("_id", id));
-					for (final Document d : docs) {
-						state.writer.addDocument(d, view.getAnalyzer());
-						state.writerDirty = true;
+						state.writer.deleteDocuments(new Term("_id", id));
+						for (final Document d : docs) {
+							state.writer.addDocument(d, view.getAnalyzer());
+							state.writerDirty = true;
+						}
+						state.setPendingSequence(seq);
+						state.readerDirty = true;
 					}
-					state.setPendingSequence(seq);
-					state.readerDirty = true;
 				}
 			}
 		}
@@ -638,7 +640,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				userData.put("last_seq", Long.toString(state.pending_seq));
 				if (!state.writerDirty) {
 					logger
-							.warn("Forcing additional document as nothing else was indexed since last commit.");
+							.debug("Forcing additional document as nothing else was indexed since last commit.");
 					state.writer.updateDocument(forceTerm(), forceDocument());
 				}
 				state.writer.commit(userData);
@@ -712,7 +714,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		context.setOptimizationLevel(9);
 
 		this.ddoc_seq = database.getInfo().getUpdateSequence();
-		this.since = 0;
+		this.since = -1L;
 
 		for (final DesignDocument ddoc : database.getAllDesignDocuments()) {
 			for (final Entry<String, View> entry : ddoc.getAllViews()
@@ -724,12 +726,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				if (!states.containsKey(view)) {
 					final Directory dir = FSDirectory.open(viewDir(view, true));
 					final long seq = getUpdateSequence(dir);
-					if (since == 0) {
+					if (since == -1) {
 						since = seq;
 					}
-					if (seq != -1L) {
-						since = Math.min(since, seq);
-					}
+					since = Math.min(since, seq);
 					logger.debug(dir + " bumped since to " + since);
 
 					final DocumentConverter converter = new DocumentConverter(
