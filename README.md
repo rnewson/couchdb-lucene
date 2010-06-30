@@ -367,7 +367,7 @@ An example numeric range query for spatial searching.
 
 <h2>Numeric term queries</h2>
 
-Fields indexed with numeric types can still be queried as normal terms, couchdb-lucene just needs to know the type. For example, ?q=age<long>:12 will find all documents where the field called 'age' has a value of 12 (when the field was indexed as "type":"int".
+Fields indexed with numeric types can still be queried as normal terms, couchdb-lucene just needs to know the type. For example, ?q=age&lt;long&gt;:12 will find all documents where the field called 'age' has a value of 12 (when the field was indexed as "type":"int".
 
 <h2>Search parameters</h2>
 
@@ -421,7 +421,7 @@ All Dublin Core attributes are indexed and stored if detected in the attachment.
 <pre>
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value&sort=other_field
-http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort=billing_size&q=body:document AND customer:[A TO C]
+http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort&lt;long&gt;=billing_size&q=body:document AND customer:[A TO C]
 </pre>
 
 <h2>Search Results Format</h2>
