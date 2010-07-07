@@ -1,3 +1,10 @@
+Version 0.5.4
+-------------
+
+* Allow searching on numeric terms.
+* Fix reindexing bug when index function changes.
+* Enhance the 'welcome' message to include the correct version string.
+
 Version 0.5.3
 -------------
 
