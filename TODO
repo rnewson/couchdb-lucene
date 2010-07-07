@@ -1,4 +1,4 @@
-* copy pom.version to the welcome message for accurate version reports.
+* Authentication to secured couchdb.
 
 * make attachment call support "store":"yes|no"
 
