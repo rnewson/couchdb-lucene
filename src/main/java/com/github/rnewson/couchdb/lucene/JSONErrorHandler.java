@@ -21,6 +21,8 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.sf.json.JSONObject;
+
 import org.mortbay.jetty.HttpConnection;
 import org.mortbay.jetty.handler.ErrorHandler;
 
@@ -37,7 +39,8 @@ public final class JSONErrorHandler extends ErrorHandler {
     public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch) throws IOException {
         HttpConnection connection = HttpConnection.getCurrentConnection();
         connection.getRequest().setHandled(true);
-        ServletUtils.sendJSONError(request, response, connection.getResponse().getStatus(), connection.getResponse().getReason());
+        ServletUtils.sendJSONError(request, response, connection.getResponse().getStatus(),
+                JSONObject.fromObject(connection.getResponse().getReason()));
     }
 
 }

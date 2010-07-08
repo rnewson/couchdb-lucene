@@ -52,8 +52,13 @@ public final class ServletUtils {
     public static void sendJSONError(final HttpServletRequest request, final HttpServletResponse response, final int code,
             final String reason) throws IOException {
         final JSONObject obj = new JSONObject();
-        obj.put("code", code);
         obj.put("reason", reason);
+        sendJSONError(request, response, code, obj);
+    }
+    
+    public static void sendJSONError(final HttpServletRequest request, final HttpServletResponse response, final int code,
+                final JSONObject error) throws IOException {
+        error.put("code", code);
 
         setResponseContentTypeAndEncoding(request, response);
         response.setHeader(HttpHeaders.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
@@ -61,7 +66,7 @@ public final class ServletUtils {
         
         final Writer writer = response.getWriter();
         try {
-            writer.write(obj.toString());
+            writer.write(error.toString());
             writer.write("\n");
         } finally {
             writer.close();
