@@ -554,3 +554,21 @@ If you recreate databases or frequently change your fulltext functions, you will
 <pre>
 curl -X POST http://localhost:5984/&lt;db>/_fti/_cleanup
 </pre>
+
+<h1>Authentication</h1>
+
+By default couchdb-lucene does not attempt to authenticate to CouchDB. If you have set CouchDB's require_valid_user to true, you will need to modify couchdb-lucene.ini. Change the url setting to include a valid username and password. e.g, the default setting is;
+
+<pre>
+[local]
+url=http://localhost:5984/
+</pre>
+
+Change it to;
+
+<pre>
+[local]
+url=http://foo:bar@localhost:5984/
+</pre>
+
+and couchdb-lucene will authenticate to couchdb.
