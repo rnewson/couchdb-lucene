@@ -159,9 +159,11 @@ public final class HttpClientFactory {
                     final String key = (String) it.next();
                     if (!key.startsWith("lucene.") && key.endsWith(".url")) {
                         final URL url = new URL(INI.getString(key));
-                        credsProvider.setCredentials(
-                                new AuthScope(url.getHost(), url.getPort()),
-                                new UsernamePasswordCredentials(url.getUserInfo()));
+                        if (url.getUserInfo() != null) {
+                            credsProvider.setCredentials(
+                                    new AuthScope(url.getHost(), url.getPort()),
+                                    new UsernamePasswordCredentials(url.getUserInfo()));
+                        }
                     }
                 }
                 instance.setCredentialsProvider(credsProvider);
