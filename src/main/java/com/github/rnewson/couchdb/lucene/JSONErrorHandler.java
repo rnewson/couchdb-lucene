@@ -39,8 +39,14 @@ public final class JSONErrorHandler extends ErrorHandler {
     public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch) throws IOException {
         HttpConnection connection = HttpConnection.getCurrentConnection();
         connection.getRequest().setHandled(true);
-        ServletUtils.sendJSONError(request, response, connection.getResponse().getStatus(),
-                JSONObject.fromObject(connection.getResponse().getReason()));
+        final String reason = connection.getResponse().getReason();
+        if (reason.startsWith("{")) {
+            ServletUtils.sendJSONError(request, response, connection.getResponse().getStatus(),
+                    JSONObject.fromObject(reason));
+        } else {
+            ServletUtils.sendJSONError(request, response, connection.getResponse().getStatus(),
+                    reason);
+        }
     }
 
 }
