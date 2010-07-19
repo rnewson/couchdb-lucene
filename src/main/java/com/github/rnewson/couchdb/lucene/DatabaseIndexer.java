@@ -157,9 +157,15 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			}
 			final long latest = database.getInfo().getUpdateSequence();
 			synchronized (this) {
+			    long timeout = getSearchTimeout();
 				while (pending_seq < latest) {
 					try {
-						wait(getSearchTimeout());
+					    final long start = System.currentTimeMillis();
+					    wait(timeout);
+					    timeout -= (System.currentTimeMillis() - start);
+					    if (timeout <= 0) {
+					        throw new IOException("Search timed out.");
+					    }
 					} catch (final InterruptedException e) {
 						throw new IOException("Search timed out.");
 					}
