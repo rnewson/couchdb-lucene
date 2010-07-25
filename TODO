@@ -1,4 +1,5 @@
-* Authentication to secured couchdb.
+* Authentication to secured couchdb. --done
+* add X-CouchDB-WWW-Authenticate=Basic realm="couchdb-lucene" and disable pre-emptive auth!
 
 * make attachment call support "store":"yes|no"
 
