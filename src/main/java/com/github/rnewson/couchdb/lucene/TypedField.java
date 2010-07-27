@@ -50,6 +50,10 @@ public final class TypedField {
     public String getName() {
         return name;
     }
+    
+    public FieldType getType() {
+        return type;
+    }
 
     public int toSortField() {
         return type.toSortField();
