@@ -164,7 +164,7 @@ public enum FieldType {
 
         @Override
         public Query toTermQuery(String name, String text) {
-            return new TermQuery(new Term(name, text));
+            throw new UnsupportedOperationException("toTermQuery is not supported for FieldType.String.");
         }
     };
 

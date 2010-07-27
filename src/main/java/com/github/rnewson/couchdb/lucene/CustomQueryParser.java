@@ -28,6 +28,8 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.util.Version;
 import org.apache.lucene.index.Term;
 
+import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
+
 /**
  * Custom query parser that uses NumericFieldQuery where appropriate.
  * 
@@ -126,7 +128,11 @@ public final class CustomQueryParser extends QueryParser {
 
     @Override
     protected Query getFieldQuery(final String field, final String queryText) throws ParseException {
-        return new TypedField(field).toTermQuery(queryText);
+        final TypedField typedField = new TypedField(field);
+        if (typedField.getType() == FieldType.STRING) {
+            return super.getFieldQuery(field, queryText);
+        }
+        return typedField.toTermQuery(queryText);
     }
 
 }
