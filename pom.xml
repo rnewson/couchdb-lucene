@@ -158,25 +158,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>osxappbundle-maven-plugin</artifactId>
-                <version>1.0-alpha-2</version>
-                <configuration>
-                    <mainClass>com.github.rnewson.couchdb.lucene.Main</mainClass>
-                    <jvmVersion>1.5+</jvmVersion>
-                    <vmOptions>-server -Xmx1g</vmOptions>
-                    <additionalResources>
-                        <fileSet>
-                            <directory>${basedir}</directory>
-                            <includes>
-                                <include>README.md</include>
-                                <include>LICENSE</include>
-                            </includes>
-                        </fileSet>
-                    </additionalResources>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
