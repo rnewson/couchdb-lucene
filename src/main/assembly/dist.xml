@@ -35,6 +35,11 @@
       <fileMode>755</fileMode>
       <outputDirectory>/tools</outputDirectory>
     </file>
+    <file>
+      <source>${project.basedir}/src/main/tools/etc/init.d/couchdb-lucene</source>
+      <fileMode>755</fileMode>
+      <outputDirectory>/tools/etc/init.d/couchdb-lucene</outputDirectory>
+    </file>
   </files>
   <dependencySets>
     <dependencySet>
