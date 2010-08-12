@@ -279,6 +279,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			return;
 		}
 
+		ServletUtils.sendJSONError(req, resp, 400, "bad_request");
 	}
 
 	public void awaitInitialization() {
