@@ -18,8 +18,8 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="Description of the service"
 NAME="couchdb-lucene"
 DAEMON=/usr/local/couchdb-lucene-0.5.5/bin/run
-DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
+DAEMON_ARGS="$PIDFILE"
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
@@ -44,9 +44,9 @@ do_start()
 	#   0 if daemon has been started
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
-	start-stop-daemon --start --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
+	PIDFILE=$PIDFILE start-stop-daemon --start --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
-	start-stop-daemon --start --pidfile $PIDFILE --exec $DAEMON -- \
+	PIDFILE=$PIDFILE start-stop-daemon --start --pidfile $PIDFILE --exec $DAEMON -- \
 		$DAEMON_ARGS \
 		|| return 2
 	# Add code here, if necessary, that waits for the process to be ready
