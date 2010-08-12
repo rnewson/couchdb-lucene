@@ -16,8 +16,6 @@ package com.github.rnewson.couchdb.lucene.util;
  * limitations under the License.
  */
 
-import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getBooleanParameter;
-
 import java.io.IOException;
 import java.io.Writer;
 

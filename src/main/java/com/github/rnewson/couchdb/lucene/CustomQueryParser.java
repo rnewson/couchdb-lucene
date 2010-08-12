@@ -26,7 +26,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.util.Version;
-import org.apache.lucene.index.Term;
 
 import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
 

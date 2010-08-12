@@ -76,7 +76,7 @@ public class CustomQueryParserTest {
 
     private void assertRange(final Query q, final Class<?> type, final Number min, final Number max) {
         assertThat(q, is(NumericRangeQuery.class));
-        final NumericRangeQuery nq = (NumericRangeQuery) q;
+        final NumericRangeQuery<?> nq = (NumericRangeQuery<?>) q;
         assertThat(nq.getMin(), is(type));
         assertThat(nq.getMax(), is(type));
         assertThat(nq.getMin(), is(min));
