@@ -230,6 +230,19 @@ public class DocumentConverterTest {
     }
     
     @Test
+    public void testDateObject2() throws Exception {
+         final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(\"January 6, 1972 16:05:00\"), {type:\"date\", field:\"num\"});  return ret; }";
+         final DocumentConverter converter = new DocumentConverter(context, view(fun));
+         final Document[] result = converter.convert(
+                 doc("{_id:\"hi\"}"),
+                 settings(),
+                 null);
+         assertThat(result.length, is(1));
+         assertThat(result[0].getFieldable("num"), is(NumericField.class));
+         assertThat((Long)((NumericField)result[0].getFieldable("num")).getNumericValue(), is(63561900000L));
+    }
+
+    @Test
     public void testParseInt() throws Exception {
     	 final String fun = "function(doc) { var ret=new Document(); ret.add(parseInt(\"12.5\"), {type:\"int\", field:\"num\"});  return ret; }";
          final DocumentConverter converter = new DocumentConverter(context, view(fun));
