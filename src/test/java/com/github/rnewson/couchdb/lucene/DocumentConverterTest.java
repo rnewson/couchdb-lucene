@@ -218,7 +218,7 @@ public class DocumentConverterTest {
     
     @Test
     public void testDateObject() throws Exception {
-    	 final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(), {type:\"date\", field:\"num\"});  return ret; }";
+    	 final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(2010,8,13), {type:\"date\", field:\"num\"});  return ret; }";
          final DocumentConverter converter = new DocumentConverter(context, view(fun));
          final Document[] result = converter.convert(
                  doc("{_id:\"hi\"}"),
@@ -226,6 +226,7 @@ public class DocumentConverterTest {
                  null);
          assertThat(result.length, is(1));
          assertThat(result[0].getFieldable("num"), is(NumericField.class));
+         assertThat((Long)((NumericField)result[0].getFieldable("num")).getNumericValue(), is(1284332400000L));
     }
     
     @Test
