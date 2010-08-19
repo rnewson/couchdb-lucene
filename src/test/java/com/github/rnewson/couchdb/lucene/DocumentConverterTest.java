@@ -3,6 +3,9 @@ package com.github.rnewson.couchdb.lucene;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+
+import java.util.TimeZone;
+
 import net.sf.json.JSONObject;
 
 import org.apache.lucene.document.Document;
@@ -21,13 +24,18 @@ public class DocumentConverterTest {
 
     private Context context;
 
+    private TimeZone tz;
+
     @Before
     public void setup() {
         context = Context.enter();
+        tz = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/London"));
     }
 
     @After
     public void teardown() {
+        TimeZone.setDefault(tz);
         Context.exit();
     }
 
