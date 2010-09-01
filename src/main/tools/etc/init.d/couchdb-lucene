@@ -13,6 +13,8 @@
 
 SCRIPT_OK=0
 SCRIPT_ERROR=1
+SCRIPT_ERROR_NOT_IMPLEMENTED=3
+SCRIPT_ERROR_NOT_INSTALLED=5
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="CouchDB Lucene index"
@@ -24,7 +26,7 @@ SCRIPTNAME=`basename $0`
 LSB_LIBRARY=/lib/lsb/init-functions
 
 # Exit if the package is not installed
-[ -x "$DAEMON" ] || exit $SCRIPT_ERROR
+[ -x "$DAEMON" ] || exit $SCRIPT_ERROR_NOT_INSTALLED
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -123,7 +125,7 @@ case "$1" in
 
   *)
     echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
-    exit 3
+    exit $SCRIPT_ERROR_NOT_IMPLEMENTED
     ;;
 esac
 
