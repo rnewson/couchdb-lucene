@@ -1,11 +1,18 @@
 #!/bin/sh
 
+NAME="couchdb-lucene"
 BACKGROUND=false        #whether to run in the background or not
 STDOUT_FILE=""          #where to send background stdout to (defaults to &1)
 PID_FILE="/var/run/couchdb-lucene/couchdb-lucene.pid"
 
 SCRIPT_OK=0
 SCRIPT_ERROR=1
+
+getPid()
+{
+  [ -f $PID_FILE ] && PID=`cat $PID_FILE`
+  echo $PID
+}
 
 start()
 {
@@ -24,10 +31,17 @@ start()
   then
     eval $command
   else
-    [ -n $STDOUT_FILE ] && command="$command >> $STDOUT_FILE"
+    PID=`getPid`
 
-    eval "$command &"
-    echo $! > $PID_FILE
+    if [ -z "$PID" ]
+    then
+      [ -n $STDOUT_FILE ] && command="$command >> $STDOUT_FILE"
+
+      eval "$command &"
+      echo $! > $PID_FILE
+    else
+      echo "$NAME is already running ($PID_FILE)."
+    fi
   fi
 }
 
