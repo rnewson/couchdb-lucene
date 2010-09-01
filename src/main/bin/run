@@ -8,6 +8,23 @@ PID_FILE=/var/run/couchdb-lucene/couchdb-lucene.pid
 SCRIPT_OK=0
 SCRIPT_ERROR=1
 
+printUsage()
+{
+  cat << EOF
+Usage: `$basename $0` [OPTIONS]
+
+Starts the couchdb-lucene server component.
+
+Options:
+
+  -h            displays this short help message and exits
+
+  -b            spawn as a background process
+  -o FILE       redirect background process's stdout to FILE (defaults to none)
+  -p FILE       set the background process's PID FILE
+EOF
+}
+
 getPid()
 {
   [ -f $PID_FILE ] && PID=`cat $PID_FILE`
