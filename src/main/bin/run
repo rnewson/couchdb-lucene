@@ -1,20 +1,66 @@
 #!/bin/sh
 
+BACKGROUND=false        #whether to run in the background or not
+STDOUT_FILE=""          #where to send background stdout to (defaults to &1)
+
+SCRIPT_OK=0
+SCRIPT_ERROR=1
+
+start()
+{
+  JAVA_OPTS="-server -Xmx1g"
+  CLASS="com.github.rnewson.couchdb.lucene.Main"
+
+  CLASSPATH="conf"
+  for JAR in `ls lib/*.jar`
+  do
+    CLASSPATH="$CLASSPATH:$JAR"
+  done
+
+  command="java $JAVA_OPTS -cp $CLASSPATH $CLASS"
+
+  if [ "$BACKGROUND" != "true" ]
+  then
+    eval $command
+  else
+    [ -n $STDOUT_FILE ] && command="$command >> $STDOUT_FILE"
+
+    eval "$command &"
+    echo $? > $PID_FILE
+  fi
+}
+
+checkEnvironment()
+{
+  prepend="couchdb-lucene needs read access to"
+  [ ! -w $STDOUT_FILE ] && echo "$prepend output file $STDOUT_FILE" && exit $SCRIPT_ERROR 
+  unset prepend
+
+  # Don't overwrite an existing pid file path - it's probably from init.
+  [ -z "$PID_FILE" ] && PID_FILE="/var/run/couchdb-lucene/couchdb-lucene.pid"
+}
+
+parseOptions()
+{
+  opts=`getopt o:hb $@`
+  set -- $opts
+  while [ $# -gt 0 ]
+  do
+    case "$1" in
+      -h) shift; printUsage; exit $SCRIPT_OK;;
+      -o) shift; STDOUT_FILE="$1"; shift;;
+      -b) shift; BACKGROUND=true;;
+      --) shift; break;; 
+      *) echo "Unknown option: $1" >&2; exit $SCRIPT_ERROR;;
+    esac
+  done
+}
+
+parseOptions $@
+checkEnvironment
+
 [ -z $CL_BASEDIR ] && CL_BASEDIR=`dirname "$0"`
 cd $CL_BASEDIR/..
 
-JAVA_OPTS="-server -Xmx1g"
-CLASS=com.github.rnewson.couchdb.lucene.Main
+start
 
-CLASSPATH="conf"
-for JAR in `ls lib/*.jar`
-do
-    CLASSPATH="$CLASSPATH:$JAR"
-done
-
-if [ -z $PIDFILE ]; then
-  exec java $JAVA_OPTS -cp $CLASSPATH $CLASS
-else
-  java $JAVA_OPTS -cp $CLASSPATH $CLASS &
-  echo $! > $PIDFILE
-fi
