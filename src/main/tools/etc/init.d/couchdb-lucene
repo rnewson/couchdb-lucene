@@ -19,9 +19,9 @@ SCRIPT_ERROR_NOT_INSTALLED=5
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="CouchDB Lucene index"
 NAME="couchdb-lucene"
-DAEMON=/usr/local/couchdb-lucene-0.5.5/bin/run
 PIDFILE=/var/run/$NAME/$NAME.pid
-DAEMON_ARGS="$PIDFILE"
+DAEMON=/usr/local/couchdb-lucene-0.5.5/bin/run
+DAEMON_ARGS="-o /var/log/couchdb-lucene.log -b"
 SCRIPTNAME=`basename $0`
 LSB_LIBRARY=/lib/lsb/init-functions
 

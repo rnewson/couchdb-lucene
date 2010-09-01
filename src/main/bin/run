@@ -3,7 +3,7 @@
 NAME="couchdb-lucene"
 BACKGROUND=false        #whether to run in the background or not
 STDOUT_FILE=""          #where to send background stdout to (defaults to &1)
-PID_FILE="/var/run/couchdb-lucene/couchdb-lucene.pid"
+PID_FILE=/var/run/couchdb-lucene/couchdb-lucene.pid
 
 SCRIPT_OK=0
 SCRIPT_ERROR=1
