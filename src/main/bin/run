@@ -32,7 +32,7 @@ start()
 
 checkEnvironment()
 {
-  prepend="couchdb-lucene needs read access to"
+  prepend="couchdb-lucene needs write access to"
   [ ! -w $STDOUT_FILE ] && echo "$prepend output file $STDOUT_FILE" && exit $SCRIPT_ERROR 
   unset prepend
 
