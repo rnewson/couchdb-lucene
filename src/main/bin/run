@@ -2,6 +2,7 @@
 
 BACKGROUND=false        #whether to run in the background or not
 STDOUT_FILE=""          #where to send background stdout to (defaults to &1)
+PID_FILE="/var/run/couchdb-lucene/couchdb-lucene.pid"
 
 SCRIPT_OK=0
 SCRIPT_ERROR=1
@@ -26,7 +27,7 @@ start()
     [ -n $STDOUT_FILE ] && command="$command >> $STDOUT_FILE"
 
     eval "$command &"
-    echo $? > $PID_FILE
+    echo $! > $PID_FILE
   fi
 }
 
@@ -35,9 +36,6 @@ checkEnvironment()
   prepend="couchdb-lucene needs write access to"
   [ ! -w $STDOUT_FILE ] && echo "$prepend output file $STDOUT_FILE" && exit $SCRIPT_ERROR 
   unset prepend
-
-  # Don't overwrite an existing pid file path - it's probably from init.
-  [ -z "$PID_FILE" ] && PID_FILE="/var/run/couchdb-lucene/couchdb-lucene.pid"
 }
 
 parseOptions()
