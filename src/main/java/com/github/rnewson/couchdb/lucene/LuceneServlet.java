@@ -110,7 +110,7 @@ public final class LuceneServlet extends HttpServlet {
 		}
 
 		resp.setStatus(202);
-		ServletUtils.writeJSON(resp, JSON_SUCCESS);
+		ServletUtils.writeJSON(req, resp, JSON_SUCCESS);
 	}
 
 	private Couch getCouch(final HttpServletRequest req) throws IOException {
@@ -152,7 +152,7 @@ public final class LuceneServlet extends HttpServlet {
 		final JSONObject welcome = new JSONObject();
 		welcome.put("couchdb-lucene", "Welcome");
 		welcome.put("version", p.getImplementationVersion());
-		ServletUtils.writeJSON(resp, welcome);
+		ServletUtils.writeJSON(req, resp, welcome);
 	}
 
 	@Override
