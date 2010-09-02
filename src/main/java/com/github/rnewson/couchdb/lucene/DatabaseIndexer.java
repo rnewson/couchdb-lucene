@@ -223,7 +223,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	private long ddoc_seq;
 
 	private long lastCommit;
-
+	
 	private final CountDownLatch latch = new CountDownLatch(1);
 
 	private final Logger logger;
@@ -433,7 +433,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			init();
 		} catch (final Exception e) {
 			logger.warn("Exiting after init() raised exception.", e);
-			latch.countDown();
+			close();
 			return;
 		}
 
@@ -449,7 +449,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			// Ignored because req.abort() does this.
 		} catch (final Exception e) {
 			logger.warn("Exiting due to exception.", e);
-			latch.countDown();
+			close();
 		}
 	}
 
@@ -627,14 +627,23 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		return req.getParameter("q").split(",");
 	}
 
-	private void close() throws IOException {
+	private void close() {
 		this.closed = true;
 
 		for (final IndexState state : states.values()) {
-			state.close();
+			try {
+                state.close();
+            } catch (final IOException e) {
+                logger.warn("Error while closing.", e);
+            }
 		}
 		states.clear();
 		Context.exit();
+		latch.countDown();
+	}
+	
+	public boolean isClosed() {
+	    return closed;
 	}
 
 	private void commitAll() throws IOException {
