@@ -264,18 +264,16 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		if ("_expunge".equals(command)) {
 			logger.info("Expunging deletes from " + state);
 			state.writer.expungeDeletes(false);
-			ServletUtils.setResponseContentTypeAndEncoding(req, resp);
-			resp.setStatus(202);
-			ServletUtils.writeJSON(resp, JSON_SUCCESS);
+						resp.setStatus(202);
+			ServletUtils.writeJSON(req, resp, JSON_SUCCESS);
 			return;
 		}
 
 		if ("_optimize".equals(command)) {
 			logger.info("Optimizing " + state);
 			state.writer.optimize(false);
-			ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 			resp.setStatus(202);
-			ServletUtils.writeJSON(resp, JSON_SUCCESS);
+			ServletUtils.writeJSON(req, resp, JSON_SUCCESS);
 			return;
 		}
 

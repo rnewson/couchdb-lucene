@@ -84,7 +84,8 @@ public final class ServletUtils {
 	    resp.setCharacterEncoding("utf-8");
 	}
 
-	public static void writeJSON(final HttpServletResponse resp, final JSONObject json) throws IOException {
+	public static void writeJSON(final HttpServletRequest req, final HttpServletResponse resp, final JSONObject json) throws IOException {
+	    setResponseContentTypeAndEncoding(req, resp);
 	    final Writer writer = resp.getWriter();
 	    try {
 	        writer.write(json.toString() + "\r\n");
