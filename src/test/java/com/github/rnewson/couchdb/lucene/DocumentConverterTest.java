@@ -14,6 +14,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.EvaluatorException;
 
 import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
@@ -147,6 +148,14 @@ public class DocumentConverterTest {
                 view("function(doc) {throw {bad : \"stuff\"}}"));
         final Document[] result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
         assertThat(result.length, is(0));
+    }
+
+    @Test(expected=EvaluatorException.class)
+    public void testBadCode() throws Exception {
+        final DocumentConverter converter = new DocumentConverter(
+                context,
+                view("function(doc) { if (doc.) return null; }"));
+        converter.convert(doc("{_id:\"hello\"}"), settings(), null);
     }
 
     @Test
