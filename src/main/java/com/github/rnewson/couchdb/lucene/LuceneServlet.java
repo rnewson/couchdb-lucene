@@ -127,11 +127,15 @@ public final class LuceneServlet extends HttpServlet {
 		Thread thread = threads.get(database);
 		if (result == null || thread == null || !thread.isAlive()) {
 			result = new DatabaseIndexer(client, root, database, ini);
-			indexers.put(database, result);
 			thread = new Thread(result);
-			threads.put(database, thread);
 			thread.start();
 			result.awaitInitialization();
+			if (result.isClosed()) {
+			    return null;
+			} else {
+	            indexers.put(database, result);
+		         threads.put(database, thread);
+			}
 		}
 
 		return result;
@@ -165,6 +169,11 @@ public final class LuceneServlet extends HttpServlet {
 			return;
 		case 5:
 			final DatabaseIndexer indexer = getIndexer(req);
+			if (indexer == null) {
+			    ServletUtils.sendJSONError(req, resp, 500, "error_creating_index");
+			    return;
+			}
+			
 			if (req.getParameter("q") == null) {
 				indexer.info(req, resp);
 			} else {
