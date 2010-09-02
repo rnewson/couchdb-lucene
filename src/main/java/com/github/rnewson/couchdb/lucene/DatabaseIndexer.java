@@ -431,8 +431,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		try {
 			init();
-		} catch (final IOException e) {
-			logger.warn("Exiting after init() raised I/O exception.", e);
+		} catch (final Exception e) {
+			logger.warn("Exiting after init() raised exception.", e);
+			latch.countDown();
 			return;
 		}
 
@@ -446,8 +447,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			}
 		} catch (final SocketException e) {
 			// Ignored because req.abort() does this.
-		} catch (final IOException e) {
-			logger.warn("Exiting due to I/O exception.", e);
+		} catch (final Exception e) {
+			logger.warn("Exiting due to exception.", e);
+			latch.countDown();
 		}
 	}
 
