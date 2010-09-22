@@ -11,7 +11,7 @@
         <include>${project.basedir}/LICENSE*</include>
         <include>${project.basedir}/NOTICE*</include>
       </includes>
-      <outputDirectory>/</outputDirectory>
+      <outputDirectory>/share/doc/couchdb-lucene</outputDirectory>
     </fileSet>
   </fileSets>
   <files>
@@ -23,28 +23,28 @@
     <file>
       <source>${project.basedir}/src/main/conf/couchdb-lucene.ini</source>
       <fileMode>644</fileMode>
-      <outputDirectory>/conf</outputDirectory>
+      <outputDirectory>/etc/couchdb-lucene</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/conf/log4j.xml</source>
       <fileMode>644</fileMode>
-      <outputDirectory>/conf</outputDirectory>
+      <outputDirectory>/etc/couchdb-lucene</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/couchdb-external-hook.py</source>
       <fileMode>755</fileMode>
-      <outputDirectory>/tools</outputDirectory>
+      <outputDirectory>/bin</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/tools/etc/init.d/couchdb-lucene</source>
       <fileMode>755</fileMode>
-      <outputDirectory>/tools/etc/init.d/couchdb-lucene</outputDirectory>
+      <outputDirectory>/etc/init.d</outputDirectory>
     </file>
   </files>
   <dependencySets>
     <dependencySet>
       <scope>runtime</scope>
-      <outputDirectory>/lib</outputDirectory>
+      <outputDirectory>/lib/couchdb-lucene</outputDirectory>
     </dependencySet>
   </dependencySets>
 </assembly>
