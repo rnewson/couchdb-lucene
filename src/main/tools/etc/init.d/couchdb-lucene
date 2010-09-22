@@ -20,7 +20,7 @@ DESC="CouchDB Lucene index"
 NAME="couchdb-lucene"
 PIDFILE=/var/run/$NAME/$NAME.pid
 DAEMON=$NAME
-DAEMON_ARGS="-o /var/log/couchdb-lucene.log -b"
+DAEMON_ARGS="-o /var/log/couchdb-lucene.log -b -p $PIDFILE"
 SCRIPTNAME=`basename $0`
 LSB_LIBRARY=/lib/lsb/init-functions
 

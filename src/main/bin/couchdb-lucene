@@ -79,6 +79,7 @@ parseOptions()
       -h) shift; printUsage; exit $SCRIPT_OK;;
       -o) shift; STDOUT_FILE="$1"; shift;;
       -b) shift; BACKGROUND=true;;
+      -p) shift; PID_FILE="$1"; shift;;
       --) shift; break;; 
       *) echo "Unknown option: $1" >&2; exit $SCRIPT_ERROR;;
     esac
