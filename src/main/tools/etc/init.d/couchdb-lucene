@@ -16,7 +16,6 @@ SCRIPT_ERROR=1
 SCRIPT_ERROR_NOT_IMPLEMENTED=3
 SCRIPT_ERROR_NOT_INSTALLED=5
 
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="CouchDB Lucene index"
 NAME="couchdb-lucene"
 PIDFILE=/var/run/$NAME/$NAME.pid
