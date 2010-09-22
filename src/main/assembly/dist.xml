@@ -19,7 +19,7 @@
   </fileSets>
   <files>
     <file>
-      <source>${project.basedir}/src/main/bin/run</source>
+      <source>${project.basedir}/src/main/bin/couchdb-lucene</source>
       <fileMode>755</fileMode>
       <outputDirectory>/bin</outputDirectory>
     </file>
