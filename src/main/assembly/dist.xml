@@ -10,6 +10,9 @@
         <include>${project.basedir}/README*</include>
         <include>${project.basedir}/LICENSE*</include>
         <include>${project.basedir}/NOTICE*</include>
+        <include>${project.basedir}/BREAKING_CHANGES*</include>
+        <include>${project.basedir}/TODO*</include>
+        <include>${project.basedir}/THANKS*</include>
       </includes>
       <outputDirectory>/share/doc/couchdb-lucene</outputDirectory>
     </fileSet>
