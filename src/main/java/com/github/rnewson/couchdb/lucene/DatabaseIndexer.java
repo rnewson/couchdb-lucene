@@ -616,7 +616,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private String[] getQueryStrings(final HttpServletRequest req) {
-		return req.getParameter("q").split(",");
+		return Utils.splitOnCommas(req.getParameter("q"));
 	}
 
 	private void close() {
