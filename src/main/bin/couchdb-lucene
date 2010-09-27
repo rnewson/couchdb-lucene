@@ -71,7 +71,7 @@ checkEnvironment()
 
 parseOptions()
 {
-  opts=`getopt o:hb $@`
+  opts=`getopt o:hbp: $@`
   set -- $opts
   while [ $# -gt 0 ]
   do
