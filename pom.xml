@@ -12,7 +12,7 @@
             <artifactId>httpclient</artifactId>
             <version>4.0.1</version>
         </dependency>
-        <dependency>
+         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
             <version>4.0.1</version>
@@ -21,6 +21,11 @@
             <groupId>net.jcip</groupId>
             <artifactId>jcip-annotations</artifactId>
             <version>1.0</version>
+        </dependency>
+        <dependency>
+          <groupId>net.oauth.core</groupId>
+          <artifactId>oauth-provider</artifactId>
+          <version>20100527</version>
         </dependency>
         <dependency>
             <groupId>org.mortbay.jetty</groupId>
@@ -127,6 +132,12 @@
             <timezone>0</timezone>
         </developer>
     </developers>
+    <repositories>
+      <repository>
+        <id>oauth</id>
+        <url>http://oauth.googlecode.com/svn/code/maven</url>
+      </repository>
+    </repositories>
     <build>
         <defaultGoal>assembly:assembly</defaultGoal>
         <plugins>
