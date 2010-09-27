@@ -63,4 +63,13 @@ public class Utils {
         return result;
     }
 
+    /**
+     * Split a string on commas but respect commas inside quotes.
+     * @param str
+     * @return
+     */
+    public static String[] splitOnCommas(final String str) {
+        return str.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+    }
+
 }
