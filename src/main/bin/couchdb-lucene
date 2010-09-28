@@ -33,16 +33,10 @@ getPid()
 
 start()
 {
-  JAVA_OPTS="-server -Xmx1g"
-  CLASS="com.github.rnewson.couchdb.lucene.Main"
+  CLASSPATH="$CL_BASEDIR/etc/couchdb-lucene:$CL_BASEDIR/lib/couchdb-lucene/*"
+  JAVA_OPTS="-server -Xmx1g -cp $CLASSPATH"
 
-  CLASSPATH="conf"
-  for JAR in `ls lib/*.jar`
-  do
-    CLASSPATH="$CLASSPATH:$JAR"
-  done
-
-  command="java $JAVA_OPTS -cp $CLASSPATH $CLASS"
+  command="java $JAVA_OPTS $JAR com.github.rnewson.couchdb.lucene.Main"
 
   if [ "$BACKGROUND" != "true" ]
   then
@@ -89,8 +83,8 @@ parseOptions()
 parseOptions $@
 checkEnvironment
 
-[ -z $CL_BASEDIR ] && CL_BASEDIR=`dirname "$0"`
-cd $CL_BASEDIR/..
+[ -z $CL_BASEDIR ] && CL_BASEDIR=`dirname "$0"`"/.."
+cd $CL_BASEDIR
 
 start
 
