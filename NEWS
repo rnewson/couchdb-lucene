@@ -1,3 +1,21 @@
+Version 0.5.6
+-------------
+
+* Full text functions that do not compile caused clients to hang forever.
+* Basic authentication backported from master for require_valid_user=true scenario.
+
+Version 0.5.5
+-------------
+
+* Pass query string through analyzer so that the same stemming rules are applied as when indexing.
+
+Version 0.5.4
+-------------
+
+* Allow searching on numeric terms.
+* Fix reindexing bug when index function changes.
+* Enhance the 'welcome' message to include the correct version string.
+
 Version 0.5.3
 -------------
 
