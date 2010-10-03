@@ -357,7 +357,7 @@ In addition to normal text-based range searches (using the "field:[lower TO uppe
 <tr><td>long</td><td>field&lt;long>:[0 TO 100]</td></tr>
 <tr><td>float</td><td>field&lt;float>:[0.0 TO 100.0]</td></tr>
 <tr><td>double</td><td>field&lt;double>:[0.0 TO 100.0]</td></tr>
-<tr><td>date</td><td>field&lt;date>:[from TO to] where from and to match any of these patterns: "yyyy-MM-dd'T'HH:mm:ssZ"", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZ", "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd'T'HH:mm:ss.SSS"</td></tr>
+<tr><td>date</td><td>field&lt;date>:[from TO to] where from and to match any of these patterns: "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZ", "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd'T'HH:mm:ss.SSS"</td></tr>
 </table>
 
 An example numeric range query for spatial searching.
