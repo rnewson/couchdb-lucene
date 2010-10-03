@@ -208,6 +208,7 @@ doc.add("value");
 doc.add(35, {"type":"int"});
 
 // Add a date field.
+doc.add(new Date("1972/1/6 16:05:00"),        {"type":"date"});
 doc.add(new Date("January 6, 1972 16:05:00"), {"type":"date"});
 
 // Add a date field (object must be a Date object
