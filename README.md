@@ -176,6 +176,7 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 <li>simple</li>
 <li>standard</li>
 <li>thai</li>
+<li>whitespace</li>
 </ul>
 
 The "perfield" option lets you use a different analyzer for different fields and is configured as follows;

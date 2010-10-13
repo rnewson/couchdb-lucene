@@ -6,6 +6,7 @@ import static org.junit.Assert.assertThat;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
+import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.fr.FrenchAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.junit.Test;
@@ -20,6 +21,11 @@ public class AnalyzersTest {
     @Test
     public void testFrench() {
         assertThat(Analyzers.getAnalyzer("french"), is(FrenchAnalyzer.class));
+    }
+
+    @Test
+    public void testWhitespace() {
+        assertThat(Analyzers.getAnalyzer("whitespace"), is(WhitespaceAnalyzer.class));
     }
 
     @Test

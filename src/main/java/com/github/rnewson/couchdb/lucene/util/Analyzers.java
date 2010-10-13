@@ -27,6 +27,7 @@ import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.PorterStemFilter;
 import org.apache.lucene.analysis.SimpleAnalyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.br.BrazilianAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.analysis.cn.ChineseAnalyzer;
@@ -137,6 +138,11 @@ public enum Analyzers {
         @Override
         public Analyzer newAnalyzer(final String args) {
             return new ThaiAnalyzer(Constants.VERSION);
+        }
+    },
+    WHITESPACE {
+        public Analyzer newAnalyzer(final String args) {
+            return new WhitespaceAnalyzer();
         }
     };
 
