@@ -181,13 +181,13 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 The "perfield" option lets you use a different analyzer for different fields and is configured as follows;
 
 <pre>
-"analyzer":"perfield:{field_name:"analyzer_name"}"
+"analyzer":"perfield:{field_name:\"analyzer_name\"}"
 </pre>
 
 Unless overridden, any field name not specified will be handled by the standard analyzer. To change the default, use the special default field name;
 
 <pre>
-"analyzer":"perfield:{default:"keyword"}"
+"analyzer":"perfield:{default:\"keyword\"}"
 </pre>
 
 <h3>The Document class</h3>
