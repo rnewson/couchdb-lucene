@@ -132,6 +132,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.5</version>
                 <configuration>
                     <source>1.5</source>
                     <showPackage>false</showPackage>
@@ -143,6 +144,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.0.2</version>
                 <configuration>
                     <source>1.5</source>
                     <target>1.5</target>
@@ -151,6 +153,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-4</version>
                 <configuration>
                     <descriptors>
                         <descriptor>src/main/assembly/dist.xml</descriptor>
@@ -160,6 +163,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>2.2</version>
                 <configuration>
                     <archive>
                         <manifest>
