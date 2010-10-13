@@ -43,7 +43,7 @@ os_process_timeout=60000 ; increase the timeout from 5 seconds.
 fti=/path/to/python /path/to/couchdb-lucene/tools/couchdb-external-hook.py
 
 [httpd_db_handlers]
-_fti = {couch_httpd_external, handle_external_req, <<"fti">>}
+_fti = {couch_httpd_external, handle_external_req, &lt;&lt;"fti"&gt;&gt;}
 </pre>
 
 <h2>Hook options</h2>
