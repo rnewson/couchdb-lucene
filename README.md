@@ -259,7 +259,7 @@ function(doc) {
 
     if (doc._attachments) {
 	for (var i in doc._attachments) {
-	    ret.attachment("attachment", i);
+	    ret.attachment("default", i);
 	}
     }
 
@@ -293,7 +293,7 @@ function(doc) {
 function(doc) {
   var result = new Document();
   for(var a in doc._attachments) {
-    result.attachment("attachment", a);
+    result.attachment("default", a);
   }
   return result;
 }
