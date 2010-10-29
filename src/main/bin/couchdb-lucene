@@ -1,0 +1,90 @@
+#!/bin/sh
+
+NAME="couchdb-lucene"
+BACKGROUND=false        #whether to run in the background or not
+STDOUT_FILE=""          #where to send background stdout to (defaults to &1)
+PID_FILE=/var/run/couchdb-lucene/couchdb-lucene.pid
+
+SCRIPT_OK=0
+SCRIPT_ERROR=1
+
+printUsage()
+{
+  cat << EOF
+Usage: `$basename $0` [OPTIONS]
+
+Starts the couchdb-lucene server component.
+
+Options:
+
+  -h            displays this short help message and exits
+
+  -b            spawn as a background process
+  -o FILE       redirect background process's stdout to FILE (defaults to none)
+  -p FILE       set the background process's PID FILE
+EOF
+}
+
+getPid()
+{
+  [ -f $PID_FILE ] && PID=`cat $PID_FILE`
+  echo $PID
+}
+
+start()
+{
+  CLASSPATH="$CL_BASEDIR/etc/couchdb-lucene:$CL_BASEDIR/lib/couchdb-lucene/*"
+  JAVA_OPTS="-server -Xmx1g -cp $CLASSPATH"
+
+  command="java $JAVA_OPTS $JAR com.github.rnewson.couchdb.lucene.Main"
+
+  if [ "$BACKGROUND" != "true" ]
+  then
+    eval $command
+  else
+    PID=`getPid`
+
+    if [ -z "$PID" ]
+    then
+      [ -n $STDOUT_FILE ] && command="$command >> $STDOUT_FILE"
+
+      eval "$command &"
+      echo $! > $PID_FILE
+    else
+      echo "$NAME is already running ($PID_FILE)."
+    fi
+  fi
+}
+
+checkEnvironment()
+{
+  prepend="couchdb-lucene needs write access to"
+  [ ! -w $STDOUT_FILE ] && echo "$prepend output file $STDOUT_FILE" && exit $SCRIPT_ERROR 
+  unset prepend
+}
+
+parseOptions()
+{
+  opts=`getopt o:hbp: $@`
+  set -- $opts
+  while [ $# -gt 0 ]
+  do
+    case "$1" in
+      -h) shift; printUsage; exit $SCRIPT_OK;;
+      -o) shift; STDOUT_FILE="$1"; shift;;
+      -b) shift; BACKGROUND=true;;
+      -p) shift; PID_FILE="$1"; shift;;
+      --) shift; break;; 
+      *) echo "Unknown option: $1" >&2; exit $SCRIPT_ERROR;;
+    esac
+  done
+}
+
+parseOptions $@
+checkEnvironment
+
+[ -z $CL_BASEDIR ] && CL_BASEDIR=`dirname "$0"`"/.."
+cd $CL_BASEDIR
+
+start
+
