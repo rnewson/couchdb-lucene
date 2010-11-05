@@ -1,3 +1,7 @@
+0.6
+
+OpenJDK compatibility!
+
 * Authentication to secured couchdb. --done
 * add X-CouchDB-WWW-Authenticate=Basic realm="couchdb-lucene" and disable pre-emptive auth!
 
