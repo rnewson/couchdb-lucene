@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 import net.sf.json.JSONArray;
+import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;
@@ -119,6 +120,8 @@ public final class DocumentConverter {
             return convertArray((JSONArray) obj);
         } else if (obj instanceof JSONObject) {
             return convertObject((JSONObject) obj);
+        } else if (obj instanceof JSONNull) {
+            return null;
         } else {
             return obj;
         }
