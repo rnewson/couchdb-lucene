@@ -16,9 +16,6 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
@@ -26,6 +23,9 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.util.Version;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
 
@@ -70,12 +70,12 @@ public final class CustomQueryParser extends QueryParser {
 		}
 	}
 
-    public static String toString(final SortField[] sortFields) {
+    public static String toString(final SortField[] sortFields) throws JSONException {
         final JSONArray result = new JSONArray();
         for (final SortField field : sortFields) {
             final JSONObject col = new JSONObject();
-            col.element("field", field.getField());
-            col.element("reverse", field.getReverse());
+            col.put("field", field.getField());
+            col.put("reverse", field.getReverse());
 
             final String type;
             switch (field.getType()) {
@@ -113,8 +113,8 @@ public final class CustomQueryParser extends QueryParser {
                 type = "unknown";
                 break;
             }
-            col.element("type", type);
-            result.add(col);
+            col.put("type", type);
+            result.put(col);
         }
         return result.toString();
     }

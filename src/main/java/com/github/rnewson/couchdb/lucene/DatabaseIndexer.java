@@ -14,17 +14,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import net.sf.json.JSON;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.http.HttpEntity;
@@ -42,10 +38,10 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexReader.FieldOption;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.FieldDoc;
@@ -56,6 +52,9 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 
@@ -93,7 +92,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		}
 
 		public synchronized IndexReader borrowReader(final boolean staleOk)
-				throws IOException {
+				throws IOException, JSONException {
 			blockForLatest(staleOk);
 			if (reader == null) {
 				etag = newEtag();
@@ -113,7 +112,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		}
 
 		public IndexSearcher borrowSearcher(final boolean staleOk)
-				throws IOException {
+				throws IOException, JSONException {
 			return new IndexSearcher(borrowReader(staleOk));
 		}
 
@@ -151,7 +150,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			return etag != null && etag.equals(req.getHeader("If-None-Match"));
 		}
 
-		private void blockForLatest(final boolean staleOk) throws IOException {
+		private void blockForLatest(final boolean staleOk) throws IOException, JSONException {
 			if (staleOk) {
 				return;
 			}
@@ -190,9 +189,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			return false;
 		}
 	}
-
-	private static final JSONObject JSON_SUCCESS = JSONObject
-			.fromObject("{\"ok\":true}");
 
 	public static File uuidDir(final File root, final UUID uuid) {
 		return new File(root, uuid.toString());
@@ -245,7 +241,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	public DatabaseIndexer(final HttpClient client, final File root,
 			final Database database, final HierarchicalINIConfiguration ini)
-			throws IOException {
+			throws IOException, JSONException {
 		this.client = client;
 		this.root = root;
 		this.database = database;
@@ -255,7 +251,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	public void admin(final HttpServletRequest req,
-			final HttpServletResponse resp) throws IOException {
+			final HttpServletResponse resp) throws IOException, JSONException {
 		final IndexState state = getState(req, resp);
 		if (state == null)
 			return;
@@ -265,7 +261,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			logger.info("Expunging deletes from " + state);
 			state.writer.expungeDeletes(false);
 						resp.setStatus(202);
-			ServletUtils.writeJSON(req, resp, JSON_SUCCESS);
+			ServletUtils.writeJsonSuccess(req, resp);
 			return;
 		}
 
@@ -273,7 +269,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			logger.info("Optimizing " + state);
 			state.writer.optimize(false);
 			resp.setStatus(202);
-			ServletUtils.writeJSON(req, resp, JSON_SUCCESS);
+			ServletUtils.writeJsonSuccess(req, resp);
 			return;
 		}
 
@@ -303,88 +299,93 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				continue loop;
 			}
 
-			final JSONObject json = JSONObject.fromObject(line);
+			try {
+                final JSONObject json = new JSONObject(line);
 
-			if (json.has("error")) {
-				logger.warn("Indexing stopping due to error: " + json);
-				break loop;
-			}
+                if (json.has("error")) {
+                	logger.warn("Indexing stopping due to error: " + json);
+                	break loop;
+                }
 
-			if (json.has("last_seq")) {
-				logger.warn("End of changes detected.");
-				break loop;
-			}
+                if (json.has("last_seq")) {
+                	logger.warn("End of changes detected.");
+                	break loop;
+                }
 
-			final long seq = json.getLong("seq");
-			final String id = json.getString("id");
-			CouchDocument doc;
-			if (json.has("doc")) {
-				doc = new CouchDocument(json.getJSONObject("doc"));
-			} else {
-				// include_docs=true doesn't work prior to 0.11.
-				try {
-					doc = database.getDocument(id);
-				} catch (final HttpResponseException e) {
-					switch (e.getStatusCode()) {
-					case HttpStatus.SC_NOT_FOUND:
-						doc = CouchDocument.deletedDocument(id);
-						break;
-					default:
-						logger.warn("Failed to fetch " + id);
-						break loop;
-					}
-				}
-			}
+                final long seq = json.getLong("seq");
+                final String id = json.getString("id");
+                CouchDocument doc;
+                if (json.has("doc")) {
+                	doc = new CouchDocument(json.getJSONObject("doc"));
+                } else {
+                	// include_docs=true doesn't work prior to 0.11.
+                	try {
+                		doc = database.getDocument(id);
+                	} catch (final HttpResponseException e) {
+                		switch (e.getStatusCode()) {
+                		case HttpStatus.SC_NOT_FOUND:
+                			doc = CouchDocument.deletedDocument(id);
+                			break;
+                		default:
+                			logger.warn("Failed to fetch " + id);
+                			break loop;
+                		}
+                	}
+                }
 
-			if (id.startsWith("_design")) {
-				if (seq > ddoc_seq) {
-					logger.info("Exiting due to design document change.");
-					break loop;
-				}
-				for (final IndexState state : states.values()) {
-					state.setPendingSequence(seq);
-				}
-				continue loop;
-			}
+                if (id.startsWith("_design")) {
+                	if (seq > ddoc_seq) {
+                		logger.info("Exiting due to design document change.");
+                		break loop;
+                	}
+                	for (final IndexState state : states.values()) {
+                		state.setPendingSequence(seq);
+                	}
+                	continue loop;
+                }
 
-			if (doc.isDeleted()) {
-				for (final IndexState state : states.values()) {
-					state.writer.deleteDocuments(new Term("_id", id));
-					state.setPendingSequence(seq);
-					state.readerDirty = true;
-				}
-			} else {
-				for (final Entry<View, IndexState> entry : states.entrySet()) {
-					final View view = entry.getKey();
-					final IndexState state = entry.getValue();
+                if (doc.isDeleted()) {
+                	for (final IndexState state : states.values()) {
+                		state.writer.deleteDocuments(new Term("_id", id));
+                		state.setPendingSequence(seq);
+                		state.readerDirty = true;
+                	}
+                } else {
+                	for (final Entry<View, IndexState> entry : states.entrySet()) {
+                		final View view = entry.getKey();
+                		final IndexState state = entry.getValue();
 
-					if (seq > state.pending_seq) {
-						final Document[] docs;
-						try {
-							docs = state.converter.convert(doc, view
-									.getDefaultSettings(), database);
-						} catch (final Exception e) {
-							logger.warn(id + " caused " + e.getMessage());
-							continue loop;
-						}
+                		if (seq > state.pending_seq) {
+                			final Document[] docs;
+                			try {
+                				docs = state.converter.convert(doc, view
+                						.getDefaultSettings(), database);
+                			} catch (final Exception e) {
+                				logger.warn(id + " caused " + e.getMessage());
+                				continue loop;
+                			}
 
-						state.writer.deleteDocuments(new Term("_id", id));
-						for (final Document d : docs) {
-							state.writer.addDocument(d, view.getAnalyzer());
-							state.writerDirty = true;
-						}
-						state.setPendingSequence(seq);
-						state.readerDirty = true;
-					}
-				}
-			}
+                			state.writer.deleteDocuments(new Term("_id", id));
+                			for (final Document d : docs) {
+                				state.writer.addDocument(d, view.getAnalyzer());
+                				state.writerDirty = true;
+                			}
+                			state.setPendingSequence(seq);
+                			state.readerDirty = true;
+                		}
+                	}
+                }
+            } catch (final JSONException e) {
+                logger.error("JSON exception in changes loop", e);
+                break loop;
+            }
 		}
 		req.abort();
 		return null;
 	}
 
 	public void info(final HttpServletRequest req,
-			final HttpServletResponse resp) throws IOException {
+			final HttpServletResponse resp) throws IOException, JSONException {
 		final IndexState state = getState(req, resp);
 		if (state == null)
 			return;
@@ -400,7 +401,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				if (((String) field).startsWith("_")) {
 					continue;
 				}
-				fields.add(field);
+				fields.put(field);
 			}
 			result.put("fields", fields);
 			result.put("last_modified", Long.toString(IndexReader
@@ -454,7 +455,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	public void search(final HttpServletRequest req,
-			final HttpServletResponse resp) throws IOException {
+			final HttpServletResponse resp) throws IOException, JSONException {
 		final IndexState state = getState(req, resp);
 		if (state == null)
 			return;
@@ -486,7 +487,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					rewritten_q.extractTerms(terms);
 					for (final Object term : terms) {
 						final int freq = searcher.docFreq((Term) term);
-						freqs.put(term, freq);
+						freqs.put(term.toString(), freq);
 					}
 					queryRow.put("freqs", freqs);
 				} else {
@@ -537,12 +538,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 										final Object obj = fields.get(name);
 										if (obj instanceof String) {
 											final JSONArray arr = new JSONArray();
-											arr.add(obj);
-											arr.add(value);
+											arr.put(obj);
+											arr.put(value);
 											fields.put(name, arr);
 										} else {
 											assert obj instanceof JSONArray;
-											((JSONArray) obj).add(value);
+											((JSONArray) obj).put(value);
 										}
 									}
 								}
@@ -560,10 +561,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 						if (include_docs) {
 							fetch_ids[i - skip] = doc.get("_id");
 						}
-						if (fields.size() > 0) {
+						if (fields.length() > 0) {
 							row.put("fields", fields);
 						}
-						rows.add(row);
+						rows.put(row);
 					}
 					// Fetch documents (if requested).
 					if (include_docs && fetch_ids.length > 0) {
@@ -592,7 +593,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					}
 					queryRow.put("rows", rows);
 				}
-				result.add(queryRow);
+				result.put(queryRow);
 			}
 		} catch (final ParseException e) {
 			ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax: "
@@ -606,13 +607,18 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		resp.setHeader("Cache-Control", "must-revalidate");
 		ServletUtils.setResponseContentTypeAndEncoding(req, resp);
 
-		final JSON json = result.size() > 1 ? result : result.getJSONObject(0);
+		final Object json = result.length() > 1 ? result : result.getJSONObject(0);
 		final String callback = req.getParameter("callback");
 		final String body;
 		if (callback != null) {
 			body = String.format("%s(%s)", callback, json);
 		} else {
-			body = json.toString(getBooleanParameter(req, "debug") ? 2 : 0);
+		    final int indentFactor = getBooleanParameter(req, "debug") ? 2 : 0;
+		    if (json instanceof JSONObject) {
+		        body = ((JSONObject)json).toString(indentFactor);
+		    } else {
+                body = ((JSONArray)json).toString(indentFactor);		        
+		    }
 		}
 
 		final Writer writer = resp.getWriter();
@@ -690,7 +696,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private IndexState getState(final HttpServletRequest req,
-			final HttpServletResponse resp) throws IOException {
+			final HttpServletResponse resp) throws IOException, JSONException {
 		final View view = paths.get(toPath(req));
 		if (view == null) {
 			ServletUtils.sendJSONError(req, resp, 400, "no_such_view");
@@ -722,7 +728,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		return 0L;
 	}
 
-	private void init() throws IOException {
+	private void init() throws IOException, JSONException {
 		this.uuid = database.getOrCreateUuid();
 
 		this.context = Context.enter();

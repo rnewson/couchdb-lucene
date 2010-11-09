@@ -3,8 +3,8 @@ package com.github.rnewson.couchdb.lucene.couchdb;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
-import net.sf.json.JSONObject;
 
+import org.json.JSONObject;
 import org.junit.Test;
 
 /**
@@ -26,18 +26,18 @@ import org.junit.Test;
 public class DesignDocumentTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void notDesignDocument() {
-        new DesignDocument(JSONObject.fromObject("{_id:\"hello\"}"));
+    public void notDesignDocument() throws Exception {
+        new DesignDocument(new JSONObject("{_id:\"hello\"}"));
     }
 
     @Test
-    public void noViews() {
-        final DesignDocument ddoc = new DesignDocument(JSONObject.fromObject("{_id:\"_design/hello\"}"));
+    public void noViews() throws Exception {
+        final DesignDocument ddoc = new DesignDocument(new JSONObject("{_id:\"_design/hello\"}"));
         assertThat(ddoc.getAllViews().size(), is(0));
     }
 
     @Test
-    public void views() {
+    public void views() throws Exception {
         final JSONObject view = new JSONObject();
         view.put("index", "function(doc) { return null; }");
 

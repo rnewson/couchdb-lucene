@@ -22,9 +22,9 @@ import java.io.Writer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.mortbay.jetty.HttpHeaders;
-
-import net.sf.json.JSONObject;
 
 public final class ServletUtils {
 
@@ -48,14 +48,14 @@ public final class ServletUtils {
     }
 
     public static void sendJSONError(final HttpServletRequest request, final HttpServletResponse response, final int code,
-            final String reason) throws IOException {
+            final String reason) throws IOException, JSONException {
         final JSONObject obj = new JSONObject();
         obj.put("reason", reason);
         sendJSONError(request, response, code, obj);
     }
     
     public static void sendJSONError(final HttpServletRequest request, final HttpServletResponse response, final int code,
-                final JSONObject error) throws IOException {
+                final JSONObject error) throws IOException, JSONException {
         error.put("code", code);
 
         setResponseContentTypeAndEncoding(request, response);
@@ -84,7 +84,7 @@ public final class ServletUtils {
 	    resp.setCharacterEncoding("utf-8");
 	}
 
-	public static void writeJSON(final HttpServletRequest req, final HttpServletResponse resp, final JSONObject json) throws IOException {
+	public static void writeJson(final HttpServletRequest req, final HttpServletResponse resp, final JSONObject json) throws IOException {
 	    setResponseContentTypeAndEncoding(req, resp);
 	    final Writer writer = resp.getWriter();
 	    try {
@@ -93,5 +93,15 @@ public final class ServletUtils {
 	        writer.close();
 	    }
 	}
+	
+   public static void writeJsonSuccess(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
+        setResponseContentTypeAndEncoding(req, resp);
+        final Writer writer = resp.getWriter();
+        try {
+            writer.write("{\"ok\", true}\r\n");
+        } finally {
+            writer.close();
+        }
+    }
 
 }

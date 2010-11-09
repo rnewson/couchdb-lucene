@@ -16,18 +16,18 @@ package com.github.rnewson.couchdb.lucene.util;
  * limitations under the License.
  */
 
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import javax.servlet.http.HttpServletRequest;
 
-
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.store.Directory;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Utils {
 
@@ -44,7 +44,11 @@ public class Utils {
     }
 
     public static Field token(final String name, final String value, final boolean store) {
-        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS);
+        return new Field(
+                name,
+                value,
+                store ? Store.YES : Store.NO,
+                Field.Index.NOT_ANALYZED_NO_NORMS);
     }
 
     public static String urlEncode(final String path) {
@@ -65,6 +69,7 @@ public class Utils {
 
     /**
      * Split a string on commas but respect commas inside quotes.
+     * 
      * @param str
      * @return
      */

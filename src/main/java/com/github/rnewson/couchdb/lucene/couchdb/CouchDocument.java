@@ -16,7 +16,8 @@ package com.github.rnewson.couchdb.lucene.couchdb;
  * limitations under the License.
  */
 
-import net.sf.json.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class CouchDocument {
 
@@ -26,7 +27,7 @@ public class CouchDocument {
 
     private static final String DELETED = "_deleted";
 
-    public static CouchDocument deletedDocument(final String id) {
+    public static CouchDocument deletedDocument(final String id) throws JSONException {
         final JSONObject json = new JSONObject();
         json.put(ID, id);
         json.put(DELETED, true);
@@ -40,7 +41,7 @@ public class CouchDocument {
         this.json = json;
     }
 
-    public String getId() {
+    public String getId() throws JSONException {
         return json.getString(ID);
     }
 

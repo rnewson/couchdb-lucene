@@ -1,7 +1,6 @@
 package com.github.rnewson.couchdb.lucene.couchdb;
 
-import net.sf.json.JSONObject;
-
+import org.json.JSONObject;
 import org.junit.Test;
 
 /**
@@ -23,12 +22,12 @@ import org.junit.Test;
 public class ViewTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void noIndex() {
-        new View(JSONObject.fromObject("{}"));
+    public void noIndex() throws Exception {
+        new View(new JSONObject("{}"));
     }
 
     @Test
-    public void index() {
+    public void index() throws Exception {
         final JSONObject json = new JSONObject();
         json.put("index", "function(doc) { return null; }");
 

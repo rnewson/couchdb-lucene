@@ -2,8 +2,8 @@ package com.github.rnewson.couchdb.lucene.couchdb;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import net.sf.json.JSONObject;
 
+import org.json.JSONObject;
 import org.junit.Test;
 
 /**
@@ -25,19 +25,19 @@ import org.junit.Test;
 public class CouchDocumentTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void notValidDocument() {
-        new CouchDocument(JSONObject.fromObject("{}"));
+    public void notValidDocument() throws Exception {
+        new CouchDocument(new JSONObject("{}"));
     }
 
     @Test
-    public void validDocument() {
-        final CouchDocument doc = new CouchDocument(JSONObject.fromObject("{_id:\"hello\"}"));
+    public void validDocument() throws Exception {
+        final CouchDocument doc = new CouchDocument(new JSONObject("{_id:\"hello\"}"));
         assertThat(doc.getId(), is("hello"));
     }
 
     @Test
-    public void asJson() {
-        final JSONObject json = JSONObject.fromObject("{_id:\"hello\"}");
+    public void asJson() throws Exception {
+        final JSONObject json = new JSONObject("{_id:\"hello\"}");
         final CouchDocument doc = new CouchDocument(json);
         assertThat(doc.asJson(), is(json));
     }

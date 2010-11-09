@@ -6,10 +6,10 @@ import static org.junit.Assert.assertThat;
 
 import java.util.TimeZone;
 
-import net.sf.json.JSONObject;
-
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.NumericField;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -281,15 +281,15 @@ public class DocumentConverterTest {
 		assertThat(result.length, is(0));
 	}
 
-    private CouchDocument doc(final String json) {
-        return new CouchDocument(JSONObject.fromObject(json));
+    private CouchDocument doc(final String json) throws JSONException {
+        return new CouchDocument(new JSONObject(json));
     }
 
     private ViewSettings settings() {
         return ViewSettings.getDefaultSettings();
     }
 
-    private View view(final String fun) {
+    private View view(final String fun) throws JSONException {
         final JSONObject json = new JSONObject();
         json.put("index", fun);
         return new View(json);
