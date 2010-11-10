@@ -137,7 +137,7 @@ public final class DocumentConverter {
     }
 
     private Scriptable convertObject(final JSONObject obj) throws JSONException {
-    	if (obj == null) {
+    	if (obj == JSONObject.NULL) {
     		return null;
     	}
         final Scriptable result = context.newObject(scope);
