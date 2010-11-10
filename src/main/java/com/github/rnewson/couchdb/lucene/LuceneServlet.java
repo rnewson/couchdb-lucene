@@ -95,7 +95,7 @@ public final class LuceneServlet extends HttpServlet {
             if (dirs == null) {
                 LOG.warn(DatabaseIndexer.uuidDir(root, db.getUuid())
                          + " is not a directory or could not be read.");
-                ServletUtils.sendJSONError(req, resp, 500, "index_dir_perms");
+                ServletUtils.sendJsonError(req, resp, 500, "index_dir_perms");
                 return;
             } else {
                 for (final File dir : dirs) {
@@ -116,7 +116,7 @@ public final class LuceneServlet extends HttpServlet {
 		}
 
 		resp.setStatus(202);
-		ServletUtils.writeJsonSuccess(req, resp);
+		ServletUtils.sendJsonSuccess(req, resp);
 	}
 
 	private Couch getCouch(final HttpServletRequest req) throws IOException {
@@ -162,7 +162,7 @@ public final class LuceneServlet extends HttpServlet {
 		final JSONObject welcome = new JSONObject();
 		welcome.put("couchdb-lucene", "Welcome");
 		welcome.put("version", p.getImplementationVersion());
-		ServletUtils.writeJson(req, resp, welcome);
+		ServletUtils.sendJson(req, resp, welcome);
 	}
 
 	@Override
@@ -185,7 +185,7 @@ public final class LuceneServlet extends HttpServlet {
 		case 5:
 			final DatabaseIndexer indexer = getIndexer(req);
 			if (indexer == null) {
-			    ServletUtils.sendJSONError(req, resp, 500, "error_creating_index");
+			    ServletUtils.sendJsonError(req, resp, 500, "error_creating_index");
 			    return;
 			}
 			
@@ -197,7 +197,7 @@ public final class LuceneServlet extends HttpServlet {
 			return;
 		}
 
-		ServletUtils.sendJSONError(req, resp, 400, "bad_request");
+		ServletUtils.sendJsonError(req, resp, 400, "bad_request");
     }
 
 	@Override
@@ -225,7 +225,7 @@ public final class LuceneServlet extends HttpServlet {
 			indexer.admin(req, resp);
 			return;
 		}
-		ServletUtils.sendJSONError(req, resp, 400, "bad_request");
+		ServletUtils.sendJsonError(req, resp, 400, "bad_request");
     }
 
 }

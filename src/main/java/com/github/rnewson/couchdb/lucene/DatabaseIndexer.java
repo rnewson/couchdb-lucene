@@ -261,7 +261,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			logger.info("Expunging deletes from " + state);
 			state.writer.expungeDeletes(false);
 						resp.setStatus(202);
-			ServletUtils.writeJsonSuccess(req, resp);
+			ServletUtils.sendJsonSuccess(req, resp);
 			return;
 		}
 
@@ -269,11 +269,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			logger.info("Optimizing " + state);
 			state.writer.optimize(false);
 			resp.setStatus(202);
-			ServletUtils.writeJsonSuccess(req, resp);
+			ServletUtils.sendJsonSuccess(req, resp);
 			return;
 		}
 
-		ServletUtils.sendJSONError(req, resp, 400, "bad_request");
+		ServletUtils.sendJsonError(req, resp, 400, "bad_request");
 	}
 
 	public void awaitInitialization() {
@@ -596,7 +596,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				result.put(queryRow);
 			}
 		} catch (final ParseException e) {
-			ServletUtils.sendJSONError(req, resp, 400, "Bad query syntax: "
+			ServletUtils.sendJsonError(req, resp, 400, "Bad query syntax: "
 					+ e.getMessage());
 			return;
 		} finally {
@@ -699,13 +699,13 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			final HttpServletResponse resp) throws IOException, JSONException {
 		final View view = paths.get(toPath(req));
 		if (view == null) {
-			ServletUtils.sendJSONError(req, resp, 400, "no_such_view");
+			ServletUtils.sendJsonError(req, resp, 400, "no_such_view");
 			return null;
 		}
 
 		final IndexState result = states.get(view);
 		if (result == null) {
-			ServletUtils.sendJSONError(req, resp, 400, "no_such_state");
+			ServletUtils.sendJsonError(req, resp, 400, "no_such_state");
 		}
 		return result;
 	}
