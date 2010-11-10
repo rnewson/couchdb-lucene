@@ -44,7 +44,6 @@ import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
-import com.github.rnewson.couchdb.lucene.util.Utils;
 
 public final class LuceneServlet extends HttpServlet {
 

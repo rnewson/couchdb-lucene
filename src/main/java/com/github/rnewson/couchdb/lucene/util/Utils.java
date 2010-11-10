@@ -26,8 +26,6 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.store.Directory;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class Utils {
 
