@@ -63,6 +63,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
+import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
@@ -127,6 +128,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		}
 
 		public Query parse(final String query) throws ParseException {
+			final QueryParser parser = new CustomQueryParser(Constants.VERSION,
+					Constants.DEFAULT_FIELD, analyzer);
+			return parser.parse(query);
+		}
+
+		public Query parse(final String query, final Analyzer analyzer) throws ParseException {
 			final QueryParser parser = new CustomQueryParser(Constants.VERSION,
 					Constants.DEFAULT_FIELD, analyzer);
 			return parser.parse(query);
@@ -467,7 +474,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				return;
 			}
 			for (final String queryString : getQueryStrings(req)) {
-				final Query q = state.parse(queryString);
+				final Analyzer analyzer = getAnalyzer(req, state.analyzer);
+				final Query q = state.parse(queryString, analyzer);
+				
 				final JSONObject queryRow = new JSONObject();
 				queryRow.put("q", q.toString());
 				if (getBooleanParameter(req, "debug")) {
@@ -767,6 +776,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private boolean isStaleOk(final HttpServletRequest req) {
 		return "ok".equals(req.getParameter("stale"));
+	}
+	
+	private Analyzer getAnalyzer(final HttpServletRequest req, final Analyzer defaultAnalyzer) {
+		final String analyzer = req.getParameter("analyzer");
+		return analyzer == null ? defaultAnalyzer : Analyzers.getAnalyzer(analyzer);
 	}
 
 	private void maybeCommit() throws IOException {
