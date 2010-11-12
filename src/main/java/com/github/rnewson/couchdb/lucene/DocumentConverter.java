@@ -118,6 +118,8 @@ public final class DocumentConverter {
     private Object convert(final Object obj) throws JSONException {
         if (obj instanceof JSONArray) {
             return convertArray((JSONArray) obj);
+        } else if (obj == JSONObject.NULL) {
+            return null;
         } else if (obj instanceof JSONObject) {
             return convertObject((JSONObject) obj);
         } else {
