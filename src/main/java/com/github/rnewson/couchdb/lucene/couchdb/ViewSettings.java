@@ -1,10 +1,9 @@
 package com.github.rnewson.couchdb.lucene.couchdb;
 
-import net.sf.json.JSONObject;
-
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
+import org.json.JSONObject;
 import org.mozilla.javascript.NativeObject;
 
 import com.github.rnewson.couchdb.lucene.util.Constants;

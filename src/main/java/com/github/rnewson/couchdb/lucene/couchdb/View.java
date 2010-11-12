@@ -20,10 +20,10 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import net.sf.json.JSONObject;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ScriptableObject;
@@ -49,22 +49,22 @@ public final class View {
 		this.json = json;
 	}
 
-	public Analyzer getAnalyzer() {
+	public Analyzer getAnalyzer() throws JSONException {
 		return Analyzers
 				.getAnalyzer(json.optString(ANALYZER, DEFAULT_ANALYZER));
 	}
 
-	public ViewSettings getDefaultSettings() {
+	public ViewSettings getDefaultSettings() throws JSONException {
 		return json.has(DEFAULTS) ? new ViewSettings(json
 				.getJSONObject(DEFAULTS)) : ViewSettings.getDefaultSettings();
 	}
 
-	public String getFunction() {
+	public String getFunction() throws JSONException {
 		return trim(json.getString(INDEX));
 	}
 
 	public Function compileFunction(final Context context,
-			ScriptableObject scope) {
+			ScriptableObject scope) throws JSONException {
 		return context.compileFunction(scope, getFunction(), null, 0, null);
 	}
 

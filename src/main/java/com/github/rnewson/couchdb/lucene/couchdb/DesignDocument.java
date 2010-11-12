@@ -18,15 +18,17 @@ package com.github.rnewson.couchdb.lucene.couchdb;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
-import net.sf.json.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class DesignDocument extends CouchDocument {
 
 	private final JSONObject fulltext;
 
-	public DesignDocument(final JSONObject json) {
+	public DesignDocument(final JSONObject json) throws JSONException {
 		super(json);
 		if (!getId().startsWith("_design/")) {
 			throw new IllegalArgumentException(json
@@ -35,7 +37,7 @@ public class DesignDocument extends CouchDocument {
 		fulltext = json.optJSONObject("fulltext");
 	}
 
-	public DesignDocument(final CouchDocument doc) {
+	public DesignDocument(final CouchDocument doc) throws JSONException {
 		this(doc.json);
 	}
 
@@ -50,7 +52,9 @@ public class DesignDocument extends CouchDocument {
 		if (fulltext == null)
 			return Collections.emptyMap();
 		final Map<String, View> result = new HashMap<String, View>();
-		for (final Object key : fulltext.keySet()) {
+		final Iterator<?> it = fulltext.keys();
+		while (it.hasNext()) {
+		    final Object key = it.next();
 			final String name = (String) key;
 			final View view = getView(name);
 			if (view != null) {

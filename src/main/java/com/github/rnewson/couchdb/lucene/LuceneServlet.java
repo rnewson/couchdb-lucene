@@ -29,14 +29,15 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.json.JSONObject;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
@@ -45,9 +46,6 @@ import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 
 public final class LuceneServlet extends HttpServlet {
-
-	private static final JSONObject JSON_SUCCESS = JSONObject
-			.fromObject("{\"ok\":true}");
 
 	private static final Logger LOG = Logger.getLogger(LuceneServlet.class);
 
@@ -71,12 +69,12 @@ public final class LuceneServlet extends HttpServlet {
 	}
 
 	private void cleanup(final HttpServletRequest req,
-			final HttpServletResponse resp) throws IOException {
+			final HttpServletResponse resp) throws IOException, JSONException {
 		final Couch couch = getCouch(req);
 		final Set<String> dbKeep = new HashSet<String>();
-
-		for (final String dbname : couch.getAllDatabases()) {
-			final Database db = couch.getDatabase(dbname);
+		final JSONArray databases = couch.getAllDatabases();
+		for (int i=0; i< databases.length(); i++) {
+			final Database db = couch.getDatabase(databases.getString(i));
 			final UUID uuid = db.getUuid();
 			if (uuid == null) {
 				continue;
@@ -96,7 +94,7 @@ public final class LuceneServlet extends HttpServlet {
             if (dirs == null) {
                 LOG.warn(DatabaseIndexer.uuidDir(root, db.getUuid())
                          + " is not a directory or could not be read.");
-                ServletUtils.sendJSONError(req, resp, 500, "index_dir_perms");
+                ServletUtils.sendJsonError(req, resp, 500, "index_dir_perms");
                 return;
             } else {
                 for (final File dir : dirs) {
@@ -117,7 +115,7 @@ public final class LuceneServlet extends HttpServlet {
 		}
 
 		resp.setStatus(202);
-		ServletUtils.writeJSON(req, resp, JSON_SUCCESS);
+		ServletUtils.sendJsonSuccess(req, resp);
 	}
 
 	private Couch getCouch(final HttpServletRequest req) throws IOException {
@@ -129,7 +127,7 @@ public final class LuceneServlet extends HttpServlet {
 	}
 
 	private synchronized DatabaseIndexer getIndexer(final Database database)
-			throws IOException {
+			throws IOException, JSONException {
 		DatabaseIndexer result = indexers.get(database);
 		Thread thread = threads.get(database);
 		if (result == null || thread == null || !thread.isAlive()) {
@@ -149,7 +147,7 @@ public final class LuceneServlet extends HttpServlet {
 	}
 
 	private DatabaseIndexer getIndexer(final HttpServletRequest req)
-			throws IOException {
+			throws IOException, JSONException {
 		final Couch couch = getCouch(req);
 		final Database database = couch.getDatabase(new PathParts(req)
 				.getDatabaseName());
@@ -158,26 +156,35 @@ public final class LuceneServlet extends HttpServlet {
 
 	private void handleWelcomeReq(final HttpServletRequest req,
 			final HttpServletResponse resp) throws ServletException,
-			IOException {
+			IOException, JSONException {
 	    final Package p = this.getClass().getPackage();
 		final JSONObject welcome = new JSONObject();
 		welcome.put("couchdb-lucene", "Welcome");
 		welcome.put("version", p.getImplementationVersion());
-		ServletUtils.writeJSON(req, resp, welcome);
+		ServletUtils.sendJson(req, resp, welcome);
 	}
 
 	@Override
 	protected void doGet(final HttpServletRequest req,
 			final HttpServletResponse resp) throws ServletException,
 			IOException {
-		switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
+		try {
+            doGetInternal(req, resp);
+        } catch (final JSONException e) {
+            resp.sendError(500);
+        }
+	}
+
+    private void doGetInternal(final HttpServletRequest req, final HttpServletResponse resp)
+            throws ServletException, IOException, JSONException {
+        switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
 		case 1:
 			handleWelcomeReq(req, resp);
 			return;
 		case 5:
 			final DatabaseIndexer indexer = getIndexer(req);
 			if (indexer == null) {
-			    ServletUtils.sendJSONError(req, resp, 500, "error_creating_index");
+			    ServletUtils.sendJsonError(req, resp, 500, "error_creating_index");
 			    return;
 			}
 			
@@ -189,14 +196,23 @@ public final class LuceneServlet extends HttpServlet {
 			return;
 		}
 
-		ServletUtils.sendJSONError(req, resp, 400, "bad_request");
-	}
+		ServletUtils.sendJsonError(req, resp, 400, "bad_request");
+    }
 
 	@Override
 	protected void doPost(final HttpServletRequest req,
 			final HttpServletResponse resp) throws ServletException,
 			IOException {
-		switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
+		try {
+            doPostInternal(req, resp);
+        } catch (final JSONException e) {
+            resp.sendError(500);
+        }
+	}
+
+    private void doPostInternal(final HttpServletRequest req, final HttpServletResponse resp)
+            throws IOException, JSONException {
+        switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
 		case 3:
 			if (req.getPathInfo().endsWith("/_cleanup")) {
 				cleanup(req, resp);
@@ -208,7 +224,7 @@ public final class LuceneServlet extends HttpServlet {
 			indexer.admin(req, resp);
 			return;
 		}
-		ServletUtils.sendJSONError(req, resp, 400, "bad_request");
-	}
+		ServletUtils.sendJsonError(req, resp, 400, "bad_request");
+    }
 
 }

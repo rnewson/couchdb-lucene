@@ -22,9 +22,9 @@ import java.io.Writer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.mortbay.jetty.HttpHeaders;
-
-import net.sf.json.JSONObject;
 
 public final class ServletUtils {
 
@@ -47,44 +47,43 @@ public final class ServletUtils {
         return result != null ? result : defaultValue;
     }
 
-    public static void sendJSONError(final HttpServletRequest request, final HttpServletResponse response, final int code,
-            final String reason) throws IOException {
+    public static void setResponseContentTypeAndEncoding(final HttpServletRequest req, final HttpServletResponse resp) {
+        final String accept = req.getHeader("Accept");
+        if (getBooleanParameter(req, "force_json") || (accept != null && accept.contains("application/json"))) {
+            resp.setContentType("application/json");
+        } else {
+            resp.setContentType("text/plain");
+        }
+        if (!resp.containsHeader("Vary")) {
+            resp.addHeader("Vary", "Accept");
+        }
+        resp.setCharacterEncoding("utf-8");
+    }
+
+    public static void sendJsonError(final HttpServletRequest request, final HttpServletResponse response, final int code,
+            final String reason) throws IOException, JSONException {
         final JSONObject obj = new JSONObject();
         obj.put("reason", reason);
-        sendJSONError(request, response, code, obj);
+        sendJsonError(request, response, code, obj);
     }
     
-    public static void sendJSONError(final HttpServletRequest request, final HttpServletResponse response, final int code,
-                final JSONObject error) throws IOException {
-        error.put("code", code);
-
+    public static void sendJsonError(final HttpServletRequest request, final HttpServletResponse response, final int code,
+                final JSONObject error) throws IOException, JSONException {
         setResponseContentTypeAndEncoding(request, response);
         response.setHeader(HttpHeaders.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
         response.setStatus(code);
+        error.put("code", code);
         
         final Writer writer = response.getWriter();
-        try {
+        try { 
             writer.write(error.toString());
-            writer.write("\n");
+            writer.write("\r\n");
         } finally {
             writer.close();
         }
     }
 
-	public static void setResponseContentTypeAndEncoding(final HttpServletRequest req, final HttpServletResponse resp) {
-	    final String accept = req.getHeader("Accept");
-	    if (getBooleanParameter(req, "force_json") || (accept != null && accept.contains("application/json"))) {
-	        resp.setContentType("application/json");
-	    } else {
-	        resp.setContentType("text/plain");
-	    }
-	    if (!resp.containsHeader("Vary")) {
-	    	resp.addHeader("Vary", "Accept");
-	    }
-	    resp.setCharacterEncoding("utf-8");
-	}
-
-	public static void writeJSON(final HttpServletRequest req, final HttpServletResponse resp, final JSONObject json) throws IOException {
+	public static void sendJson(final HttpServletRequest req, final HttpServletResponse resp, final JSONObject json) throws IOException {
 	    setResponseContentTypeAndEncoding(req, resp);
 	    final Writer writer = resp.getWriter();
 	    try {
@@ -93,5 +92,15 @@ public final class ServletUtils {
 	        writer.close();
 	    }
 	}
+	
+   public static void sendJsonSuccess(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
+        setResponseContentTypeAndEncoding(req, resp);
+        final Writer writer = resp.getWriter();
+        try {
+            writer.write("{\"ok\", true}\r\n");
+        } finally {
+            writer.close();
+        }
+    }
 
 }

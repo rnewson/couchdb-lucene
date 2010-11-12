@@ -1,6 +1,7 @@
 package com.github.rnewson.couchdb.lucene.couchdb;
 
-import net.sf.json.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class DatabaseInfo {
 
@@ -10,11 +11,11 @@ public class DatabaseInfo {
 		this.json = json;
 	}
 
-	public long getUpdateSequence() {
+	public long getUpdateSequence() throws JSONException {
 		return json.getLong("update_seq");
 	}
 
-	public String getName() {
+	public String getName() throws JSONException {
 		return json.getString("db_name");
 	}
 

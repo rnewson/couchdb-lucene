@@ -45,10 +45,6 @@ public class Main {
 
         final File dir = new File(configuration.getString("lucene.dir", "indexes"));
 
-        if (dir == null) {
-            LOG.error("lucene.dir not set.");
-            System.exit(1);
-        }
         if (!dir.exists() && !dir.mkdir()) {
             LOG.error("Could not create " + dir.getCanonicalPath());
             System.exit(1);

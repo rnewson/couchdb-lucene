@@ -14,22 +14,22 @@ import org.junit.Test;
 public class AnalyzersTest {
 
     @Test
-    public void testStandard() {
+    public void testStandard() throws Exception {
         assertThat(Analyzers.getAnalyzer("standard"), is(StandardAnalyzer.class));
     }
 
     @Test
-    public void testFrench() {
+    public void testFrench() throws Exception {
         assertThat(Analyzers.getAnalyzer("french"), is(FrenchAnalyzer.class));
     }
 
     @Test
-    public void testWhitespace() {
+    public void testWhitespace() throws Exception {
         assertThat(Analyzers.getAnalyzer("whitespace"), is(WhitespaceAnalyzer.class));
     }
 
     @Test
-    public void testPerField() {
+    public void testPerField() throws Exception {
         final Analyzer analyzer = Analyzers.getAnalyzer("perfield:{name:\"standard\",age:\"keyword\"}");
         assertThat(analyzer, is(PerFieldAnalyzerWrapper.class));
         assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.standard.StandardAnalyzer"));
@@ -38,7 +38,7 @@ public class AnalyzersTest {
     }
 
     @Test
-    public void testPerFieldDefault() {
+    public void testPerFieldDefault() throws Exception {
         final Analyzer analyzer = Analyzers.getAnalyzer("perfield:{default:\"keyword\"}");
         assertThat(analyzer, is(PerFieldAnalyzerWrapper.class));
         assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.KeywordAnalyzer"));

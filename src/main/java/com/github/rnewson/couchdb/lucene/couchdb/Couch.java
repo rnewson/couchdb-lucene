@@ -18,10 +18,10 @@ package com.github.rnewson.couchdb.lucene.couchdb;
 
 import java.io.IOException;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-
 import org.apache.http.client.HttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Simple Java API access to CouchDB.
@@ -40,14 +40,13 @@ public class Couch {
 		this.url = url.endsWith("/") ? url : url + "/";
 	}
 
-	public final String[] getAllDatabases() throws IOException {
+	public final JSONArray getAllDatabases() throws IOException, JSONException {
 		final String response = HttpUtils.get(httpClient, url + "_all_dbs");
-		final JSONArray arr = JSONArray.fromObject(response);
-		return (String[]) arr.toArray(new String[0]);
+		return new JSONArray(response);
 	}
 
-	public final JSONObject getInfo() throws IOException {
-		return JSONObject.fromObject(HttpUtils.get(httpClient, url));
+	public final JSONObject getInfo() throws IOException, JSONException {
+		return new JSONObject(HttpUtils.get(httpClient, url));
 	}
 
 	public Database getDatabase(final String dbname) throws IOException {

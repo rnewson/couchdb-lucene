@@ -22,15 +22,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.github.rnewson.couchdb.lucene.util.Utils;
 
@@ -53,29 +53,29 @@ public final class Database {
 		return HttpUtils.delete(httpClient, url) == 200;
 	}
 
-	public List<DesignDocument> getAllDesignDocuments() throws IOException {
+	public List<DesignDocument> getAllDesignDocuments() throws IOException, JSONException {
 		final String body = HttpUtils.get(httpClient, String
 				.format("%s_all_docs?startkey=%s&endkey=%s&include_docs=true",
 						url, Utils.urlEncode("\"_design\""), Utils
 								.urlEncode("\"_design0\"")));
-		final JSONObject json = JSONObject.fromObject(body);
+		final JSONObject json = new JSONObject(body);
 		return toDesignDocuments(json);
 	}
 
-	public CouchDocument getDocument(final String id) throws IOException {
+	public CouchDocument getDocument(final String id) throws IOException, JSONException {
 		final String response = HttpUtils.get(httpClient, url
 				+ Utils.urlEncode(id));
-		return new CouchDocument(JSONObject.fromObject(response));
+		return new CouchDocument(new JSONObject(response));
 	}
 
-	public DesignDocument getDesignDocument(final String id) throws IOException {
+	public DesignDocument getDesignDocument(final String id) throws IOException, JSONException {
 		final String response = HttpUtils.get(httpClient, url
 				+ Utils.urlEncode(id));
-		return new DesignDocument(JSONObject.fromObject(response));
+		return new DesignDocument(new JSONObject(response));
 	}
 
 	public List<CouchDocument> getDocuments(final String... ids)
-			throws IOException {
+			throws IOException, JSONException {
 		if (ids.length == 0) {
 			return Collections.emptyList();
 		}
@@ -83,19 +83,18 @@ public final class Database {
 		final JSONArray keys = new JSONArray();
 		for (final String id : ids) {
 			assert id != null;
-			keys.add(id);
+			keys.put(id);
 		}
 		final JSONObject req = new JSONObject();
-		req.element("keys", keys);
+		req.put("keys", keys);
 
 		final String body = HttpUtils.post(httpClient, url
 				+ "_all_docs?include_docs=true", req.toString());
-		final JSONObject json = JSONObject.fromObject(body);
-		return toDocuments(json);
+		return toDocuments(new JSONObject(body));
 	}
 
-	public DatabaseInfo getInfo() throws IOException {
-		return new DatabaseInfo(JSONObject.fromObject(HttpUtils.get(httpClient,
+	public DatabaseInfo getInfo() throws IOException, JSONException {
+		return new DatabaseInfo(new JSONObject(HttpUtils.get(httpClient,
 				url)));
 	}
 
@@ -119,7 +118,7 @@ public final class Database {
 		return HttpUtils.put(httpClient, url + Utils.urlEncode(id), body) == 201;
 	}
 
-	public UUID getUuid() throws IOException {
+	public UUID getUuid() throws IOException, JSONException {
 		try {
 			final CouchDocument local = getDocument("_local/lucene");
 			return UUID.fromString(local.asJson().getString("uuid"));
@@ -138,7 +137,7 @@ public final class Database {
 		saveDocument("_local/lucene", String.format("{\"uuid\":\"%s\"}", uuid));
 	}
 
-	public UUID getOrCreateUuid() throws IOException {
+	public UUID getOrCreateUuid() throws IOException, JSONException {
 		final UUID result = getUuid();
 		if (result != null) {
 			return result;
@@ -147,7 +146,7 @@ public final class Database {
 		return getUuid();
 	}
 
-	private List<DesignDocument> toDesignDocuments(final JSONObject json) {
+	private List<DesignDocument> toDesignDocuments(final JSONObject json) throws JSONException {
 		final List<DesignDocument> result = new ArrayList<DesignDocument>();
 		for (final JSONObject doc : rows(json)) {
 			result.add(new DesignDocument(doc));
@@ -155,7 +154,7 @@ public final class Database {
 		return result;
 	}
 
-	private List<CouchDocument> toDocuments(final JSONObject json) {
+	private List<CouchDocument> toDocuments(final JSONObject json) throws JSONException {
 		final List<CouchDocument> result = new ArrayList<CouchDocument>();
 		for (final JSONObject doc : rows(json)) {
 			result.add(new CouchDocument(doc));
@@ -163,10 +162,10 @@ public final class Database {
 		return result;
 	}
 
-	private List<JSONObject> rows(final JSONObject json) {
+	private List<JSONObject> rows(final JSONObject json) throws JSONException {
 		final List<JSONObject> result = new ArrayList<JSONObject>();
 		final JSONArray rows = json.getJSONArray("rows");
-		for (int i = 0; i < rows.size(); i++) {
+		for (int i = 0; i < rows.length(); i++) {
 			result.add(rows.getJSONObject(i).getJSONObject("doc"));
 		}
 		return result;
