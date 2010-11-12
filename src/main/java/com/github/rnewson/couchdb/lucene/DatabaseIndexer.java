@@ -126,12 +126,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			returnReader(searcher.getIndexReader());
 		}
 
-		public Query parse(final String query) throws ParseException {
-			final QueryParser parser = new CustomQueryParser(Constants.VERSION,
-					Constants.DEFAULT_FIELD, analyzer);
-			return parser.parse(query);
-		}
-
 		public Query parse(final String query, final Analyzer analyzer) throws ParseException {
 			final QueryParser parser = new CustomQueryParser(Constants.VERSION,
 					Constants.DEFAULT_FIELD, analyzer);
@@ -784,7 +778,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		return "ok".equals(req.getParameter("stale"));
 	}
 	
-	private Analyzer getAnalyzer(final HttpServletRequest req, final Analyzer defaultAnalyzer) {
+	private Analyzer getAnalyzer(final HttpServletRequest req, final Analyzer defaultAnalyzer) throws JSONException {
 		final String analyzer = req.getParameter("analyzer");
 		return analyzer == null ? defaultAnalyzer : Analyzers.getAnalyzer(analyzer);
 	}
