@@ -126,10 +126,14 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			returnReader(searcher.getIndexReader());
 		}
 
-		public Query parse(final String query, final Analyzer analyzer) throws ParseException {
+		public Query parse(final String query, final Analyzer analyzer) throws ParseException, JSONException {
 			final QueryParser parser = new CustomQueryParser(Constants.VERSION,
 					Constants.DEFAULT_FIELD, analyzer);
 			return parser.parse(query);
+		}
+
+		public Analyzer analyzer(final String analyzerName) throws JSONException {
+		    return analyzerName == null ? this.analyzer : Analyzers.getAnalyzer(analyzerName);
 		}
 
 		private synchronized void close() throws IOException {
@@ -469,14 +473,14 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				return;
 			}
 			for (final String queryString : getQueryStrings(req)) {
-				final Analyzer analyzer = getAnalyzer(req, state.analyzer);
+				final Analyzer analyzer = state.analyzer(req.getParameter("analyzer"));
 				final Query q = state.parse(queryString, analyzer);
-				
+
 				final JSONObject queryRow = new JSONObject();
 				queryRow.put("q", q.toString());
 				if (getBooleanParameter(req, "debug")) {
 					queryRow.put("plan", QueryPlan.toPlan(q));
-					queryRow.put("analyzer", state.analyzer.getClass());
+					queryRow.put("analyzer", analyzer.getClass());
 				}
 				queryRow.put("etag", etag);
 				if (getBooleanParameter(req, "rewrite")) {
@@ -776,11 +780,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private boolean isStaleOk(final HttpServletRequest req) {
 		return "ok".equals(req.getParameter("stale"));
-	}
-	
-	private Analyzer getAnalyzer(final HttpServletRequest req, final Analyzer defaultAnalyzer) throws JSONException {
-		final String analyzer = req.getParameter("analyzer");
-		return analyzer == null ? defaultAnalyzer : Analyzers.getAnalyzer(analyzer);
 	}
 
 	private void maybeCommit() throws IOException {
