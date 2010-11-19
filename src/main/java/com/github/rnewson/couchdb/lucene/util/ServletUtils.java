@@ -97,7 +97,7 @@ public final class ServletUtils {
         setResponseContentTypeAndEncoding(req, resp);
         final Writer writer = resp.getWriter();
         try {
-            writer.write("{\"ok\", true}\r\n");
+            writer.write("{\"ok\": true}\r\n");
         } finally {
             writer.close();
         }
