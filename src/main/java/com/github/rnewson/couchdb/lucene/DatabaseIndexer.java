@@ -620,11 +620,14 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		if (callback != null) {
 			body = String.format("%s(%s)", callback, json);
 		} else {
-		    final int indentFactor = getBooleanParameter(req, "debug") ? 2 : 0;
 		    if (json instanceof JSONObject) {
-		        body = ((JSONObject)json).toString(indentFactor);
+		        final JSONObject obj = (JSONObject) json;
+		        body = getBooleanParameter(req, "debug") ?
+		            obj.toString(2) : obj.toString();
 		    } else {
-                body = ((JSONArray)json).toString(indentFactor);		        
+		        final JSONArray arr = (JSONArray) json;
+                body = getBooleanParameter(req, "debug") ?
+		            arr.toString(2) : arr.toString();
 		    }
 		}
 
