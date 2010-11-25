@@ -97,7 +97,7 @@
     </dependencies>
     <properties>
         <lucene-version>3.0.2</lucene-version>
-        <tika-version>0.7</tika-version>
+        <tika-version>0.8</tika-version>
         <jetty-version>6.1.20</jetty-version>
     </properties>
     <issueManagement>
