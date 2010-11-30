@@ -54,6 +54,7 @@ public class AnalyzersTest {
     public void testPorter() throws Exception {
         assertThat(Analyzers.getAnalyzer("porter"), is(PorterStemAnalyzer.class));
         assertAnalysisOf(Analyzers.getAnalyzer("porter"), "foo bar", "foo", "bar");
+        assertAnalysisOf(Analyzers.getAnalyzer("porter"), "walking", "walk");
     }
     
     @Test
