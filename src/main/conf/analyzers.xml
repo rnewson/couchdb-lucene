@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+  <!-- Pin to 3.0 -->
+  <bean id="version" class="org.apache.lucene.util.Version" factory-method="valueOf">
+  	<constructor-arg value="LUCENE_30"/>
+  </bean>
+
+  <bean id="BRAZILIAN" class="org.apache.lucene.analysis.br.BrazilianAnalyzer">
+  	<constructor-arg ref="version"/>
+  </bean> 
+  
+  <bean id="CHINESE" class="org.apache.lucene.analysis.cn.ChineseAnalyzer"/>
+
+  <bean id="CJK" class="org.apache.lucene.analysis.cjk.CJKAnalyzer">
+  	<constructor-arg ref="version"/>
+  </bean>
+  
+  <bean id="CZECH" class="org.apache.lucene.analysis.cz.CzechAnalyzer">
+  	<constructor-arg ref="version"/>
+  </bean>
+
+  <bean id="DUTCH" class="org.apache.lucene.analysis.nl.DutchAnalyzer">
+  	<constructor-arg ref="version"/>
+  </bean>
+
+  <bean id="ENGLISH" class="org.apache.lucene.analysis.standard.StandardAnalyzer">
+  	<constructor-arg ref="version"/>
+  </bean>
+  
+  <bean id="FRENCH" class="org.apache.lucene.analysis.fr.FrenchAnalyzer">
+  	<constructor-arg ref="version"/>
+  </bean>
+  
+  <bean id="GERMAN" class="org.apache.lucene.analysis.de.GermanAnalyzer">
+  	<constructor-arg ref="version"/>
+  </bean>
+    
+  <bean id="KEYWORD" class="org.apache.lucene.analysis.KeywordAnalyzer"/>
+  
+  <bean id="RUSSIAN" class="org.apache.lucene.analysis.ru.RussianAnalyzer">
+  	<constructor-arg ref="version"/>  	
+  </bean> 
+  
+  <bean id="SIMPLE" class="org.apache.lucene.analysis.SimpleAnalyzer"/>
+  
+  <bean id="PORTER" class="com.github.rnewson.couchdb.lucene.util.PorterStemAnalyzer"/>
+  
+  <bean id="THAI" class="org.apache.lucene.analysis.th.ThaiAnalyzer">
+  	<constructor-arg ref="version"/>
+  </bean>   
+  
+  <bean id="WHITESPACE" class="org.apache.lucene.analysis.WhitespaceAnalyzer"/>
+  
+  <bean id="STANDARD" class="org.apache.lucene.analysis.standard.StandardAnalyzer">
+  	<constructor-arg ref="version"/>
+  </bean>
+
+</beans>
