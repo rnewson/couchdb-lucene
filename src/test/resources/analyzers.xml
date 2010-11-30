@@ -46,6 +46,11 @@
   </bean> 
   
   <bean id="SIMPLE" class="org.apache.lucene.analysis.SimpleAnalyzer"/>
+
+  <bean id="SNOWBALL" class="org.apache.lucene.analysis.snowball.SnowballAnalyzer">
+  	<constructor-arg ref="version"/>
+  	<constructor-arg value="English"/>
+  </bean>   
   
   <bean id="PORTER" class="com.github.rnewson.couchdb.lucene.util.PorterStemAnalyzer"/>
   

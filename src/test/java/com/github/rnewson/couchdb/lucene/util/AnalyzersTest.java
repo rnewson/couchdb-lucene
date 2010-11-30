@@ -8,6 +8,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.fr.FrenchAnalyzer;
+import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.junit.Test;
 
@@ -42,6 +43,16 @@ public class AnalyzersTest {
         final Analyzer analyzer = Analyzers.getAnalyzer("perfield:{default:\"keyword\"}");
         assertThat(analyzer, is(PerFieldAnalyzerWrapper.class));
         assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.KeywordAnalyzer"));
+    }
+    
+    @Test
+    public void testPorter() throws Exception {
+        assertThat(Analyzers.getAnalyzer("porter"), is(PorterStemAnalyzer.class));
+    }
+    
+    @Test
+    public void testSnowball() throws Exception {
+        assertThat(Analyzers.getAnalyzer("snowball"), is(SnowballAnalyzer.class));
     }
 
 }
