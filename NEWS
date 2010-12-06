@@ -1,3 +1,15 @@
+Version 0.6.0
+-------------
+
+* Upgrade to Lucene 3.0.3.
+* Upgrade to Tika 0.8.
+* Changed JSON library for improved JSON parsing.
+* Control over term vectors when indexing.
+* Added the whitespace analyzer.
+* Include init.d startup script in zip.
+* Allow query-time override of analyzer.
+* Split multiple queries with embedding commas correctly.
+
 Version 0.5.6
 -------------
 

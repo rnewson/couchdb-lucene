@@ -4,13 +4,13 @@
 <tr><th>CouchDB</th><th>couchdb-lucene</th></tr>
 <tr><td>0.9.1, 0.10</td><td>0.4</td></tr>
 <tr><td>0.11</td><td>0.4-maint (0.4 with patch for trunk compatibility)</td></tr>
-<tr><td>0.10.x, 0.11.x, 1.0.x</td><td>0.5.x</td></tr>
+<tr><td>0.10.x, 0.11.x, 1.0.x</td><td>0.5.x, 0.6.x</td></tr>
 </table>
 
 <h1>Breaking Changes</h1>
 
 <ul>
-<li>couchdb-lucene 0.5.x runs as a standalone daemon (0.4 was run directly by couchdb).
+<li>couchdb-lucene 0.5.x and higher runs as a standalone daemon (0.4 was run directly by couchdb).
 <li>URL's now require the full design document id (where you would say "foo", you must now say "_design/foo").
 </ul>
 
