@@ -379,6 +379,7 @@ The following parameters can be passed for more sophisticated searches;
 <dt>analyzer</dt><dd>Override the default analyzer used to parse the q parameter</dd>
 <dt>callback</dt><dd>Specify a JSONP callback wrapper. The full JSON result will be prepended with this parameter and also placed with parentheses."</dd>
 <dt>debug</dt><dd>Setting this to true disables response caching (the query is executed every time) and indents the JSON response for readability.</dd>
+<dt>default_operator</dt><dd>Change the default operator for boolean queries. Defaults to "OR", other permitted value is "AND".</dd>
 <dt>force_json<dt><dd>Usually couchdb-lucene determines the Content-Type of its response based on the presence of the Accept header. If Accept contains "application/json", you get "application/json" in the response, otherwise you get "text/plain;charset=utf8". Some tools, like JSONView for FireFox, do not send the Accept header but do render "application/json" responses if received. Setting force_json=true forces all response to "application/json" regardless of the Accept header.</dd>
 <dt>include_docs</dt><dd>whether to include the source docs</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>

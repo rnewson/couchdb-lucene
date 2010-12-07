@@ -44,6 +44,7 @@ import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryParser.QueryParser.Operator;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -126,9 +127,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			returnReader(searcher.getIndexReader());
 		}
 
-		public Query parse(final String query, final Analyzer analyzer) throws ParseException, JSONException {
+		public Query parse(final String query, final Operator operator, final Analyzer analyzer) throws ParseException, JSONException {
 			final QueryParser parser = new CustomQueryParser(Constants.VERSION,
 					Constants.DEFAULT_FIELD, analyzer);
+			parser.setDefaultOperator(operator);
 			return parser.parse(query);
 		}
 
@@ -474,7 +476,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			}
 			for (final String queryString : getQueryStrings(req)) {
 				final Analyzer analyzer = state.analyzer(req.getParameter("analyzer"));
-				final Query q = state.parse(queryString, analyzer);
+				final Operator operator = "and".equalsIgnoreCase(req.getParameter("default_operator"))
+				? Operator.AND : Operator.OR;
+				final Query q = state.parse(queryString, operator, analyzer);
 
 				final JSONObject queryRow = new JSONObject();
 				queryRow.put("q", q.toString());
