@@ -25,6 +25,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
+import org.json.JSONObject;
 
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.ErrorPreservingResponseHandler;
@@ -44,9 +45,10 @@ public final class HttpUtils {
         return execute(httpClient, new HttpGet(url));
     }
 
-    public static final String post(final HttpClient httpClient, final String url, final String body) throws IOException {
+    public static final String post(final HttpClient httpClient, final String url, final JSONObject body) throws IOException {
         final HttpPost post = new HttpPost(url);
-        post.setEntity(new StringEntity(body));
+        post.setHeader("Content-Type", "application/json");
+        post.setEntity(new StringEntity(body.toString()));
         return execute(httpClient, post);
     }
 
