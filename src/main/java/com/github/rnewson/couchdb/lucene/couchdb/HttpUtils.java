@@ -18,6 +18,8 @@ package com.github.rnewson.couchdb.lucene.couchdb;
 
 import java.io.IOException;
 
+import net.sf.json.JSONObject;
+
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -44,9 +46,10 @@ public final class HttpUtils {
         return execute(httpClient, new HttpGet(url));
     }
 
-    public static final String post(final HttpClient httpClient, final String url, final String body) throws IOException {
+    public static final String post(final HttpClient httpClient, final String url, final JSONObject body) throws IOException {
         final HttpPost post = new HttpPost(url);
-        post.setEntity(new StringEntity(body));
+        post.setHeader("Content-Type", "application/json");
+        post.setEntity(new StringEntity(body.toString()));
         return execute(httpClient, post);
     }
 

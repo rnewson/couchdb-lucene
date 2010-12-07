@@ -89,7 +89,7 @@ public final class Database {
 		req.element("keys", keys);
 
 		final String body = HttpUtils.post(httpClient, url
-				+ "_all_docs?include_docs=true", req.toString());
+				+ "_all_docs?include_docs=true", req);
 		final JSONObject json = JSONObject.fromObject(body);
 		return toDocuments(json);
 	}
