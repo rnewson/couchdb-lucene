@@ -3,7 +3,7 @@
 [ -z $CL_BASEDIR ] && CL_BASEDIR=`dirname "$0"`
 cd $CL_BASEDIR/..
 
-JAVA_OPTS="-server -Xmx1g"
+JAVA_OPTS="-server -Xmx1g -XX:OnOutOfMemoryError=bin/kill_ppid"
 CLASS=com.github.rnewson.couchdb.lucene.Main
 
 CLASSPATH="conf"
