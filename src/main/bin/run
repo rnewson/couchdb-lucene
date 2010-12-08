@@ -3,7 +3,7 @@
 DIR=`dirname "$0"`
 cd $DIR/..
 
-JAVA_OPTS="-server -Xmx1g"
+JAVA_OPTS="-server -Xmx1g -XX:OnOutOfMemoryError=bin/kill_ppid"
 CLASS=com.github.rnewson.couchdb.lucene.Main
 
 CLASSPATH="conf"
