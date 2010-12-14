@@ -322,7 +322,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 final long seq = json.getLong("seq");
                 final String id = json.getString("id");
                 CouchDocument doc;
-                if (json.has("doc")) {
+                if (!json.isNull("doc")) {
                 	doc = new CouchDocument(json.getJSONObject("doc"));
                 } else {
                 	// include_docs=true doesn't work prior to 0.11.
