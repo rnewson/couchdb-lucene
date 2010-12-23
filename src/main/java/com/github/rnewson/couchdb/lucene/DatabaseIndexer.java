@@ -508,7 +508,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 					final boolean include_docs = getBooleanParameter(req,
 							"include_docs");
-					final int limit = getIntParameter(req, "limit", 25);
+					final int limit = getIntParameter(req, "limit",
+					        ini.getInt("lucene.limit", 25));
 					final Sort sort = CustomQueryParser.toSort(req
 							.getParameter("sort"));
 					final int skip = getIntParameter(req, "skip", 0);
