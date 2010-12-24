@@ -9,6 +9,7 @@ Version 0.6.0
 * Include init.d startup script in zip.
 * Allow query-time override of analyzer.
 * Split multiple queries with embedding commas correctly.
+* Launch the JVM with settings to hard kill the process if it encounters an OutOfMemoryError.
 
 Version 0.5.6
 -------------
