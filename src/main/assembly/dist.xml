@@ -37,7 +37,7 @@
     </file>
     <file>
       <source>${project.basedir}/couchdb-external-hook.py</source>
-      <fileMode>755</fileMode>
+      <fileMode>777</fileMode>
       <outputDirectory>/tools</outputDirectory>
     </file>
     <file>
