@@ -29,8 +29,8 @@ Java 1.5 (or above) is required; the <strike>Sun</strike> Oracle version is reco
 <li>checkout repository
 <li>type 'mvn'
 <li>cd target
-<li>unzip couchdb-lucene-<version>.zip
-<li>cd couchdb-lucene-<version>
+<li>unzip couchdb-lucene-&lt;version&gt;.zip
+<li>cd couchdb-lucene-&lt;version&gt;
 <li>./bin/run
 </ol>
 
