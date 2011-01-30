@@ -20,20 +20,25 @@ Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">gith
 
 <h1>Minimum System Requirements</h1>
 
-Java 1.5 (or above) is required; the Sun version is recommended as it's regularly tested against.
+Java 1.5 (or above) is required; the <strike>Sun</strike> Oracle version is recommended as it's regularly tested against.
 
-<h1>Build couchdb-lucene</h1>
+<h1>Build and run couchdb-lucene</h1>
 
 <ol>
 <li>Install Maven 2.
 <li>checkout repository
 <li>type 'mvn'
-<li>configure couchdb (see below)
+<li>cd target
+<li>unzip couchdb-lucene-<version>.zip
+<li>cd couchdb-lucene-<version>
+<li>./bin/run
 </ol>
 
-You will now have a zip file in the target/ directory. This contains all the couchdb-lucene code, dependencies, startup scripts and configuration files to run couchdb-lucene.
+The zip file contains all the couchdb-lucene code, dependencies, startup scripts and configuration files you need, so unzip it wherever you wish to install couchdb-lucene.
 
 <h1>Configure CouchDB</h1>
+
+The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene;
 
 <pre>
 [couchdb]
