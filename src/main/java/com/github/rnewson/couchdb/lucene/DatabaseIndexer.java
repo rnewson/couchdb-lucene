@@ -345,10 +345,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 		logger.info("Exiting due to design document change.");
                 		break loop;
                 	}
-                	for (final IndexState state : states.values()) {
-                		state.setPendingSequence(seq);
-                	}
-                	continue loop;
                 }
 
                 if (doc.isDeleted()) {
