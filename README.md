@@ -179,10 +179,23 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 <li>porter</li>
 <li>russian</li>
 <li>simple</li>
+<li>snowball</li>
 <li>standard</li>
 <li>thai</li>
 <li>whitespace</li>
 </ul>
+
+<h4>The Snowball Analyzer</h4>
+
+This analyzer requires an extra argument to specify the language (see http://lucene.apache.org/java/3_0_3/api/contrib-snowball/org/apache/lucene/analysis/snowball/SnowballAnalyzer.html for details);
+
+<pre>
+"analyzer":"snowball:English"
+</pre>
+
+Note: the argument is case-sensitive and is passed directly to the <code>SnowballAnalyzer</code>'s constructor.
+
+<h4>The Per-field Analyzer"</h4>
 
 The "perfield" option lets you use a different analyzer for different fields and is configured as follows;
 
