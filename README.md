@@ -187,7 +187,7 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 
 <h4>The Snowball Analyzer</h4>
 
-This analyzer requires an extra argument to specify the language (see http://lucene.apache.org/java/3_0_3/api/contrib-snowball/org/apache/lucene/analysis/snowball/SnowballAnalyzer.html for details);
+This analyzer requires an extra argument to specify the language (see <a href="http://lucene.apache.org/java/3_0_3/api/contrib-snowball/org/apache/lucene/analysis/snowball/SnowballAnalyzer.html">here</a> for details);
 
 <pre>
 "analyzer":"snowball:English"
