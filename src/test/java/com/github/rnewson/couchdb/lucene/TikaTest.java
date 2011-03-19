@@ -48,12 +48,12 @@ public class TikaTest {
         parse("example.xml", "text/xml", "bar");
         assertThat(doc.getField("bar"), not(nullValue()));
     }
-    
+
     @Test
     public void testWord() throws IOException {
         parse("example.doc", "application/msword", "bar");
         assertThat(doc.getField("bar"), not(nullValue()));
-        assertThat(doc.get("bar"), containsString("576 dsf45 d56 dsgh"));
+        assertThat(doc.get("bar"), containsString("576   dsf45   d56             dsgh"));
     }
 
     private void parse(final String resource, final String type, final String field) throws IOException {

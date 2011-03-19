@@ -102,7 +102,7 @@
     </dependencies>
     <properties>
         <lucene-version>3.0.3</lucene-version>
-        <tika-version>0.8</tika-version>
+        <tika-version>0.9</tika-version>
         <jetty-version>6.1.20</jetty-version>
         <http-version>4.0.1</http-version>
     </properties>
