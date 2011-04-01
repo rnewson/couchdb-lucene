@@ -17,9 +17,12 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
+import org.apache.commons.io.FileUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.log4j.Logger;
 import org.mortbay.jetty.Connector;
@@ -44,6 +47,7 @@ public class Main {
         configuration.setReloadingStrategy(new FileChangedReloadingStrategy());
 
         final File dir = new File(configuration.getString("lucene.dir", "indexes"));
+        cleanLocks(dir);
 
         if (!dir.exists() && !dir.mkdir()) {
             LOG.error("Could not create " + dir.getCanonicalPath());
@@ -84,5 +88,15 @@ public class Main {
         server.start();
         server.join();
     }
+
+	private static void cleanLocks(final File root) throws IOException {
+		final Iterator it = FileUtils.iterateFiles(root,
+				new String[] { "lock" }, true);
+		while (it.hasNext()) {
+			final File lock = (File) it.next();
+			LOG.info("Releasing stale lock at " + lock);
+			lock.delete();
+		}
+	}
 
 }
