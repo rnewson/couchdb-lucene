@@ -47,7 +47,6 @@ public class Main {
         configuration.setReloadingStrategy(new FileChangedReloadingStrategy());
 
         final File dir = new File(configuration.getString("lucene.dir", "indexes"));
-        cleanLocks(dir);
 
         if (!dir.exists() && !dir.mkdir()) {
             LOG.error("Could not create " + dir.getCanonicalPath());
@@ -62,6 +61,7 @@ public class Main {
             System.exit(1);
         }
         LOG.info("Index output goes to: " + dir.getCanonicalPath());
+        cleanLocks(dir);
 
         final Server server = new Server();
         final SelectChannelConnector connector = new SelectChannelConnector();
