@@ -63,11 +63,6 @@
             <version>${lucene-version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-snowball</artifactId>
-            <version>${lucene-version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
             <version>${tika-version}</version>
@@ -101,7 +96,7 @@
         </dependency>
     </dependencies>
     <properties>
-        <lucene-version>3.0.3</lucene-version>
+        <lucene-version>3.1.0</lucene-version>
         <tika-version>0.9</tika-version>
         <jetty-version>6.1.20</jetty-version>
         <http-version>4.0.1</http-version>

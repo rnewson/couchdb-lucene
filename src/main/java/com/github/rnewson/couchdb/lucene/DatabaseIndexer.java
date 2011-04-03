@@ -35,12 +35,11 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
-import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.LogByteSizeMergePolicy;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
@@ -54,6 +53,7 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.SimpleFSLockFactory;
+import org.apache.lucene.util.Version;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -76,7 +76,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		private final DocumentConverter converter;
 		private boolean readerDirty;
-		private boolean writerDirty;
 		private String etag;
 
 		private final Analyzer analyzer;
@@ -104,7 +103,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			if (reader != null) {
 				reader.decRef();
 			}
-			reader = writer.getReader();
+			reader = IndexReader.open(writer, !staleOk);
 			if (readerDirty) {
 				etag = newEtag();
 				readerDirty = false;
@@ -372,7 +371,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 			state.writer.deleteDocuments(new Term("_id", id));
                 			for (final Document d : docs) {
                 				state.writer.addDocument(d, view.getAnalyzer());
-                				state.writerDirty = true;
                 			}
                 			state.setPendingSequence(seq);
                 			state.readerDirty = true;
@@ -672,28 +670,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			if (state.pending_seq > getUpdateSequence(state.writer)) {
 				final Map<String, String> userData = new HashMap<String, String>();
 				userData.put("last_seq", Long.toString(state.pending_seq));
-				if (!state.writerDirty) {
-					logger
-							.debug("Forcing additional document as nothing else was indexed since last commit.");
-					state.writer.updateDocument(forceTerm(), forceDocument());
-				}
 				state.writer.commit(userData);
-				state.writerDirty = false;
 				logger.info(view + " now at update_seq " + state.pending_seq);
 			}
 		}
 		lastCommit = now();
-	}
-
-	private Document forceDocument() {
-		final Document result = new Document();
-		result.add(new Field("_cl", uuid.toString(), Store.NO,
-				Index.NOT_ANALYZED_NO_NORMS));
-		return result;
-	}
-
-	private Term forceTerm() {
-		return new Term("_cl", uuid.toString());
 	}
 
 	private boolean getBooleanParameter(final HttpServletRequest req,
@@ -795,14 +776,19 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private IndexWriter newWriter(final Directory dir) throws IOException {
-		final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER,
-				MaxFieldLength.UNLIMITED);
-		result.setMergeFactor(ini.getInt("lucene.mergeFactor", 10));
-		result.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
+		final IndexWriterConfig config = new IndexWriterConfig(
+				Version.LUCENE_30, Constants.ANALYZER);
+
+		final LogByteSizeMergePolicy mergePolicy = new LogByteSizeMergePolicy();
+		mergePolicy.setMergeFactor(ini.getInt("lucene.mergeFactor", 10));
+		mergePolicy.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
 				false));
-		result.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB",
-				IndexWriter.DEFAULT_RAM_BUFFER_SIZE_MB));
-		return result;
+		config.setMergePolicy(mergePolicy);
+
+		config.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB",
+				IndexWriterConfig.DEFAULT_RAM_BUFFER_SIZE_MB));
+
+		return new IndexWriter(dir, config);
 	}
 
 	private File viewDir(final View view, final boolean mkdirs)

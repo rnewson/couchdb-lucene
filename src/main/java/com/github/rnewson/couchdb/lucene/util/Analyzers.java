@@ -128,7 +128,7 @@ public enum Analyzers {
     SIMPLE {
         @Override
         public Analyzer newAnalyzer(final String args) {
-            return new SimpleAnalyzer();
+            return new SimpleAnalyzer(Constants.VERSION);
         }
     },
     SNOWBALL {
@@ -151,14 +151,14 @@ public enum Analyzers {
     },
     WHITESPACE {
         public Analyzer newAnalyzer(final String args) {
-            return new WhitespaceAnalyzer();
+            return new WhitespaceAnalyzer(Constants.VERSION);
         }
     };
 
     private static final class PorterStemAnalyzer extends Analyzer {
         @Override
         public TokenStream tokenStream(final String fieldName, final Reader reader) {
-            return new PorterStemFilter(new LowerCaseTokenizer(reader));
+            return new PorterStemFilter(new LowerCaseTokenizer(Constants.VERSION, reader));
         }
     }
 
