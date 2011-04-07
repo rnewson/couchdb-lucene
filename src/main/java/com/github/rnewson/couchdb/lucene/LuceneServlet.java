@@ -16,6 +16,7 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -44,8 +45,10 @@ import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
+import java.io.StringWriter;
 
 public final class LuceneServlet extends HttpServlet {
+    public static final String QUERY_PARM = "q";
 
 	private static final Logger LOG = Logger.getLogger(LuceneServlet.class);
 
@@ -122,7 +125,7 @@ public final class LuceneServlet extends HttpServlet {
 		final Configuration section = ini.getSection(new PathParts(req)
 				.getKey());
 		final String url = section.containsKey("url") ? section
-				.getString("url") : null;
+				.getString("url") : "";
 		return new Couch(client, url);
 	}
 
@@ -188,7 +191,7 @@ public final class LuceneServlet extends HttpServlet {
 			    return;
 			}
 			
-			if (req.getParameter("q") == null) {
+			if (req.getParameter(LuceneServlet.QUERY_PARM) == null) {
 				indexer.info(req, resp);
 			} else {
 				indexer.search(req, resp);
@@ -212,6 +215,7 @@ public final class LuceneServlet extends HttpServlet {
 
     private void doPostInternal(final HttpServletRequest req, final HttpServletResponse resp)
             throws IOException, JSONException {
+        DatabaseIndexer indexer;
         switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
 		case 3:
 			if (req.getPathInfo().endsWith("/_cleanup")) {
@@ -219,9 +223,38 @@ public final class LuceneServlet extends HttpServlet {
 				return;
 			}
 			break;
+        case 5:
+            indexer = getIndexer(req);
+			if (indexer == null) {
+			    ServletUtils.sendJsonError(req, resp, 500, "error_creating_index");
+			    return;
+			}
+            if (req.getContentLength() == 0) {
+				indexer.info(req, resp);
+			} else {
+                BufferedReader reader = req.getReader();
+                StringWriter writer = new StringWriter();
+
+                char[] buffer = new char[1024];
+                try {
+                    int n;
+                    while ((n = reader.read(buffer)) != -1) {
+                        writer.write(buffer, 0, n);
+                    }
+                } catch(Exception ex) {
+                    log("Could not read input", ex);
+                } finally {
+                    reader.close();
+                }
+                String query = writer.toString();
+                
+				indexer.search(query,req, resp);
+			}
+			return;
 		case 6:
-			final DatabaseIndexer indexer = getIndexer(req);
-			indexer.admin(req, resp);
+			indexer = getIndexer(req);
+            if (indexer != null)
+                indexer.admin(req, resp);
 			return;
 		}
 		ServletUtils.sendJsonError(req, resp, 400, "bad_request");

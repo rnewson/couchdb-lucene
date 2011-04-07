@@ -72,6 +72,8 @@ import com.github.rnewson.couchdb.lucene.util.Utils;
 
 public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
+
+
 	private class IndexState {
 
 		private final DocumentConverter converter;
@@ -455,8 +457,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			close();
 		}
 	}
+    public void search(final HttpServletRequest req,
+			final HttpServletResponse resp) throws IOException, JSONException {
+        search(req.getParameter(LuceneServlet.QUERY_PARM), req, resp);
+    }
 
-	public void search(final HttpServletRequest req,
+	public void search(final String query,final HttpServletRequest req,
 			final HttpServletResponse resp) throws IOException, JSONException {
 		final IndexState state = getState(req, resp);
 		if (state == null)
@@ -469,7 +475,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				resp.setStatus(304);
 				return;
 			}
-			for (final String queryString : getQueryStrings(req)) {
+			for (final String queryString : getQueryStrings(query)) {
 				final Analyzer analyzer = state.analyzer(req.getParameter("analyzer"));
 				final Operator operator = "and".equalsIgnoreCase(req.getParameter("default_operator"))
 				? Operator.AND : Operator.OR;
@@ -640,7 +646,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private String[] getQueryStrings(final HttpServletRequest req) {
-		return Utils.splitOnCommas(req.getParameter("q"));
+		return getQueryStrings(req.getParameter("q"));
+	}
+    private String[] getQueryStrings(final String query) {
+		return Utils.splitOnCommas(query);
 	}
 
 	private void close() {
