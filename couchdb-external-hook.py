@@ -35,7 +35,7 @@ def main():
     if len(args):
         parser.error("Unrecognized arguments: %s" % ' '.join(args))
     for req in requests():
-        res = httplib.HTTPConnection(opts.remote_host, opts.remote_port)
+        res = httplib.HTTPConnection(opts.remote_host, opts.remote_port,timeout=300)
         try:
             resp = respond(res, req, opts.key)
         except Exception, e:
