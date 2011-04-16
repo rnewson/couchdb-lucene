@@ -4,11 +4,16 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Iterator;
+import java.util.Scanner;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -56,29 +61,45 @@ public class SSLNio {
 
 		final SocketChannel channel = SocketChannel.open(new InetSocketAddress(
 				"localhost", 6984));
+
+		final Selector selector = Selector.open();
 		channel.configureBlocking(false);
-		SSLEngineResult result;
+		channel.register(selector,
+				SelectionKey.OP_READ | SelectionKey.OP_WRITE, session);
 
-		while (!engine.isInboundDone() || !engine.isOutboundDone()) {
-			result = engine.wrap(clientOut, cTOs);
-			runDelegatedTasks(engine);
-			cTOs.flip();
-			channel.write(cTOs);
+		SSLEngineResult result = null;
 
-			channel.read(sTOc);
-			sTOc.flip();
-			result = engine.unwrap(sTOc, clientIn);
-			runDelegatedTasks(engine);
+		while (true) {
+			selector.select();
+			final Set<SelectionKey> keys = selector.selectedKeys();
+			for (final Iterator<SelectionKey> i = keys.iterator(); i.hasNext();) {
+				final SelectionKey key = i.next();
+				i.remove();
 
-			if (result.getHandshakeStatus() == HandshakeStatus.NOT_HANDSHAKING
-					&& result.getStatus() == Status.OK) {
-				clientIn.flip();
-				System.out.println(decode(clientIn));
-				clientIn.compact();
+				result = engine.wrap(clientOut, cTOs);
+				runDelegatedTasks(engine);
+				cTOs.flip();
+				channel.write(cTOs);
+				cTOs.compact();
+
+				channel.read(sTOc);
+				sTOc.flip();
+				result = engine.unwrap(sTOc, clientIn);
+				runDelegatedTasks(engine);
+				sTOc.compact();
+
+				if (result.getHandshakeStatus() == HandshakeStatus.NOT_HANDSHAKING
+						&& result.getStatus() == Status.OK) {
+					clientIn.flip();
+					final Scanner scanner = new Scanner(clientIn);
+					System.out.print(decode(clientIn));
+					clientIn.compact();
+				}
+
+				if (result.getStatus() == Status.CLOSED) {
+					channel.close();
+				}
 			}
-
-			cTOs.compact();
-			sTOc.compact();
 		}
 	}
 
