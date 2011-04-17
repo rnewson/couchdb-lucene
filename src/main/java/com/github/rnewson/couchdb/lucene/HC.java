@@ -9,7 +9,13 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.CountDownLatch;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -21,6 +27,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.nio.DefaultClientIOEventDispatch;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+import org.apache.http.impl.nio.ssl.SSLClientIOEventDispatch;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.IOControl;
@@ -63,7 +70,8 @@ public class HC {
 			buffer.clear();
 			final int bytesRead = decoder.read(buffer);
 			buffer.flip();
-			final CharsetDecoder charsetDecoder = Charset.forName("US-ASCII").newDecoder();
+			final CharsetDecoder charsetDecoder = Charset.forName("US-ASCII")
+					.newDecoder();
 			final CharBuffer charBuffer = charsetDecoder.decode(buffer);
 			System.out.println(charBuffer);
 		}
@@ -134,6 +142,22 @@ public class HC {
 		public void fatalProtocolException(final HttpException ex,
 				final NHttpConnection conn) {
 			System.err.println("HTTP error: " + ex.getMessage());
+		}
+
+	}
+
+	private static class BlindTrust implements X509TrustManager {
+
+		public void checkClientTrusted(X509Certificate[] arg0, String arg1)
+				throws CertificateException {
+		}
+
+		public void checkServerTrusted(X509Certificate[] arg0, String arg1)
+				throws CertificateException {
+		}
+
+		public X509Certificate[] getAcceptedIssuers() {
+			return new X509Certificate[0];
 		}
 
 	}
@@ -258,12 +282,28 @@ public class HC {
 		// I/O event and main threads
 		final CountDownLatch requestCount = new CountDownLatch(1);
 
+		final boolean ssl = true;
+
+		final SSLContext sslcontext;
+		if (ssl) {
+			sslcontext = SSLContext.getInstance("TLS");
+			sslcontext
+					.init(null, new TrustManager[] { new BlindTrust() }, null);
+		} else {
+			sslcontext = null;
+		}
+
 		final NHttpClientHandler handler = new AsyncNHttpClientHandler(
 				httpproc, new MyHttpRequestExecutionHandler(requestCount),
 				new DefaultConnectionReuseStrategy(), params);
 
-		final IOEventDispatch ioEventDispatch = new DefaultClientIOEventDispatch(
-				handler, params);
+		final IOEventDispatch ioEventDispatch;
+		if (ssl) {
+			ioEventDispatch = new SSLClientIOEventDispatch(handler, sslcontext,
+					params);
+		} else {
+			ioEventDispatch = new DefaultClientIOEventDispatch(handler, params);
+		}
 
 		final Thread t = new Thread(new Runnable() {
 
@@ -281,8 +321,10 @@ public class HC {
 		});
 		t.start();
 
-		ioReactor.connect(new InetSocketAddress("localhost", 5984), null,
-				new HttpHost("localhost", 5984), new MySessionRequestCallback(
+		final int port = ssl ? 6984 : 5984;
+
+		ioReactor.connect(new InetSocketAddress("localhost", port), null,
+				new HttpHost("localhost", port), new MySessionRequestCallback(
 						requestCount));
 
 		// Block until all connections signal
