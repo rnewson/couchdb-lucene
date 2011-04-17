@@ -217,7 +217,7 @@ public class HC {
 				// Stick some object into the context
 				context.setAttribute(REQUEST_SENT, Boolean.TRUE);
 				return new BasicHttpRequest("GET",
-						"/db1/_changes?feed=continuous&timeout=1000");
+						"/db1/_changes?feed=continuous&heartbeat=20000");
 			} else {
 				// No new request to submit
 				return null;
@@ -260,15 +260,14 @@ public class HC {
 
 	public static void main(final String[] args) throws Exception {
 		final HttpParams params = new SyncBasicHttpParams();
-		params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 5000)
-				.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000)
-				.setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE,
-						8 * 1024)
-				.setBooleanParameter(
-						CoreConnectionPNames.STALE_CONNECTION_CHECK, false)
-				.setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
-				.setParameter(CoreProtocolPNames.USER_AGENT,
-						"HttpComponents/1.1");
+		params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 30000);
+		params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 30000);
+		params.setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE,
+				8 * 1024);
+		params.setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK,
+				true);
+		params.setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true);
+		params.setParameter(CoreProtocolPNames.USER_AGENT, "HttpComponents/1.1");
 
 		final ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(2,
 				params);
