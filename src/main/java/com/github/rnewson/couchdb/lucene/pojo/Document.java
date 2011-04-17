@@ -33,8 +33,14 @@ public class Document {
 
 	private String id;
 
+	private String revision;
+
 	public String getId() {
 		return id;
+	}
+
+	public String getRevision() {
+		return revision;
 	}
 
 	public boolean isDeleted() {
@@ -49,6 +55,11 @@ public class Document {
 	@JsonProperty("_id")
 	public void setId(final String id) {
 		this.id = id;
+	}
+
+	@JsonProperty("_rev")
+	public void setRevision(final String revision) {
+		this.revision = revision;
 	}
 
 }

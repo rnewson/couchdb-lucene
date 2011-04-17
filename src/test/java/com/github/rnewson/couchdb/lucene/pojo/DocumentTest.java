@@ -30,7 +30,10 @@ public class DocumentTest extends JacksonTest {
 
 	@Test
 	public void testDocument() throws JsonProcessingException, IOException {
-		final String str = "{\"_id\":\"foo\",\"_rev\":\"2-7051cbe5c8faecd085a3fa619e6e6337\"}";
+		final String str = "{\"_id\":\"foo\",\"_rev\":\"1-cd533285df9f7bf140d77b6bfb9eb2a3\","
+				+ "\"text\":\"hello\",\"number\":1176,"
+				+ "\"_attachments\":{\"foo\":{\"content_type\":\"text/plain\",\"revpos\":1,"
+				+ "\"length\":229,\"stub\":true}}}";
 		final Document doc = mapper.readValue(str, Document.class);
 		assertThat(doc.getId(), is("foo"));
 		assertThat(doc.isDeleted(), is(false));

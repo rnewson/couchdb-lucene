@@ -5,9 +5,14 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ViewRow {
 
+	private Document doc;
 	private String id;
 	private String key;
 	private Object value;
+
+	public Document getDoc() {
+		return doc;
+	}
 
 	public String getId() {
 		return id;
@@ -19,6 +24,10 @@ public class ViewRow {
 
 	public Object getValue() {
 		return value;
+	}
+
+	public void setDoc(final Document doc) {
+		this.doc = doc;
 	}
 
 	public void setId(final String id) {
