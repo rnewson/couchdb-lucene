@@ -1,3 +1,7 @@
+0.7.x
+
+Settings for the Defaults Object must now be in upper case.
+
 0.5.1, 0.6.x
 
 Multiple queries must now be comma-separated (previously the document said "multiple q parameters"). This is due to a JSON encoding problem (a JSON object cannot have non-unique keys).

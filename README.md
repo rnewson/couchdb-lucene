@@ -138,20 +138,20 @@ The following indexing options can be defaulted;
   <tr>
     <th>store</th>
     <td>whether the data is stored. The value will be returned in the search result.</td>
-    <td>yes, no</td>
-    <td>no</td>
+    <td>YES, NO</td>
+    <td>NO</td>
   </tr>
   <tr>
     <th>index</th>
     <td>whether (and how) the data is indexed</td>
-    <td>analyzed, analyzed_no_norms, no, not_analyzed, not_analyzed_no_norms</td>
-    <td>analyzed</td>
+    <td>ANALYZED, ANALYZED_NO_NORMS, NO, NOT_ANALYZED, NOT_ANALYZED_NO_NORMS</td>
+    <td>ANALYZED</td>
   </tr>
   <tr>
     <th>termvector</th>
     <td>whether and how a field should have term vectors</td>
-    <td>no, with_offsets, with_positions, with_positions_offsets, yes</td>
-    <td>no</td>
+    <td>NO, WITH_OFFSETS, WITH_POSITIONS, WITH_POSITIONS_OFFSETS, YES</td>
+    <td>NO</td>
   </tr>
   <tr>
     <th>boost</th>
@@ -236,10 +236,10 @@ doc.add(new Date("January 6, 1972 16:05:00"), {"type":"date"});
 doc.add("this is the subject line.", {"field":"subject"});
 
 // Add but ensure it's stored.
-doc.add("value", {"store":"yes"});
+doc.add("value", {"store":"YES"});
 
 // Add but don't analyze.
-doc.add("don't analyze me", {"index":"not_analyzed"});
+doc.add("don't analyze me", {"index":"NOT_ANALYZED"});
 
 // Extract text from the named attachment and index it to a named field
 doc.attachment("attachment field", "attachment name");
@@ -298,7 +298,7 @@ function(doc) {
 <pre>
 function(doc) {
   var result = new Document();
-  result.add(doc.subject, {"field":"subject", "store":"yes"});
+  result.add(doc.subject, {"field":"subject", "store":"YES"});
   result.add(doc.content, {"field":"subject"});
   result.add(new Date(), {"field":"indexed_at"});
   return result;
@@ -323,8 +323,8 @@ function(doc) {
 function(doc) {
     var mk = function(name, value, group) {
         var ret = new Document();
-        ret.add(value, {"field": group, "store":"yes"});
-        ret.add(group, {"field":"group", "store":"yes"});
+        ret.add(value, {"field": group, "store":"YES"});
+        ret.add(group, {"field":"group", "store":"YES"});
         return ret;
     };
     if(doc.type != "reference") return null;
