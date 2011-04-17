@@ -99,7 +99,7 @@
         <lucene-version>3.1.0</lucene-version>
         <tika-version>0.9</tika-version>
         <jetty-version>6.1.20</jetty-version>
-        <http-version>4.0.1</http-version>
+        <http-version>4.1</http-version>
     </properties>
     <issueManagement>
         <system>github</system>
