@@ -21,9 +21,11 @@ import static com.github.rnewson.couchdb.lucene.util.Utils.text;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.HttpHeaders;
@@ -50,12 +52,9 @@ public final class Tika {
 
         try {
             // Add body text.
-            doc.add(text(fieldName, tika.parseToString(in, md), false));
+            doc.add(new Field(fieldName, tika.parse(in, md)));
         } catch (final IOException e) {
             log.warn("Failed to index an attachment.", e);
-            return;
-        } catch (final TikaException e) {
-            log.warn("Failed to parse an attachment.", e);
             return;
         }
 
