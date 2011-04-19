@@ -6,14 +6,18 @@ import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -27,6 +31,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.nio.DefaultClientIOEventDispatch;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+import org.apache.http.impl.nio.reactor.SSLSetupHandler;
 import org.apache.http.impl.nio.ssl.SSLClientIOEventDispatch;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.ContentDecoder;
@@ -39,6 +44,7 @@ import org.apache.http.nio.protocol.EventListener;
 import org.apache.http.nio.protocol.NHttpRequestExecutionHandler;
 import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.http.nio.reactor.IOEventDispatch;
+import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.SessionRequest;
 import org.apache.http.nio.reactor.SessionRequestCallback;
 import org.apache.http.params.CoreConnectionPNames;
@@ -55,12 +61,38 @@ import org.apache.http.protocol.RequestExpectContinue;
 import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
 import org.apache.http.util.EntityUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 
 public class HC {
+
+	private static class MySSLSetupHandler implements SSLSetupHandler {
+
+		public void initalize(SSLEngine sslengine, HttpParams params)
+				throws SSLException {
+			System.err.println(Arrays.toString(sslengine
+					.getEnabledCipherSuites()));
+
+			// TODO make configurable in ini file
+			sslengine.setEnabledProtocols(new String[] { "TLSv1" });
+
+			// TODO make configurable in ini file
+			sslengine.setEnabledCipherSuites(new String[] {
+					"TLS_RSA_WITH_AES_256_CBC_SHA",
+					"TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+					"TLS_DHE_DSS_WITH_AES_256_CBC_SHA" });
+		}
+
+		public void verify(IOSession iosession, SSLSession sslsession)
+				throws SSLException {
+		}
+
+	}
 
 	private static class MyConsumingNHttpEntity implements ConsumingNHttpEntity {
 
 		private final ByteBuffer buffer = ByteBuffer.allocate(4096);
+		private final ObjectMapper mapper = new ObjectMapper();
+		private String remainder = "";
 
 		public void consumeContent() throws IOException {
 		}
@@ -72,8 +104,20 @@ public class HC {
 			buffer.flip();
 			final CharsetDecoder charsetDecoder = Charset.forName("US-ASCII")
 					.newDecoder();
-			final CharBuffer charBuffer = charsetDecoder.decode(buffer);
-			System.out.println(charBuffer);
+			final String str = charsetDecoder.decode(buffer).toString();
+			final String[] changes = str.split("\n");
+			for (int i = 0, len = changes.length - 1; i < len; i++) {
+				final String line = i == 0 ? remainder + changes[i]
+						: changes[i];
+				if (line.startsWith("{") && line.endsWith("}")) {
+					System.out.print("valid  : ");
+				} else {
+					System.out.print("invalid: ");
+				}
+				System.out.println(line);
+			}
+			remainder = changes[changes.length-1];
+
 		}
 
 		public void finish() throws IOException {
@@ -120,7 +164,7 @@ public class HC {
 
 	}
 
-	static class EventLogger implements EventListener {
+	private static class EventLogger implements EventListener {
 
 		public void connectionClosed(final NHttpConnection conn) {
 			System.out.println("Connection closed: " + conn);
@@ -226,7 +270,8 @@ public class HC {
 
 	}
 
-	static class MySessionRequestCallback implements SessionRequestCallback {
+	private static class MySessionRequestCallback implements
+			SessionRequestCallback {
 
 		private final CountDownLatch requestCount;
 
@@ -269,8 +314,8 @@ public class HC {
 		params.setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true);
 		params.setParameter(CoreProtocolPNames.USER_AGENT, "HttpComponents/1.1");
 
-		final ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(2,
-				params);
+		final ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(
+				Runtime.getRuntime().availableProcessors(), params);
 
 		final HttpProcessor httpproc = new ImmutableHttpProcessor(
 				new HttpRequestInterceptor[] { new RequestContent(),
@@ -281,11 +326,12 @@ public class HC {
 		// I/O event and main threads
 		final CountDownLatch requestCount = new CountDownLatch(1);
 
-		final boolean ssl = true;
+		final boolean ssl = false;
 
 		final SSLContext sslcontext;
 		if (ssl) {
 			sslcontext = SSLContext.getInstance("TLS");
+			// TODO allow toggle between default trust and custom file.
 			sslcontext
 					.init(null, new TrustManager[] { new BlindTrust() }, null);
 		} else {
@@ -299,7 +345,7 @@ public class HC {
 		final IOEventDispatch ioEventDispatch;
 		if (ssl) {
 			ioEventDispatch = new SSLClientIOEventDispatch(handler, sslcontext,
-					params);
+					new MySSLSetupHandler(), params);
 		} else {
 			ioEventDispatch = new DefaultClientIOEventDispatch(handler, params);
 		}
