@@ -52,7 +52,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.store.SimpleFSLockFactory;
+import org.apache.lucene.store.SingleInstanceLockFactory;
 import org.apache.lucene.util.Version;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -740,7 +740,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 				if (!states.containsKey(view)) {
 					final Directory dir = FSDirectory.open(viewDir(view, true),
-						new SimpleFSLockFactory());
+						new SingleInstanceLockFactory());
 					final long seq = getUpdateSequence(dir);
 					if (since == -1) {
 						since = seq;

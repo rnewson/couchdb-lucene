@@ -61,7 +61,6 @@ public class Main {
             System.exit(1);
         }
         LOG.info("Index output goes to: " + dir.getCanonicalPath());
-        cleanLocks(dir);
 
         final Server server = new Server();
         final SelectChannelConnector connector = new SelectChannelConnector();
@@ -88,15 +87,5 @@ public class Main {
         server.start();
         server.join();
     }
-
-	private static void cleanLocks(final File root) throws IOException {
-		final Iterator it = FileUtils.iterateFiles(root,
-				new String[] { "lock" }, true);
-		while (it.hasNext()) {
-			final File lock = (File) it.next();
-			LOG.info("Releasing stale lock at " + lock);
-			lock.delete();
-		}
-	}
 
 }
