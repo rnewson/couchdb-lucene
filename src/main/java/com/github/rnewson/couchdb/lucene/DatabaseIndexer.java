@@ -798,7 +798,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		mergePolicy.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
 				false));
 		config.setMergePolicy(mergePolicy);
-
+		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 		config.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB",
 				IndexWriterConfig.DEFAULT_RAM_BUFFER_SIZE_MB));
 
