@@ -24,6 +24,12 @@ Java 1.5 (or above) is required; the <strike>Sun</strike> Oracle version is reco
 
 <h1>Build and run couchdb-lucene</h1>
 
+If you are on OS X, you might find it easiest to;
+
+<pre>
+brew install couchdb-lucene
+</pre>
+
 <ol>
 <li>Install Maven 2.
 <li>checkout repository

@@ -38,6 +38,11 @@
             <version>1.6</version>
         </dependency>
         <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.5</version>
+        </dependency>
+        <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20090211</version>
@@ -71,6 +76,11 @@
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parsers</artifactId>
             <version>${tika-version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.erlang.otp</groupId>
+          <artifactId>jinterface</artifactId>
+          <version>1.5.3.2</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
