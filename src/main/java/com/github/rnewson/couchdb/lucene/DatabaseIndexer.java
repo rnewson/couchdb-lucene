@@ -70,6 +70,7 @@ import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
 import com.github.rnewson.couchdb.lucene.util.Utils;
+import org.apache.lucene.search.BooleanQuery;
 
 public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
@@ -795,8 +796,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		final LogByteSizeMergePolicy mergePolicy = new LogByteSizeMergePolicy();
 		mergePolicy.setMergeFactor(ini.getInt("lucene.mergeFactor", 10));
-		mergePolicy.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
-				false));
+		mergePolicy.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",false));
+		
+		BooleanQuery.setMaxClauseCount(ini.getInt("lucene.maxBooleanClauseCount", 10000));
+		
 		config.setMergePolicy(mergePolicy);
 		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 		config.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB",
