@@ -229,30 +229,28 @@ public final class LuceneServlet extends HttpServlet {
 			    ServletUtils.sendJsonError(req, resp, 500, "error_creating_index");
 			    return;
 			}
-            if (req.getContentLength() == 0) {
-				indexer.info(req, resp);
-			} else {
-                BufferedReader reader = req.getReader();
-                StringWriter writer = new StringWriter();
+            
+			BufferedReader reader = req.getReader();
+			StringWriter writer = new StringWriter();
 
-                char[] buffer = new char[1024];
-                try {
-                    int n;
-                    while ((n = reader.read(buffer)) != -1) {
-                        writer.write(buffer, 0, n);
-                    }
-                } catch(Exception ex) {
-                    log("Could not read input", ex);
-					ServletUtils.sendJsonError(req, resp, 500, "could not read input");
-					reader.close();
-					return;
-                } finally {
-                    reader.close();
-                }
-                String query = writer.toString();
-                
-				indexer.search(query,req, resp);
+			char[] buffer = new char[1024];
+			try {
+				int n;
+				while ((n = reader.read(buffer)) != -1) {
+					writer.write(buffer, 0, n);
+				}
+			} catch(Exception ex) {
+				log("Could not read input", ex);
+				ServletUtils.sendJsonError(req, resp, 500, "could not read input");
+				reader.close();
+				return;
+			} finally {
+				reader.close();
 			}
+			String query = writer.toString();
+
+			indexer.search(query,req, resp);
+			
 			return;
 		case 6:
 			indexer = getIndexer(req);
