@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN" "http://java.sun.com/dtd/web-app_2_3.dtd">
+
+<web-app>
+
+  <display-name>couchdb-lucene</display-name>
+  <description>Enables full-text searching of CouchDB documents using Lucene</description>
+
+  <servlet>
+    <servlet-name>lucene</servlet-name>
+    <servlet-class>com.github.rnewson.couchdb.lucene.LuceneServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>lucene</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
+</web-app>
