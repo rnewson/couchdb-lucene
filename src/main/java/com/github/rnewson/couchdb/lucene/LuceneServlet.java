@@ -48,54 +48,53 @@ import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 
 public final class LuceneServlet extends HttpServlet {
 
-    private static final Logger LOG = Logger.getLogger(LuceneServlet.class);
+	private static final Logger LOG = Logger.getLogger(LuceneServlet.class);
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    private final HttpClient client;
+	private final HttpClient client;
 
-    private final Map<Database, DatabaseIndexer> indexers = new HashMap<Database, DatabaseIndexer>();
+	private final Map<Database, DatabaseIndexer> indexers = new HashMap<Database, DatabaseIndexer>();
 
-    private final HierarchicalINIConfiguration ini;
+	private final HierarchicalINIConfiguration ini;
 
-    private final File root;
+	private final File root;
 
-    private final Map<Database, Thread> threads = new HashMap<Database, Thread>();
-    
-    public LuceneServlet() throws ConfigurationException, IOException {
-        final Config config = new Config();
-        this.client = config.getClient();
-        this.root = config.getDir();
-        this.ini = config.getConfiguration();
-    }
-    
-    public LuceneServlet(final HttpClient client, final File root,
-            final HierarchicalINIConfiguration ini) {
-        this.client = client;
-        this.root = root;
-        this.ini = ini;
-    }
+	private final Map<Database, Thread> threads = new HashMap<Database, Thread>();
 
-    private void cleanup(final HttpServletRequest req,
-            final HttpServletResponse resp) throws IOException, JSONException {
-        final Couch couch = getCouch(req);
-        final Set<String> dbKeep = new HashSet<String>();
-        final JSONArray databases = couch.getAllDatabases();
-        for (int i=0; i< databases.length(); i++) {
-            final Database db = couch.getDatabase(databases.getString(i));
-            final UUID uuid = db.getUuid();
-            if (uuid == null) {
-                continue;
-            }
-            dbKeep.add(uuid.toString());
+	public LuceneServlet() throws ConfigurationException, IOException {
+		final Config config = new Config();
+		this.client = config.getClient();
+		this.root = config.getDir();
+		this.ini = config.getConfiguration();
+	}
+	public LuceneServlet(final HttpClient client, final File root,
+			final HierarchicalINIConfiguration ini) {
+		this.client = client;
+		this.root = root;
+		this.ini = ini;
+	}
 
-            final Set<String> viewKeep = new HashSet<String>();
+	private void cleanup(final HttpServletRequest req,
+			final HttpServletResponse resp) throws IOException, JSONException {
+		final Couch couch = getCouch(req);
+		final Set<String> dbKeep = new HashSet<String>();
+		final JSONArray databases = couch.getAllDatabases();
+		for (int i=0; i< databases.length(); i++) {
+			final Database db = couch.getDatabase(databases.getString(i));
+			final UUID uuid = db.getUuid();
+			if (uuid == null) {
+				continue;
+			}
+			dbKeep.add(uuid.toString());
 
-            for (final DesignDocument ddoc : db.getAllDesignDocuments()) {
-                for (final View view : ddoc.getAllViews().values()) {
-                    viewKeep.add(view.getDigest());
-                }
-            }
+			final Set<String> viewKeep = new HashSet<String>();
+
+			for (final DesignDocument ddoc : db.getAllDesignDocuments()) {
+				for (final View view : ddoc.getAllViews().values()) {
+					viewKeep.add(view.getDigest());
+				}
+			}
 
             // Delete all indexes except the keepers.
             final File[] dirs = DatabaseIndexer.uuidDir(root, db.getUuid()).listFiles();
@@ -112,127 +111,127 @@ public final class LuceneServlet extends HttpServlet {
                     }
                 }
             }
-        }
+		}
 
-        // Delete all directories except the keepers.
-        for (final File dir : root.listFiles()) {
-            if (!dbKeep.contains(dir.getName())) {
-                LOG.info("Cleaning old index at " + dir);
-                FileUtils.deleteDirectory(dir);
-            }
-        }
+		// Delete all directories except the keepers.
+		for (final File dir : root.listFiles()) {
+			if (!dbKeep.contains(dir.getName())) {
+				LOG.info("Cleaning old index at " + dir);
+				FileUtils.deleteDirectory(dir);
+			}
+		}
 
-        resp.setStatus(202);
-        ServletUtils.sendJsonSuccess(req, resp);
-    }
+		resp.setStatus(202);
+		ServletUtils.sendJsonSuccess(req, resp);
+	}
 
-    private Couch getCouch(final HttpServletRequest req) throws IOException {
-        final Configuration section = ini.getSection(new PathParts(req)
-                .getKey());
-        final String url = section.containsKey("url") ? section
-                .getString("url") : null;
-        return new Couch(client, url);
-    }
+	private Couch getCouch(final HttpServletRequest req) throws IOException {
+		final Configuration section = ini.getSection(new PathParts(req)
+				.getKey());
+		final String url = section.containsKey("url") ? section
+				.getString("url") : null;
+		return new Couch(client, url);
+	}
 
-    private synchronized DatabaseIndexer getIndexer(final Database database)
-            throws IOException, JSONException {
-        DatabaseIndexer result = indexers.get(database);
-        Thread thread = threads.get(database);
-        if (result == null || thread == null || !thread.isAlive()) {
-            result = new DatabaseIndexer(client, root, database, ini);
-            thread = new Thread(result);
-            thread.start();
-            result.awaitInitialization();
-            if (result.isClosed()) {
-                return null;
-            } else {
-                indexers.put(database, result);
-                 threads.put(database, thread);
-            }
-        }
+	private synchronized DatabaseIndexer getIndexer(final Database database)
+			throws IOException, JSONException {
+		DatabaseIndexer result = indexers.get(database);
+		Thread thread = threads.get(database);
+		if (result == null || thread == null || !thread.isAlive()) {
+			result = new DatabaseIndexer(client, root, database, ini);
+			thread = new Thread(result);
+			thread.start();
+			result.awaitInitialization();
+			if (result.isClosed()) {
+			    return null;
+			} else {
+	            indexers.put(database, result);
+		         threads.put(database, thread);
+			}
+		}
 
-        return result;
-    }
+		return result;
+	}
 
-    private DatabaseIndexer getIndexer(final HttpServletRequest req)
-            throws IOException, JSONException {
-        final Couch couch = getCouch(req);
-        final Database database = couch.getDatabase(new PathParts(req)
-                .getDatabaseName());
-        return getIndexer(database);
-    }
+	private DatabaseIndexer getIndexer(final HttpServletRequest req)
+			throws IOException, JSONException {
+		final Couch couch = getCouch(req);
+		final Database database = couch.getDatabase(new PathParts(req)
+				.getDatabaseName());
+		return getIndexer(database);
+	}
 
-    private void handleWelcomeReq(final HttpServletRequest req,
-            final HttpServletResponse resp) throws ServletException,
-            IOException, JSONException {
-        final Package p = this.getClass().getPackage();
-        final JSONObject welcome = new JSONObject();
-        welcome.put("couchdb-lucene", "Welcome");
-        welcome.put("version", p.getImplementationVersion());
-        ServletUtils.sendJson(req, resp, welcome);
-    }
+	private void handleWelcomeReq(final HttpServletRequest req,
+			final HttpServletResponse resp) throws ServletException,
+			IOException, JSONException {
+	    final Package p = this.getClass().getPackage();
+		final JSONObject welcome = new JSONObject();
+		welcome.put("couchdb-lucene", "Welcome");
+		welcome.put("version", p.getImplementationVersion());
+		ServletUtils.sendJson(req, resp, welcome);
+	}
 
-    @Override
-    protected void doGet(final HttpServletRequest req,
-            final HttpServletResponse resp) throws ServletException,
-            IOException {
-        try {
+	@Override
+	protected void doGet(final HttpServletRequest req,
+			final HttpServletResponse resp) throws ServletException,
+			IOException {
+		try {
             doGetInternal(req, resp);
         } catch (final JSONException e) {
             resp.sendError(500);
         }
-    }
+	}
 
     private void doGetInternal(final HttpServletRequest req, final HttpServletResponse resp)
             throws ServletException, IOException, JSONException {
         switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
-        case 1:
-            handleWelcomeReq(req, resp);
-            return;
-        case 5:
-            final DatabaseIndexer indexer = getIndexer(req);
-            if (indexer == null) {
-                ServletUtils.sendJsonError(req, resp, 500, "error_creating_index");
-                return;
-            }
-            
-            if (req.getParameter("q") == null) {
-                indexer.info(req, resp);
-            } else {
-                indexer.search(req, resp);
-            }
-            return;
-        }
+		case 1:
+			handleWelcomeReq(req, resp);
+			return;
+		case 5:
+			final DatabaseIndexer indexer = getIndexer(req);
+			if (indexer == null) {
+			    ServletUtils.sendJsonError(req, resp, 500, "error_creating_index");
+			    return;
+			}
+			
+			if (req.getParameter("q") == null) {
+				indexer.info(req, resp);
+			} else {
+				indexer.search(req, resp);
+			}
+			return;
+		}
 
-        ServletUtils.sendJsonError(req, resp, 400, "bad_request");
+		ServletUtils.sendJsonError(req, resp, 400, "bad_request");
     }
 
-    @Override
-    protected void doPost(final HttpServletRequest req,
-            final HttpServletResponse resp) throws ServletException,
-            IOException {
-        try {
+	@Override
+	protected void doPost(final HttpServletRequest req,
+			final HttpServletResponse resp) throws ServletException,
+			IOException {
+		try {
             doPostInternal(req, resp);
         } catch (final JSONException e) {
             resp.sendError(500);
         }
-    }
+	}
 
     private void doPostInternal(final HttpServletRequest req, final HttpServletResponse resp)
             throws IOException, JSONException {
         switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
-        case 3:
-            if (req.getPathInfo().endsWith("/_cleanup")) {
-                cleanup(req, resp);
-                return;
-            }
-            break;
-        case 6:
-            final DatabaseIndexer indexer = getIndexer(req);
-            indexer.admin(req, resp);
-            return;
-        }
-        ServletUtils.sendJsonError(req, resp, 400, "bad_request");
+		case 3:
+			if (req.getPathInfo().endsWith("/_cleanup")) {
+				cleanup(req, resp);
+				return;
+			}
+			break;
+		case 6:
+			final DatabaseIndexer indexer = getIndexer(req);
+			indexer.admin(req, resp);
+			return;
+		}
+		ServletUtils.sendJsonError(req, resp, 400, "bad_request");
     }
 
 }
