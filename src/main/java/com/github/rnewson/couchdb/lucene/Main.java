@@ -17,13 +17,7 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Iterator;
 
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
-import org.apache.commons.io.FileUtils;
-import org.apache.http.client.HttpClient;
 import org.apache.log4j.Logger;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
@@ -42,30 +36,13 @@ public class Main {
      * Run couchdb-lucene.
      */
     public static void main(String[] args) throws Exception {
-        final HierarchicalINIConfiguration configuration = new HierarchicalINIConfiguration(
-                Main.class.getClassLoader().getResource("couchdb-lucene.ini"));
-        configuration.setReloadingStrategy(new FileChangedReloadingStrategy());
-
-        final File dir = new File(configuration.getString("lucene.dir", "indexes"));
-
-        if (!dir.exists() && !dir.mkdir()) {
-            LOG.error("Could not create " + dir.getCanonicalPath());
-            System.exit(1);
-        }
-        if (!dir.canRead()) {
-            LOG.error(dir + " is not readable.");
-            System.exit(1);
-        }
-        if (!dir.canWrite()) {
-            LOG.error(dir + " is not writable.");
-            System.exit(1);
-        }
-        LOG.info("Index output goes to: " + dir.getCanonicalPath());
+        final Config config = new Config();
+        final File dir = config.getDir();
 
         final Server server = new Server();
         final SelectChannelConnector connector = new SelectChannelConnector();
-        connector.setHost(configuration.getString("lucene.host", "localhost"));
-        connector.setPort(configuration.getInt("lucene.port", 5985));
+        connector.setHost(config.getConfiguration().getString("lucene.host", "localhost"));
+        connector.setPort(config.getConfiguration().getInt("lucene.port", 5985));
 
         LOG.info("Accepting connections with " + connector);
 
@@ -73,10 +50,7 @@ public class Main {
         server.setStopAtShutdown(true);
         server.setSendServerVersion(false);
 
-        HttpClientFactory.setIni(configuration);
-        final HttpClient httpClient = HttpClientFactory.getInstance();
-
-        final LuceneServlet servlet = new LuceneServlet(httpClient, dir, configuration);
+        final LuceneServlet servlet = new LuceneServlet(config.getClient(), dir, config.getConfiguration());
 
         final Context context = new Context(server, "/", Context.NO_SESSIONS | Context.NO_SECURITY);
         context.addServlet(new ServletHolder(servlet), "/*");
