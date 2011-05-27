@@ -576,7 +576,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					}
 					// Fetch documents (if requested).
 					if (include_docs && fetch_ids.length > 0) {
-						database.getDocuments(fetch_ids);
 						final List<CouchDocument> fetched_docs = database
 								.getDocuments(fetch_ids);
 						for (int j = 0; j < max; j++) {
