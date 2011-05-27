@@ -242,7 +242,6 @@ public final class LuceneServlet extends HttpServlet {
 			} catch(Exception ex) {
 				log("Could not read input", ex);
 				ServletUtils.sendJsonError(req, resp, 500, "could not read input");
-				reader.close();
 				return;
 			} finally {
 				reader.close();
