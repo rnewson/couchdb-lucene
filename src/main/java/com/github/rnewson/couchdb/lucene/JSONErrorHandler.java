@@ -41,7 +41,7 @@ public final class JSONErrorHandler extends ErrorHandler {
         connection.getRequest().setHandled(true);
         final String reason = connection.getResponse().getReason();
         try {
-            if (reason.startsWith("{")) {
+            if (reason != null && reason.startsWith("{")) {
                 ServletUtils.sendJsonError(request, response, connection.getResponse().getStatus(),
                         new JSONObject(reason));
             } else {
