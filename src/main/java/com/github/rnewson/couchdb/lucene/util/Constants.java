@@ -26,7 +26,7 @@ public final class Constants {
 
     public static final Analyzer ANALYZER = new StandardAnalyzer(VERSION);
 
-    public static final String CONTENT_TYPE = "application/json";
+    public static final String APPLICATION_JSON = "application/json";
 
     public static final String DEFAULT_FIELD = "default";
 
