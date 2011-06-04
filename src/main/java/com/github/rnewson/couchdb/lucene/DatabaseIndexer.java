@@ -63,7 +63,6 @@ import org.mozilla.javascript.Context;
 import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
-import com.github.rnewson.couchdb.lucene.couchdb.UpdateSequence;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import com.github.rnewson.couchdb.lucene.util.Constants;
@@ -80,7 +79,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		private String etag;
 
 		private final Analyzer analyzer;
-		private UpdateSequence pending_seq;
+		private long pending_seq;
 		private IndexReader reader;
 		private final IndexWriter writer;
 		private final Database database;
@@ -162,10 +161,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			if (staleOk) {
 				return;
 			}
-			final UpdateSequence latest = database.getInfo().getUpdateSequence();
+			final long latest = database.getInfo().getUpdateSequence();
 			synchronized (this) {
 			    long timeout = getSearchTimeout();
-				while (pending_seq.isEarlierThan(latest)) {
+				while (pending_seq < latest) {
 					try {
 					    final long start = System.currentTimeMillis();
 					    wait(timeout);
@@ -180,8 +179,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			}
 		}
 
-		private synchronized void setPendingSequence(final UpdateSequence seq) {
-			pending_seq = seq;
+		private synchronized void setPendingSequence(final long newSequence) {
+			pending_seq = newSequence;
 			notifyAll();
 		}
 
@@ -224,7 +223,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private final Database database;
 
-	private UpdateSequence ddoc_seq;
+	private long ddoc_seq;
 
 	private long lastCommit;
 	
@@ -238,7 +237,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private final File root;
 
-	private UpdateSequence since;
+	private long since;
 
 	private final Map<View, IndexState> states = Collections
 			.synchronizedMap(new HashMap<View, IndexState>());
@@ -320,7 +319,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 	break loop;
                 }
 
-                final UpdateSequence seq = new UpdateSequence(json.getString("seq"));
+                final long seq = json.getLong("seq");
                 final String id = json.getString("id");
                 CouchDocument doc;
                 if (!json.isNull("doc")) {
@@ -342,7 +341,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 }
 
                 if (id.startsWith("_design")) {
-                	if (ddoc_seq.isEarlierThan(seq)) {
+                	if (seq > ddoc_seq) {
                 		logger.info("Exiting due to design document change.");
                 		break loop;
                 	}
@@ -359,7 +358,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 		final View view = entry.getKey();
                 		final IndexState state = entry.getValue();
 
-                		if (state.pending_seq.isEarlierThan(seq)) {
+                		if (seq > state.pending_seq) {
                 			final Document[] docs;
                 			try {
                 				docs = state.converter.convert(doc, view
@@ -671,9 +670,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			final View view = entry.getKey();
 			final IndexState state = entry.getValue();
 
-			if (getUpdateSequence(state.writer).isEarlierThan(state.pending_seq)) {
+			if (state.pending_seq > getUpdateSequence(state.writer)) {
 				final Map<String, String> userData = new HashMap<String, String>();
-				userData.put("last_seq", state.pending_seq.toString());
+				userData.put("last_seq", Long.toString(state.pending_seq));
 				state.writer.commit(userData);
 				logger.info(view + " now at update_seq " + state.pending_seq);
 			}
@@ -707,22 +706,22 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		return result;
 	}
 
-	private UpdateSequence getUpdateSequence(final Directory dir) throws IOException {
+	private long getUpdateSequence(final Directory dir) throws IOException {
 		if (!IndexReader.indexExists(dir)) {
-			return UpdateSequence.BOTTOM;
+			return 0L;
 		}
 		return getUpdateSequence(IndexReader.getCommitUserData(dir));
 	}
 
-	private UpdateSequence getUpdateSequence(final IndexWriter writer) throws IOException {
+	private long getUpdateSequence(final IndexWriter writer) throws IOException {
 		return getUpdateSequence(writer.getDirectory());
 	}
 
-	private UpdateSequence getUpdateSequence(final Map<String, String> userData) {
+	private long getUpdateSequence(final Map<String, String> userData) {
 		if (userData != null && userData.containsKey("last_seq")) {
-			return new UpdateSequence(userData.get("last_seq"));
+			return Long.parseLong(userData.get("last_seq"));
 		}
-		return UpdateSequence.BOTTOM;
+		return 0L;
 	}
 
 	private void init() throws IOException, JSONException {
@@ -733,7 +732,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		context.setOptimizationLevel(9);
 
 		this.ddoc_seq = database.getInfo().getUpdateSequence();
-		this.since = null;
+		this.since = -1L;
 
 		for (final DesignDocument ddoc : database.getAllDesignDocuments()) {
 			for (final Entry<String, View> entry : ddoc.getAllViews()
@@ -745,13 +744,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				if (!states.containsKey(view)) {
 					final Directory dir = FSDirectory.open(viewDir(view, true),
 						new SingleInstanceLockFactory());
-					final UpdateSequence seq = getUpdateSequence(dir);
-					if (since == null) {
+					final long seq = getUpdateSequence(dir);
+					if (since == -1) {
 						since = seq;
 					}
-					if (seq.isEarlierThan(since)) {
-						since = seq;
-					}
+					since = Math.min(since, seq);
 					logger.debug(dir + " bumped since to " + since);
 
 					final DocumentConverter converter = new DocumentConverter(

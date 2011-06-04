@@ -105,7 +105,7 @@ public final class Database {
 		return httpClient.execute(get, handler);
 	}
 
-	public HttpUriRequest getChangesRequest(final UpdateSequence since)
+	public HttpUriRequest getChangesRequest(final long since)
 			throws IOException {
 		return new HttpGet(
 				url
