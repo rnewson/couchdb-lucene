@@ -11,8 +11,8 @@ public class DatabaseInfo {
 		this.json = json;
 	}
 
-	public long getUpdateSequence() throws JSONException {
-		return json.getLong("update_seq");
+	public UpdateSequence getUpdateSequence() throws JSONException {
+		return UpdateSequence.parseUpdateSequence(json.getString("update_seq"));
 	}
 
 	public String getName() throws JSONException {

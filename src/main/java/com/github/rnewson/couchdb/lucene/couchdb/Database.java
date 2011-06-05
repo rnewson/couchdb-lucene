@@ -105,12 +105,10 @@ public final class Database {
 		return httpClient.execute(get, handler);
 	}
 
-	public HttpUriRequest getChangesRequest(final long since)
+	public HttpUriRequest getChangesRequest(final UpdateSequence since)
 			throws IOException {
-		return new HttpGet(
-				url
-						+ "_changes?feed=continuous&heartbeat=15000&include_docs=true&since="
-						+ since);
+		final String uri = url + "_changes?feed=continuous&heartbeat=15000&include_docs=true";
+		return new HttpGet(since.appendSince(uri));
 	}
 
 	public boolean saveDocument(final String id, final String body)
