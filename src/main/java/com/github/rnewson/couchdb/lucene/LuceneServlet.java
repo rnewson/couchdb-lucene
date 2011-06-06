@@ -17,6 +17,7 @@ package com.github.rnewson.couchdb.lucene;
  */
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -126,11 +127,12 @@ public final class LuceneServlet extends HttpServlet {
 	}
 
 	private Couch getCouch(final HttpServletRequest req) throws IOException {
-		final Configuration section = ini.getSection(new PathParts(req)
-				.getKey());
-		final String url = section.containsKey("url") ? section
-				.getString("url") : null;
-		return new Couch(client, url);
+		final String sectionName = new PathParts(req).getKey();
+		final Configuration section = ini.getSection(sectionName);
+		if (!section.containsKey("url")) {
+			throw new FileNotFoundException(sectionName + " is missing or has no url parameter.");
+		}
+		return new Couch(client, section.getString("url"));
 	}
 
 	private synchronized DatabaseIndexer getIndexer(final Database database)
