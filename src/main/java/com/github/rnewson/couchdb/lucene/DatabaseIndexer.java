@@ -661,6 +661,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		states.clear();
 		if (context != null) {
 			Context.exit();
+			context = null;
 		}
 		latch.countDown();
 	}
