@@ -53,7 +53,10 @@ public class TikaTest {
     public void testWord() throws IOException {
         parse("example.doc", "application/msword", "bar");
         assertThat(doc.getField("bar"), not(nullValue()));
-        assertThat(doc.get("bar"), containsString("576   dsf45   d56             dsgh"));
+        assertThat(doc.get("bar"), containsString("576"));
+        assertThat(doc.get("bar"), containsString("dsf45"));
+        assertThat(doc.get("bar"), containsString("d56"));
+        assertThat(doc.get("bar"), containsString("dsgh"));
     }
 
     private void parse(final String resource, final String type, final String field) throws IOException {
