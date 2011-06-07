@@ -586,8 +586,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 						final List<CouchDocument> fetched_docs = database
 								.getDocuments(fetch_ids);
 						for (int j = 0; j < max; j++) {
-							rows.getJSONObject(j).put("doc",
-									fetched_docs.get(j).asJson());
+							CouchDocument doc = fetched_docs.get(j);
+							rows.getJSONObject(j).put("doc",doc!=null?doc.asJson():null);
 						}
 
 					}
