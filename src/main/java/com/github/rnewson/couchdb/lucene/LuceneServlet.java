@@ -46,6 +46,8 @@ import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
 import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import java.io.StringWriter;
+import org.apache.log4j.Level;
+import org.apache.log4j.Priority;
 
 public final class LuceneServlet extends HttpServlet {
     public static final String QUERY_PARM = "q";
@@ -174,8 +176,15 @@ public final class LuceneServlet extends HttpServlet {
 		try {
             doGetInternal(req, resp);
         } catch (final JSONException e) {
+			LOG.log(Level.FATAL, resp, e);
             resp.sendError(500);
-        }
+        } catch(final IOException e) {
+			LOG.log(Level.FATAL, resp, e);
+			throw e;
+		} catch(final Throwable e) {
+			LOG.log(Level.FATAL, resp, e);
+			resp.sendError(500);
+		}
 	}
 
     private void doGetInternal(final HttpServletRequest req, final HttpServletResponse resp)
@@ -209,8 +218,15 @@ public final class LuceneServlet extends HttpServlet {
 		try {
             doPostInternal(req, resp);
         } catch (final JSONException e) {
+			LOG.log(Level.FATAL, resp, e);
             resp.sendError(500);
-        }
+        } catch(final IOException e) {
+			LOG.log(Level.FATAL, resp, e);
+			throw e;
+		} catch(final Throwable e) {
+			LOG.log(Level.FATAL, resp, e);
+			resp.sendError(500);
+		}
 	}
 
     private void doPostInternal(final HttpServletRequest req, final HttpServletResponse resp)
