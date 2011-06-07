@@ -79,7 +79,7 @@ def respond(res, req, key):
         method = req["verb"]
 
     if method == "POST":
-        res.request(method, path,req.get("body"),req_headers)
+        res.request(method, path,req.get("body").decode("utf-8"),req_headers)
     else:
         res.request(method, path, headers=req_headers)
     resp = res.getresponse()
@@ -92,7 +92,7 @@ def respond(res, req, key):
     return mkresp(resp.status, resp.read(), resp_headers)
 
 def mkresp(code, body, headers=None):
-    ret = {"code": code, "body": body}
+    ret = {"code": code, "body": body.encode("utf-8")}
     if headers is not None:
         ret["headers"] = headers
     return ret
