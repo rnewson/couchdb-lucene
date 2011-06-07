@@ -166,7 +166,7 @@ public final class Database {
 		final List<JSONObject> result = new ArrayList<JSONObject>();
 		final JSONArray rows = json.getJSONArray("rows");
 		for (int i = 0; i < rows.length(); i++) {
-			result.add(rows.getJSONObject(i).getJSONObject("doc"));
+			result.add(rows.getJSONObject(i).optJSONObject("doc"));
 		}
 		return result;
 	}
