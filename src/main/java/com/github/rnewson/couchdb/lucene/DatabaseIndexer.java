@@ -35,6 +35,8 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.index.IndexWriter;
@@ -529,14 +531,17 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 						final JSONObject fields = new JSONObject();
 
 						// Include stored fields.
-						for (final Object f : doc.getFields()) {
-							final Field fld = (Field) f;
-
-							if (!fld.isStored()) {
+						for (final Fieldable f : doc.getFields()) {
+							if (!f.isStored()) {
 								continue;
 							}
-							final String name = fld.name();
-							final String value = fld.stringValue();
+							final String name = f.name();
+							final Object value;
+							if (f instanceof NumericField) {
+								value = ((NumericField)f).getNumericValue();
+							} else {
+								value = f.stringValue();
+							}
 							if (value != null) {
 								if ("_id".equals(name)) {
 									row.put("id", value);
