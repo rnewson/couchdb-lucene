@@ -168,7 +168,11 @@ public final class RhinoDocument extends ScriptableObject {
 
             public Void handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
                 final HttpEntity entity = response.getEntity();
-                Tika.INSTANCE.parse(entity.getContent(), entity.getContentType().getValue(), attachment.fieldName, out);
+                try {
+                	Tika.INSTANCE.parse(entity.getContent(), entity.getContentType().getValue(), attachment.fieldName, out);
+                } finally {
+                	entity.consumeContent();
+                }
                 return null;
             }
         };

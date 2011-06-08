@@ -44,6 +44,7 @@ import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -147,6 +148,8 @@ public final class HttpClientFactory {
             final SchemeRegistry schemeRegistry = new SchemeRegistry();
             schemeRegistry
                     .register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 5984));
+            schemeRegistry
+            		.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
             final ClientConnectionManager cm = new ShieldedClientConnManager(
                     new ThreadSafeClientConnManager(params, schemeRegistry));
 

@@ -47,16 +47,16 @@ public final class HttpUtils {
 
     public static final String post(final HttpClient httpClient, final String url, final JSONObject body) throws IOException {
         final HttpPost post = new HttpPost(url);
-        post.setHeader("Content-Type", "application/json");
-        post.setEntity(new StringEntity(body.toString()));
+        post.setHeader("Content-Type", Constants.APPLICATION_JSON);
+        post.setEntity(new StringEntity(body.toString(), "UTF-8"));
         return execute(httpClient, post);
     }
 
     public static final int put(final HttpClient httpClient, final String url, final String body) throws IOException {
         final HttpPut put = new HttpPut(url);
         if (body != null) {
-            put.setHeader("Content-Type", Constants.CONTENT_TYPE);
-            put.setEntity(new StringEntity(body));
+            put.setHeader("Content-Type", Constants.APPLICATION_JSON);
+            put.setEntity(new StringEntity(body, "UTF-8"));
         }
         return httpClient.execute(put, new StatusCodeResponseHandler());
     }

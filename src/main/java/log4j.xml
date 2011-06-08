@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+  <!-- Output to screen -->
+  <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%-5p %c %x | %d{HH:mm:ss} | %m%n"/>
+    </layout>
+  </appender>
+
+  <!-- Output to file -->
+  <appender name="FILE" class="org.apache.log4j.RollingFileAppender">
+    <param name="file" value="logs/couchdb-lucene.log"/>
+    <param name="MaxFileSize" value="100KB"/>
+    <!-- Keep one backup file -->
+    <param name="MaxBackupIndex" value="1"/>
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d{ISO8601} %p [%c{1}] %m%n"/>
+    </layout>
+  </appender>
+
+  <logger name="com.github">
+    <level value="INFO"/>
+  </logger>
+
+  <root>
+    <priority value="WARN"/>
+    <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="FILE"/>
+  </root>
+</log4j:configuration>

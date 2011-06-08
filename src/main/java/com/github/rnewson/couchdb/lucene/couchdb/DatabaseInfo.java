@@ -12,7 +12,7 @@ public class DatabaseInfo {
 	}
 
 	public UpdateSequence getUpdateSequence() throws JSONException {
-		return new UpdateSequence(json.getString("update_seq"));
+		return UpdateSequence.parseUpdateSequence(json.getString("update_seq"));
 	}
 
 	public String getName() throws JSONException {

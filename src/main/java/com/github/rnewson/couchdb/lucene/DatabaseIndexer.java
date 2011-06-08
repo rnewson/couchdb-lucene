@@ -312,6 +312,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 			try {
                 final JSONObject json = new JSONObject(line);
+                logger.debug(json);
 
                 if (json.has("error")) {
                 	logger.warn("Indexing stopping due to error: " + json);
@@ -323,7 +324,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 	break loop;
                 }
 
-                final UpdateSequence seq = new UpdateSequence(json.getString("seq"));
+                final UpdateSequence seq = UpdateSequence.parseUpdateSequence(json.getString("seq"));
                 final String id = json.getString("id");
                 CouchDocument doc;
                 if (!json.isNull("doc")) {
@@ -345,7 +346,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 }
 
                 if (id.startsWith("_design")) {
-                	if (ddoc_seq.isEarlierThan(seq)) {
+                	if (seq.isLaterThan(ddoc_seq)) {
                 		logger.info("Exiting due to design document change.");
                 		break loop;
                 	}
@@ -362,7 +363,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 		final View view = entry.getKey();
                 		final IndexState state = entry.getValue();
 
-                		if (state.pending_seq.isEarlierThan(seq)) {
+                		if (seq.isLaterThan(state.pending_seq)) {
                 			final Document[] docs;
                 			try {
                 				docs = state.converter.convert(doc, view
@@ -586,10 +587,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 						final List<CouchDocument> fetched_docs = database
 								.getDocuments(fetch_ids);
 						for (int j = 0; j < max; j++) {
-							CouchDocument doc = fetched_docs.get(j);
+							final CouchDocument doc = fetched_docs.get(j);
 							rows.getJSONObject(j).put("doc",doc!=null?doc.asJson():null);
 						}
-
 					}
 					stopWatch.lap("fetch");
 
@@ -666,6 +666,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		states.clear();
 		if (context != null) {
 			Context.exit();
+			context = null;
 		}
 		latch.countDown();
 	}
@@ -679,7 +680,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			final View view = entry.getKey();
 			final IndexState state = entry.getValue();
 
-			if (getUpdateSequence(state.writer).isEarlierThan(state.pending_seq)) {
+			if (state.pending_seq.isLaterThan(getUpdateSequence(state.writer))) {
 				final Map<String, String> userData = new HashMap<String, String>();
 				userData.put("last_seq", state.pending_seq.toString());
 				state.writer.commit(userData);
@@ -717,7 +718,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private UpdateSequence getUpdateSequence(final Directory dir) throws IOException {
 		if (!IndexReader.indexExists(dir)) {
-			return UpdateSequence.BOTTOM;
+			return UpdateSequence.START;
 		}
 		return getUpdateSequence(IndexReader.getCommitUserData(dir));
 	}
@@ -728,9 +729,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private UpdateSequence getUpdateSequence(final Map<String, String> userData) {
 		if (userData != null && userData.containsKey("last_seq")) {
-			return new UpdateSequence(userData.get("last_seq"));
+			return UpdateSequence.parseUpdateSequence(userData.get("last_seq"));
 		}
-		return UpdateSequence.BOTTOM;
+		return UpdateSequence.START;
 	}
 
 	private void init() throws IOException, JSONException {
@@ -757,9 +758,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					if (since == null) {
 						since = seq;
 					}
-					if (seq.isEarlierThan(since)) {
-						since = seq;
-					}
+					since = seq.isEarlierThan(since) ? seq : since;
 					logger.debug(dir + " bumped since to " + since);
 
 					final DocumentConverter converter = new DocumentConverter(

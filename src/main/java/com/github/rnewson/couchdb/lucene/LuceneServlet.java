@@ -18,6 +18,7 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -66,6 +68,12 @@ public final class LuceneServlet extends HttpServlet {
 
 	private final Map<Database, Thread> threads = new HashMap<Database, Thread>();
 
+	public LuceneServlet() throws ConfigurationException, IOException {
+		final Config config = new Config();
+		this.client = config.getClient();
+		this.root = config.getDir();
+		this.ini = config.getConfiguration();
+	}
 	public LuceneServlet(final HttpClient client, final File root,
 			final HierarchicalINIConfiguration ini) {
 		this.client = client;
@@ -124,11 +132,12 @@ public final class LuceneServlet extends HttpServlet {
 	}
 
 	private Couch getCouch(final HttpServletRequest req) throws IOException {
-		final Configuration section = ini.getSection(new PathParts(req)
-				.getKey());
-		final String url = section.containsKey("url") ? section
-				.getString("url") : "";
-		return new Couch(client, url);
+		final String sectionName = new PathParts(req).getKey();
+		final Configuration section = ini.getSection(sectionName);
+		if (!section.containsKey("url")) {
+			throw new FileNotFoundException(sectionName + " is missing or has no url parameter.");
+		}
+		return new Couch(client, section.getString("url"));
 	}
 
 	private synchronized DatabaseIndexer getIndexer(final Database database)

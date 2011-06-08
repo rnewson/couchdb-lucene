@@ -42,6 +42,12 @@ brew install couchdb-lucene
 
 The zip file contains all the couchdb-lucene code, dependencies, startup scripts and configuration files you need, so unzip it wherever you wish to install couchdb-lucene.
 
+If you want to run couchdb-lucene on a servlet container like Tomcat, you can build the war file using Maven
+
+<pre>
+mvn war:war
+</pre>
+
 <h1>Configure CouchDB</h1>
 
 The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene;

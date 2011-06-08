@@ -107,10 +107,8 @@ public final class Database {
 
 	public HttpUriRequest getChangesRequest(final UpdateSequence since)
 			throws IOException {
-		return new HttpGet(
-				url
-						+ "_changes?feed=continuous&heartbeat=15000&include_docs=true&since="
-						+ since);
+		final String uri = url + "_changes?feed=continuous&heartbeat=15000&include_docs=true";
+		return new HttpGet(since.appendSince(uri));
 	}
 
 	public boolean saveDocument(final String id, final String body)
@@ -157,7 +155,7 @@ public final class Database {
 	private List<CouchDocument> toDocuments(final JSONObject json) throws JSONException {
 		final List<CouchDocument> result = new ArrayList<CouchDocument>();
 		for (final JSONObject doc : rows(json)) {
-			result.add(doc != null ? new CouchDocument(doc) : null);
+			result.add(doc == null ? null : new CouchDocument(doc));
 		}
 		return result;
 	}
