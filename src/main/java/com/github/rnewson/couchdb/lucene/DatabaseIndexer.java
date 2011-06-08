@@ -325,6 +325,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 }
 
                 final UpdateSequence seq = UpdateSequence.parseUpdateSequence(json.getString("seq"));
+				
                 final String id = json.getString("id");
                 CouchDocument doc = null;
 				boolean isDeleted = false;
@@ -385,7 +386,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 			}
                 			state.setPendingSequence(seq);
                 			state.readerDirty = true;
-                		}
+                		} else {
+							logger.warn(String.format("%s is not later than %s",seq,state.pending_seq));
+						}
                 	}
                 }
             } catch (final JSONException e) {
