@@ -174,7 +174,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					    wait(timeout);
 					    timeout -= (System.currentTimeMillis() - start);
 					    if (timeout <= 0) {
-					        throw new IOException("Search timed out.");
+					        throw new IOException(String.format("Search timed out while waiting for %s (currently at: %s)",latest,pending_seq));
 					    }
 					} catch (final InterruptedException e) {
 						throw new IOException("Search timed out.");
