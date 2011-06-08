@@ -49,7 +49,7 @@ public abstract class UpdateSequence {
 
 		@Override
 		public String appendSince(final String url) {
-			return url + "?since=" + since;
+			return url + "&since=" + since;
 		}
 
 		@Override
@@ -111,7 +111,7 @@ public abstract class UpdateSequence {
 
 		@Override
 		public String appendSince(final String url) {
-			return url + "?since=" + seq;
+			return url + "&since=" + seq;
 		}
 
 		@Override
