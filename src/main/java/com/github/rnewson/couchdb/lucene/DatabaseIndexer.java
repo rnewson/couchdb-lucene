@@ -326,23 +326,29 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
                 final UpdateSequence seq = UpdateSequence.parseUpdateSequence(json.getString("seq"));
                 final String id = json.getString("id");
-                CouchDocument doc;
+                CouchDocument doc = null;
+				boolean isDeleted = false;
                 if (!json.isNull("doc")) {
                 	doc = new CouchDocument(json.getJSONObject("doc"));
+					isDeleted = doc.isDeleted();
                 } else {
-                	// include_docs=true doesn't work prior to 0.11.
-                	try {
-                		doc = database.getDocument(id);
-                	} catch (final HttpResponseException e) {
-                		switch (e.getStatusCode()) {
-                		case HttpStatus.SC_NOT_FOUND:
-                			doc = CouchDocument.deletedDocument(id);
-                			break;
-                		default:
-                			logger.warn("Failed to fetch " + id);
-                			break loop;
-                		}
-                	}
+					isDeleted = json.has("deleted") && json.getBoolean("deleted");
+					if (!isDeleted) {
+						logger.warn("Doc was null:" + id);
+						// include_docs=true doesn't work prior to 0.11.
+						try {
+							doc = database.getDocument(id);
+						} catch (final HttpResponseException e) {
+							switch (e.getStatusCode()) {
+							case HttpStatus.SC_NOT_FOUND:
+								doc = CouchDocument.deletedDocument(id);
+								break;
+							default:
+								logger.warn("Failed to fetch " + id);
+								break loop;
+							}
+						}
+					}
                 }
 
                 if (id.startsWith("_design")) {
@@ -352,7 +358,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 	}
                 }
 
-                if (doc.isDeleted()) {
+                if (isDeleted) {
                 	for (final IndexState state : states.values()) {
                 		state.writer.deleteDocuments(new Term("_id", id));
                 		state.setPendingSequence(seq);
