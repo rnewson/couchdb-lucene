@@ -70,7 +70,7 @@ public final class CustomQueryParser extends QueryParser {
 		}
 	}
 
-    public static String toString(final SortField[] sortFields) throws JSONException {
+    public static JSONArray toJSON(final SortField[] sortFields) throws JSONException {
         final JSONArray result = new JSONArray();
         for (final SortField field : sortFields) {
             final JSONObject col = new JSONObject();
@@ -116,7 +116,7 @@ public final class CustomQueryParser extends QueryParser {
             col.put("type", type);
             result.put(col);
         }
-        return result.toString();
+        return result;
     }
 
     @Override

@@ -603,7 +603,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					// Include sort info (if requested).
 					if (td instanceof TopFieldDocs) {
 						queryRow.put("sort_order", CustomQueryParser
-								.toString(((TopFieldDocs) td).fields));
+								.toJSON(((TopFieldDocs) td).fields));
 					}
 					queryRow.put("rows", rows);
 				}
