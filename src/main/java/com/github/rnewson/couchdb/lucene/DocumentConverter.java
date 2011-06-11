@@ -18,6 +18,9 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
@@ -43,7 +46,7 @@ import com.github.rnewson.couchdb.lucene.rhino.RhinoDocument;
 
 public final class DocumentConverter {
 
-    private static final Document[] NO_DOCUMENTS = new Document[0];
+    private static final Collection<Document> NO_DOCUMENTS = Collections.emptyList();
     private static final Logger LOG = Logger.getLogger(DocumentConverter.class);
 
     private final Context context;
@@ -72,7 +75,7 @@ public final class DocumentConverter {
         viewFun = view.compileFunction(context, scope);
     }
 
-    public Document[] convert(
+    public Collection<Document> convert(
             final CouchDocument doc,
             final ViewSettings defaults,
             final Database database) throws IOException, ParseException, JSONException {
@@ -93,12 +96,12 @@ public final class DocumentConverter {
         if (result instanceof RhinoDocument) {
             final RhinoDocument rhinoDocument = (RhinoDocument) result;
             final Document document = rhinoDocument.toDocument(doc.getId(), defaults, database);
-            return new Document[]{document};
+            return Collections.singleton(document);
         }
 
         if (result instanceof NativeArray) {
             final NativeArray nativeArray = (NativeArray) result;
-            final Document[] arrayResult = new Document[(int) nativeArray.getLength()];
+            final Collection<Document> arrayResult = new ArrayList<Document>((int) nativeArray.getLength());
             for (int i = 0; i < (int) nativeArray.getLength(); i++) {
                 if (nativeArray.get(i, null) instanceof RhinoDocument) {
                     final RhinoDocument rhinoDocument = (RhinoDocument) nativeArray.get(i, null);
@@ -106,7 +109,7 @@ public final class DocumentConverter {
                             doc.getId(),
                             defaults,
                             database);
-                    arrayResult[i] = document;
+                    arrayResult.add(document);
                 }
             }
             return arrayResult;

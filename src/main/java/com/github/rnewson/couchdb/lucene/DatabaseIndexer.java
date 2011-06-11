@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
 import java.net.SocketException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -363,7 +364,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 		final IndexState state = entry.getValue();
 
                 		if (seq.isLaterThan(state.pending_seq)) {
-                			final Document[] docs;
+                			final Collection<Document> docs;
                 			try {
                 				docs = state.converter.convert(doc, view
                 						.getDefaultSettings(), database);
@@ -372,10 +373,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 				continue loop;
                 			}
 
-                			state.writer.deleteDocuments(new Term("_id", id));
-                			for (final Document d : docs) {
-                				state.writer.addDocument(d, view.getAnalyzer());
-                			}
+                			state.writer.updateDocuments(new Term("_id", id), docs,
+                					view.getAnalyzer());
                 			state.setPendingSequence(seq);
                 			state.readerDirty = true;
                 		}
