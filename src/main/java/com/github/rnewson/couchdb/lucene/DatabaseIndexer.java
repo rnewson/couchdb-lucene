@@ -787,7 +787,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private IndexWriter newWriter(final Directory dir) throws IOException {
 		final IndexWriterConfig config = new IndexWriterConfig(
-				Version.LUCENE_30, Constants.ANALYZER);
+				Constants.VERSION, Constants.ANALYZER);
 
 		final LogByteSizeMergePolicy mergePolicy = new LogByteSizeMergePolicy();
 		mergePolicy.setMergeFactor(ini.getInt("lucene.mergeFactor", 10));
