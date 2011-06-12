@@ -40,6 +40,7 @@ import org.codehaus.jackson.node.ObjectNode;
 @Consumes({ "text/plain", "application/json" })
 public final class DatabaseResource {
 
+    private static final String FAKE_INSTANCE_START_TIME = "1307900650417";
     private static final String FAKE_REV = "1-967a00dff5e02add41819138abb3284d";
     private static final Version _VERSION = Version.LUCENE_32;
     private static final Analyzer ANALYZER = new StandardAnalyzer(_VERSION);
@@ -91,8 +92,7 @@ public final class DatabaseResource {
     public Response ensureFullCommit(@PathParam("db") final String db) {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("ok", true);
-        node.put("instance_start_time",
-                Long.toString(System.currentTimeMillis()));
+        node.put("instance_start_time",FAKE_INSTANCE_START_TIME);
         return Response.status(201).entity(node.toString()).build();
     }
 
@@ -112,6 +112,7 @@ public final class DatabaseResource {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("db_name", db);
         node.put("update_seq", 0);
+        node.put("instance_start_time",FAKE_INSTANCE_START_TIME);
         return node.toString();
     }
 
@@ -145,6 +146,7 @@ public final class DatabaseResource {
         return response.toString();
     }
 
+    // FOR THINGS WITH ATTACHMENTS!
     @PUT
     @Consumes("multipart/related")
     @Path("/{id}")
@@ -158,7 +160,9 @@ public final class DatabaseResource {
 
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("ok", true);
-        return Response.ok().entity(node.toString()).build();
+        node.put("id", id);
+        node.put("rev", FAKE_REV);
+        return Response.status(201).entity(node.toString()).build();
     }
 
     private Directory getDirectory(final String db) {
