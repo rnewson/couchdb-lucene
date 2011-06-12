@@ -35,6 +35,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 
+import com.sun.jersey.multipart.MultiPart;
+
 @Path("/{db}")
 @Produces({ "text/plain", "application/json" })
 @Consumes({ "text/plain", "application/json" })
@@ -92,7 +94,7 @@ public final class DatabaseResource {
     public Response ensureFullCommit(@PathParam("db") final String db) {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("ok", true);
-        node.put("instance_start_time",FAKE_INSTANCE_START_TIME);
+        node.put("instance_start_time", FAKE_INSTANCE_START_TIME);
         return Response.status(201).entity(node.toString()).build();
     }
 
@@ -112,7 +114,7 @@ public final class DatabaseResource {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("db_name", db);
         node.put("update_seq", 0);
-        node.put("instance_start_time",FAKE_INSTANCE_START_TIME);
+        node.put("instance_start_time", FAKE_INSTANCE_START_TIME);
         return node.toString();
     }
 
@@ -146,13 +148,23 @@ public final class DatabaseResource {
         return response.toString();
     }
 
-    // FOR THINGS WITH ATTACHMENTS!
     @PUT
-    @Consumes("multipart/related")
     @Path("/{id}")
-    public Response updateDocument(@PathParam("db") final String db,
-            @PathParam("id") final String id) throws IOException {
-        System.err.println("put " + id);
+    public Response updateDocument(@PathParam("id") final String id) {
+        final ObjectNode node = MAPPER.createObjectNode();
+        node.put("ok", true);
+        node.put("id", id);
+        node.put("rev", FAKE_REV);
+        return Response.status(201).entity(node.toString()).build();
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Consumes("multipart/related")
+    public Response updateDocumentAndAttachments(
+            @PathParam("db") final String db, @PathParam("id") final String id,
+            final MultiPart multiPart) throws IOException {
+        System.err.println(multiPart);
         final Directory dir = getDirectory(db);
         final IndexWriter writer = writer(dir);
         writer.updateDocument(new Term("_id", id), new Document());

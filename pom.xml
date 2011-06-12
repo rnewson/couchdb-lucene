@@ -9,11 +9,16 @@
   <url>http://github.com/rnewson/couchdb-lucene/</url>
   <version>0.7-SNAPSHOT</version>
   <dependencies>
+    <!-- JAX-RS -->
     <dependency>
-      <!-- the implementation of JAX-RS -->
       <groupId>com.sun.jersey</groupId>
       <artifactId>jersey-server</artifactId>
-      <version>1.0.1</version>
+      <version>${jersey-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.jersey.contribs</groupId>
+      <artifactId>jersey-multipart</artifactId>
+      <version>${jersey-version}</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
@@ -28,45 +33,17 @@
       <version>2.5</version>
       <scope>provided</scope>
     </dependency>
-    <!-- HTTP client -->
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <version>${http-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient-cache</artifactId>
-            <version>${http-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore-nio</artifactId>
-      <version>${http-version}</version>
-    </dependency>
     <!-- JSON lib -->
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-mapper-asl</artifactId>
       <version>1.8.0</version>
     </dependency>
-    <!-- Base64 lib -->
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>1.5</version>
-    </dependency>
-    <!-- Javascript engine -->
-    <dependency>
-      <groupId>rhino</groupId>
-      <artifactId>js</artifactId>
-      <version>1.7R2</version>
-    </dependency>
     <!-- Lucene -->
     <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>${lucene-version}</version>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-core</artifactId>
+      <version>${lucene-version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
@@ -89,12 +66,6 @@
       <artifactId>tika-parsers</artifactId>
       <version>${tika-version}</version>
     </dependency>
-    <!-- OTP -->
-    <dependency>
-      <groupId>org.erlang.otp</groupId>
-      <artifactId>jinterface</artifactId>
-      <version>1.5.3.2</version>
-    </dependency>
     <!-- TEST SCOPE DEPENDENCIES -->
     <dependency>
       <groupId>junit</groupId>
@@ -111,9 +82,9 @@
     </dependency>
   </dependencies>
   <properties>
+    <jersey-version>1.0.1</jersey-version>
     <lucene-version>3.2.0</lucene-version>
     <tika-version>0.9</tika-version>
-    <http-version>4.1.1</http-version>
   </properties>
   <build>
     <finalName>couchdb-lucene</finalName>
