@@ -1,0 +1,154 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.github.rnewson</groupId>
+  <artifactId>couchdb-lucene</artifactId>
+  <packaging>war</packaging>
+  <name>CouchDB Lucene</name>
+  <description>Full-text indexing for CouchDB</description>
+  <url>http://github.com/rnewson/couchdb-lucene/</url>
+  <version>0.7-SNAPSHOT</version>
+  <dependencies>
+    <dependency>
+      <!-- the implementation of JAX-RS -->
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-server</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.13</version>
+      <type>jar</type>
+    </dependency>
+    <!-- PROVIDED BY CONTAINER; HERE FOR COMPILE ONLY -->
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <version>2.5</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- HTTP client -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${http-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient-cache</artifactId>
+            <version>${http-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore-nio</artifactId>
+      <version>${http-version}</version>
+    </dependency>
+    <!-- JSON lib -->
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-mapper-asl</artifactId>
+      <version>1.8.0</version>
+    </dependency>
+    <!-- Base64 lib -->
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.5</version>
+    </dependency>
+    <!-- Javascript engine -->
+    <dependency>
+      <groupId>rhino</groupId>
+      <artifactId>js</artifactId>
+      <version>1.7R2</version>
+    </dependency>
+    <!-- Lucene -->
+    <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>${lucene-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-analyzers</artifactId>
+      <version>${lucene-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-queries</artifactId>
+      <version>${lucene-version}</version>
+    </dependency>
+    <!-- Tika -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${tika-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers</artifactId>
+      <version>${tika-version}</version>
+    </dependency>
+    <!-- OTP -->
+    <dependency>
+      <groupId>org.erlang.otp</groupId>
+      <artifactId>jinterface</artifactId>
+      <version>1.5.3.2</version>
+    </dependency>
+    <!-- TEST SCOPE DEPENDENCIES -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>[4.0,5.0)</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <!-- used in integration tests -->
+      <groupId>javanettasks</groupId>
+      <artifactId>httpunit</artifactId>
+      <version>[1.0,2.0)</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <properties>
+    <lucene-version>3.2.0</lucene-version>
+    <tika-version>0.9</tika-version>
+    <http-version>4.1.1</http-version>
+  </properties>
+  <build>
+    <finalName>couchdb-lucene</finalName>
+    <plugins>
+      <plugin>
+        <!-- JETTY 6 PLUGIN -->
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>maven-jetty-plugin</artifactId>
+        <version>6.1.14</version>
+        <configuration>
+          <scanIntervalSeconds>10</scanIntervalSeconds>
+          <contextPath>/</contextPath>
+          <connectors>
+            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+              <port>5985</port>
+              <maxIdleTime>60000</maxIdleTime>
+            </connector>
+          </connectors>
+          <webApp>${basedir}/target/cl</webApp>
+          <requestLog implementation="org.mortbay.jetty.NCSARequestLog">
+            <filename>target/yyyy_mm_dd.request.log</filename>
+            <retainDays>90</retainDays>
+            <append>true</append>
+            <extended>true</extended>
+            <logTimeZone>GMT</logTimeZone>
+          </requestLog>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <repositories>
+    <repository>
+      <id>javamaven2</id>
+      <name>Repository for Maven2</name>
+      <url>http://download.java.net/maven/2</url>
+    </repository>
+  </repositories>
+</project>
