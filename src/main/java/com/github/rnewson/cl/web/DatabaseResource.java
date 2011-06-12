@@ -86,7 +86,7 @@ public final class DatabaseResource {
         final Directory dir = new RAMDirectory();
         writer(dir).close();
         DATABASES.put(db, dir);
-        return Response.ok().build();
+        return Response.status(201).build();
     }
 
     @POST
@@ -106,6 +106,14 @@ public final class DatabaseResource {
         node.put("error", "not_found");
         node.put("reason", "missing");
         return Response.status(404).entity(node.toString()).build();
+    }
+
+    // for CouchDB 1.1
+    @GET
+    @Path("/_local/{id}")
+    public Response getLocalDocument(@PathParam("db") final String db,
+            @PathParam("id") final String id) {
+        return getDocument(db, id);
     }
 
     @GET
@@ -156,6 +164,22 @@ public final class DatabaseResource {
         node.put("id", id);
         node.put("rev", FAKE_REV);
         return Response.status(201).entity(node.toString()).build();
+    }
+
+    // For CouchDB 1.1
+    @PUT
+    @Path("/_design/{id}")
+    @Consumes("multipart/related")
+    public Response updateDesignDocument(@PathParam("id") final String id) {
+        return updateDocument("_design/" + id);
+    }
+
+    // For CouchDB 1.1
+    @PUT
+    @Path("/_local/{id}")
+    @Consumes("multipart/related")
+    public Response updateLocalDocument(@PathParam("id") final String id) {
+        return updateDocument("_local/" + id);
     }
 
     @PUT
