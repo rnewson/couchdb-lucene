@@ -1,4 +1,4 @@
-package com.github.rnewson.cl.web;
+package com.github.rnewson.cl;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package com.github.rnewson.cl.web;
+package com.github.rnewson.cl;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;

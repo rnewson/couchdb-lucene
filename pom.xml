@@ -66,6 +66,11 @@
       <artifactId>tika-parsers</artifactId>
       <version>${tika-version}</version>
     </dependency>
+    <dependency>
+      <groupId>commons-pool</groupId>
+      <artifactId>commons-pool</artifactId>
+      <version>1.5.6</version>
+    </dependency>
     <!-- TEST SCOPE DEPENDENCIES -->
     <dependency>
       <groupId>junit</groupId>
