@@ -58,8 +58,7 @@ public final class DatabaseResource {
 
     @POST
     @Path("/_bulk_docs")
-    public Response bulkDocs(final String json) throws IOException {
-        final JsonNode bulkDocsRequest = MAPPER.readTree(json);
+    public Response bulkDocs(final JsonNode bulkDocsRequest) throws IOException {
         final JsonNode docs = bulkDocsRequest.path("docs");
 
         final Directory dir = getDirectory(db);
@@ -69,8 +68,7 @@ public final class DatabaseResource {
         while (it.hasNext()) {
             final JsonNode doc = it.next();
             final Document luceneDoc = new Document();
-            final Field id = new Field("_id", doc.path("_id").getTextValue(),
-                    Store.YES, Index.NOT_ANALYZED);
+            final Field id = new Field("_id", doc.path("_id").getTextValue(), Store.YES, Index.NOT_ANALYZED);
             luceneDoc.add(id);
 
             final ObjectNode doc1 = MAPPER.createObjectNode();
@@ -81,7 +79,7 @@ public final class DatabaseResource {
         }
         writer.close();
 
-        return Response.ok().entity(bulkDocsResponse.toString()).build();
+        return Response.ok().entity(bulkDocsResponse).build();
     }
 
     @PUT
@@ -113,7 +111,7 @@ public final class DatabaseResource {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("ok", true);
         node.put("instance_start_time", FAKE_INSTANCE_START_TIME);
-        return Response.status(201).entity(node.toString()).build();
+        return Response.status(201).entity(node).build();
     }
 
     @GET
@@ -122,7 +120,7 @@ public final class DatabaseResource {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("error", "not_found");
         node.put("reason", "missing");
-        return Response.status(404).entity(node.toString()).build();
+        return Response.status(404).entity(node).build();
     }
 
     // for CouchDB 1.1
@@ -133,24 +131,22 @@ public final class DatabaseResource {
     }
 
     @GET
-    public String info() {
+    public ObjectNode info() {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("db_name", db);
         node.put("update_seq", 0);
         node.put("instance_start_time", FAKE_INSTANCE_START_TIME);
-        return node.toString();
+        return node;
     }
 
     @POST
     @Path("/_missing_revs")
-    public String missingRevs(final String json) throws IOException {
+    public ObjectNode missingRevs(final JsonNode missingRevsRequest) throws IOException {
         final Directory dir = DATABASES.get(db);
         if (dir == null) {
             throw new WebApplicationException(404);
         }
-        final JsonNode missingRevsRequest = MAPPER.readTree(json);
-        final Iterator<Entry<String, JsonNode>> it = missingRevsRequest
-                .getFields();
+        final Iterator<Entry<String, JsonNode>> it = missingRevsRequest.getFields();
         final ObjectNode missingRevsResponse = MAPPER.createObjectNode();
         final IndexReader reader = IndexReader.open(dir, true);
         final TermDocs termDocs = reader.termDocs();
@@ -158,8 +154,7 @@ public final class DatabaseResource {
             final Entry<String, JsonNode> idAndRevs = it.next();
             termDocs.seek(new Term("_id", idAndRevs.getKey()));
             if (!termDocs.next()) {
-                missingRevsResponse.put(idAndRevs.getKey(),
-                        idAndRevs.getValue());
+                missingRevsResponse.put(idAndRevs.getKey(), idAndRevs.getValue());
             }
         }
         termDocs.close();
@@ -167,7 +162,7 @@ public final class DatabaseResource {
 
         final ObjectNode response = MAPPER.createObjectNode();
         response.put("missing_revs", missingRevsResponse);
-        return response.toString();
+        return response;
     }
 
     @PUT
@@ -177,7 +172,7 @@ public final class DatabaseResource {
         node.put("ok", true);
         node.put("id", id);
         node.put("rev", FAKE_REV);
-        return Response.status(201).entity(node.toString()).build();
+        return Response.status(201).entity(node).build();
     }
 
     // For CouchDB 1.1
@@ -199,10 +194,8 @@ public final class DatabaseResource {
     @PUT
     @Path("/{id}")
     @Consumes("multipart/related")
-    public Response updateDocumentAndAttachments(
-            @PathParam("id") final String id, final MultiPart multiPart)
+    public Response updateDocumentAndAttachments(@PathParam("id") final String id, final MultiPart multiPart)
             throws IOException {
-        System.err.println(multiPart);
         final Directory dir = getDirectory(db);
         final IndexWriter writer = writer(dir);
         writer.updateDocument(new Term("_id", id), new Document());
@@ -212,7 +205,7 @@ public final class DatabaseResource {
         node.put("ok", true);
         node.put("id", id);
         node.put("rev", FAKE_REV);
-        return Response.status(201).entity(node.toString()).build();
+        return Response.status(201).entity(node).build();
     }
 
     private Directory getDirectory(final String db) {

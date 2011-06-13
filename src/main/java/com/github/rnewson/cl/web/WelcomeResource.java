@@ -9,8 +9,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
 @Path("/")
-@Produces({"text/plain", "application/json"})
-@Consumes({"text/plain", "application/json"})
+@Produces("application/json")
+@Consumes("application/json")
 public class WelcomeResource {
 
     @GET
