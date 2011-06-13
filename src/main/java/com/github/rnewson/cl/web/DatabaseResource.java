@@ -31,11 +31,17 @@ import org.apache.lucene.index.TermDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
+import org.apache.tika.Tika;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
+import org.xml.sax.SAXException;
 
+import com.sun.jersey.multipart.BodyPart;
+import com.sun.jersey.multipart.BodyPartEntity;
 import com.sun.jersey.multipart.MultiPart;
 
 @Path("/{db}")
@@ -194,12 +200,21 @@ public final class DatabaseResource {
     @PUT
     @Path("/{id}")
     @Consumes("multipart/related")
-    public Response updateDocumentAndAttachments(@PathParam("id") final String id, final MultiPart multiPart)
-            throws IOException {
+    public Response updateDocumentAndAttachments(@PathParam("id") final String id, final MultiPart body)
+            throws IOException, SAXException, TikaException {
         final Directory dir = getDirectory(db);
         final IndexWriter writer = writer(dir);
         writer.updateDocument(new Term("_id", id), new Document());
         writer.close();
+
+        final Tika tika = new Tika();
+        for (final BodyPart bodyPart : body.getBodyParts()) {
+            final BodyPartEntity entity = (BodyPartEntity) bodyPart.getEntity();
+            final Metadata metadata = new Metadata();
+            final String txt = tika.parseToString(entity.getInputStream(), metadata);
+            System.err.println(metadata);
+            System.err.println(txt);
+        }
 
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("ok", true);
