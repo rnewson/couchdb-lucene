@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -49,10 +50,15 @@ public final class DatabaseResource {
     private static final Map<String, Directory> DATABASES = new HashMap<String, Directory>();
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    private final String db;
+
+    public DatabaseResource(@PathParam("db") final String db) {
+        this.db = db;
+    }
+
     @POST
     @Path("/_bulk_docs")
-    public Response bulkDocs(@PathParam("db") final String db, final String json)
-            throws IOException {
+    public Response bulkDocs(final String json) throws IOException {
         final JsonNode bulkDocsRequest = MAPPER.readTree(json);
         final JsonNode docs = bulkDocsRequest.path("docs");
 
@@ -79,7 +85,7 @@ public final class DatabaseResource {
     }
 
     @PUT
-    public Response create(@PathParam("db") final String db) throws IOException {
+    public Response create() throws IOException {
         if (DATABASES.containsKey(db)) {
             throw new WebApplicationException(412);
         }
@@ -89,9 +95,21 @@ public final class DatabaseResource {
         return Response.status(201).build();
     }
 
+    @DELETE
+    public Response delete() throws IOException {
+        final Directory dir = DATABASES.remove(db);
+        if (dir == null) {
+            throw new WebApplicationException(404);
+        }
+        for (final String name : dir.listAll()) {
+            dir.deleteFile(name);
+        }
+        return Response.status(200).build();
+    }
+
     @POST
     @Path("/_ensure_full_commit")
-    public Response ensureFullCommit(@PathParam("db") final String db) {
+    public Response ensureFullCommit() {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("ok", true);
         node.put("instance_start_time", FAKE_INSTANCE_START_TIME);
@@ -100,8 +118,7 @@ public final class DatabaseResource {
 
     @GET
     @Path("/{id}")
-    public Response getDocument(@PathParam("db") final String db,
-            @PathParam("id") final String id) {
+    public Response getDocument(@PathParam("id") final String id) {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("error", "not_found");
         node.put("reason", "missing");
@@ -111,14 +128,12 @@ public final class DatabaseResource {
     // for CouchDB 1.1
     @GET
     @Path("/_local/{id}")
-    public Response getLocalDocument(@PathParam("db") final String db,
-            @PathParam("id") final String id) {
-        return getDocument(db, id);
+    public Response getLocalDocument(@PathParam("id") final String id) {
+        return getDocument(id);
     }
 
     @GET
-    public String info(@PathParam("db") final String db) {
-        getDirectory(db);
+    public String info() {
         final ObjectNode node = MAPPER.createObjectNode();
         node.put("db_name", db);
         node.put("update_seq", 0);
@@ -128,8 +143,7 @@ public final class DatabaseResource {
 
     @POST
     @Path("/_missing_revs")
-    public String missingRevs(@PathParam("db") final String db,
-            final String json) throws IOException {
+    public String missingRevs(final String json) throws IOException {
         final Directory dir = DATABASES.get(db);
         if (dir == null) {
             throw new WebApplicationException(404);
@@ -186,8 +200,8 @@ public final class DatabaseResource {
     @Path("/{id}")
     @Consumes("multipart/related")
     public Response updateDocumentAndAttachments(
-            @PathParam("db") final String db, @PathParam("id") final String id,
-            final MultiPart multiPart) throws IOException {
+            @PathParam("id") final String id, final MultiPart multiPart)
+            throws IOException {
         System.err.println(multiPart);
         final Directory dir = getDirectory(db);
         final IndexWriter writer = writer(dir);
