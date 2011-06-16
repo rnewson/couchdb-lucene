@@ -64,10 +64,10 @@ public final class DocumentReader implements MessageBodyReader<Document> {
                     fieldable = new NumericField(fieldName).setFloatValue(parser.getFloatValue());
                     break;
                 case VALUE_TRUE:
-                    fieldable = new NumericField(fieldName).setIntValue(1);
+                    fieldable = new Field(fieldName, "true", Store.YES, Index.NOT_ANALYZED);
                     break;
                 case VALUE_FALSE:
-                    fieldable = new NumericField(fieldName).setIntValue(0);
+                    fieldable = new Field(fieldName, "false", Store.YES, Index.NOT_ANALYZED);
                     break;
                 }
                 if (fieldable != null) {
