@@ -26,6 +26,12 @@
       <version>1.2.13</version>
       <type>jar</type>
     </dependency>
+    <!-- Spring -->
+    <dependency>
+      <groupId>com.sun.jersey.contribs</groupId>
+      <artifactId>jersey-spring</artifactId>
+      <version>${jersey-version}</version>
+    </dependency>
     <!-- PROVIDED BY CONTAINER; HERE FOR COMPILE ONLY -->
     <dependency>
       <groupId>javax.servlet</groupId>
@@ -56,6 +62,7 @@
       <version>${lucene-version}</version>
     </dependency>
     <!-- Tika -->
+<!--
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
@@ -66,11 +73,7 @@
       <artifactId>tika-parsers</artifactId>
       <version>${tika-version}</version>
     </dependency>
-    <dependency>
-      <groupId>commons-pool</groupId>
-      <artifactId>commons-pool</artifactId>
-      <version>1.5.6</version>
-    </dependency>
+-->
     <!-- TEST SCOPE DEPENDENCIES -->
     <dependency>
       <groupId>junit</groupId>

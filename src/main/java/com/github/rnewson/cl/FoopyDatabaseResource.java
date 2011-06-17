@@ -3,9 +3,11 @@ package com.github.rnewson.cl;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.servlet.ServletContext;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -15,6 +17,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -47,7 +50,7 @@ import com.sun.jersey.multipart.MultiPart;
 @Path("/{db}")
 @Produces({ "text/plain", "application/json" })
 @Consumes({ "text/plain", "application/json" })
-public final class DatabaseResource {
+public final class FoopyDatabaseResource {
 
     private static final String FAKE_INSTANCE_START_TIME = "1307900650417";
     private static final String FAKE_REV = "1-967a00dff5e02add41819138abb3284d";
@@ -58,13 +61,26 @@ public final class DatabaseResource {
 
     private final String db;
 
-    public DatabaseResource(@PathParam("db") final String db) {
+    private @Context
+    ServletContext servletContext;
+
+    public FoopyDatabaseResource(@PathParam("db") final String db) {
         this.db = db;
+    }
+
+    @POST
+    @Path("/_bulk_docs2")
+    public void bulkDocs(final IndexWriter writer, final List<Document> documents) throws IOException {
+        for (final Document document : documents) {
+            final Term id = new Term("_id", document.get("_id"));
+            writer.updateDocument(id, document);
+        }
     }
 
     @POST
     @Path("/_bulk_docs")
     public Response bulkDocs(final JsonNode bulkDocsRequest) throws IOException {
+        System.err.println("context " + servletContext);
         final JsonNode docs = bulkDocsRequest.path("docs");
 
         final Directory dir = getDirectory(db);
@@ -212,8 +228,8 @@ public final class DatabaseResource {
             final BodyPartEntity entity = (BodyPartEntity) bodyPart.getEntity();
             final Metadata metadata = new Metadata();
             final String txt = tika.parseToString(entity.getInputStream(), metadata);
-            System.err.println(metadata);
-            System.err.println(txt);
+            // System.err.println(metadata);
+            // System.err.println(txt);
         }
 
         final ObjectNode node = MAPPER.createObjectNode();
