@@ -15,8 +15,6 @@ GOTO :eof
 
 :done
 
-ECHO CLASSPATH=%CLASSPATH%
- 
 java %JAVA_OPTS% -cp %CLASSPATH% %CLASS%
 
 ENDLOCAL
