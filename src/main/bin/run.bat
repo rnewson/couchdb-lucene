@@ -10,7 +10,7 @@ FOR %%G IN (lib/*.jar) DO (
 GOTO :done
 
 :addclasspath
-SET CLASSPATH=%CLASSPATH%:%1
+SET CLASSPATH=%CLASSPATH%;%1
 GOTO :eof
 
 :done
