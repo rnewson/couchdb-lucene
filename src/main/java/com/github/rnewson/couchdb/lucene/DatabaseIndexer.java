@@ -310,7 +310,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 			try {
                 final JSONObject json = new JSONObject(line);
-                logger.debug(json);
 
                 if (json.has("error")) {
                 	logger.warn("Indexing stopping due to error: " + json);
