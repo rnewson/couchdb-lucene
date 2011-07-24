@@ -67,7 +67,7 @@ _fti = {couch_httpd_external, handle_external_req, &lt;&lt;"fti"&gt;&gt;}
 <h2>For CouchDB versions from 1.1 onward</h2>
 <pre>
 [httpd_global_handlers]
-_fti = {couch_httpd_proxy, handle_proxy_req, <<"http://127.0.0.1:5985">>}
+_fti = {couch_httpd_proxy, handle_proxy_req, &lt;&lt;"http://127.0.0.1:5985"&gt;&gt;}
 </pre>
 
 <b>Note:</b> The urls via the proxy have a different form:
