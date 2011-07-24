@@ -52,6 +52,7 @@ mvn war:war
 
 The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene;
 
+<h2>For CouchDB versions prior to 1.1</h2>
 <pre>
 [couchdb]
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
@@ -62,6 +63,18 @@ fti=/path/to/python /path/to/couchdb-lucene/tools/couchdb-external-hook.py
 [httpd_db_handlers]
 _fti = {couch_httpd_external, handle_external_req, &lt;&lt;"fti"&gt;&gt;}
 </pre>
+
+<h2>For CouchDB versions from 1.1 onward</h2>
+<pre>
+[httpd_global_handlers]
+_fti = {couch_httpd_proxy, handle_proxy_req, <<"http://127.0.0.1:5985">>}
+</pre>
+
+<b>Note:</b> The urls via the proxy have a different form:
+
+<pre>http://127.0.0.1:5984/_fti/local/db1/_design/cl-test/idx?q=hello</pre>
+
+The "local" matches the name of the key from <code>couchdb-lucene.ini</code>.
 
 <h2>Hook options</h2>
 
