@@ -468,7 +468,7 @@ All Dublin Core attributes are indexed and stored if detected in the attachment.
 <pre>
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value&sort=other_field
-http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort&lt;long&gt;=billing_size&q=body:document AND customer:[A TO C]
+http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort=billing_size&lt;long&gt;&q=body:document AND customer:[A TO C]
 </pre>
 
 <h2>Search Results Format</h2>
