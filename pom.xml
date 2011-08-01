@@ -5,7 +5,7 @@
     <name>CouchDB Lucene</name>
     <description>Full-text indexing for CouchDB</description>
     <url>http://github.com/rnewson/couchdb-lucene/</url>
-    <version>0.7.0</version>
+    <version>0.8.0-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
