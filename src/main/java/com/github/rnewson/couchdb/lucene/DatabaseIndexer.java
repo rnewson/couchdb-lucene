@@ -85,14 +85,16 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		private IndexReader reader;
 		private final IndexWriter writer;
 		private final Database database;
+		private final View view;
 
 		public IndexState(final DocumentConverter converter,
 				final IndexWriter writer, final Analyzer analyzer,
-				final Database database) {
+				final Database database, final View view) {
 			this.converter = converter;
 			this.writer = writer;
 			this.analyzer = analyzer;
 			this.database = database;
+			this.view = view;
 		}
 
 		public synchronized IndexReader borrowReader(final boolean staleOk)
@@ -149,6 +151,14 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		private synchronized String getEtag() {
 			return etag;
+		}
+
+		public UUID getUuid() throws JSONException, IOException {
+		    return database.getUuid();
+		}
+
+		public String getDigest() {
+		    return view.getDigest();
 		}
 
 		private String newEtag() {
@@ -398,6 +408,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			result.put("disk_size", Utils.directorySize(reader.directory()));
 			result.put("doc_count", reader.numDocs());
 			result.put("doc_del_count", reader.numDeletedDocs());
+			result.put("uuid", state.getUuid());
+			result.put("digest", state.getDigest());
 			final JSONArray fields = new JSONArray();
 			for (final Object field : reader.getFieldNames(FieldOption.INDEXED)) {
 				if (((String) field).startsWith("_")) {
@@ -760,7 +772,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					final IndexWriter writer = newWriter(dir);
 
 					final IndexState state = new IndexState(converter, writer,
-							view.getAnalyzer(), database);
+							view.getAnalyzer(), database, view);
 					state.setPendingSequence(seq);
 					states.put(view, state);
 				}
