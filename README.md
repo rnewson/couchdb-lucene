@@ -425,6 +425,7 @@ The following parameters can be passed for more sophisticated searches;
 <dt>default_operator</dt><dd>Change the default operator for boolean queries. Defaults to "OR", other permitted value is "AND".</dd>
 <dt>force_json<dt><dd>Usually couchdb-lucene determines the Content-Type of its response based on the presence of the Accept header. If Accept contains "application/json", you get "application/json" in the response, otherwise you get "text/plain;charset=utf8". Some tools, like JSONView for FireFox, do not send the Accept header but do render "application/json" responses if received. Setting force_json=true forces all response to "application/json" regardless of the Accept header.</dd>
 <dt>include_docs</dt><dd>whether to include the source docs</dd>
+<dt>include_fields</dt><dd>By default, <i>all</i> stored fields are returned with results. Use a comma-separate list of field names with this parameter to refine the response</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>
 <dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched. Multiple queries can be supplied, separated by commas; the resulting JSON will be an array of responses.</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
