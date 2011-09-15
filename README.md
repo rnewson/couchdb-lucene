@@ -275,7 +275,7 @@ if (doc.foo) {
 }
 </pre>
 
-<h3>Example Transforms</h3>
+<h3>Example Index Functions</h3>
 
 <h4>Index Everything</h4>
 
