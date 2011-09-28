@@ -43,7 +43,7 @@
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-mapper-asl</artifactId>
-      <version>1.8.0</version>
+      <version>1.8.5</version>
     </dependency>
     <!-- Lucene -->
     <dependency>
@@ -90,8 +90,8 @@
     </dependency>
   </dependencies>
   <properties>
-    <jersey-version>1.0.1</jersey-version>
-    <lucene-version>3.2.0</lucene-version>
+    <jersey-version>1.9.1</jersey-version>
+    <lucene-version>3.4.0</lucene-version>
     <tika-version>0.9</tika-version>
   </properties>
   <build>
