@@ -62,7 +62,6 @@
       <version>${lucene-version}</version>
     </dependency>
     <!-- Tika -->
-<!--
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
@@ -73,7 +72,6 @@
       <artifactId>tika-parsers</artifactId>
       <version>${tika-version}</version>
     </dependency>
--->
     <!-- TEST SCOPE DEPENDENCIES -->
     <dependency>
       <groupId>junit</groupId>
