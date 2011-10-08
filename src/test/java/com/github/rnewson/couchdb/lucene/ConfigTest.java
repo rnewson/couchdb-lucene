@@ -38,7 +38,7 @@ public class ConfigTest {
             assertTrue(dir.exists());
             assertTrue(dir.canRead());
             assertTrue(dir.canWrite());
-            assertEquals("target/indexes", dir.getPath());
+            assertEquals(new File("target", "indexes"), dir);
         } catch (ConfigurationException ce) {
             fail("ConfigurationException shouldn't have been thrown."
                     + ce.getMessage());

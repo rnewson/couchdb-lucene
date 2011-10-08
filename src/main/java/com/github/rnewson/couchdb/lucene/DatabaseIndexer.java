@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
 import java.net.SocketException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,7 +36,10 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldSelector;
+import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.document.MapFieldSelector;
+import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.index.IndexWriter;
@@ -53,7 +58,6 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.SingleInstanceLockFactory;
-import org.apache.lucene.util.Version;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -87,14 +91,16 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		private IndexReader reader;
 		private final IndexWriter writer;
 		private final Database database;
+		private final View view;
 
 		public IndexState(final DocumentConverter converter,
 				final IndexWriter writer, final Analyzer analyzer,
-				final Database database) {
+				final Database database, final View view) {
 			this.converter = converter;
 			this.writer = writer;
 			this.analyzer = analyzer;
 			this.database = database;
+			this.view = view;
 		}
 
 		public synchronized IndexReader borrowReader(final boolean staleOk)
@@ -151,6 +157,14 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		private synchronized String getEtag() {
 			return etag;
+		}
+
+		public UUID getUuid() throws JSONException, IOException {
+		    return database.getUuid();
+		}
+
+		public String getDigest() {
+		    return view.getDigest();
 		}
 
 		private String newEtag() {
@@ -312,7 +326,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 			try {
                 final JSONObject json = new JSONObject(line);
-                logger.debug(json);
 
                 if (json.has("error")) {
                 	logger.warn("Indexing stopping due to error: " + json);
@@ -371,7 +384,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 		final IndexState state = entry.getValue();
 
                 		if (seq.isLaterThan(state.pending_seq)) {
-                			final Document[] docs;
+                			final Collection<Document> docs;
                 			try {
                 				docs = state.converter.convert(doc, view
                 						.getDefaultSettings(), database);
@@ -380,10 +393,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 				continue loop;
                 			}
 
-                			state.writer.deleteDocuments(new Term("_id", id));
-                			for (final Document d : docs) {
-                				state.writer.addDocument(d, view.getAnalyzer());
-                			}
+                			state.writer.updateDocuments(new Term("_id", id), docs,
+                					view.getAnalyzer());
                 			state.setPendingSequence(seq);
                 			state.readerDirty = true;
                 		}
@@ -410,6 +421,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			result.put("disk_size", Utils.directorySize(reader.directory()));
 			result.put("doc_count", reader.numDocs());
 			result.put("doc_del_count", reader.numDeletedDocs());
+			result.put("uuid", state.getUuid());
+			result.put("digest", state.getDigest());
 			final JSONArray fields = new JSONArray();
 			for (final Object field : reader.getFieldNames(FieldOption.INDEXED)) {
 				if (((String) field).startsWith("_")) {
@@ -525,6 +538,15 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 							.getParameter("sort"));
 					final int skip = getIntParameter(req, "skip", 0);
 
+					final FieldSelector fieldSelector;
+					if (req.getParameter("include_fields") == null) {
+					    fieldSelector = null;
+					} else {
+					    final String[] fields = Utils.splitOnCommas(
+					            req.getParameter("include_fields"));
+					    fieldSelector = new MapFieldSelector(Arrays.asList(fields));
+					}
+
 					if (sort == null) {
 						td = searcher.search(q, null, skip + limit);
 					} else {
@@ -538,19 +560,24 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					final JSONArray rows = new JSONArray();
 					final String[] fetch_ids = new String[max];
 					for (int i = skip; i < skip + max; i++) {
-						final Document doc = searcher.doc(td.scoreDocs[i].doc);
+						final Document doc = searcher.doc(td.scoreDocs[i].doc,
+						        fieldSelector);
+
 						final JSONObject row = new JSONObject();
 						final JSONObject fields = new JSONObject();
 
 						// Include stored fields.
-						for (final Object f : doc.getFields()) {
-							final Field fld = (Field) f;
-
-							if (!fld.isStored()) {
+						for (final Fieldable f : doc.getFields()) {
+							if (!f.isStored()) {
 								continue;
 							}
-							final String name = fld.name();
-							final String value = fld.stringValue();
+							final String name = f.name();
+							final Object value;
+							if (f instanceof NumericField) {
+								value = ((NumericField)f).getNumericValue();
+							} else {
+								value = f.stringValue();
+							}
 							if (value != null) {
 								if ("_id".equals(name)) {
 									row.put("id", value);
@@ -610,7 +637,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					// Include sort info (if requested).
 					if (td instanceof TopFieldDocs) {
 						queryRow.put("sort_order", CustomQueryParser
-								.toString(((TopFieldDocs) td).fields));
+								.toJSON(((TopFieldDocs) td).fields));
 					}
 					queryRow.put("rows", rows);
 				}
@@ -773,11 +800,14 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					final IndexWriter writer = newWriter(dir);
 
 					final IndexState state = new IndexState(converter, writer,
-							view.getAnalyzer(), database);
+							view.getAnalyzer(), database, view);
 					state.setPendingSequence(seq);
 					states.put(view, state);
 				}
 			}
+		}
+		if (since == null) {
+		    since = UpdateSequence.START;
 		}
 		logger.debug("paths: " + paths);
 
@@ -797,7 +827,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private IndexWriter newWriter(final Directory dir) throws IOException {
 		final IndexWriterConfig config = new IndexWriterConfig(
-				Version.LUCENE_30, Constants.ANALYZER);
+				Constants.VERSION, Constants.ANALYZER);
 
 		final LogByteSizeMergePolicy mergePolicy = new LogByteSizeMergePolicy();
 		mergePolicy.setMergeFactor(ini.getInt("lucene.mergeFactor", 10));

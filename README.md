@@ -52,6 +52,7 @@ mvn war:war
 
 The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene;
 
+<h2>For CouchDB versions prior to 1.1</h2>
 <pre>
 [couchdb]
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
@@ -62,6 +63,18 @@ fti=/path/to/python /path/to/couchdb-lucene/tools/couchdb-external-hook.py
 [httpd_db_handlers]
 _fti = {couch_httpd_external, handle_external_req, &lt;&lt;"fti"&gt;&gt;}
 </pre>
+
+<h2>For CouchDB versions from 1.1 onward</h2>
+<pre>
+[httpd_global_handlers]
+_fti = {couch_httpd_proxy, handle_proxy_req, &lt;&lt;"http://127.0.0.1:5985"&gt;&gt;}
+</pre>
+
+<b>Note:</b> The urls via the proxy have a different form:
+
+<pre>http://127.0.0.1:5984/_fti/local/db1/_design/cl-test/idx?q=hello</pre>
+
+The "local" matches the name of the key from <code>couchdb-lucene.ini</code>.
 
 <h2>Hook options</h2>
 
@@ -262,7 +275,7 @@ if (doc.foo) {
 }
 </pre>
 
-<h3>Example Transforms</h3>
+<h3>Example Index Functions</h3>
 
 <h4>Index Everything</h4>
 
@@ -412,6 +425,7 @@ The following parameters can be passed for more sophisticated searches;
 <dt>default_operator</dt><dd>Change the default operator for boolean queries. Defaults to "OR", other permitted value is "AND".</dd>
 <dt>force_json<dt><dd>Usually couchdb-lucene determines the Content-Type of its response based on the presence of the Accept header. If Accept contains "application/json", you get "application/json" in the response, otherwise you get "text/plain;charset=utf8". Some tools, like JSONView for FireFox, do not send the Accept header but do render "application/json" responses if received. Setting force_json=true forces all response to "application/json" regardless of the Accept header.</dd>
 <dt>include_docs</dt><dd>whether to include the source docs</dd>
+<dt>include_fields</dt><dd>By default, <i>all</i> stored fields are returned with results. Use a comma-separate list of field names with this parameter to refine the response</dd>
 <dt>limit</dt><dd>the maximum number of results to return</dd>
 <dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched. Multiple queries can be supplied, separated by commas; the resulting JSON will be an array of responses.</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
@@ -455,7 +469,7 @@ All Dublin Core attributes are indexed and stored if detected in the attachment.
 <pre>
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value&sort=other_field
-http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort&lt;long&gt;=billing_size&q=body:document AND customer:[A TO C]
+http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort=billing_size&lt;long&gt;&q=body:document AND customer:[A TO C]
 </pre>
 
 <h2>Search Results Format</h2>

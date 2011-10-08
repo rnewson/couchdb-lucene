@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.util.Collection;
 import java.util.TimeZone;
 
 import org.apache.lucene.document.Document;
@@ -45,9 +46,9 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {return new Document();}"));
-        final Document[] result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
-        assertThat(result.length, is(1));
-        assertThat(result[0].get("_id"), is("hello"));
+        final Collection<Document> result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().get("_id"), is("hello"));
     }
 
     @Test
@@ -55,9 +56,9 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {var ret = new Array(); ret.push(new Document()); ret.push(new Document()); return ret;}"));
-        final Document[] result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
-        assertThat(result.length, is(2));
-        assertThat(result[0].get("_id"), is("hello"));
+        final Collection<Document> result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
+        assertThat(result.size(), is(2));
+        assertThat(result.iterator().next().get("_id"), is("hello"));
     }
 
     @Test
@@ -65,12 +66,12 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {var ret=new Document(); ret.add(doc.key); return ret;}"));
-        final Document[] result = converter.convert(
+        final Collection<Document> result = converter.convert(
                 doc("{_id:\"hello\", key:\"value\"}"),
                 settings(),
                 null);
-        assertThat(result.length, is(1));
-        assertThat(result[0].get(Constants.DEFAULT_FIELD), is("value"));
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().get(Constants.DEFAULT_FIELD), is("value"));
     }
 
     @Test
@@ -78,14 +79,14 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {var ret=new Document(); for (var key in doc) { ret.add(doc[key]); } return ret; }"));
-        final Document[] result = converter.convert(
+        final Collection<Document> result = converter.convert(
                 doc("{_id:\"hello\", key:\"value\"}"),
                 settings(),
                 null);
-        assertThat(result.length, is(1));
-        assertThat(result[0].get("_id"), is("hello"));
-        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[0], is("hello"));
-        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[1], is("value"));
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().get("_id"), is("hello"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[0], is("hello"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[1], is("value"));
     }
 
     @Test
@@ -93,16 +94,16 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {var ret=new Document(); for (var key in doc.arr) {ret.add(doc.arr[key]); } return ret; }"));
-        final Document[] result = converter.convert(
+        final Collection<Document> result = converter.convert(
                 doc("{_id:\"hello\", arr:[0,1,2,3]}"),
                 settings(),
                 null);
-        assertThat(result.length, is(1));
-        assertThat(result[0].get("_id"), is("hello"));
-        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[0], is("0"));
-        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[1], is("1"));
-        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[2], is("2"));
-        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[3], is("3"));
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().get("_id"), is("hello"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[0], is("0"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[1], is("1"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[2], is("2"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[3], is("3"));
     }
 
     @Test
@@ -114,13 +115,13 @@ public class DocumentConverterTest {
                      + "{switch (typeof obj[key]) {case 'object':idx(obj[key]); break; "
                      + "case 'function': break; default: ret.add(obj[key]); break;} } }; idx(doc); return ret; }"));
 
-        final Document[] result = converter.convert(
+        final Collection<Document> result = converter.convert(
                 doc("{_id:\"hello\", l1: { l2: {l3:[\"v3\", \"v4\"]}}}"),
                 settings(),
                 null);
-        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[0], is("hello"));
-        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[1], is("v3"));
-        assertThat(result[0].getValues(Constants.DEFAULT_FIELD)[2], is("v4"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[0], is("hello"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[1], is("v3"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[2], is("v4"));
     }
 
     @Test
@@ -128,8 +129,8 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {return null;}"));
-        final Document[] result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
-        assertThat(result.length, is(0));
+        final Collection<Document> result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
+        assertThat(result.size(), is(0));
     }
 
     @Test
@@ -137,8 +138,8 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {return doc.nope;}"));
-        final Document[] result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
-        assertThat(result.length, is(0));
+        final Collection<Document> result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
+        assertThat(result.size(), is(0));
     }
 
     @Test
@@ -146,8 +147,8 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {throw {bad : \"stuff\"}}"));
-        final Document[] result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
-        assertThat(result.length, is(0));
+        final Collection<Document> result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
+        assertThat(result.size(), is(0));
     }
 
     @Test(expected=EvaluatorException.class)
@@ -163,8 +164,8 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {var ret=new Document(); ret.add(doc.nope); return ret;}"));
-        final Document[] result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
-        assertThat(result.length, is(1));
+        final Collection<Document> result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
+        assertThat(result.size(), is(1));
     }
 
     @Test
@@ -172,103 +173,103 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("\"function(doc) {return new Document();}\""));
-        final Document[] result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
-        assertThat(result.length, is(1));
-        assertThat(result[0].get("_id"), is("hello"));
+        final Collection<Document> result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().get("_id"), is("hello"));
     }
 
     @Test
     public void testNoReturnValue() throws Exception {
         final String fun = "function(doc) { }";
         final DocumentConverter converter = new DocumentConverter(context, view(fun));
-        final Document[] result = converter.convert(doc("{_id:\"hi\"}"), settings(), null);
-        assertThat(result.length, is(0));
+        final Collection<Document> result = converter.convert(doc("{_id:\"hi\"}"), settings(), null);
+        assertThat(result.size(), is(0));
     }
 
     @Test
     public void testDefaultValue() throws Exception {
         final String fun = "function(doc) { var ret=new Document(); ret.add(doc['arr'].join(' '));  return ret; }";
         final DocumentConverter converter = new DocumentConverter(context, view(fun));
-        final Document[] result = converter.convert(
+        final Collection<Document> result = converter.convert(
                 doc("{_id:\"hi\", arr:[\"1\",\"2\"]}"),
                 settings(),
                 null);
-        assertThat(result.length, is(1));
-        assertThat(result[0].get("default"), is("1 2"));
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().get("default"), is("1 2"));
     }
     
     @Test
     public void testNullValue() throws Exception {
     	 final String fun = "function(doc) { var ret=new Document(); ret.add(doc.foo);  return ret; }";
          final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Document[] result = converter.convert(
+         final Collection<Document> result = converter.convert(
                  doc("{_id:\"hi\", foo:null}"),
                  settings(),
                  null);
-         assertThat(result.length, is(1));
-         assertThat(result[0].get("foo"), is(nullValue()));
+         assertThat(result.size(), is(1));
+         assertThat(result.iterator().next().get("foo"), is(nullValue()));
     }
     
     @Test
     public void testLongValue() throws Exception {
     	 final String fun = "function(doc) { var ret=new Document(); ret.add(12, {type:\"long\", field:\"num\"});  return ret; }";
          final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Document[] result = converter.convert(
+         final Collection<Document> result = converter.convert(
                  doc("{_id:\"hi\"}"),
                  settings(),
                  null);
-         assertThat(result.length, is(1));
-         assertThat(result[0].getFieldable("num"), is(NumericField.class));
+         assertThat(result.size(), is(1));
+         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
     }
     
     @Test
     public void testDateString() throws Exception {
     	 final String fun = "function(doc) { var ret=new Document(); ret.add(\"2009-01-01\", {type:\"date\", field:\"num\"});  return ret; }";
          final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Document[] result = converter.convert(
+         final Collection<Document> result = converter.convert(
                  doc("{_id:\"hi\"}"),
                  settings(),
                  null);
-         assertThat(result.length, is(1));
-         assertThat(result[0].getFieldable("num"), is(NumericField.class));
+         assertThat(result.size(), is(1));
+         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
     }
     
     @Test
     public void testDateObject() throws Exception {
     	 final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(2010,8,13), {type:\"date\", field:\"num\"});  return ret; }";
          final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Document[] result = converter.convert(
+         final Collection<Document> result = converter.convert(
                  doc("{_id:\"hi\"}"),
                  settings(),
                  null);
-         assertThat(result.length, is(1));
-         assertThat(result[0].getFieldable("num"), is(NumericField.class));
-         assertThat((Long)((NumericField)result[0].getFieldable("num")).getNumericValue(), is(1284332400000L));
+         assertThat(result.size(), is(1));
+         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+         assertThat((Long)((NumericField)result.iterator().next().getFieldable("num")).getNumericValue(), is(1284332400000L));
     }
     
     @Test
     public void testDateObject2() throws Exception {
          final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(\"January 6, 1972 16:05:00\"), {type:\"date\", field:\"num\"});  return ret; }";
          final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Document[] result = converter.convert(
+         final Collection<Document> result = converter.convert(
                  doc("{_id:\"hi\"}"),
                  settings(),
                  null);
-         assertThat(result.length, is(1));
-         assertThat(result[0].getFieldable("num"), is(NumericField.class));
-         assertThat((Long)((NumericField)result[0].getFieldable("num")).getNumericValue(), is(63561900000L));
+         assertThat(result.size(), is(1));
+         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+         assertThat((Long)((NumericField)result.iterator().next().getFieldable("num")).getNumericValue(), is(63561900000L));
     }
 
     @Test
     public void testParseInt() throws Exception {
     	 final String fun = "function(doc) { var ret=new Document(); ret.add(parseInt(\"12.5\"), {type:\"int\", field:\"num\"});  return ret; }";
          final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Document[] result = converter.convert(
+         final Collection<Document> result = converter.convert(
                  doc("{_id:\"hi\"}"),
                  settings(),
                  null);
-         assertThat(result.length, is(1));
-         assertThat(result[0].getFieldable("num"), is(NumericField.class));
+         assertThat(result.size(), is(1));
+         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
     }
     
 	@Test
@@ -276,9 +277,9 @@ public class DocumentConverterTest {
 		final String fun = "function(doc) { if (doc.foo && doc.bar) { return new Document(); }; return null; }";
 		final DocumentConverter converter = new DocumentConverter(context,
 				view(fun));
-		final Document[] result = converter.convert(
+		final Collection<Document> result = converter.convert(
 				doc("{_id:\"hi\", foo: null, bar: null}"), settings(), null);
-		assertThat(result.length, is(0));
+		assertThat(result.size(), is(0));
 	}
 
     private CouchDocument doc(final String json) throws JSONException {

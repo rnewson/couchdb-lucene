@@ -104,12 +104,7 @@ public final class LuceneServlet extends HttpServlet {
 
             // Delete all indexes except the keepers.
             final File[] dirs = DatabaseIndexer.uuidDir(root, db.getUuid()).listFiles();
-            if (dirs == null) {
-                LOG.warn(DatabaseIndexer.uuidDir(root, db.getUuid())
-                         + " is not a directory or could not be read.");
-                ServletUtils.sendJsonError(req, resp, 500, "index_dir_perms");
-                return;
-            } else {
+            if (dirs != null) {
                 for (final File dir : dirs) {
                     if (!viewKeep.contains(dir.getName())) {
                         LOG.info("Cleaning old index at " + dir);
