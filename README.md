@@ -580,7 +580,7 @@ The Content-Type of the response is negotiated via the Accept request header lik
 Calling couchdb-lucene without arguments returns a JSON object with information about the index.
 
 <pre>
-http://127.0.0.1:5984/&lt;db>/_fti/_design/foo/&lt;index
+http://127.0.0.1:5984/&lt;db>/_fti/_design/foo/&lt;index&gt;
 </pre>
 
 returns;
