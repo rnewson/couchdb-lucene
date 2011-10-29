@@ -16,6 +16,8 @@ package com.github.rnewson.couchdb.lucene;
  * limitations under the License.
  */
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
@@ -27,7 +29,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.github.rnewson.couchdb.lucene.Config;
 import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
+
 
 /**
  * Custom query parser that uses NumericFieldQuery where appropriate.
@@ -37,8 +41,12 @@ import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
  */
 public final class CustomQueryParser extends QueryParser {
 
-    public CustomQueryParser(final Version matchVersion, final String f, final Analyzer a) {
+    public CustomQueryParser (final Version matchVersion, final String f, final Analyzer a) throws ConfigurationException {
         super(matchVersion, f, a);
+	// Allow users to set setAllowLeasingWildcard true
+	HierarchicalINIConfiguration ini = new Config().getConfiguration();
+	boolean allowLeadingWildcard = ini.getBoolean("lucene.setAllowLeadingWildcard", false);
+	this.setAllowLeadingWildcard(allowLeadingWildcard);
     }
 
 	public static Sort toSort(final String sort) throws ParseException {
