@@ -36,6 +36,7 @@ import org.apache.lucene.analysis.fr.FrenchAnalyzer;
 import org.apache.lucene.analysis.nl.DutchAnalyzer;
 import org.apache.lucene.analysis.ru.RussianAnalyzer;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
+import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
 import org.json.JSONException;
@@ -59,6 +60,12 @@ public enum Analyzers {
         @Override
         public Analyzer newAnalyzer(final String args) {
             return new CJKAnalyzer(Constants.VERSION);
+        }
+    },
+    CLASSIC {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new ClassicAnalyzer(Constants.VERSION);
         }
     },
     CZECH {
