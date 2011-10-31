@@ -45,8 +45,13 @@ public final class JSONErrorHandler extends ErrorHandler {
                 ServletUtils.sendJsonError(request, response, connection.getResponse().getStatus(),
                         new JSONObject(reason));
             } else {
-                ServletUtils.sendJsonError(request, response, connection.getResponse().getStatus(),
-                        reason);
+				if (reason != null)
+					ServletUtils.sendJsonError(request, response, connection.getResponse().getStatus(),
+							reason);
+				else
+					ServletUtils.sendJsonError(request, response, connection.getResponse().getStatus(),
+						"Unknown");
+				
             }
         } catch (final JSONException e) {
             response.sendError(500);

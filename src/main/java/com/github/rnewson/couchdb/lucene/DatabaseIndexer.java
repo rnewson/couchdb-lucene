@@ -74,8 +74,11 @@ import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.ServletUtils;
 import com.github.rnewson.couchdb.lucene.util.StopWatch;
 import com.github.rnewson.couchdb.lucene.util.Utils;
+import org.apache.lucene.search.BooleanQuery;
 
 public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
+
+
 
 	private class IndexState {
 
@@ -186,7 +189,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					    wait(timeout);
 					    timeout -= (System.currentTimeMillis() - start);
 					    if (timeout <= 0) {
-					        throw new IOException("Search timed out.");
+					        throw new IOException(String.format("Search timed out while waiting for %s (currently at: %s)",latest,pending_seq));
 					    }
 					} catch (final InterruptedException e) {
 						throw new IOException("Search timed out.");
@@ -336,24 +339,31 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 }
 
                 final UpdateSequence seq = UpdateSequence.parseUpdateSequence(json.getString("seq"));
+				
                 final String id = json.getString("id");
-                CouchDocument doc;
+                CouchDocument doc = null;
+				boolean isDeleted = false;
                 if (!json.isNull("doc")) {
                 	doc = new CouchDocument(json.getJSONObject("doc"));
+					isDeleted = doc.isDeleted();
                 } else {
-                	// include_docs=true doesn't work prior to 0.11.
-                	try {
-                		doc = database.getDocument(id);
-                	} catch (final HttpResponseException e) {
-                		switch (e.getStatusCode()) {
-                		case HttpStatus.SC_NOT_FOUND:
-                			doc = CouchDocument.deletedDocument(id);
-                			break;
-                		default:
-                			logger.warn("Failed to fetch " + id);
-                			break loop;
-                		}
-                	}
+					isDeleted = json.has("deleted") && json.getBoolean("deleted");
+					if (!isDeleted) {
+						logger.warn("Doc was null:" + id);
+						// include_docs=true doesn't work prior to 0.11.
+						try {
+							doc = database.getDocument(id);
+						} catch (final HttpResponseException e) {
+							switch (e.getStatusCode()) {
+							case HttpStatus.SC_NOT_FOUND:
+								doc = CouchDocument.deletedDocument(id);
+								break;
+							default:
+								logger.warn("Failed to fetch " + id);
+								break loop;
+							}
+						}
+					}
                 }
 
                 if (id.startsWith("_design")) {
@@ -363,7 +373,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 	}
                 }
 
-                if (doc.isDeleted()) {
+                if (isDeleted) {
                 	for (final IndexState state : states.values()) {
                 		state.writer.deleteDocuments(new Term("_id", id));
                 		state.setPendingSequence(seq);
@@ -471,8 +481,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			close();
 		}
 	}
+    public void search(final HttpServletRequest req,
+			final HttpServletResponse resp) throws IOException, JSONException {
+        search(req.getParameter(LuceneServlet.QUERY_PARM), req, resp);
+    }
 
-	public void search(final HttpServletRequest req,
+	public void search(final String query,final HttpServletRequest req,
 			final HttpServletResponse resp) throws IOException, JSONException {
 		final IndexState state = getState(req, resp);
 		if (state == null)
@@ -485,7 +499,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				resp.setStatus(304);
 				return;
 			}
-			for (final String queryString : getQueryStrings(req)) {
+			for (final String queryString : getQueryStrings(query)) {
 				final Analyzer analyzer = state.analyzer(req.getParameter("analyzer"));
 				final Operator operator = "and".equalsIgnoreCase(req.getParameter("default_operator"))
 				? Operator.AND : Operator.OR;
@@ -609,10 +623,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 								.getDocuments(fetch_ids);
 						for (int j = 0; j < max; j++) {
 							final CouchDocument doc = fetched_docs.get(j);
-							final JSONObject row = doc == null ?
-									new JSONObject("{\"error\":\"not_found\"}") :
-									doc.asJson();
-							rows.getJSONObject(j).put("doc", row);
+							rows.getJSONObject(j).put("doc",doc!=null?doc.asJson():null);
 						}
 					}
 					stopWatch.lap("fetch");
@@ -671,7 +682,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private String[] getQueryStrings(final HttpServletRequest req) {
-		return Utils.splitOnCommas(req.getParameter("q"));
+		return getQueryStrings(req.getParameter("q"));
+	}
+    private String[] getQueryStrings(final String query) {
+		return Utils.splitOnCommas(query);
 	}
 
 	private void close() {
@@ -818,10 +832,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		final LogByteSizeMergePolicy mergePolicy = new LogByteSizeMergePolicy();
 		mergePolicy.setMergeFactor(ini.getInt("lucene.mergeFactor", 10));
-		mergePolicy.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
-				false));
+		mergePolicy.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",false));
+		
+		BooleanQuery.setMaxClauseCount(ini.getInt("lucene.maxBooleanClauseCount", 10000));
+		
 		config.setMergePolicy(mergePolicy);
-
+		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 		config.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB",
 				IndexWriterConfig.DEFAULT_RAM_BUFFER_SIZE_MB));
 
