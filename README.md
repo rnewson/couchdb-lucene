@@ -389,7 +389,7 @@ Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to 
 
 <h1>Searching with couchdb-lucene</h1>
 
-You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">query syntax</a>.
+You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/3_4_0/queryparsersyntax.html">query syntax</a>.
 
 <h2>Numeric range queries</h2>
 
