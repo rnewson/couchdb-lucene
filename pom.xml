@@ -179,6 +179,7 @@
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            <mainClass>com.github.rnewson.couchdb.lucene.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
