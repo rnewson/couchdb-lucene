@@ -628,3 +628,21 @@ url=http://foo:bar@localhost:5984/
 </pre>
 
 and couchdb-lucene will authenticate to couchdb.
+
+<h1>Other Tricks</h1>
+
+A couple of 'expert' options can be set in the couchdb-lucene.ini file;
+
+Leading wildcards are prohibited by default as they perform very poorly most of the time. You can enable them as follows;
+
+<pre>
+[lucene]
+allowLeadingWildcard=true
+</pre>
+
+Lucene automatically converts terms to lower case in wildcard situations. You can disable this with;
+
+<pre>
+[lucene]
+lowercaseExpandedTerms=false
+</pre>
