@@ -139,6 +139,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					Constants.DEFAULT_FIELD, analyzer);
 			parser.setDefaultOperator(operator);
 			parser.setAllowLeadingWildcard(ini.getBoolean("lucene.allowLeadingWildcard", false));
+			parser.setLowercaseExpandedTerms(ini.getBoolean("lucene.lowercaseExpandedTerms", true));
 			return parser.parse(query);
 		}
 
