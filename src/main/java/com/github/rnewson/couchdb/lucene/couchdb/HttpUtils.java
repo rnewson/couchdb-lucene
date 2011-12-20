@@ -40,9 +40,23 @@ public final class HttpUtils {
     public static final String execute(final HttpClient httpClient, final HttpUriRequest request) throws IOException {
         return httpClient.execute(request, new ErrorPreservingResponseHandler());
     }
-
+    
     public static final String get(final HttpClient httpClient, final String url) throws IOException {
-        return execute(httpClient, new HttpGet(url));
+    	return get(httpClient, url, null, null);
+    }
+    
+    public static final String get(final HttpClient httpClient, final String url, final String user, final String password)  throws IOException {
+    	return execute(httpClient, getHttpGetRequest(url, user, password));
+    }
+    
+    public static final HttpGet getHttpGetRequest(final String url, final String user, final String password) {
+    	HttpGet get = new HttpGet(url);
+    	if (user != null && password != null) {
+	    	sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+	    	String userInfo = user + ":" + password;
+	    	get.addHeader("Authorization", "Basic " + encoder.encode(userInfo.getBytes()));
+    	}
+    	return get;
     }
 
     public static final String post(final HttpClient httpClient, final String url, final JSONObject body) throws IOException {

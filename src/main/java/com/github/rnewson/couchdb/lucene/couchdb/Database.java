@@ -39,10 +39,29 @@ public final class Database {
 	private final HttpClient httpClient;
 
 	private final String url;
+	
+	private String user;
+	private String password;
 
 	public Database(final HttpClient httpClient, final String url) {
 		this.httpClient = httpClient;
 		this.url = url.endsWith("/") ? url : url + "/";
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getUser() {
+		return user;
+	}
+
+	public void setUser(String user) {
+		this.user = user;
 	}
 
 	public boolean create() throws IOException {
@@ -57,20 +76,20 @@ public final class Database {
 		final String body = HttpUtils.get(httpClient, String
 				.format("%s_all_docs?startkey=%s&endkey=%s&include_docs=true",
 						url, Utils.urlEncode("\"_design\""), Utils
-								.urlEncode("\"_design0\"")));
+								.urlEncode("\"_design0\"")), user, password);
 		final JSONObject json = new JSONObject(body);
 		return toDesignDocuments(json);
 	}
 
 	public CouchDocument getDocument(final String id) throws IOException, JSONException {
 		final String response = HttpUtils.get(httpClient, url
-				+ Utils.urlEncode(id));
+				+ Utils.urlEncode(id), user, password);
 		return new CouchDocument(new JSONObject(response));
 	}
 
 	public DesignDocument getDesignDocument(final String id) throws IOException, JSONException {
 		final String response = HttpUtils.get(httpClient, url
-				+ Utils.urlEncode(id));
+				+ Utils.urlEncode(id), user, password);
 		return new DesignDocument(new JSONObject(response));
 	}
 
@@ -95,7 +114,7 @@ public final class Database {
 
 	public DatabaseInfo getInfo() throws IOException, JSONException {
 		return new DatabaseInfo(new JSONObject(HttpUtils.get(httpClient,
-				url)));
+				url, user, password)));
 	}
 
 	public <T> T handleAttachment(final String doc, final String att,
@@ -108,7 +127,7 @@ public final class Database {
 	public HttpUriRequest getChangesRequest(final UpdateSequence since)
 			throws IOException {
 		final String uri = url + "_changes?feed=continuous&heartbeat=15000&include_docs=true";
-		return new HttpGet(since.appendSince(uri));
+ 		return HttpUtils.getHttpGetRequest(since.appendSince(uri), user, password);
 	}
 
 	public boolean saveDocument(final String id, final String body)
