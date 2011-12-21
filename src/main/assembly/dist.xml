@@ -7,7 +7,7 @@
   <fileSets>
     <fileSet>
       <directory>${project.basedir}</directory>
-      <outputDirectory>/usr/share/doc/couchdb-lucene</outputDirectory>
+      <outputDirectory>${destDocDir}/couchdb-lucene</outputDirectory>
       <includes>
         <include>README*</include>
         <include>LICENSE*</include>
@@ -22,38 +22,38 @@
     <file>
       <source>${project.basedir}/src/main/bin/couchdb-lucene</source>
       <fileMode>755</fileMode>
-      <outputDirectory>/usr/local/bin</outputDirectory>
+      <outputDirectory>${destBinDir}</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/bin/kill_ppid</source>
       <fileMode>755</fileMode>
-      <outputDirectory>/usr/local/bin</outputDirectory>
+      <outputDirectory>${destVarLibDir}/couchdb-lucene</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/resources/couchdb-lucene.ini</source>
       <fileMode>644</fileMode>
-      <outputDirectory>/etc/couchdb-lucene</outputDirectory>
+      <outputDirectory>${destEtcDir}/couchdb-lucene</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/resources/log4j.xml</source>
       <fileMode>644</fileMode>
-      <outputDirectory>/etc/couchdb-lucene</outputDirectory>
+      <outputDirectory>${destEtcDir}/couchdb-lucene</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/couchdb-external-hook.py</source>
       <fileMode>755</fileMode>
-      <outputDirectory>/usr/local/bin</outputDirectory>
+      <outputDirectory>${destBinDir}</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/tools/etc/init.d/couchdb-lucene</source>
       <fileMode>755</fileMode>
-      <outputDirectory>/etc/init.d</outputDirectory>
+      <outputDirectory>${destEtcDir}/init.d</outputDirectory>
     </file>
   </files>
   <dependencySets>
     <dependencySet>
       <scope>runtime</scope>
-      <outputDirectory>/lib/couchdb-lucene</outputDirectory>
+      <outputDirectory>${destVarLibDir}/couchdb-lucene</outputDirectory>
     </dependencySet>
   </dependencySets>
 </assembly>
