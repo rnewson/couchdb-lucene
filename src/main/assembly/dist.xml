@@ -6,50 +6,54 @@
   </formats>
   <fileSets>
     <fileSet>
+      <directory>${project.basedir}</directory>
+      <outputDirectory>/usr/share/doc/couchdb-lucene</outputDirectory>
       <includes>
-        <include>${project.basedir}/README*</include>
-        <include>${project.basedir}/LICENSE*</include>
-        <include>${project.basedir}/NOTICE*</include>
+        <include>README*</include>
+        <include>LICENSE*</include>
+        <include>NOTICE*</include>
+        <include>BREAKING_CHANGES*</include>
+        <include>TODO*</include>
+        <include>THANKS*</include>
       </includes>
-      <outputDirectory>/</outputDirectory>
     </fileSet>
   </fileSets>
   <files>
     <file>
-      <source>${project.basedir}/src/main/bin/run</source>
+      <source>${project.basedir}/src/main/bin/couchdb-lucene</source>
       <fileMode>755</fileMode>
-      <outputDirectory>/bin</outputDirectory>
+      <outputDirectory>/usr/local/bin</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/bin/kill_ppid</source>
       <fileMode>755</fileMode>
-      <outputDirectory>/bin</outputDirectory>
+      <outputDirectory>/usr/local/bin</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/resources/couchdb-lucene.ini</source>
       <fileMode>644</fileMode>
-      <outputDirectory>/conf</outputDirectory>
+      <outputDirectory>/etc/couchdb-lucene</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/resources/log4j.xml</source>
       <fileMode>644</fileMode>
-      <outputDirectory>/conf</outputDirectory>
+      <outputDirectory>/etc/couchdb-lucene</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/couchdb-external-hook.py</source>
-      <fileMode>777</fileMode>
-      <outputDirectory>/tools</outputDirectory>
+      <fileMode>755</fileMode>
+      <outputDirectory>/usr/local/bin</outputDirectory>
     </file>
     <file>
       <source>${project.basedir}/src/main/tools/etc/init.d/couchdb-lucene</source>
       <fileMode>755</fileMode>
-      <outputDirectory>/tools/etc/init.d/couchdb-lucene</outputDirectory>
+      <outputDirectory>/etc/init.d</outputDirectory>
     </file>
   </files>
   <dependencySets>
     <dependencySet>
       <scope>runtime</scope>
-      <outputDirectory>/lib</outputDirectory>
+      <outputDirectory>/lib/couchdb-lucene</outputDirectory>
     </dependencySet>
   </dependencySets>
 </assembly>
