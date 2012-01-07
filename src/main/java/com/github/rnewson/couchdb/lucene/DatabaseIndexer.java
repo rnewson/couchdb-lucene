@@ -178,7 +178,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			if (staleOk) {
 				return;
 			}
-			final UpdateSequence latest = database.getInfo().getUpdateSequence();
+			final UpdateSequence latest = database.getLastSequence();
 			synchronized (this) {
 			    long timeout = getSearchTimeout();
 				while (pending_seq.isEarlierThan(latest)) {

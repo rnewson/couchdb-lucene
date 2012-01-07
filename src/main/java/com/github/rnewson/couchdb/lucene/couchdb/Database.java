@@ -98,6 +98,12 @@ public final class Database {
 				url)));
 	}
 
+    public UpdateSequence getLastSequence() throws IOException, JSONException {
+        final JSONObject result = new JSONObject(HttpUtils.get(httpClient, url
+                + "_changes?limit=0&descending=true"));
+        return UpdateSequence.parseUpdateSequence(result.getString("last_seq"));
+    }
+
 	public <T> T handleAttachment(final String doc, final String att,
 			final ResponseHandler<T> handler) throws IOException {
 		final HttpGet get = new HttpGet(url + "/" + Utils.urlEncode(doc) + "/"
