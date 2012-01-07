@@ -41,14 +41,14 @@ public class DesignDocument extends CouchDocument {
 		this(doc.json);
 	}
 
-	public View getView(final String name) {
+	public View getView(final String name) throws JSONException {
 		if (fulltext == null)
 			return null;
 		final JSONObject json = fulltext.optJSONObject(name);
-		return json == null ? null : new View(json);
+		return json == null ? null : new View(getId() + "/" + name, json);
 	}
 
-	public Map<String, View> getAllViews() {
+	public Map<String, View> getAllViews() throws JSONException {
 		if (fulltext == null)
 			return Collections.emptyMap();
 		final Map<String, View> result = new HashMap<String, View>();

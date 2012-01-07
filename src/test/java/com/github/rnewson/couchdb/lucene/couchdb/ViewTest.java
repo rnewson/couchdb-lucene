@@ -23,7 +23,7 @@ public class ViewTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void noIndex() throws Exception {
-        new View(new JSONObject("{}"));
+        new View(null, new JSONObject("{}"));
     }
 
     @Test
@@ -31,7 +31,7 @@ public class ViewTest {
         final JSONObject json = new JSONObject();
         json.put("index", "function(doc) { return null; }");
 
-        new View(json);
+        new View(null, json);
     }
 
 }

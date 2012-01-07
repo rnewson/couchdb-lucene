@@ -293,7 +293,7 @@ public class DocumentConverterTest {
     private View view(final String fun) throws JSONException {
         final JSONObject json = new JSONObject();
         json.put("index", fun);
-        return new View(json);
+        return new View(null, json);
     }
 
 }

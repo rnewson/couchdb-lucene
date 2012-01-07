@@ -33,6 +33,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
@@ -72,7 +73,12 @@ public final class DocumentConverter {
         ScriptableObject.putProperty(scope, "log", new JSLog());
 
         // Compile user-specified function
-        viewFun = view.compileFunction(context, scope);
+        try {
+            viewFun = view.compileFunction(context, scope);
+        } catch (final RhinoException e) {
+            LOG.error("View code for " + view + " does not compile.");
+            throw e;
+        }
     }
 
     public Collection<Document> convert(

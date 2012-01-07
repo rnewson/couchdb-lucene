@@ -42,10 +42,13 @@ public final class View {
 
 	private final JSONObject json;
 
-	public View(final JSONObject json) {
+	private final String name;
+
+	public View(final String name, final JSONObject json) {
 		if (!json.has(INDEX)) {
 			throw new IllegalArgumentException(json + " is not an index");
 		}
+		this.name = name;
 		this.json = json;
 	}
 
@@ -121,7 +124,7 @@ public final class View {
 
 	@Override
 	public String toString() {
-		return String.format("View[digest=%s]", getDigest());
+		return String.format("View[name=%s, digest=%s]", name, getDigest());
 	}
 
 }
