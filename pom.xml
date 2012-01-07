@@ -110,6 +110,13 @@
         <tika-version>1.0</tika-version>
         <jetty-version>6.1.20</jetty-version>
         <http-version>4.0.1</http-version>
+        <env>default</env>
+        <destRootDir>/usr/local</destRootDir>
+        <destVarDir>${destRootDir}/var</destVarDir>
+        <destVarLibDir>${destVarDir}/lib</destVarLibDir>
+        <destEtcDir>${destRootDir}/etc</destEtcDir>
+        <destBinDir>${destRootDir}/bin</destBinDir>
+        <destDocDir>${destRootDir}/share/doc</destDocDir>
     </properties>
     <issueManagement>
         <system>github</system>
@@ -179,6 +186,7 @@
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            <mainClass>com.github.rnewson.couchdb.lucene.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
