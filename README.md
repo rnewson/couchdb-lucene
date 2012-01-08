@@ -1,10 +1,11 @@
+
 <h1>Version Compatibility</h1>
 
 <table>
 <tr><th>CouchDB</th><th>couchdb-lucene</th></tr>
 <tr><td>0.9.1, 0.10</td><td>0.4</td></tr>
 <tr><td>0.11</td><td>0.4-maint (0.4 with patch for trunk compatibility)</td></tr>
-<tr><td>0.10.x, 0.11.x, 1.0.x, 1.1.x</td><td>0.5.x, 0.6.x, 0.7.x</td></tr>
+<tr><td>0.10.x, 0.11.x, 1.0.x, 1.1.x, 1.2.x</td><td>0.5.x, 0.6.x, 0.7.x, 0.8.x</td></tr>
 </table>
 
 <h1>Breaking Changes</h1>
@@ -389,7 +390,7 @@ Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to 
 
 <h1>Searching with couchdb-lucene</h1>
 
-You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/3_4_0/queryparsersyntax.html">query syntax</a>.
+You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/3_5_0/queryparsersyntax.html">query syntax</a>.
 
 <h2>Numeric range queries</h2>
 

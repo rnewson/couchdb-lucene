@@ -1,3 +1,26 @@
+Version 0.8.0
+-------------
+
+* Upgrade to Lucene 3.5
+* Upgrade to Tika 1.0
+* Add include_fields=[field] to allow control over stored fields
+* Add [lucene] allowLeadingWildcard=true|false option
+* Add [lucene] lowercaseExpandedTerms=true|false
+* Include uuid and digest in view info
+* Include ddoc and view name in compilation error log
+* Fix hang when last change was _revs_limit or _security
+* Add "classic" analyzer for pre-3.3 analysis
+
+Version 0.7.0
+-------------
+
+* Upgrade to Lucene 3.3
+* Upgrade to Tika 0.9
+* Add snowball analyzer
+* Add BigCouch compatibility
+* Return stored numeric fields as numbers, not strings
+* include_docs=true now gets docs once, not twice
+
 Version 0.6.0
 -------------
 
