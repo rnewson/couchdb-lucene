@@ -17,7 +17,7 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="Description of the service"
 NAME="couchdb-lucene"
-DAEMON=/usr/local/couchdb-lucene-0.5.5/bin/run
+DAEMON=/usr/local/couchdb-lucene-0.8.0/bin/run
 PIDFILE=/var/run/$NAME.pid
 DAEMON_ARGS="$PIDFILE"
 SCRIPTNAME=/etc/init.d/$NAME
