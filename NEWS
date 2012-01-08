@@ -32,6 +32,7 @@ Version 0.6.0
 * Include init.d startup script in zip.
 * Allow query-time override of analyzer.
 * Split multiple queries with embedding commas correctly.
+* Support for remote couchdb nodes over HTTPS.
 
 Version 0.5.6
 -------------
