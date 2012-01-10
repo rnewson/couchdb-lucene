@@ -1,4 +1,3 @@
-
 <h1>Version Compatibility</h1>
 
 <table>
@@ -32,7 +31,7 @@ brew install couchdb-lucene
 </pre>
 
 <ol>
-<li>Install Maven 2.
+<li>Install Maven (2 or 3).
 <li>checkout repository
 <li>type 'mvn'
 <li>cd target
