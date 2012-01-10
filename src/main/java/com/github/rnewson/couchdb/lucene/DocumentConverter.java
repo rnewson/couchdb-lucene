@@ -57,6 +57,7 @@ public final class DocumentConverter {
     public DocumentConverter(final Context context, final View view) throws IOException, JSONException {
         this.context = context;
         scope = context.initStandardObjects();
+        context.setLanguageVersion(Context.VERSION_1_8);
 
         // Allow custom document helper class.
         try {
