@@ -1,11 +1,6 @@
 <h1>Version Compatibility</h1>
 
-<table>
-<tr><th>CouchDB</th><th>couchdb-lucene</th></tr>
-<tr><td>0.9.1, 0.10</td><td>0.4</td></tr>
-<tr><td>0.11</td><td>0.4-maint (0.4 with patch for trunk compatibility)</td></tr>
-<tr><td>0.10.x, 0.11.x, 1.0.x, 1.1.x, 1.2.x</td><td>0.5.x, 0.6.x, 0.7.x, 0.8.x</td></tr>
-</table>
+CouchDB-Lucene works with all version of CouchDB from 0.10 upwards.
 
 <h1>Breaking Changes</h1>
 
