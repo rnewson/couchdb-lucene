@@ -127,7 +127,7 @@ public final class LuceneServlet extends HttpServlet {
 		if (!section.containsKey("url")) {
 			throw new FileNotFoundException(sectionName + " is missing or has no url parameter.");
 		}
-		return new Couch(client, section.getString("url"));
+		return new Couch(client, section.getString("url"), req);
 	}
 
 	private synchronized DatabaseIndexer getIndexer(final Database database)
@@ -135,18 +135,21 @@ public final class LuceneServlet extends HttpServlet {
 		DatabaseIndexer result = indexers.get(database);
 		Thread thread = threads.get(database);
 		if (result == null || thread == null || !thread.isAlive()) {
-			result = new DatabaseIndexer(client, root, database, ini);
-			thread = new Thread(result);
-			thread.start();
-			result.awaitInitialization();
-			if (result.isClosed()) {
-			    return null;
-			} else {
-	            indexers.put(database, result);
-		         threads.put(database, thread);
-			}
+		    result = new DatabaseIndexer(client, root, database, ini);
+		    thread = new Thread(result);
+		    thread.start();
+		    result.awaitInitialization();
+		    if (result.isClosed()) {
+		        return null;
+		    } else {
+		        indexers.put(database, result);
+		        threads.put(database, thread);
+		    }
+		} else {
+		    //This will throw an exception if we're not allowed to access
+		    //the database with the current credentials
+		    database.getInfo();
 		}
-
 		return result;
 	}
 

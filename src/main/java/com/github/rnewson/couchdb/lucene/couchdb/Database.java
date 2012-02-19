@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.http.HttpStatus;
@@ -39,38 +40,40 @@ public final class Database {
 	private final HttpClient httpClient;
 
 	private final String url;
+	private final Map<String, String> headers;
 
-	public Database(final HttpClient httpClient, final String url) {
+	public Database(final HttpClient httpClient, final String url, Map<String, String> headers) {
 		this.httpClient = httpClient;
 		this.url = url.endsWith("/") ? url : url + "/";
+		this.headers = headers;
 	}
 
 	public boolean create() throws IOException {
-		return HttpUtils.put(httpClient, url, null) == 201;
+		return HttpUtils.put(httpClient, url, null, headers) == 201;
 	}
 
 	public boolean delete() throws IOException {
-		return HttpUtils.delete(httpClient, url) == 200;
+		return HttpUtils.delete(httpClient, url, headers) == 200;
 	}
 
 	public List<DesignDocument> getAllDesignDocuments() throws IOException, JSONException {
 		final String body = HttpUtils.get(httpClient, String
 				.format("%s_all_docs?startkey=%s&endkey=%s&include_docs=true",
 						url, Utils.urlEncode("\"_design\""), Utils
-								.urlEncode("\"_design0\"")));
+								.urlEncode("\"_design0\"")), headers);
 		final JSONObject json = new JSONObject(body);
 		return toDesignDocuments(json);
 	}
 
 	public CouchDocument getDocument(final String id) throws IOException, JSONException {
 		final String response = HttpUtils.get(httpClient, url
-				+ Utils.urlEncode(id));
+				+ Utils.urlEncode(id), headers);
 		return new CouchDocument(new JSONObject(response));
 	}
 
 	public DesignDocument getDesignDocument(final String id) throws IOException, JSONException {
 		final String response = HttpUtils.get(httpClient, url
-				+ Utils.urlEncode(id));
+				+ Utils.urlEncode(id), headers);
 		return new DesignDocument(new JSONObject(response));
 	}
 
@@ -89,18 +92,18 @@ public final class Database {
 		req.put("keys", keys);
 
 		final String body = HttpUtils.post(httpClient, url
-				+ "_all_docs?include_docs=true", req);
+				+ "_all_docs?include_docs=true", req, headers);
 		return toDocuments(new JSONObject(body));
 	}
 
 	public DatabaseInfo getInfo() throws IOException, JSONException {
 		return new DatabaseInfo(new JSONObject(HttpUtils.get(httpClient,
-				url)));
+				url, headers)));
 	}
 
     public UpdateSequence getLastSequence() throws IOException, JSONException {
         final JSONObject result = new JSONObject(HttpUtils.get(httpClient, url
-                + "_changes?limit=0&descending=true"));
+                + "_changes?limit=0&descending=true", headers));
         return UpdateSequence.parseUpdateSequence(result.getString("last_seq"));
     }
 
@@ -108,18 +111,18 @@ public final class Database {
 			final ResponseHandler<T> handler) throws IOException {
 		final HttpGet get = new HttpGet(url + "/" + Utils.urlEncode(doc) + "/"
 				+ Utils.urlEncode(att));
-		return httpClient.execute(get, handler);
+		return httpClient.execute(HttpUtils.addHeaders(get, headers), handler);
 	}
 
 	public HttpUriRequest getChangesRequest(final UpdateSequence since)
 			throws IOException {
 		final String uri = url + "_changes?feed=continuous&heartbeat=15000&include_docs=true";
-		return new HttpGet(since.appendSince(uri));
+		return HttpUtils.addHeaders(new HttpGet(since.appendSince(uri)), headers);
 	}
 
 	public boolean saveDocument(final String id, final String body)
 			throws IOException {
-		return HttpUtils.put(httpClient, url + Utils.urlEncode(id), body) == 201;
+		return HttpUtils.put(httpClient, url + Utils.urlEncode(id), body, headers) == 201;
 	}
 
 	public UUID getUuid() throws IOException, JSONException {
