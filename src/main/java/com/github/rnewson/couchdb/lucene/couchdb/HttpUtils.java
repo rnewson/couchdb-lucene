@@ -17,6 +17,7 @@ package com.github.rnewson.couchdb.lucene.couchdb;
  */
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
@@ -33,27 +34,27 @@ import com.github.rnewson.couchdb.lucene.util.StatusCodeResponseHandler;
 
 public final class HttpUtils {
 
-    public static final int delete(final HttpClient httpClient, final String url) throws IOException {
-        return httpClient.execute(new HttpDelete(url), new StatusCodeResponseHandler());
+    public static final int delete(final HttpClient httpClient, final String url, Map<String, String> headers) throws IOException {
+        return httpClient.execute(addHeaders(new HttpDelete(url), headers), new StatusCodeResponseHandler());
     }
 
-    public static final String execute(final HttpClient httpClient, final HttpUriRequest request) throws IOException {
-        return httpClient.execute(request, new ErrorPreservingResponseHandler());
+    public static final String execute(final HttpClient httpClient, final HttpUriRequest request, Map<String, String> headers) throws IOException {
+        return httpClient.execute(addHeaders(request, headers), new ErrorPreservingResponseHandler());
     }
 
-    public static final String get(final HttpClient httpClient, final String url) throws IOException {
-        return execute(httpClient, new HttpGet(url));
+    public static final String get(final HttpClient httpClient, final String url, Map<String, String> headers) throws IOException {
+        return execute(httpClient, new HttpGet(url), headers);
     }
 
-    public static final String post(final HttpClient httpClient, final String url, final JSONObject body) throws IOException {
+    public static final String post(final HttpClient httpClient, final String url, final JSONObject body, Map<String, String> headers) throws IOException {
         final HttpPost post = new HttpPost(url);
         post.setHeader("Content-Type", Constants.APPLICATION_JSON);
         post.setEntity(new StringEntity(body.toString(), "UTF-8"));
-        return execute(httpClient, post);
+        return execute(httpClient, post, headers);
     }
 
-    public static final int put(final HttpClient httpClient, final String url, final String body) throws IOException {
-        final HttpPut put = new HttpPut(url);
+    public static final int put(final HttpClient httpClient, final String url, final String body, Map<String, String> headers) throws IOException {
+        final HttpPut put = addHeaders(new HttpPut(url), headers);
         if (body != null) {
             put.setHeader("Content-Type", Constants.APPLICATION_JSON);
             put.setEntity(new StringEntity(body, "UTF-8"));
@@ -61,4 +62,10 @@ public final class HttpUtils {
         return httpClient.execute(put, new StatusCodeResponseHandler());
     }
 
+    static final <T extends HttpUriRequest> T addHeaders(T request, Map<String, String> headers) {
+        for (Map.Entry<String, String> e: headers.entrySet()) {
+            request.addHeader(e.getKey(), e.getValue());
+        }
+        return (T)request;
+    }
 }
