@@ -19,10 +19,16 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -49,6 +55,7 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -129,49 +136,85 @@ public final class HttpClientFactory {
 
     }
 
-    private static DefaultHttpClient instance;
+    private static HttpClient instance;
+    private static HttpClient unauthenticatedClient;
 
     private static HierarchicalINIConfiguration INI;
 
+    /**
+     * Returns a client where each request is responsible for authentication
+     *
+     * @return
+     * @throws MalformedURLException
+     */
+    public static synchronized HttpClient getAuthenticatingInstance(HttpServletRequest request) throws MalformedURLException {
+        if (unauthenticatedClient == null) {
+            unauthenticatedClient = createInstance(false);
+        }
+        final Collection<Header> headers = new LinkedList<Header>();
+        @SuppressWarnings("unchecked")
+        final Enumeration<String> headerEnum = request.getHeaderNames();
+        while (headerEnum.hasMoreElements()) {
+            final String name = headerEnum.nextElement();
+            @SuppressWarnings("unchecked")
+            final Enumeration<String> values = request.getHeaders(name);
+            while (values.hasMoreElements()) {
+                headers.add(new BasicHeader(name, values.nextElement()));
+            }
+        }
+        return new AuthenticatingHttpClient(unauthenticatedClient, headers);
+    }
+
+    /**
+     * Returns a client where the credentials in the configuration file are used for authentication
+     *
+     * @return
+     * @throws MalformedURLException
+     */
     public static synchronized HttpClient getInstance() throws MalformedURLException {
         if (instance == null) {
-            final HttpParams params = new BasicHttpParams();
-            // protocol params.
-            HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
-            HttpProtocolParams.setUseExpectContinue(params, false);
-            // connection params.
-            HttpConnectionParams.setTcpNoDelay(params, true);
-            HttpConnectionParams.setStaleCheckingEnabled(params, false);
-            ConnManagerParams.setMaxTotalConnections(params, 1000);
-            ConnManagerParams.setMaxConnectionsPerRoute(params, new ConnPerRouteBean(1000));
+            instance = createInstance(true);
+        }
+        return instance;
+    }
 
-            final SchemeRegistry schemeRegistry = new SchemeRegistry();
-            schemeRegistry
-                    .register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 5984));
-            schemeRegistry
-            		.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
-            final ClientConnectionManager cm = new ShieldedClientConnManager(
-                    new ThreadSafeClientConnManager(params, schemeRegistry));
+    private static HttpClient createInstance(boolean authenticate) throws MalformedURLException {
+        final HttpParams params = new BasicHttpParams();
+        // protocol params.
+        HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
+        HttpProtocolParams.setUseExpectContinue(params, false);
+        // connection params.
+        HttpConnectionParams.setTcpNoDelay(params, true);
+        HttpConnectionParams.setStaleCheckingEnabled(params, false);
+        ConnManagerParams.setMaxTotalConnections(params, 1000);
+        ConnManagerParams.setMaxConnectionsPerRoute(params, new ConnPerRouteBean(1000));
 
-            instance = new DefaultHttpClient(cm, params);
+        final SchemeRegistry schemeRegistry = new SchemeRegistry();
+        schemeRegistry
+                .register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 5984));
+        schemeRegistry
+                .register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
+        final ClientConnectionManager cm = new ShieldedClientConnManager(
+                new ThreadSafeClientConnManager(params, schemeRegistry));
 
-            if (INI != null) {
-                final CredentialsProvider credsProvider = new BasicCredentialsProvider();
-                final Iterator<?> it = INI.getKeys();
-                while (it.hasNext()) {
-                    final String key = (String) it.next();
-                    if (!key.startsWith("lucene.") && key.endsWith(".url")) {
-                        final URL url = new URL(INI.getString(key));
-                        if (url.getUserInfo() != null) {
-                            credsProvider.setCredentials(
-                                    new AuthScope(url.getHost(), url.getPort()),
-                                    new UsernamePasswordCredentials(url.getUserInfo()));
-                        }
+        final DefaultHttpClient instance = new DefaultHttpClient(cm, params);
+
+        if (INI != null) {
+            final CredentialsProvider credsProvider = new BasicCredentialsProvider();
+            final Iterator<?> it = INI.getKeys();
+            while (it.hasNext()) {
+                final String key = (String) it.next();
+                if (!key.startsWith("lucene.") && key.endsWith(".url")) {
+                    final URL url = new URL(INI.getString(key));
+                    if (authenticate && url.getUserInfo() != null) {
+                        credsProvider.setCredentials(
+                                new AuthScope(url.getHost(), url.getPort()),
+                                new UsernamePasswordCredentials(url.getUserInfo()));
                     }
                 }
-                instance.setCredentialsProvider(credsProvider);
-                instance.addRequestInterceptor(new PreemptiveAuthenticationRequestInterceptor(), 0);
             }
+            instance.setCredentialsProvider(credsProvider);
+            instance.addRequestInterceptor(new PreemptiveAuthenticationRequestInterceptor(), 0);
         }
         return instance;
     }
