@@ -2,7 +2,6 @@ package com.github.rnewson.couchdb.lucene;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Arrays;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -17,42 +16,10 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.protocol.HTTP;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.security.UserRealm;
 
 public class CouchDbRealm implements UserRealm {
-
-	private class CouchDbPrincipal implements Principal {
-
-		private final String name;
-		private final JSONArray roles;
-
-		public CouchDbPrincipal(final String name, final JSONArray roles) {
-			this.name = name;
-			this.roles = roles;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public boolean isInRole(final String role) {
-			for (int i = 0; i < roles.length(); i++) {
-				try {
-					if (role.equals(roles.getString(i)))
-						return true;
-				} catch (JSONException e) {
-					// ignored.
-				}
-			}
-			return false;
-		}
-
-	}
 
 	private final HttpClient client;
 
@@ -74,7 +41,8 @@ public class CouchDbRealm implements UserRealm {
 
 	public Principal authenticate(final String username,
 			final Object credentials, final Request req) {
-		final String sectionName = new PathParts(req).getKey();
+		final PathParts parts = new PathParts(req);
+		final String sectionName = parts.getKey();
 		final Configuration section = ini.getSection(sectionName);
 		if (!section.containsKey("url")) {
 			return null;
@@ -83,7 +51,7 @@ public class CouchDbRealm implements UserRealm {
 		String url = section.getString("url");
 		url = url.endsWith("/") ? url : url + "/";
 
-		final HttpGet get = new HttpGet(url + "_session");
+		final HttpGet get = new HttpGet(url + parts.getDatabaseName());
 		final UsernamePasswordCredentials creds = new UsernamePasswordCredentials(
 				username, (String) credentials);
 		final Header auth = BasicScheme.authenticate(creds,
@@ -96,18 +64,7 @@ public class CouchDbRealm implements UserRealm {
 				public Principal handleResponse(final HttpResponse response)
 						throws ClientProtocolException, IOException {
 					if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-						final String body = EntityUtils.toString(response
-								.getEntity());
-						try {
-							final JSONObject json = new JSONObject(body);
-							final JSONObject userCtx = json
-									.getJSONObject("userCtx");
-							final JSONArray roles = userCtx
-									.getJSONArray("roles");
-							return new CouchDbPrincipal(username, roles);
-						} catch (final JSONException e) {
-							return null;
-						}						
+						return new BasicUserPrincipal(username);
 					}
 					return null;
 				}
@@ -124,7 +81,7 @@ public class CouchDbRealm implements UserRealm {
 	}
 
 	public boolean isUserInRole(Principal user, String role) {
-		return ((CouchDbPrincipal) user).isInRole(role);
+		return true;
 	}
 
 	public void disassociate(Principal user) {
