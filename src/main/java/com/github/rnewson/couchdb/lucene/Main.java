@@ -23,6 +23,10 @@ import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.nio.SelectChannelConnector;
+import org.mortbay.jetty.security.Constraint;
+import org.mortbay.jetty.security.ConstraintMapping;
+import org.mortbay.jetty.security.HashUserRealm;
+import org.mortbay.jetty.security.SecurityHandler;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.ServletHolder;
@@ -56,6 +60,24 @@ public class Main {
         context.addServlet(new ServletHolder(servlet), "/*");
         context.addFilter(new FilterHolder(new GzipFilter()), "/*", Handler.DEFAULT);
         context.setErrorHandler(new JSONErrorHandler());
+        
+        if (config.getConfiguration().getBoolean("lucene.authenticateUsers", false)) {
+        	final Constraint constraint = new Constraint();
+        	constraint.setName(Constraint.__BASIC_AUTH);;
+        	constraint.setRoles(new String[]{"_reader","_admin"});
+        	constraint.setAuthenticate(true);
+        	 
+        	final ConstraintMapping cm = new ConstraintMapping();
+        	cm.setConstraint(constraint);
+        	cm.setPathSpec("/*");
+        	 
+        	final SecurityHandler sh = new SecurityHandler();
+        	sh.setUserRealm(new CouchDbRealm(config.getClient(), config.getConfiguration()));
+        	sh.setConstraintMappings(new ConstraintMapping[]{cm});
+        	context.addHandler(sh);
+        }
+        
+        
         server.setHandler(context);
 
         server.start();
