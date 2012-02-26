@@ -19,6 +19,7 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,12 +85,17 @@ public final class LuceneServlet extends HttpServlet {
 	    try {
 	        if (configFile != null) {
 	            final URL url = new URL(configFile);
+	            InputStream ignoredStream = null;
 	            try {
-	                url.openStream(); //Check that file actually exists
+	                ignoredStream = url.openStream(); //Check that file actually exists
 	                init(new Config(url));
 	            } catch (FileNotFoundException e ) {
 	                LOG.error("Cannot open: " + configFile + ". Using defaults");
 	                init(new Config());
+	            } finally {
+	                if (ignoredStream != null) {
+	                    ignoredStream.close();
+	                }
 	            }
 	        } else {
 	            init(new Config());
