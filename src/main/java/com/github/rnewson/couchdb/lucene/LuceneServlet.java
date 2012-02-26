@@ -19,12 +19,14 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -53,27 +55,56 @@ public final class LuceneServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private final HttpClient client;
+	private HttpClient client;
 
 	private final Map<Database, DatabaseIndexer> indexers = new HashMap<Database, DatabaseIndexer>();
 
-	private final HierarchicalINIConfiguration ini;
+	private HierarchicalINIConfiguration ini;
 
-	private final File root;
+	private File root;
 
 	private final Map<Database, Thread> threads = new HashMap<Database, Thread>();
 
+	private final static String CONFIG_FILE_PARAM = "config";
+
 	public LuceneServlet() throws ConfigurationException, IOException {
-		final Config config = new Config();
-		this.client = config.getClient();
-		this.root = config.getDir();
-		this.ini = config.getConfiguration();
+		init(new Config());
 	}
 	public LuceneServlet(final HttpClient client, final File root,
 			final HierarchicalINIConfiguration ini) {
 		this.client = client;
 		this.root = root;
 		this.ini = ini;
+	}
+
+	@Override
+	public void init(ServletConfig config) throws ServletException {
+	    super.init(config);
+	    final String configFile =  config.getInitParameter(CONFIG_FILE_PARAM);
+	    try {
+	        if (configFile != null) {
+	            final URL url = new URL(configFile);
+	            try {
+	                url.openStream(); //Check that file actually exists
+	                init(new Config(url));
+	            } catch (FileNotFoundException e ) {
+	                LOG.error("Cannot open: " + configFile + ". Using defaults");
+	                init(new Config());
+	            }
+	        } else {
+	            init(new Config());
+	        }
+	    } catch (ConfigurationException e) {
+	        throw new IllegalArgumentException("Bad config file: ", e);
+	    } catch (IOException e) {
+	        throw new IllegalArgumentException("Bad config file: ", e);
+	    }
+	}
+
+	private void init(Config config) throws ConfigurationException, IOException{
+	    this.client = config.getClient();
+	    this.root = config.getDir();
+	    this.ini = config.getConfiguration();
 	}
 
 	private void cleanup(final HttpServletRequest req,

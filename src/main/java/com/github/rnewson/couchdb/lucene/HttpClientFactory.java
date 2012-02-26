@@ -177,6 +177,7 @@ public final class HttpClientFactory {
     }
 
     public static void setIni(final HierarchicalINIConfiguration ini) {
+        instance = null;
         INI = ini;
     }
 
