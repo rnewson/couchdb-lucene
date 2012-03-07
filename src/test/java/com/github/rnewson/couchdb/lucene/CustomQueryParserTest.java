@@ -7,6 +7,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,6 +69,12 @@ public class CustomQueryParserTest {
     public void dateTimeTimeZoneRangeQuery() throws Exception {
         final Query q = parser.parse("blah<date>:[2000-01-01T00:00:00-0100 TO 2010-02-04T00:00:00-0100]");
         assertRange(q, Long.class, time("2000-01-01T00:00:00-0100"), time("2010-02-04T00:00:00-0100"));
+    }
+
+    @Test
+    public void fieldNameWithDashes() throws Exception {
+        final Query q = parser.parse("foo-bar:baz");
+        assertThat(q, is(TermQuery.class));
     }
 
     private long time(final String str) throws ParseException {
