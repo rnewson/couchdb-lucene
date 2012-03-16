@@ -1,3 +1,5 @@
+[![Build Status](https://secure.travis-ci.org/rnewson/couchdb-lucene.png)](http://travis-ci.org/rnewson/couchdb-lucene)
+
 <h1>Version Compatibility</h1>
 
 CouchDB-Lucene works with all version of CouchDB from 0.10 upwards.
