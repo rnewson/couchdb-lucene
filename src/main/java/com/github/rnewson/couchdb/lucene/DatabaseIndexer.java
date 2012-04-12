@@ -47,6 +47,8 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LogByteSizeMergePolicy;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermFreqVector;
+import org.apache.lucene.index.TermPositionVector;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.queryParser.QueryParser.Operator;
@@ -608,6 +610,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 						if (fields.length() > 0) {
 							row.put("fields", fields);
 						}
+
+						final JsonTermVectorMapper mapper = new JsonTermVectorMapper();
+						searcher.getIndexReader().getTermFreqVector(td.scoreDocs[i].doc, mapper);
+						row.put("termvectors", mapper.getObject());
+
 						rows.put(row);
 					}
 					// Fetch documents (if requested).
