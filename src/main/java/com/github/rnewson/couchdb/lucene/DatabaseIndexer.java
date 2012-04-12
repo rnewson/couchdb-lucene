@@ -285,7 +285,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		if ("_expunge".equals(command)) {
 			logger.info("Expunging deletes from " + state);
-			state.writer.expungeDeletes(false);
+			state.writer.forceMergeDeletes(false);
 						resp.setStatus(202);
 			ServletUtils.sendJsonSuccess(req, resp);
 			return;
@@ -293,7 +293,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 		if ("_optimize".equals(command)) {
 			logger.info("Optimizing " + state);
-			state.writer.optimize(false);
+			state.writer.forceMerge(1, false);
 			resp.setStatus(202);
 			ServletUtils.sendJsonSuccess(req, resp);
 			return;
