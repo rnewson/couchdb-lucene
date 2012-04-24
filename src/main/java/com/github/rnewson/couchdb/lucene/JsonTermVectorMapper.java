@@ -37,9 +37,13 @@ class JsonTermVectorMapper extends TermVectorMapper {
 					arr.put(arr2);
 				}
 				field.put("offsets", arr);
+			} else {
+				field.put("offsets", "null");
 			}
 			if (positions != null) {
 				field.put("positions", positions);
+			} else {
+				field.put("positions", "null");
 			}
 			currentObj.put(term, field);
 		} catch (JSONException e) {

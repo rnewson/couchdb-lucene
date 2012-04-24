@@ -43,6 +43,7 @@ import org.apache.lucene.document.MapFieldSelector;
 import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LogByteSizeMergePolicy;
@@ -52,6 +53,7 @@ import org.apache.lucene.index.TermPositionVector;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.queryParser.QueryParser.Operator;
+import org.apache.lucene.search.vectorhighlight.FastVectorHighlighter;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -488,6 +490,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			return;
 		final IndexSearcher searcher = state.borrowSearcher(isStaleOk(req));
 		final String etag = state.getEtag();
+		final FastVectorHighlighter fvh = new FastVectorHighlighter(true, true);
 		final JSONArray result = new JSONArray();
 		try {
 			if (state.notModified(req)) {
@@ -528,6 +531,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 					final boolean include_docs = getBooleanParameter(req,
 							"include_docs");
+					final int highlights = getIntParameter(req, "highlights", 0);
+					final int highlight_length = max(getIntParameter(req, "highlight_length", 18), 18); // min for fast term vector highlighter is 18
+					final boolean include_termvectors = getBooleanParameter(req, "include_termvectors");
+					final boolean include_fields = getBooleanParameter(req, "include_fields");
 					final int limit = getIntParameter(req, "limit",
 					        ini.getInt("lucene.limit", 25));
 					final Sort sort = CustomQueryParser.toSort(req
@@ -561,6 +568,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 						final JSONObject row = new JSONObject();
 						final JSONObject fields = new JSONObject();
+						final JSONObject highlight_rows = new JSONObject();
 
 						// Include stored fields.
 						for (final Fieldable f : doc.getFields()) {
@@ -592,6 +600,11 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 											((JSONArray) obj).put(value);
 										}
 									}
+
+									if (highlights > 0) {
+										String[] frags = fvh.getBestFragments(fvh.getFieldQuery(q), searcher.getIndexReader(), td.scoreDocs[i].doc, name, highlight_length, highlights);
+										highlight_rows.put(name, frags);
+									}
 								}
 							}
 						}
@@ -607,13 +620,17 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 						if (include_docs) {
 							fetch_ids[i - skip] = doc.get("_id");
 						}
-						if (fields.length() > 0) {
+						if (include_fields && fields.length() > 0) {
 							row.put("fields", fields);
 						}
-
-						final JsonTermVectorMapper mapper = new JsonTermVectorMapper();
-						searcher.getIndexReader().getTermFreqVector(td.scoreDocs[i].doc, mapper);
-						row.put("termvectors", mapper.getObject());
+						if (highlight_rows.length() > 0) {
+							row.put("highlights", highlight_rows);
+						}
+						if (include_termvectors) {
+							final JsonTermVectorMapper mapper = new JsonTermVectorMapper();
+							searcher.getIndexReader().getTermFreqVector(td.scoreDocs[i].doc, mapper);
+							row.put("termvectors", mapper.getObject());
+						}
 
 						rows.put(row);
 					}
