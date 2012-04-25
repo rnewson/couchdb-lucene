@@ -533,7 +533,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					final int highlights = getIntParameter(req, "highlights", 0);
 					final int highlight_length = max(getIntParameter(req, "highlight_length", 18), 18); // min for fast term vector highlighter is 18
 					final boolean include_termvectors = getBooleanParameter(req, "include_termvectors");
-					final boolean include_storedfields = getBooleanParameter(req, "include_storedfields");
 					final int limit = getIntParameter(req, "limit",
 					        ini.getInt("lucene.limit", 25));
 					final Sort sort = CustomQueryParser.toSort(req
@@ -619,7 +618,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 						if (include_docs) {
 							fetch_ids[i - skip] = doc.get("_id");
 						}
-						if (include_storedfields && fields.length() > 0) {
+						if (fields.length() > 0) {
 							row.put("fields", fields);
 						}
 						if (highlight_rows.length() > 0) {
