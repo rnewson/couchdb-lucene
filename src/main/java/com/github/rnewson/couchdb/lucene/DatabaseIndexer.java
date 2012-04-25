@@ -43,7 +43,6 @@ import org.apache.lucene.document.MapFieldSelector;
 import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexReader.FieldOption;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LogByteSizeMergePolicy;
