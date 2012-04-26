@@ -1,5 +1,7 @@
 package com.github.rnewson.couchdb.lucene.couchdb;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -50,7 +52,11 @@ public abstract class UpdateSequence {
 
 		@Override
 		public String appendSince(final String url) {
-			return url + "&since=" + since;
+			try {
+				return url + "&since=" + URLEncoder.encode(since,  "US-ASCII");
+			} catch (UnsupportedEncodingException e) {
+				throw new Error("US-ASCII inexplicably missing.");
+			}
 		}
 
 		@Override
