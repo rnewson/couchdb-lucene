@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -27,10 +29,9 @@ public abstract class UpdateSequence {
 		private final String since;
 		private final Map<String, Long> vector = new HashMap<String, Long>();
 
-		private BigCouchUpdateSequence(final String encodedVector) {
+		private BigCouchUpdateSequence(final String encodedVector, final String packedSeqs) {
 			this.since = encodedVector;
 
-			final String packedSeqs = encodedVector.split("-", 2)[1];
 			final byte[] bytes = new Base64(true).decode(packedSeqs);
 			final OtpInputStream stream = new OtpInputStream(bytes);
 			try {
@@ -173,14 +174,29 @@ public abstract class UpdateSequence {
 
 	public static final UpdateSequence START = new StartOfUpdateSequence();
 
+	private static Pattern BC3 = Pattern.compile("[0-9]+-([0-9a-zA-Z_-]+)");
+	private static Pattern BC4 = Pattern.compile("\\[[0-9]+\\s*,\\s*\"([0-9a-zA-Z_-]+)\"\\]");
+
 	public static UpdateSequence parseUpdateSequence(final String str) {
 		if (str.matches("[0-9]+")) {
 			return new CouchDbUpdateSequence(str);
 		}
-		if (str.matches("[0-9]+-[0-9a-zA-Z_-]+")) {
-			return new BigCouchUpdateSequence(str);
+		String packedSeqs;
+		if ((packedSeqs = extractPackedSeqs(BC3, str)) != null) {
+			return new BigCouchUpdateSequence(str, packedSeqs);
+		}
+		if ((packedSeqs = extractPackedSeqs(BC4, str)) != null) {
+			return new BigCouchUpdateSequence(str, packedSeqs);
 		}
 		throw new IllegalArgumentException(str + " not recognized.");
+	}
+
+	private static String extractPackedSeqs(final Pattern p, final String str) {
+		final Matcher m = p.matcher(str);
+		if (m.matches()) {
+			return m.group(1);
+		}
+		return null;
 	}
 
 	public abstract String appendSince(final String url);
