@@ -177,6 +177,7 @@ public enum FieldType {
     }
 
     private static <T extends AbstractField> T boost(final T field, final ViewSettings settings) {
+        field.setOmitNorms(false);
         field.setBoost(settings.getBoost());
         return field;
     }
