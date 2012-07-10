@@ -77,6 +77,12 @@ public class CustomQueryParserTest {
         assertThat(q, is(TermQuery.class));
     }
 
+    @Test
+    public void fieldNameWithEscapedSpaces() throws Exception {
+        final Query q = parser.parse("foo\\ bar:baz");
+        assertThat(q, is(TermQuery.class));
+    }
+
     private long time(final String str) throws ParseException {
         return FieldType.toDate(str);
     }
