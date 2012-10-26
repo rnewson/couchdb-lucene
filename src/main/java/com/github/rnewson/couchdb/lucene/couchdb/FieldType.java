@@ -19,9 +19,12 @@ package com.github.rnewson.couchdb.lucene.couchdb;
 import java.util.Date;
 
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.lucene.document.AbstractField;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericField;
+import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.FloatField;
+import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.MultiTermQuery;
@@ -37,8 +40,8 @@ public enum FieldType {
     DATE(8, SortField.LONG) {
 
         @Override
-        public NumericField toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
-            return field(name, precisionStep, settings).setLongValue(toDate(value));
+        public LongField toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
+            return new LongField(name, toDate(value), settings.getStore());
         }
 
         @Override
@@ -56,8 +59,8 @@ public enum FieldType {
     },
     DOUBLE(8, SortField.DOUBLE) {
         @Override
-        public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, precisionStep, settings).setDoubleValue(toDouble(value));
+        public DoubleField toField(final String name, final Object value, final ViewSettings settings) {
+            return new DoubleField(name, toDouble(value), settings.getStore());
         }
 
         @Override
@@ -80,8 +83,8 @@ public enum FieldType {
     },
     FLOAT(4, SortField.FLOAT) {
         @Override
-        public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, 4, settings).setFloatValue(toFloat(value));
+        public FloatField toField(final String name, final Object value, final ViewSettings settings) {
+            return new FloatField(name, toFloat(value), settings.getStore());
         }
 
         @Override
@@ -104,7 +107,7 @@ public enum FieldType {
     INT(4, SortField.INT) {
         @Override
         public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, 4, settings).setIntValue(toInt(value));
+            return new IntField(name, toInt(value), settings.getStore());
         }
 
         @Override
@@ -127,8 +130,8 @@ public enum FieldType {
     },
     LONG(8, SortField.LONG) {
         @Override
-        public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, precisionStep, settings).setLongValue(toLong(value));
+        public LongField toField(final String name, final Object value, final ViewSettings settings) {
+            return new LongField(name, toLong(value), settings.getStore());
         }
 
         @Override
@@ -168,15 +171,11 @@ public enum FieldType {
         }
     };
 
-    private static NumericField field(final String name, final int precisionStep, final ViewSettings settings) {
-        return boost(new NumericField(name, precisionStep, settings.getStore(), settings.getIndex().isIndexed()), settings);
-    }
-
     private static Field field(final String name, final Object value, final ViewSettings settings) {
         return boost(new Field(name, value.toString(), settings.getStore(), settings.getIndex(), settings.getTermVector()), settings);
     }
 
-    private static <T extends AbstractField> T boost(final T field, final ViewSettings settings) {
+    private static <T extends Field> T boost(final T field, final ViewSettings settings) {
         field.setOmitNorms(false);
         field.setBoost(settings.getBoost());
         return field;
@@ -194,7 +193,7 @@ public enum FieldType {
         this.sortField = sortField;
     }
 
-    public abstract AbstractField toField(final String name, final Object value, final ViewSettings settings) throws ParseException;
+    public abstract Field toField(final String name, final Object value, final ViewSettings settings) throws ParseException;
 
     public abstract Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive)
             throws ParseException;
