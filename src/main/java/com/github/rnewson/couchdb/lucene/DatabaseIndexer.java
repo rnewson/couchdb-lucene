@@ -420,6 +420,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			result.put("doc_del_count", reader.numDeletedDocs());
 			result.put("uuid", state.getUuid());
 			result.put("digest", state.getDigest());
+			result.put("update_seq", getUpdateSequence(reader.getIndexCommit().getUserData()));
 			final JSONArray fields = new JSONArray();
 			final Iterator<FieldInfo> it = ReaderUtil.getMergedFieldInfos(reader).iterator();
 			while (it.hasNext()) {
