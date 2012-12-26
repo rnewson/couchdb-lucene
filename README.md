@@ -398,7 +398,7 @@ In addition to normal text-based range searches (using the "field:[lower TO uppe
 <tr><td>long</td><td>field&lt;long>:[0 TO 100]</td></tr>
 <tr><td>float</td><td>field&lt;float>:[0.0 TO 100.0]</td></tr>
 <tr><td>double</td><td>field&lt;double>:[0.0 TO 100.0]</td></tr>
-<tr><td>date</td><td>field&lt;date>:[from TO to] where from and to match any of these patterns: <code>"yyyy-MM-dd'T'HH:mm:ssZ"</code>, <code>"yyyy-MM-dd'T'HH:mm:ss"<code>, <code>"yyyy-MM-ddZ"M/code>, <code>"yyyy-MM-dd"</code>, <code>"yyyy-MM-dd'T'HH:mm:ss.SSSZ"</code>, <code>"yyyy-MM-dd'T'HH:mm:ss.SSS"</code>. So, in order to search for articles published in July, you would issue a following query: <code>published_at&lt;date&gt;:["2010-07-01T00:00:00"+TO+"2010-07-31T23:59:59"]</code></td></tr>
+<tr><td>date</td><td>field&lt;date>:[from TO to] where from and to match any of these patterns: <code>"yyyy-MM-dd'T'HH:mm:ssZ"</code>, <code>"yyyy-MM-dd'T'HH:mm:ss"<code>, <code>"yyyy-MM-ddZ"</code>, <code>"yyyy-MM-dd"</code>, <code>"yyyy-MM-dd'T'HH:mm:ss.SSSZ"</code>, <code>"yyyy-MM-dd'T'HH:mm:ss.SSS"</code>. So, in order to search for articles published in July, you would issue a following query: <code>published_at&lt;date&gt;:["2010-07-01T00:00:00"+TO+"2010-07-31T23:59:59"]</code></td></tr>
 </table>
 
 An example numeric range query for spatial searching.
