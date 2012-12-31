@@ -1,7 +1,10 @@
-Version 0.9.0 (Unreleased)
+Version 0.9.0
 
-* Upgrade to Rhino 1.7R3
+* Upgrade to Rhino 1.7R4
+* Upgrade to Lucene 3.6.1
+* Upgrade to Tika 1.2
 * Add JSON.stringify support (see above)
+* Support highlights
 
 Version 0.8.0
 -------------
