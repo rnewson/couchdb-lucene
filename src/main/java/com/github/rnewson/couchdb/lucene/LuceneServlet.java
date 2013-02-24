@@ -16,6 +16,9 @@
 
 package com.github.rnewson.couchdb.lucene;
 
+import java.io.BufferedReader;
+import java.io.StringWriter;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -215,7 +218,7 @@ public final class LuceneServlet extends HttpServlet {
 	}
 
     private void doPostInternal(final HttpServletRequest req, final HttpServletResponse resp)
-            throws IOException, JSONException {
+            throws ServletException, IOException, JSONException {
         switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
 		case 3:
 			if (req.getPathInfo().endsWith("/_cleanup")) {
@@ -223,6 +226,34 @@ public final class LuceneServlet extends HttpServlet {
 				return;
 			}
 			break;
+		case 5:
+			final DatabaseIndexer indexr = getIndexer(req);
+			if (indexr == null) {
+			    ServletUtils.sendJsonError(req, resp, 500, "error_creating_index");
+			    return;
+			}
+			
+			BufferedReader reader = req.getReader();
+			StringWriter writer = new StringWriter();
+
+			char[] buffer = new char[1024];
+			try {
+				int n;
+				while ((n = reader.read(buffer)) != -1) {
+					writer.write(buffer, 0, n);
+				}
+			} catch(Exception ex) {
+				log("Could not read input", ex);
+				ServletUtils.sendJsonError(req, resp, 500, "could not read input");
+				return;
+			} finally {
+				reader.close();
+			}
+			String query = writer.toString();
+
+			indexr.search(req, resp, query);
+			return;
+
 		case 6:
 			final DatabaseIndexer indexer = getIndexer(req);
 			indexer.admin(req, resp);
