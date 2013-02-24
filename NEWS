@@ -7,6 +7,7 @@ Version 0.10.0 (UNRELEASED)
   timestamp
 * Use the full OOXML Schemas from Apache POI, to make Tika
   able to parse Office documents that use exotic features
+* Allow sending queries via POST
 
 Version 0.9.0
 -------------
