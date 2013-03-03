@@ -61,7 +61,7 @@ fti=/path/to/python /path/to/couchdb-lucene/tools/couchdb-external-hook.py
 _fti = {couch_httpd_external, handle_external_req, &lt;&lt;"fti"&gt;&gt;}
 </pre>
 
-<h2>Hook options</h2>
+<h3>Hook options</h3>
 
 <table>
 <tr><th>Option</th><th>Meaning</th><th>Default Value</th></tr>
