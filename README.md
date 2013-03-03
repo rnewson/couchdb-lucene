@@ -49,7 +49,7 @@ mvn war:war
 
 The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene;
 
-<h2>For CouchDB versions prior to 1.1</h2>
+<h2>Python hook script (for CouchDB versions prior to 1.1)</h2>
 <pre>
 [couchdb]
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
@@ -70,7 +70,7 @@ _fti = {couch_httpd_external, handle_external_req, &lt;&lt;"fti"&gt;&gt;}
 <tr><td>--local-key</td><td>The key for the local couchdb instance as known to the couchdb-lucene server</td><td>local</td></tr>
 </table>
 
-<h2>For CouchDB versions from 1.1 onward</h2>
+<h2>Proxy handler (for CouchDB versions from 1.1 onward)</h2>
 <pre>
 [httpd_global_handlers]
 _fti = {couch_httpd_proxy, handle_proxy_req, &lt;&lt;"http://127.0.0.1:5985"&gt;&gt;}
@@ -115,13 +115,13 @@ Here's an complete example of a design document with couchdb-lucene features:
 
 Here are some example URL's for the given design document;
 
-<h2>CouchDB versions prior to 1.1</h2>
+<h2>Using the Python hook script</h2>
 <pre>
 http://localhost:5984/database/_fti/_design/foo/by_subject?q=hello
 http://localhost:5984/database/_fti/_design/foo/by_content?q=hello
 </pre>
 
-<h2>CouchDB versions from 1.1 onward</h2>
+<h2>Using the proxy handler</h2>
 <pre>
 http://localhost:5984/_fti/local/database/_design/foo/by_subject?q=hello
 http://localhost:5984/_fti/local/database/_design/foo/by_content?q=hello
@@ -467,14 +467,14 @@ All Dublin Core attributes are indexed and stored if detected in the attachment.
 
 <h2>Examples</h2>
 
-<h2>CouchDB versions prior to 1.1</h2>
+<h2>Using the Python hook script</h2>
 <pre>
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value&sort=other_field
 http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort=billing_size&lt;long&gt;&q=body:document AND customer:[A TO C]
 </pre>
 
-<h2>CouchDB versions from 1.1 onward</h2>
+<h2>Using the proxy handler</h2>
 <pre>
 http://localhost:5984/_fti/local/dbname/_design/foo/view_name?q=field_name:value
 http://localhost:5984/_fti/local/dbname/_design/foo/view_name?q=field_name:value&sort=other_field
