@@ -17,16 +17,16 @@
 package com.github.rnewson.couchdb.lucene.util;
 
 import java.io.Reader;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.KeywordAnalyzer;
-import org.apache.lucene.analysis.core.LowerCaseTokenizer;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.core.*;
+import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
-import org.apache.lucene.analysis.miscellaneous.PorterStemFilter;
-import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.br.BrazilianAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.analysis.cn.ChineseAnalyzer;
@@ -38,6 +38,7 @@ import org.apache.lucene.analysis.ru.RussianAnalyzer;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
 import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -109,15 +110,16 @@ public enum Analyzers {
         public Analyzer newAnalyzer(final String args) throws JSONException {
             final JSONObject json = new JSONObject(args == null ? "{}" : args);
             final Analyzer defaultAnalyzer = Analyzers.getAnalyzer(json.optString(Constants.DEFAULT_FIELD, "standard"));
-            final PerFieldAnalyzerWrapper result = new PerFieldAnalyzerWrapper(defaultAnalyzer);
+            final Map<String, Analyzer> analyzers = new HashMap<String, Analyzer>();
+
             final Iterator<?> it = json.keys();
             while (it.hasNext()) {
                 final String key = it.next().toString();
                 if (Constants.DEFAULT_FIELD.equals(key))
                     continue;
-                result.addAnalyzer(key, Analyzers.getAnalyzer(json.getString(key)));
+                analyzers.put(key, Analyzers.getAnalyzer(json.getString(key)));
             }
-            return result;
+            return new PerFieldAnalyzerWrapper(defaultAnalyzer, analyzers);
         }
     },
     PORTER {
@@ -163,10 +165,15 @@ public enum Analyzers {
     };
 
     private static final class PorterStemAnalyzer extends Analyzer {
+
         @Override
-        public TokenStream tokenStream(final String fieldName, final Reader reader) {
-            return new PorterStemFilter(new LowerCaseTokenizer(Constants.VERSION, reader));
+        protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
+            final Tokenizer source = new StandardTokenizer(Constants.VERSION, reader);
+            TokenStream result = new LowerCaseFilter(Constants.VERSION, source);
+            result = new PorterStemFilter(result);
+            return new TokenStreamComponents(source, result);
         }
+
     }
 
     public static Analyzer getAnalyzer(final String str) throws JSONException {
