@@ -26,7 +26,7 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.FloatField;
 import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;

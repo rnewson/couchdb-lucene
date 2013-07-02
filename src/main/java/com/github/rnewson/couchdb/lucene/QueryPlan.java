@@ -62,8 +62,8 @@ public final class QueryPlan {
         builder.append(query.getTerm());
         builder.append(",prefixLength=");
         builder.append(query.getPrefixLength());
-        builder.append(",minSimilarity=");
-        builder.append(query.getMinSimilarity());
+        builder.append(",maxEdits=");
+        builder.append(query.getMaxEdits());
     }
 
     private static void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery<?> query) {

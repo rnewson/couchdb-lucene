@@ -19,7 +19,7 @@ package com.github.rnewson.couchdb.lucene;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
 
 import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
