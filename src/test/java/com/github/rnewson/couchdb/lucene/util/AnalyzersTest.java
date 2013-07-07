@@ -25,10 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.fr.FrenchAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.junit.Test;
@@ -56,14 +56,14 @@ public class AnalyzersTest {
         assertThat(analyzer, is(PerFieldAnalyzerWrapper.class));
         assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.standard.StandardAnalyzer"));
         assertThat(analyzer.toString(), containsString("name=org.apache.lucene.analysis.standard.StandardAnalyzer"));
-        assertThat(analyzer.toString(), containsString("age=org.apache.lucene.analysis.KeywordAnalyzer"));
+        assertThat(analyzer.toString(), containsString("age=org.apache.lucene.analysis.core.KeywordAnalyzer"));
     }
 
     @Test
     public void testPerFieldDefault() throws Exception {
         final Analyzer analyzer = Analyzers.getAnalyzer("perfield:{default:\"keyword\"}");
         assertThat(analyzer, is(PerFieldAnalyzerWrapper.class));
-        assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.KeywordAnalyzer"));
+        assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.core.KeywordAnalyzer"));
     }
 
     @Test

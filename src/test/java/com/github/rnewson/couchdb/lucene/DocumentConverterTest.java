@@ -24,7 +24,8 @@ import java.util.Collection;
 import java.util.TimeZone;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.NumericField;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.LongField;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -247,7 +248,7 @@ public class DocumentConverterTest {
                  settings(),
                  null);
          assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+         assertThat(result.iterator().next().getField("num"), is(LongField.class));
     }
     
     @Test
@@ -259,7 +260,7 @@ public class DocumentConverterTest {
                  settings(),
                  null);
          assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+         assertThat(result.iterator().next().getField("num"), is(LongField.class));
     }
     
     @Test
@@ -271,8 +272,8 @@ public class DocumentConverterTest {
                  settings(),
                  null);
          assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
-         assertThat((Long)((NumericField)result.iterator().next().getFieldable("num")).getNumericValue(), is(1284332400000L));
+         assertThat(result.iterator().next().getField("num"), is(LongField.class));
+         assertThat((Long)((LongField)result.iterator().next().getField("num")).numericValue(), is(1284332400000L));
     }
     
     @Test
@@ -284,8 +285,8 @@ public class DocumentConverterTest {
                  settings(),
                  null);
          assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
-         assertThat((Long)((NumericField)result.iterator().next().getFieldable("num")).getNumericValue(), is(63561900000L));
+         assertThat(result.iterator().next().getField("num"), is(LongField.class));
+         assertThat((Long)((LongField)result.iterator().next().getField("num")).numericValue(), is(63561900000L));
     }
 
     @Test
@@ -297,7 +298,7 @@ public class DocumentConverterTest {
                  settings(),
                  null);
          assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+         assertThat(result.iterator().next().getField("num"), is(IntField.class));
     }
     
 	@Test

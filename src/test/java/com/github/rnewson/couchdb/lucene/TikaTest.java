@@ -40,19 +40,19 @@ public class TikaTest {
     @Test
     public void testPDF() throws IOException {
         parse("paxos-simple.pdf", "application/pdf", "foo");
-        assertThat(doc.getFieldable("foo"), not(nullValue()));
+        assertThat(doc.getField("foo"), not(nullValue()));
     }
 
     @Test
     public void testXML() throws IOException {
         parse("example.xml", "text/xml", "bar");
-        assertThat(doc.getFieldable("bar"), not(nullValue()));
+        assertThat(doc.getField("bar"), not(nullValue()));
     }
 
     @Test
     public void testWord() throws IOException {
         parse("example.doc", "application/msword", "bar");
-        assertThat(doc.getFieldable("bar"), not(nullValue()));
+        assertThat(doc.getField("bar"), not(nullValue()));
         assertThat(doc.get("bar"), containsString("The express mission of the organization"));
     }
 
