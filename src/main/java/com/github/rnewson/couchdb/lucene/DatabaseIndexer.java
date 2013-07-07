@@ -528,11 +528,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 							.getParameter("sort"));
 					final int skip = getIntParameter(req, "skip", 0);
 
-                    final Set<String> fieldsToLoad = new HashSet<String>(
-                            Arrays.asList(
-                                    Utils.splitOnCommas(
-                                            req.getParameter("include_fields"))));
-
 					if (sort == null) {
 						td = searcher.search(q, null, skip + limit);
 					} else {
@@ -546,8 +541,17 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					final JSONArray rows = new JSONArray();
 					final String[] fetch_ids = new String[max];
 					for (int i = skip; i < skip + max; i++) {
-						final Document doc = searcher.doc(td.scoreDocs[i].doc,
-						        fieldsToLoad);
+						final Document doc;
+						if (req.getParameter("include_fields") == null) {
+						    doc = searcher.doc(td.scoreDocs[i].doc);
+						} else {
+						    final String[] fieldsToLoad = Utils.splitOnCommas(
+						        req.getParameter("include_fields"));
+						    final Set<String> set = new HashSet<String>(
+						        Arrays.asList(fieldsToLoad)
+						    );
+						    doc = searcher.doc(td.scoreDocs[i].doc, set);
+						}
 
 						final JSONObject row = new JSONObject();
 						final JSONObject fields = new JSONObject();
