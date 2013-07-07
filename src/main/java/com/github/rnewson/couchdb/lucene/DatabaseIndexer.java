@@ -607,11 +607,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 						if (highlight_rows.length() > 0) {
 							row.put("highlights", highlight_rows);
 						}
-						if (include_termvectors) {
-							final JsonTermVectorMapper mapper = new JsonTermVectorMapper();
-							searcher.getIndexReader().getTermFreqVector(td.scoreDocs[i].doc, mapper);
-							row.put("termvectors", mapper.getObject());
-						}
 
 						rows.put(row);
 					}
