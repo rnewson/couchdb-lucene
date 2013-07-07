@@ -23,6 +23,7 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
 
 import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
+import org.apache.lucene.search.SortField;
 
 public final class TypedField {
 
@@ -55,12 +56,16 @@ public final class TypedField {
         return type;
     }
 
-    public int toSortField() {
+    public SortField.Type toSortField() {
         return type.toSortField();
     }
 
-    public Query toRangeQuery(final String lower, final String upper, final boolean inclusive) throws ParseException {
-        return type.toRangeQuery(name, lower, upper, inclusive);
+    public Query toRangeQuery(final String lower, final String upper,
+                              final boolean inclusiveLower,
+                              final boolean inclusiveUpper)
+            throws ParseException {
+        return type.toRangeQuery(name, lower, upper,
+                inclusiveLower, inclusiveUpper);
     }
     
     public Query toTermQuery(final String text) throws ParseException {

@@ -57,17 +57,12 @@ import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.document.MapFieldSelector;
 import org.apache.lucene.document.NumericField;
-import org.apache.lucene.index.FieldInfo;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.LogByteSizeMergePolicy;
-import org.apache.lucene.index.Term;
+import org.apache.lucene.index.*;
 import org.apache.lucene.index.TermFreqVector;
 import org.apache.lucene.index.TermPositionVector;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.queryParser.QueryParser.Operator;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.vectorhighlight.FastVectorHighlighter;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
@@ -784,10 +779,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	private UpdateSequence getUpdateSequence(final Directory dir) throws IOException {
-		if (!IndexReader.indexExists(dir)) {
+		if (!DirectoryReader.indexExists(dir)) {
 			return UpdateSequence.START;
 		}
-		return getUpdateSequence(IndexReader.getCommitUserData(dir));
+		return getUpdateSequence(DirectoryReader.getCommitUserData(dir));
 	}
 
 	private UpdateSequence getUpdateSequence(final IndexWriter writer) throws IOException {

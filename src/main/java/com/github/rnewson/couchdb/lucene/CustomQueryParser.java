@@ -56,9 +56,9 @@ public final class CustomQueryParser extends QueryParser {
 				}
 				final SortField sortField;
 				if ("_score".equals(tmp)) {
-					sortField = new SortField(null, SortField.SCORE, reverse);
+					sortField = new SortField(null, SortField.Type.SCORE, reverse);
 				} else if ("_doc".equals(tmp)) {
-					sortField = new SortField(null, SortField.DOC, reverse);						
+					sortField = new SortField(null, SortField.Type.DOC, reverse);
 				} else {
 					final TypedField typedField = new TypedField(tmp);
 					sortField = new SortField(typedField.getName(), typedField
@@ -79,34 +79,34 @@ public final class CustomQueryParser extends QueryParser {
 
             final String type;
             switch (field.getType()) {
-            case SortField.DOC:
+            case DOC:
                 type = "doc";
                 break;
-            case SortField.SCORE:
+            case SCORE:
                 type = "score";
                 break;
-            case SortField.INT:
+            case INT:
                 type = "int";
                 break;
-            case SortField.LONG:
+            case LONG:
                 type = "long";
                 break;
-            case SortField.BYTE:
+            case BYTE:
                 type = "byte";
                 break;
-            case SortField.CUSTOM:
+            case CUSTOM:
                 type = "custom";
                 break;
-            case SortField.DOUBLE:
+            case DOUBLE:
                 type = "double";
                 break;
-            case SortField.FLOAT:
+            case FLOAT:
                 type = "float";
                 break;
-            case SortField.SHORT:
+            case SHORT:
                 type = "short";
                 break;
-            case SortField.STRING:
+            case STRING:
                 type = "string";
                 break;
             default:
@@ -120,9 +120,12 @@ public final class CustomQueryParser extends QueryParser {
     }
 
     @Override
-    protected Query getRangeQuery(final String field, final String lower, final String upper, final boolean inclusive)
+    protected Query getRangeQuery(final String field, final String lower, final String upper,
+                                  final boolean inclusiveLower,
+                                  final boolean inclusiveUpper)
             throws ParseException {
-        return new TypedField(field).toRangeQuery(lower, upper, inclusive);
+        return new TypedField(field).toRangeQuery(lower, upper,
+                inclusiveLower, inclusiveUpper);
     }
 
     @Override
