@@ -82,8 +82,7 @@ public final class ViewSettings {
         return type;
     }
 
-    public TermVector getTermVector()
-    {
+    public TermVector getTermVector() {
         return termvector;
     }
 

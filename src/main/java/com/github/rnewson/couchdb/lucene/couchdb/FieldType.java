@@ -71,9 +71,9 @@ public enum FieldType {
         }
 
         private double toDouble(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).doubleValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number)obj).doubleValue();
+            }
             return Double.parseDouble(obj.toString());
         }
 
@@ -95,9 +95,9 @@ public enum FieldType {
         }
 
         private float toFloat(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).floatValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number)obj).floatValue();
+            }
             return Float.parseFloat(obj.toString());
         }
     },
@@ -118,9 +118,9 @@ public enum FieldType {
         }
 
         private int toInt(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).intValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number)obj).intValue();
+            }
             return Integer.parseInt(obj.toString());
         }
 
@@ -137,9 +137,9 @@ public enum FieldType {
         }
 
         private long toLong(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).longValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number)obj).longValue();
+            }
             return Long.parseLong(obj.toString());
         }
 
@@ -206,9 +206,9 @@ public enum FieldType {
     }
 
     public static long toDate(final Object obj) throws ParseException {
-    	if (obj instanceof Date) {
-    		return ((Date)obj).getTime();
-    	}
+        if (obj instanceof Date) {
+            return ((Date)obj).getTime();
+        }
         try {
             return DateUtils.parseDate(obj.toString().toUpperCase(), DATE_PATTERNS).getTime();
         } catch (final java.text.ParseException e) {
