@@ -1,4 +1,10 @@
+Version 0.10.0 (UNRELEASED)
+---------------------------
+
+* Upgrade to Lucene 3.6.2
+
 Version 0.9.0
+-------------
 
 * Upgrade to Rhino 1.7R4
 * Upgrade to Lucene 3.6.1
