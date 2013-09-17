@@ -99,6 +99,12 @@ public class CustomQueryParserTest {
         assertThat(q, is(TermQuery.class));
     }
 
+    @Test
+    public void fieldNameWithNonAscii() throws Exception {
+        final Query q = parser.parse("foó:bar");
+        assertThat(q, is(TermQuery.class));
+    }
+
     private long time(final String str) throws ParseException {
         return FieldType.toDate(str);
     }

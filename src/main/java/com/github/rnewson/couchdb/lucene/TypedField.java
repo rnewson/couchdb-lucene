@@ -26,7 +26,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
 
 public final class TypedField {
 
-    private static Pattern PATTERN = Pattern.compile("^(\\w[\\\\ \\w_.-]*)(<([\\w]+)>)?$");
+    private static Pattern PATTERN = Pattern.compile("^([^<]+)(<([^>]+)>)?$");
 
     private final String name;
 
