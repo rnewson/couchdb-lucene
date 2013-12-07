@@ -5,6 +5,8 @@ Version 0.10.0 (UNRELEASED)
 * Increase the PrecisionStep of date fields to 1, for more
   granularity in Range queries and allow exact sorting by
   timestamp
+* Use the full OOXML Schemas from Apache POI, to make Tika
+  able to parse Office documents that use exotic features
 
 Version 0.9.0
 -------------
