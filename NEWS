@@ -1,3 +1,10 @@
+Version 0.10.0 (UNRELEASED)
+---------------------------
+
+* Upgrade to Lucene 3.6.2
+* Use the full OOXML Schemas from Apache POI, to make Tika
+  able to parse Office documents that use exotic features
+
 Version 0.9.0
 
 * Upgrade to Rhino 1.7R4
