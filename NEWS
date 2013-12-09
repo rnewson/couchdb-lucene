@@ -1,4 +1,16 @@
+Version 0.10.0 (UNRELEASED)
+---------------------------
+
+* Upgrade to Lucene 3.6.2
+* Increase the PrecisionStep of date fields to 1, for more
+  granularity in Range queries and allow exact sorting by
+  timestamp
+* Use the full OOXML Schemas from Apache POI, to make Tika
+  able to parse Office documents that use exotic features
+* Allow sending queries via POST
+
 Version 0.9.0
+-------------
 
 * Upgrade to Rhino 1.7R4
 * Upgrade to Lucene 3.6.1

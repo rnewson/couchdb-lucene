@@ -99,6 +99,11 @@
             <version>${tika-version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>ooxml-schemas</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
           <groupId>org.erlang.otp</groupId>
           <artifactId>jinterface</artifactId>
           <version>1.5.3.2</version>

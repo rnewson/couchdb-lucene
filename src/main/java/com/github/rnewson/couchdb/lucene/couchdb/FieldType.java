@@ -34,7 +34,7 @@ import org.apache.lucene.util.NumericUtils;
 
 public enum FieldType {
 
-    DATE(8, SortField.LONG) {
+    DATE(1, SortField.LONG) {
 
         @Override
         public NumericField toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
@@ -71,9 +71,9 @@ public enum FieldType {
         }
 
         private double toDouble(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).doubleValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number)obj).doubleValue();
+            }
             return Double.parseDouble(obj.toString());
         }
 
@@ -81,7 +81,7 @@ public enum FieldType {
     FLOAT(4, SortField.FLOAT) {
         @Override
         public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, 4, settings).setFloatValue(toFloat(value));
+            return field(name, precisionStep, settings).setFloatValue(toFloat(value));
         }
 
         @Override
@@ -95,16 +95,16 @@ public enum FieldType {
         }
 
         private float toFloat(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).floatValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number)obj).floatValue();
+            }
             return Float.parseFloat(obj.toString());
         }
     },
     INT(4, SortField.INT) {
         @Override
         public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, 4, settings).setIntValue(toInt(value));
+            return field(name, precisionStep, settings).setIntValue(toInt(value));
         }
 
         @Override
@@ -118,9 +118,9 @@ public enum FieldType {
         }
 
         private int toInt(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).intValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number)obj).intValue();
+            }
             return Integer.parseInt(obj.toString());
         }
 
@@ -137,9 +137,9 @@ public enum FieldType {
         }
 
         private long toLong(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).longValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number)obj).longValue();
+            }
             return Long.parseLong(obj.toString());
         }
 
@@ -206,9 +206,9 @@ public enum FieldType {
     }
 
     public static long toDate(final Object obj) throws ParseException {
-    	if (obj instanceof Date) {
-    		return ((Date)obj).getTime();
-    	}
+        if (obj instanceof Date) {
+            return ((Date)obj).getTime();
+        }
         try {
             return DateUtils.parseDate(obj.toString().toUpperCase(), DATE_PATTERNS).getTime();
         } catch (final java.text.ParseException e) {

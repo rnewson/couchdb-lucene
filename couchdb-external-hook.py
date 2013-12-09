@@ -78,7 +78,11 @@ def respond(res, req, key):
     else:
         method = req["verb"]
 
-    res.request(method, path, headers=req_headers)
+    if method == "POST":
+      res.request(method, path, req.get('body').encode('utf-8'), headers=req_headers)
+    else:
+      res.request(method, path, headers=req_headers)
+
     resp = res.getresponse()
 
     resp_headers = {}
