@@ -1,0 +1,46 @@
+CouchDB-Lucene includes the following open source Java components, licensed under:
+
+- Apache 2.0 License:
+
+ * httpclient            4.3.1     http://hc.apache.org/
+ * httpcore              4.3.1     http://hc.apache.org/
+ * jetty                 6.1.20    http://www.eclipse.org/jetty/licenses.php
+ * commons-io            1.4       http://commons.apache.org/proper/commons-io/
+ * commons-configuration 1.6       http://commons.apache.org/proper/commons-configuration/
+ * commons-codec         1.5       http://commons.apache.org/proper/commons-codec/
+ * lucene                3.6.2     https://lucene.apache.org/
+ * tika                  1.2       http://tika.apache.org/license.html
+ * ooxml-schemas         1.1       http://poi.apache.org/legal.html
+ * jinterface            1.5.3.2   https://github.com/erlang/otp
+ * log4j                 1.2.14    http://logging.apache.org/log4j/1.2/license.html
+
+
+- Eclipse Public License:
+
+ * junit                 4.5       https://github.com/junit-team/junit/blob/master/LICENSE.txt
+
+
+- MIT License
+
+ * slf4j-log4j12         1.5.6     http://slf4j.org/license.html
+
+
+- BSD License
+
+ * hamcrest              1.1       https://code.google.com/p/hamcrest/
+
+
+- MPL 2.0 License:
+
+ * rhino                 1.7R4     https://developer.mozilla.org/en/docs/Rhino/License
+
+
+- Creative Commons Attribution 2.5 License:
+
+ * jcip-annotiations     1.0       http://jcip.net.s3-website-us-east-1.amazonaws.com/annotations/doc/index.html
+
+
+- Provided with no support or warranty:
+
+ * org.json              200902122 http://www.json.org/license.html
+
