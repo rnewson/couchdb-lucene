@@ -17,16 +17,17 @@
 package com.github.rnewson.couchdb.lucene;
 
 import java.io.File;
+import java.util.EnumSet;
 
 import org.apache.log4j.Logger;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Handler;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.nio.SelectChannelConnector;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.FilterHolder;
-import org.mortbay.jetty.servlet.ServletHolder;
-import org.mortbay.servlet.GzipFilter;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlets.GzipFilter;
+
+import javax.servlet.DispatcherType;
 
 public class Main {
 
@@ -46,15 +47,16 @@ public class Main {
 
         LOG.info("Accepting connections with " + connector);
 
-        server.setConnectors(new Connector[]{connector});
+        server.addConnector(connector);
         server.setStopAtShutdown(true);
-        server.setSendServerVersion(false);
 
         final LuceneServlet servlet = new LuceneServlet(config.getClient(), dir, config.getConfiguration());
 
-        final Context context = new Context(server, "/", Context.NO_SESSIONS | Context.NO_SECURITY);
+        final ServletContextHandler context = new ServletContextHandler(server, "/",
+                ServletContextHandler.NO_SESSIONS | ServletContextHandler.NO_SECURITY);
         context.addServlet(new ServletHolder(servlet), "/*");
-        context.addFilter(new FilterHolder(new GzipFilter()), "/*", Handler.DEFAULT);
+        context.addFilter(new FilterHolder(new GzipFilter()), "/*",
+                EnumSet.of(DispatcherType.REQUEST));
         context.setErrorHandler(new JSONErrorHandler());
         server.setHandler(context);
 

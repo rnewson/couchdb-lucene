@@ -22,9 +22,9 @@ import java.io.Writer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jetty.http.HttpHeaders;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mortbay.jetty.HttpHeaders;
 
 public final class ServletUtils {
 
