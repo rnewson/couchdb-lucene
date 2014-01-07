@@ -16,17 +16,15 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import java.io.IOException;
+import com.github.rnewson.couchdb.lucene.util.ServletUtils;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.ErrorHandler;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.mortbay.jetty.HttpConnection;
-import org.mortbay.jetty.handler.ErrorHandler;
-
-import com.github.rnewson.couchdb.lucene.util.ServletUtils;
+import java.io.IOException;
 
 /**
  * Convert errors to CouchDB-style JSON objects.
@@ -36,21 +34,23 @@ import com.github.rnewson.couchdb.lucene.util.ServletUtils;
  */
 public final class JSONErrorHandler extends ErrorHandler {
 
-    public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch) throws IOException {
-        HttpConnection connection = HttpConnection.getCurrentConnection();
-        connection.getRequest().setHandled(true);
-        final String reason = connection.getResponse().getReason();
+    public void handle(String target,
+                       Request baseRequest,
+                       HttpServletRequest request,
+                       HttpServletResponse response) throws IOException {
+        final String reason = baseRequest.getResponse().getReason();
         try {
             if (reason != null && reason.startsWith("{")) {
-                ServletUtils.sendJsonError(request, response, connection.getResponse().getStatus(),
+                ServletUtils.sendJsonError(request, response, baseRequest.getResponse().getStatus(),
                         new JSONObject(reason));
             } else {
-                ServletUtils.sendJsonError(request, response, connection.getResponse().getStatus(),
+                ServletUtils.sendJsonError(request, response, baseRequest.getResponse().getStatus(),
                         reason);
             }
         } catch (final JSONException e) {
             response.sendError(500);
         }
+
     }
 
 }

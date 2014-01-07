@@ -22,9 +22,9 @@ import java.io.Writer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jetty.http.HttpHeader;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mortbay.jetty.HttpHeaders;
 
 public final class ServletUtils {
 
@@ -70,7 +70,7 @@ public final class ServletUtils {
     public static void sendJsonError(final HttpServletRequest request, final HttpServletResponse response, final int code,
                 final JSONObject error) throws IOException, JSONException {
         setResponseContentTypeAndEncoding(request, response);
-        response.setHeader(HttpHeaders.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
+        response.setHeader(HttpHeader.CACHE_CONTROL.asString(), "must-revalidate,no-cache,no-store");
         response.setStatus(code);
         error.put("code", code);
         
