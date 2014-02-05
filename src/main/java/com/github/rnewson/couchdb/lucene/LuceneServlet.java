@@ -36,6 +36,7 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -121,13 +122,21 @@ public final class LuceneServlet extends HttpServlet {
 		ServletUtils.sendJsonSuccess(req, resp);
 	}
 
-	private Couch getCouch(final HttpServletRequest req) throws IOException {
+	private Couch getCouch(final HttpServletRequest req, HttpClient client) throws IOException {
 		final String sectionName = new PathParts(req).getKey();
 		final Configuration section = ini.getSection(sectionName);
 		if (!section.containsKey("url")) {
 			throw new FileNotFoundException(sectionName + " is missing or has no url parameter.");
 		}
 		return new Couch(client, section.getString("url"));
+	}
+
+	private Couch getAuthenticatingCouch(final HttpServletRequest req) throws IOException {
+	    return getCouch(req, HttpClientFactory.getAuthenticatingInstance(req));
+	}
+
+	private Couch getCouch(final HttpServletRequest req) throws IOException {
+	    return getCouch(req, client);
 	}
 
 	private synchronized DatabaseIndexer getIndexer(final Database database)
@@ -186,6 +195,9 @@ public final class LuceneServlet extends HttpServlet {
 			handleWelcomeReq(req, resp);
 			return;
 		case 5:
+			if ( ! validateDatabaseRequest(req, resp)) {
+				return;
+			}
 			final DatabaseIndexer indexer = getIndexer(req);
 			if (indexer == null) {
 			    ServletUtils.sendJsonError(req, resp, 500, "error_creating_index");
@@ -228,7 +240,19 @@ public final class LuceneServlet extends HttpServlet {
 			indexer.admin(req, resp);
 			return;
 		}
-		ServletUtils.sendJsonError(req, resp, 400, "bad_request");
+        ServletUtils.sendJsonError(req, resp, 400, "bad_request");
+    }
+
+    private boolean validateDatabaseRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException, JSONException {
+        final Couch couch = getAuthenticatingCouch(req);
+        final Database db = couch.getDatabase(new PathParts(req).getDatabaseName());
+        try {
+            db.getInfo(); //This will throw an HttpResponseException if not authenticated
+            return true;
+        } catch (HttpResponseException e) {
+            ServletUtils.sendJsonError(req, resp, e.getStatusCode(), new JSONObject(e.getMessage()));
+        }
+        return false;
     }
 
 }
