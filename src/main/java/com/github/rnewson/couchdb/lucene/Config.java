@@ -19,6 +19,7 @@ package com.github.rnewson.couchdb.lucene;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -37,8 +38,11 @@ public final class Config {
     private final HierarchicalINIConfiguration configuration;
 
     public Config() throws ConfigurationException {
-        this.configuration = new HierarchicalINIConfiguration(Config.class
-                .getClassLoader().getResource(CONFIG_FILE));
+        this(Config.class.getClassLoader().getResource(CONFIG_FILE));
+    }
+
+    public Config(URL file) throws ConfigurationException {
+        this.configuration = new HierarchicalINIConfiguration(file);
         this.configuration
                 .setReloadingStrategy(new FileChangedReloadingStrategy());
     }

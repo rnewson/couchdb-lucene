@@ -25,6 +25,11 @@
   <servlet>
     <servlet-name>lucene</servlet-name>
     <servlet-class>com.github.rnewson.couchdb.lucene.LuceneServlet</servlet-class>
+    <init-param>
+      <description>CouchDB-Lucene configuration file URL</description>
+      <param-name>config</param-name>
+      <param-value>file:///etc/couchdb-lucene/couchdb-lucene.ini</param-value>
+    </init-param>
   </servlet>
 
   <servlet-mapping>
