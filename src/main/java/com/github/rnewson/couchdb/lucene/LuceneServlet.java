@@ -122,7 +122,7 @@ public final class LuceneServlet extends HttpServlet {
 	}
 
 	private Couch getCouch(final HttpServletRequest req) throws IOException {
-		final String sectionName = new PathParts(req).getKey();
+		final String sectionName = new PathParts(PathParts.getPathWithoutContext(req)).getKey();
 		final Configuration section = ini.getSection(sectionName);
 		if (!section.containsKey("url")) {
 			throw new FileNotFoundException(sectionName + " is missing or has no url parameter.");
@@ -153,8 +153,7 @@ public final class LuceneServlet extends HttpServlet {
 	private DatabaseIndexer getIndexer(final HttpServletRequest req)
 			throws IOException, JSONException {
 		final Couch couch = getCouch(req);
-		final Database database = couch.getDatabase(new PathParts(req)
-				.getDatabaseName());
+		final Database database = couch.getDatabase(new PathParts(PathParts.getPathWithoutContext(req)).getDatabaseName());
 		return getIndexer(database);
 	}
 
@@ -179,9 +178,9 @@ public final class LuceneServlet extends HttpServlet {
         }
 	}
 
-    private void doGetInternal(final HttpServletRequest req, final HttpServletResponse resp)
-            throws ServletException, IOException, JSONException {
-        switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
+	private void doGetInternal(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException, JSONException {
+		LOG.debug("processing path "+req.getRequestURI()+" -- effective: "+PathParts.getPathWithoutContext(req));
+		switch (StringUtils.countMatches(PathParts.getPathWithoutContext(req), "/")) {
 		case 1:
 			handleWelcomeReq(req, resp);
 			return;
@@ -214,9 +213,8 @@ public final class LuceneServlet extends HttpServlet {
         }
 	}
 
-    private void doPostInternal(final HttpServletRequest req, final HttpServletResponse resp)
-            throws IOException, JSONException {
-        switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
+	private void doPostInternal(final HttpServletRequest req, final HttpServletResponse resp) throws IOException, JSONException {
+		switch (StringUtils.countMatches(PathParts.getPathWithoutContext(req), "/")) {
 		case 3:
 			if (req.getPathInfo().endsWith("/_cleanup")) {
 				cleanup(req, resp);

@@ -37,7 +37,7 @@
   </appender>
 
   <logger name="com.github">
-    <level value="INFO"/>
+    <level value="DEBUG"/>
   </logger>
 
   <root>

@@ -31,11 +31,11 @@ public class PathParts {
 
 	private Matcher matcher;
 
-	public PathParts(final HttpServletRequest req) {
-		this(req.getRequestURI());
+	public PathParts(final String path) {
+		this.setPath(path);
 	}
 
-	public PathParts(final String path) {
+	public void setPath(String path) {
 		matcher = QUERY_REGEX.matcher(path);
 		if (!matcher.matches()) {
 			matcher = GLOBAL_REGEX.matcher(path);
@@ -77,4 +77,12 @@ public class PathParts {
 				+ "]";
 	}
 
+	public static String getPathWithoutContext(HttpServletRequest request) {
+		if (request.getContextPath().isEmpty() && (!("/".equals(request.getContextPath())))) {
+			return request.getRequestURI();
+		} else {
+			return (request.getRequestURI().replace(request.getContextPath(), ""));
+		}
+
+	}
 }
