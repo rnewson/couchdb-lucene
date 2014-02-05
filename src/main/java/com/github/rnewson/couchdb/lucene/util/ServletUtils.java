@@ -103,4 +103,10 @@ public final class ServletUtils {
         }
     }
 
+   //Strip of context part of URI
+   public static String getUri(HttpServletRequest request) {
+       //Strip of context path if present
+       return request.getRequestURI().substring(request.getContextPath().length());
+   }
+
 }
