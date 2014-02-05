@@ -36,6 +36,7 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -153,8 +154,12 @@ public final class LuceneServlet extends HttpServlet {
 	private DatabaseIndexer getIndexer(final HttpServletRequest req)
 			throws IOException, JSONException {
 		final Couch couch = getCouch(req);
-		final Database database = couch.getDatabase(new PathParts(req)
-				.getDatabaseName());
+		final Database database = couch.getDatabase(new PathParts(req).getDatabaseName());
+		if (req.getHeader("Authorization") != null) {
+			AuthorizationInfo authInfo = new AuthorizationInfo(req.getHeader("Authorization"));
+			database.setUser(authInfo.getUser());
+			database.setPassword(authInfo.getPassword());
+		}
 		return getIndexer(database);
 	}
 
@@ -174,6 +179,13 @@ public final class LuceneServlet extends HttpServlet {
 			IOException {
 		try {
             doGetInternal(req, resp);
+		} catch (HttpResponseException e) {
+			if (e.getStatusCode() == 401) {
+				resp.sendError(e.getStatusCode(), e.getMessage());
+			}
+			else {
+				throw e;
+			}
         } catch (final JSONException e) {
             resp.sendError(500);
         }
