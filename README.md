@@ -412,6 +412,10 @@ An example numeric range query for spatial searching.
 
 Fields indexed with numeric types can still be queried as normal terms, couchdb-lucene just needs to know the type. For example, ?q=age&lt;long&gt;:12 will find all documents where the field called 'age' has a value of 12 (when the field was indexed as "type":"int".
 
+<h2>Search methods</h2>
+
+You may use HTTP GET or POST. For POST, use application/x-www-form-urlencoded format.
+
 <h2>Search parameters</h2>
 
 The following parameters can be passed for more sophisticated searches;
