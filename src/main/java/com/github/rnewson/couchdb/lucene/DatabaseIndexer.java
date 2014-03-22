@@ -500,7 +500,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	}
 
 	public void search(final HttpServletRequest req,
-			final HttpServletResponse resp) throws IOException, JSONException {
+			final HttpServletResponse resp) throws IOException, JSONException {	
+		search(req, resp, req.getParameter("q"));
+	}
+
+	public void search(final HttpServletRequest req,
+			final HttpServletResponse resp, final String query) throws IOException, JSONException {
 		final IndexState state = getState(req, resp);
 		if (state == null)
 			return;
@@ -513,7 +518,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 				resp.setStatus(304);
 				return;
 			}
-			for (final String queryString : getQueryStrings(req)) {
+			for (final String queryString : getQueryStrings(query)) {
 				final Analyzer analyzer = state.analyzer(req.getParameter("analyzer"));
 				final Operator operator = "and".equalsIgnoreCase(req.getParameter("default_operator"))
 				? Operator.AND : Operator.OR;
@@ -718,6 +723,10 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
 	private String[] getQueryStrings(final HttpServletRequest req) {
 		return Utils.splitOnCommas(req.getParameter("q"));
+	}
+
+	private String[] getQueryStrings(final String query) {
+		return Utils.splitOnCommas(query);
 	}
 
 	private void close() {
