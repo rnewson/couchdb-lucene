@@ -16,18 +16,8 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.http.HttpException;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.HttpVersion;
+import org.apache.http.*;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
@@ -56,11 +46,16 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
+
 /**
  * HttpClient instances just the way we like them.
- * 
+ *
  * @author rnewson
- * 
  */
 public final class HttpClientFactory {
 
@@ -123,8 +118,8 @@ public final class HttpClientFactory {
         }
 
         public void shutdown() {
-        // SHIELDED.
-        // delegate.shutdown();
+            // SHIELDED.
+            // delegate.shutdown();
         }
 
     }
@@ -149,7 +144,7 @@ public final class HttpClientFactory {
             schemeRegistry
                     .register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 5984));
             schemeRegistry
-            		.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
+                    .register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
             final ClientConnectionManager cm = new ShieldedClientConnManager(
                     new ThreadSafeClientConnManager(params, schemeRegistry));
 

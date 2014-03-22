@@ -21,7 +21,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.util.Version;
 
 public final class Constants {
-    
+
     public static final Version VERSION = Version.LUCENE_36;
 
     public static final Analyzer ANALYZER = new StandardAnalyzer(VERSION);

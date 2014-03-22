@@ -16,19 +16,16 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.http.client.HttpClient;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.http.client.HttpClient;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 public class ConfigTest {
 

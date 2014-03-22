@@ -16,9 +16,8 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-
+import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
+import com.github.rnewson.couchdb.lucene.util.Constants;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.NumericRangeQuery;
@@ -27,8 +26,8 @@ import org.apache.lucene.search.TermQuery;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
-import com.github.rnewson.couchdb.lucene.util.Constants;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 public class CustomQueryParserTest {
 

@@ -28,9 +28,8 @@ import java.io.IOException;
 
 /**
  * Convert errors to CouchDB-style JSON objects.
- * 
+ *
  * @author rnewson
- * 
  */
 public final class JSONErrorHandler extends ErrorHandler {
 

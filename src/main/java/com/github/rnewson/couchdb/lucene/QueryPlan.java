@@ -16,22 +16,13 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.FuzzyQuery;
-import org.apache.lucene.search.NumericRangeQuery;
-import org.apache.lucene.search.PrefixQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TermRangeQuery;
-import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.search.*;
 
 /**
  * this class converts Query objects to a textual description of the classes
  * used to execute it.
- * 
+ *
  * @author rnewson
- * 
  */
 public final class QueryPlan {
 
@@ -41,7 +32,7 @@ public final class QueryPlan {
 
     /**
      * Produces a string representation of the query classes used for a query.
-     * 
+     *
      * @param query
      * @return
      */

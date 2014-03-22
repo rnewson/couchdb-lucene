@@ -16,10 +16,9 @@
 
 package com.github.rnewson.couchdb.lucene.util;
 
-import static org.junit.Assert.assertArrayEquals;
-
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
 
 
 public class UtilsTest {

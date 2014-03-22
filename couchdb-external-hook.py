@@ -13,20 +13,22 @@ except:
 
 __usage__ = "%prog [OPTIONS]"
 
-httpdict = {"etag":"ETag", "content-type":"Content-Type"}
+httpdict = {"etag": "ETag", "content-type": "Content-Type"}
+
 
 def options():
     return [
         op.make_option('--remote-host', dest='remote_host',
-            default="localhost",
-            help="Hostname of the couchdb-lucene server. [%default]"),
+                       default="localhost",
+                       help="Hostname of the couchdb-lucene server. [%default]"),
         op.make_option('--remote-port', dest='remote_port', type='int',
-            default=5985,
-            help="Port of the couchdb-lucene server. [%default]"),
+                       default=5985,
+                       help="Port of the couchdb-lucene server. [%default]"),
         op.make_option('--local-key', dest='key',
-            default="local",
-            help="Configured key name for this couchdb instance. [%default]"),
+                       default="local",
+                       help="Configured key name for this couchdb instance. [%default]"),
     ]
+
 
 def main():
     parser = op.OptionParser(usage=__usage__, option_list=options())
@@ -47,11 +49,13 @@ def main():
         sys.stdout.write("\n")
         sys.stdout.flush()
 
+
 def requests():
     line = sys.stdin.readline()
     while line:
         yield json.loads(line)
         line = sys.stdin.readline()
+
 
 def respond(res, req, key):
     path = req.get("path", [])
@@ -64,7 +68,8 @@ def respond(res, req, key):
         path[index] = urllib.quote(path[index], safe=":/")
 
     path = '/'.join(['', key] + path)
-    params = urllib.urlencode(dict([k, v.encode('utf-8')] for k, v in req["query"].items()))
+    params = urllib.urlencode(
+        dict([k, v.encode('utf-8')] for k, v in req["query"].items()))
     path = '?'.join([path, params])
 
     req_headers = {}
@@ -88,11 +93,13 @@ def respond(res, req, key):
 
     return mkresp(resp.status, resp.read(), resp_headers)
 
+
 def mkresp(code, body, headers=None):
     ret = {"code": code, "body": body}
     if headers is not None:
         ret["headers"] = headers
     return ret
+
 
 if __name__ == "__main__":
     main()

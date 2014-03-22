@@ -16,11 +16,6 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import static com.github.rnewson.couchdb.lucene.util.Utils.text;
-
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -29,6 +24,11 @@ import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import static com.github.rnewson.couchdb.lucene.util.Utils.text;
 
 public final class Tika {
 
@@ -41,7 +41,7 @@ public final class Tika {
     private final org.apache.tika.Tika tika = new org.apache.tika.Tika();
 
     private Tika() {
-    	tika.setMaxStringLength(-1);
+        tika.setMaxStringLength(-1);
     }
 
     public void parse(final InputStream in, final String contentType, final String fieldName, final Document doc)

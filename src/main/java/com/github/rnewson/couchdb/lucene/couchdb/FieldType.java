@@ -16,26 +16,20 @@
 
 package com.github.rnewson.couchdb.lucene.couchdb;
 
-import java.util.Date;
-
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.lucene.document.AbstractField;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.search.MultiTermQuery;
-import org.apache.lucene.search.NumericRangeQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.SortField;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.search.*;
 import org.apache.lucene.util.NumericUtils;
+
+import java.util.Date;
 
 public enum FieldType {
 
     DATE(8, SortField.LONG) {
-
         @Override
         public NumericField toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
             return field(name, precisionStep, settings).setLongValue(toDate(value));
@@ -46,7 +40,7 @@ public enum FieldType {
                 throws ParseException {
             return NumericRangeQuery.newLongRange(name, precisionStep, toDate(lower), toDate(upper), inclusive, inclusive);
         }
-        
+
         @Override
         public Query toTermQuery(final String name, final String text) throws ParseException {
             final long date = toDate(text);
@@ -64,16 +58,16 @@ public enum FieldType {
         public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
             return NumericRangeQuery.newDoubleRange(name, precisionStep, toDouble(lower), toDouble(upper), inclusive, inclusive);
         }
-        
+
         @Override
         public Query toTermQuery(final String name, final String text) {
             return new TermQuery(new Term(name, NumericUtils.doubleToPrefixCoded(toDouble(text))));
         }
 
         private double toDouble(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).doubleValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number) obj).doubleValue();
+            }
             return Double.parseDouble(obj.toString());
         }
 
@@ -88,16 +82,16 @@ public enum FieldType {
         public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
             return NumericRangeQuery.newFloatRange(name, precisionStep, toFloat(lower), toFloat(upper), inclusive, inclusive);
         }
-        
+
         @Override
         public Query toTermQuery(final String name, final String text) {
             return new TermQuery(new Term(name, NumericUtils.floatToPrefixCoded(toFloat(text))));
         }
 
         private float toFloat(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).floatValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number) obj).floatValue();
+            }
             return Float.parseFloat(obj.toString());
         }
     },
@@ -111,16 +105,16 @@ public enum FieldType {
         public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
             return NumericRangeQuery.newIntRange(name, precisionStep, toInt(lower), toInt(upper), inclusive, inclusive);
         }
-        
+
         @Override
         public Query toTermQuery(final String name, final String text) {
             return new TermQuery(new Term(name, NumericUtils.intToPrefixCoded(toInt(text))));
         }
 
         private int toInt(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).intValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number) obj).intValue();
+            }
             return Integer.parseInt(obj.toString());
         }
 
@@ -137,9 +131,9 @@ public enum FieldType {
         }
 
         private long toLong(final Object obj) {
-        	if (obj instanceof Number) {
-        		return ((Number)obj).longValue();
-        	}
+            if (obj instanceof Number) {
+                return ((Number) obj).longValue();
+            }
             return Long.parseLong(obj.toString());
         }
 
@@ -182,7 +176,7 @@ public enum FieldType {
         return field;
     }
 
-    public static final String[] DATE_PATTERNS = new String[] { "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZ",
+    public static final String[] DATE_PATTERNS = new String[]{"yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZ",
             "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd'T'HH:mm:ss.SSS"};
 
     private final int sortField;
@@ -198,7 +192,7 @@ public enum FieldType {
 
     public abstract Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive)
             throws ParseException;
-    
+
     public abstract Query toTermQuery(final String name, final String text) throws ParseException;
 
     public final int toSortField() {
@@ -206,9 +200,9 @@ public enum FieldType {
     }
 
     public static long toDate(final Object obj) throws ParseException {
-    	if (obj instanceof Date) {
-    		return ((Date)obj).getTime();
-    	}
+        if (obj instanceof Date) {
+            return ((Date) obj).getTime();
+        }
         try {
             return DateUtils.parseDate(obj.toString().toUpperCase(), DATE_PATTERNS).getTime();
         } catch (final java.text.ParseException e) {

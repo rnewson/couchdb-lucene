@@ -16,9 +16,6 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import java.io.File;
-import java.util.EnumSet;
-
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -28,6 +25,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.GzipFilter;
 
 import javax.servlet.DispatcherType;
+import java.io.File;
+import java.util.EnumSet;
 
 public class Main {
 

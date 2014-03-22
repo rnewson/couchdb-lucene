@@ -16,20 +16,15 @@
 
 package com.github.rnewson.couchdb.lucene.couchdb;
 
-import java.io.IOException;
-
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.StringEntity;
-import org.json.JSONObject;
-
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import com.github.rnewson.couchdb.lucene.util.ErrorPreservingResponseHandler;
 import com.github.rnewson.couchdb.lucene.util.StatusCodeResponseHandler;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.*;
+import org.apache.http.entity.StringEntity;
+import org.json.JSONObject;
+
+import java.io.IOException;
 
 public final class HttpUtils {
 

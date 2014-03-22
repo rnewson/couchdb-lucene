@@ -16,41 +16,40 @@
 
 package com.github.rnewson.couchdb.lucene.couchdb;
 
-import java.io.IOException;
-
 import org.apache.http.client.HttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+
 /**
  * Simple Java API access to CouchDB.
- * 
+ *
  * @author rnewson
- * 
  */
 public class Couch {
 
-	private final HttpClient httpClient;
-	private final String url;
+    private final HttpClient httpClient;
+    private final String url;
 
-	public Couch(final HttpClient httpClient, final String url)
-			throws IOException {
-		this.httpClient = httpClient;
-		this.url = url.endsWith("/") ? url : url + "/";
-	}
+    public Couch(final HttpClient httpClient, final String url)
+            throws IOException {
+        this.httpClient = httpClient;
+        this.url = url.endsWith("/") ? url : url + "/";
+    }
 
-	public final JSONArray getAllDatabases() throws IOException, JSONException {
-		final String response = HttpUtils.get(httpClient, url + "_all_dbs");
-		return new JSONArray(response);
-	}
+    public final JSONArray getAllDatabases() throws IOException, JSONException {
+        final String response = HttpUtils.get(httpClient, url + "_all_dbs");
+        return new JSONArray(response);
+    }
 
-	public final JSONObject getInfo() throws IOException, JSONException {
-		return new JSONObject(HttpUtils.get(httpClient, url));
-	}
+    public final JSONObject getInfo() throws IOException, JSONException {
+        return new JSONObject(HttpUtils.get(httpClient, url));
+    }
 
-	public Database getDatabase(final String dbname) throws IOException {
-		return new Database(httpClient, url + dbname);
-	}
+    public Database getDatabase(final String dbname) throws IOException {
+        return new Database(httpClient, url + dbname);
+    }
 
 }

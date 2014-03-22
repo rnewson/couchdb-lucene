@@ -16,17 +16,7 @@
 
 package com.github.rnewson.couchdb.lucene.util;
 
-import java.io.Reader;
-import java.util.Iterator;
-
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.analysis.LowerCaseTokenizer;
-import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
-import org.apache.lucene.analysis.PorterStemFilter;
-import org.apache.lucene.analysis.SimpleAnalyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.*;
 import org.apache.lucene.analysis.br.BrazilianAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.analysis.cn.ChineseAnalyzer;
@@ -41,6 +31,9 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.Reader;
+import java.util.Iterator;
 
 public enum Analyzers {
 

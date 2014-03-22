@@ -16,16 +16,15 @@
 
 package com.github.rnewson.couchdb.lucene.util;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.store.Directory;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 public class Utils {
 
@@ -67,7 +66,7 @@ public class Utils {
 
     /**
      * Split a string on commas but respect commas inside quotes.
-     * 
+     *
      * @param str
      * @return
      */

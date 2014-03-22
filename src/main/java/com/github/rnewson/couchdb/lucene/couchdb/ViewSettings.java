@@ -16,13 +16,12 @@
 
 package com.github.rnewson.couchdb.lucene.couchdb;
 
+import com.github.rnewson.couchdb.lucene.util.Constants;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 import org.json.JSONObject;
 import org.mozilla.javascript.NativeObject;
-
-import com.github.rnewson.couchdb.lucene.util.Constants;
 
 public final class ViewSettings {
 
@@ -59,7 +58,7 @@ public final class ViewSettings {
         this.store = store != null ? Store.valueOf(store.toUpperCase()) : defaults.getStore();
         this.type = type != null ? FieldType.valueOf(type.toUpperCase()) : defaults.getFieldType();
         this.boost = boost != null ? Float.valueOf(boost) : defaults.getBoost();
-        this.termvector = termvector != null? TermVector.valueOf(termvector.toUpperCase()) : defaults.getTermVector();
+        this.termvector = termvector != null ? TermVector.valueOf(termvector.toUpperCase()) : defaults.getTermVector();
     }
 
     public float getBoost() {
@@ -82,8 +81,7 @@ public final class ViewSettings {
         return type;
     }
 
-    public TermVector getTermVector()
-    {
+    public TermVector getTermVector() {
         return termvector;
     }
 

@@ -16,15 +16,14 @@
 
 package com.github.rnewson.couchdb.lucene.util;
 
-import java.io.IOException;
-import java.io.Writer;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.eclipse.jetty.http.HttpHeaders;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.Writer;
 
 public final class ServletUtils {
 
@@ -61,21 +60,21 @@ public final class ServletUtils {
     }
 
     public static void sendJsonError(final HttpServletRequest request, final HttpServletResponse response, final int code,
-            final String reason) throws IOException, JSONException {
+                                     final String reason) throws IOException, JSONException {
         final JSONObject obj = new JSONObject();
         obj.put("reason", reason);
         sendJsonError(request, response, code, obj);
     }
-    
+
     public static void sendJsonError(final HttpServletRequest request, final HttpServletResponse response, final int code,
-                final JSONObject error) throws IOException, JSONException {
+                                     final JSONObject error) throws IOException, JSONException {
         setResponseContentTypeAndEncoding(request, response);
         response.setHeader(HttpHeaders.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
         response.setStatus(code);
         error.put("code", code);
-        
+
         final Writer writer = response.getWriter();
-        try { 
+        try {
             writer.write(error.toString());
             writer.write("\r\n");
         } finally {
@@ -83,17 +82,17 @@ public final class ServletUtils {
         }
     }
 
-	public static void sendJson(final HttpServletRequest req, final HttpServletResponse resp, final JSONObject json) throws IOException {
-	    setResponseContentTypeAndEncoding(req, resp);
-	    final Writer writer = resp.getWriter();
-	    try {
-	        writer.write(json.toString() + "\r\n");
-	    } finally {
-	        writer.close();
-	    }
-	}
-	
-   public static void sendJsonSuccess(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
+    public static void sendJson(final HttpServletRequest req, final HttpServletResponse resp, final JSONObject json) throws IOException {
+        setResponseContentTypeAndEncoding(req, resp);
+        final Writer writer = resp.getWriter();
+        try {
+            writer.write(json.toString() + "\r\n");
+        } finally {
+            writer.close();
+        }
+    }
+
+    public static void sendJsonSuccess(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
         setResponseContentTypeAndEncoding(req, resp);
         final Writer writer = resp.getWriter();
         try {

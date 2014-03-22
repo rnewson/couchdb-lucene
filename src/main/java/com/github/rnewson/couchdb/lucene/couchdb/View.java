@@ -16,11 +16,7 @@
 
 package com.github.rnewson.couchdb.lucene.couchdb;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
+import com.github.rnewson.couchdb.lucene.util.Analyzers;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.json.JSONException;
@@ -29,103 +25,106 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ScriptableObject;
 
-import com.github.rnewson.couchdb.lucene.util.Analyzers;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public final class View {
 
-	private static final String DEFAULT_ANALYZER = "standard";
+    private static final String DEFAULT_ANALYZER = "standard";
 
-	private static final String ANALYZER = "analyzer";
+    private static final String ANALYZER = "analyzer";
 
-	private static final String INDEX = "index";
+    private static final String INDEX = "index";
 
-	private static final String DEFAULTS = "defaults";
+    private static final String DEFAULTS = "defaults";
 
-	private final JSONObject json;
+    private final JSONObject json;
 
-	private final String name;
+    private final String name;
 
-	public View(final String name, final JSONObject json) {
-		if (!json.has(INDEX)) {
-			throw new IllegalArgumentException(json + " is not an index");
-		}
-		this.name = name;
-		this.json = json;
-	}
+    public View(final String name, final JSONObject json) {
+        if (!json.has(INDEX)) {
+            throw new IllegalArgumentException(json + " is not an index");
+        }
+        this.name = name;
+        this.json = json;
+    }
 
-	public Analyzer getAnalyzer() throws JSONException {
-		return Analyzers
-				.getAnalyzer(json.optString(ANALYZER, DEFAULT_ANALYZER));
-	}
+    public Analyzer getAnalyzer() throws JSONException {
+        return Analyzers
+                .getAnalyzer(json.optString(ANALYZER, DEFAULT_ANALYZER));
+    }
 
-	public ViewSettings getDefaultSettings() throws JSONException {
-		return json.has(DEFAULTS) ? new ViewSettings(json
-				.getJSONObject(DEFAULTS)) : ViewSettings.getDefaultSettings();
-	}
+    public ViewSettings getDefaultSettings() throws JSONException {
+        return json.has(DEFAULTS) ? new ViewSettings(json
+                .getJSONObject(DEFAULTS)) : ViewSettings.getDefaultSettings();
+    }
 
-	public String getFunction() throws JSONException {
-		return trim(json.getString(INDEX));
-	}
+    public String getFunction() throws JSONException {
+        return trim(json.getString(INDEX));
+    }
 
-	public Function compileFunction(final Context context,
-			ScriptableObject scope) throws JSONException {
-		return context.compileFunction(scope, getFunction(), null, 0, null);
-	}
+    public Function compileFunction(final Context context,
+                                    ScriptableObject scope) throws JSONException {
+        return context.compileFunction(scope, getFunction(), null, 0, null);
+    }
 
-	public String getDigest() {
-		try {
-			final MessageDigest md = MessageDigest.getInstance("MD5");
-			md.update(toBytes(json.optString("analyzer")));
-			md.update(toBytes(json.optString("defaults")));
-			md.update(toBytes(json.optString("index")));
-			return new BigInteger(1, md.digest()).toString(Character.MAX_RADIX);
-		} catch (final NoSuchAlgorithmException e) {
-			throw new Error("MD5 support missing.");
-		}
-	}
+    public String getDigest() {
+        try {
+            final MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(toBytes(json.optString("analyzer")));
+            md.update(toBytes(json.optString("defaults")));
+            md.update(toBytes(json.optString("index")));
+            return new BigInteger(1, md.digest()).toString(Character.MAX_RADIX);
+        } catch (final NoSuchAlgorithmException e) {
+            throw new Error("MD5 support missing.");
+        }
+    }
 
-	private static byte[] toBytes(final String str) {
-		if (str == null) {
-			return new byte[0];
-		}
-		try {
-			return str.getBytes("UTF-8");
-		} catch (final UnsupportedEncodingException e) {
-			throw new Error("UTF-8 support missing.");
-		}
-	}
+    private static byte[] toBytes(final String str) {
+        if (str == null) {
+            return new byte[0];
+        }
+        try {
+            return str.getBytes("UTF-8");
+        } catch (final UnsupportedEncodingException e) {
+            throw new Error("UTF-8 support missing.");
+        }
+    }
 
-	private String trim(final String fun) {
-		String result = fun;
-		result = StringUtils.trim(result);
-		result = StringUtils.removeStart(result, "\"");
-		result = StringUtils.removeEnd(result, "\"");
-		return result;
-	}
+    private String trim(final String fun) {
+        String result = fun;
+        result = StringUtils.trim(result);
+        result = StringUtils.removeStart(result, "\"");
+        result = StringUtils.removeEnd(result, "\"");
+        return result;
+    }
 
-	@Override
-	public int hashCode() {
-		return getDigest().hashCode();
-	}
+    @Override
+    public int hashCode() {
+        return getDigest().hashCode();
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (!(obj instanceof View)) {
-			return false;
-		}
-		View other = (View) obj;
-		return getDigest().equals(other.getDigest());
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof View)) {
+            return false;
+        }
+        View other = (View) obj;
+        return getDigest().equals(other.getDigest());
+    }
 
-	@Override
-	public String toString() {
-		return String.format("View[name=%s, digest=%s]", name, getDigest());
-	}
+    @Override
+    public String toString() {
+        return String.format("View[name=%s, digest=%s]", name, getDigest());
+    }
 
 }

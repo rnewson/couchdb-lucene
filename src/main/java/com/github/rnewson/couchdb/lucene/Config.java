@@ -16,15 +16,15 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.http.client.HttpClient;
 import org.apache.log4j.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 
 public final class Config {
 

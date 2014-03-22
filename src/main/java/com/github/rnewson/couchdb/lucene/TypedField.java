@@ -16,13 +16,12 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Query;
 
-import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class TypedField {
 
@@ -50,7 +49,7 @@ public final class TypedField {
     public String getName() {
         return name;
     }
-    
+
     public FieldType getType() {
         return type;
     }
@@ -62,7 +61,7 @@ public final class TypedField {
     public Query toRangeQuery(final String lower, final String upper, final boolean inclusive) throws ParseException {
         return type.toRangeQuery(name, lower, upper, inclusive);
     }
-    
+
     public Query toTermQuery(final String text) throws ParseException {
         return type.toTermQuery(name, text);
     }

@@ -14,7 +14,9 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.rnewson.couchdb.lucene</groupId>
     <artifactId>couchdb-lucene</artifactId>
@@ -114,9 +116,9 @@
             <version>1.1</version>
         </dependency>
         <dependency>
-          <groupId>org.erlang.otp</groupId>
-          <artifactId>jinterface</artifactId>
-          <version>1.5.3.2</version>
+            <groupId>org.erlang.otp</groupId>
+            <artifactId>jinterface</artifactId>
+            <version>1.5.3.2</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -147,14 +149,16 @@
         <jetty-version>8.1.14.v20131031</jetty-version>
         <http-version>4.0.1</http-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.reporting.outputEncoding>UTF-8
+        </project.reporting.outputEncoding>
     </properties>
     <issueManagement>
         <system>github</system>
         <url>http://github.com/rnewson/couchdb-lucene/issues</url>
     </issueManagement>
     <scm>
-        <connection>scm:git:git://github.com/rnewson/couchdb-lucene.git</connection>
+        <connection>scm:git:git://github.com/rnewson/couchdb-lucene.git
+        </connection>
         <url>http://github.com/rnewson/couchdb-lucene/</url>
     </scm>
     <licenses>
@@ -186,7 +190,8 @@
                     <showPackage>false</showPackage>
                     <links>
                         <link>http://java.sun.com/javase/6/docs/api/</link>
-                        <link>http://lucene.apache.org/java/3_0_0/api/core/</link>
+                        <link>http://lucene.apache.org/java/3_0_0/api/core/
+                        </link>
                     </links>
                 </configuration>
             </plugin>
@@ -215,20 +220,22 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            <addDefaultImplementationEntries>true
+                            </addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true
+                            </addDefaultSpecificationEntries>
                         </manifest>
                     </archive>
                 </configuration>
             </plugin>
             <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-eclipse-plugin</artifactId>
-              <version>2.9</version>
-              <configuration>
-                <downloadSources>true</downloadSources>
-                <downloadJavadocs>true</downloadJavadocs>
-              </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-eclipse-plugin</artifactId>
+                <version>2.9</version>
+                <configuration>
+                    <downloadSources>true</downloadSources>
+                    <downloadJavadocs>true</downloadJavadocs>
+                </configuration>
             </plugin>
         </plugins>
     </build>

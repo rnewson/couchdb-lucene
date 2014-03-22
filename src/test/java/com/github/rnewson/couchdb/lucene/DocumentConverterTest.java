@@ -16,13 +16,10 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
-
-import java.util.Collection;
-import java.util.TimeZone;
-
+import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
+import com.github.rnewson.couchdb.lucene.couchdb.View;
+import com.github.rnewson.couchdb.lucene.couchdb.ViewSettings;
+import com.github.rnewson.couchdb.lucene.util.Constants;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.NumericField;
 import org.json.JSONException;
@@ -33,10 +30,12 @@ import org.junit.Test;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
 
-import com.github.rnewson.couchdb.lucene.couchdb.CouchDocument;
-import com.github.rnewson.couchdb.lucene.couchdb.View;
-import com.github.rnewson.couchdb.lucene.couchdb.ViewSettings;
-import com.github.rnewson.couchdb.lucene.util.Constants;
+import java.util.Collection;
+import java.util.TimeZone;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 public class DocumentConverterTest {
 
@@ -127,9 +126,9 @@ public class DocumentConverterTest {
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {var ret=new Document(); "
-                     + "function idx(obj) {for (var key in obj) "
-                     + "{switch (typeof obj[key]) {case 'object':idx(obj[key]); break; "
-                     + "case 'function': break; default: ret.add(obj[key]); break;} } }; idx(doc); return ret; }"));
+                        + "function idx(obj) {for (var key in obj) "
+                        + "{switch (typeof obj[key]) {case 'object':idx(obj[key]); break; "
+                        + "case 'function': break; default: ret.add(obj[key]); break;} } }; idx(doc); return ret; }"));
 
         final Collection<Document> result = converter.convert(
                 doc("{_id:\"hello\", l1: { l2: {l3:[\"v3\", \"v4\"]}}}"),
@@ -179,7 +178,7 @@ public class DocumentConverterTest {
         assertThat(result.iterator().next().getValues("s")[0], is("{\"foo\":\"bar\"}"));
     }
 
-    @Test(expected=EvaluatorException.class)
+    @Test(expected = EvaluatorException.class)
     public void testBadCode() throws Exception {
         final DocumentConverter converter = new DocumentConverter(
                 context,
@@ -225,90 +224,90 @@ public class DocumentConverterTest {
         assertThat(result.size(), is(1));
         assertThat(result.iterator().next().get("default"), is("1 2"));
     }
-    
+
     @Test
     public void testNullValue() throws Exception {
-    	 final String fun = "function(doc) { var ret=new Document(); ret.add(doc.foo);  return ret; }";
-         final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Collection<Document> result = converter.convert(
-                 doc("{_id:\"hi\", foo:null}"),
-                 settings(),
-                 null);
-         assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().get("foo"), is(nullValue()));
+        final String fun = "function(doc) { var ret=new Document(); ret.add(doc.foo);  return ret; }";
+        final DocumentConverter converter = new DocumentConverter(context, view(fun));
+        final Collection<Document> result = converter.convert(
+                doc("{_id:\"hi\", foo:null}"),
+                settings(),
+                null);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().get("foo"), is(nullValue()));
     }
-    
+
     @Test
     public void testLongValue() throws Exception {
-    	 final String fun = "function(doc) { var ret=new Document(); ret.add(12, {type:\"long\", field:\"num\"});  return ret; }";
-         final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Collection<Document> result = converter.convert(
-                 doc("{_id:\"hi\"}"),
-                 settings(),
-                 null);
-         assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+        final String fun = "function(doc) { var ret=new Document(); ret.add(12, {type:\"long\", field:\"num\"});  return ret; }";
+        final DocumentConverter converter = new DocumentConverter(context, view(fun));
+        final Collection<Document> result = converter.convert(
+                doc("{_id:\"hi\"}"),
+                settings(),
+                null);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
     }
-    
+
     @Test
     public void testDateString() throws Exception {
-    	 final String fun = "function(doc) { var ret=new Document(); ret.add(\"2009-01-01\", {type:\"date\", field:\"num\"});  return ret; }";
-         final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Collection<Document> result = converter.convert(
-                 doc("{_id:\"hi\"}"),
-                 settings(),
-                 null);
-         assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+        final String fun = "function(doc) { var ret=new Document(); ret.add(\"2009-01-01\", {type:\"date\", field:\"num\"});  return ret; }";
+        final DocumentConverter converter = new DocumentConverter(context, view(fun));
+        final Collection<Document> result = converter.convert(
+                doc("{_id:\"hi\"}"),
+                settings(),
+                null);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
     }
-    
+
     @Test
     public void testDateObject() throws Exception {
-    	 final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(2010,8,13), {type:\"date\", field:\"num\"});  return ret; }";
-         final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Collection<Document> result = converter.convert(
-                 doc("{_id:\"hi\"}"),
-                 settings(),
-                 null);
-         assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
-         assertThat((Long)((NumericField)result.iterator().next().getFieldable("num")).getNumericValue(), is(1284332400000L));
+        final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(2010,8,13), {type:\"date\", field:\"num\"});  return ret; }";
+        final DocumentConverter converter = new DocumentConverter(context, view(fun));
+        final Collection<Document> result = converter.convert(
+                doc("{_id:\"hi\"}"),
+                settings(),
+                null);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+        assertThat((Long) ((NumericField) result.iterator().next().getFieldable("num")).getNumericValue(), is(1284332400000L));
     }
-    
+
     @Test
     public void testDateObject2() throws Exception {
-         final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(\"January 6, 1972 16:05:00\"), {type:\"date\", field:\"num\"});  return ret; }";
-         final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Collection<Document> result = converter.convert(
-                 doc("{_id:\"hi\"}"),
-                 settings(),
-                 null);
-         assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
-         assertThat((Long)((NumericField)result.iterator().next().getFieldable("num")).getNumericValue(), is(63561900000L));
+        final String fun = "function(doc) { var ret=new Document(); ret.add(new Date(\"January 6, 1972 16:05:00\"), {type:\"date\", field:\"num\"});  return ret; }";
+        final DocumentConverter converter = new DocumentConverter(context, view(fun));
+        final Collection<Document> result = converter.convert(
+                doc("{_id:\"hi\"}"),
+                settings(),
+                null);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+        assertThat((Long) ((NumericField) result.iterator().next().getFieldable("num")).getNumericValue(), is(63561900000L));
     }
 
     @Test
     public void testParseInt() throws Exception {
-    	 final String fun = "function(doc) { var ret=new Document(); ret.add(parseInt(\"12.5\"), {type:\"int\", field:\"num\"});  return ret; }";
-         final DocumentConverter converter = new DocumentConverter(context, view(fun));
-         final Collection<Document> result = converter.convert(
-                 doc("{_id:\"hi\"}"),
-                 settings(),
-                 null);
-         assertThat(result.size(), is(1));
-         assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
+        final String fun = "function(doc) { var ret=new Document(); ret.add(parseInt(\"12.5\"), {type:\"int\", field:\"num\"});  return ret; }";
+        final DocumentConverter converter = new DocumentConverter(context, view(fun));
+        final Collection<Document> result = converter.convert(
+                doc("{_id:\"hi\"}"),
+                settings(),
+                null);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next().getFieldable("num"), is(NumericField.class));
     }
-    
-	@Test
-	public void testConditionalOnNulls() throws Exception {
-		final String fun = "function(doc) { if (doc.foo && doc.bar) { return new Document(); }; return null; }";
-		final DocumentConverter converter = new DocumentConverter(context,
-				view(fun));
-		final Collection<Document> result = converter.convert(
-				doc("{_id:\"hi\", foo: null, bar: null}"), settings(), null);
-		assertThat(result.size(), is(0));
-	}
+
+    @Test
+    public void testConditionalOnNulls() throws Exception {
+        final String fun = "function(doc) { if (doc.foo && doc.bar) { return new Document(); }; return null; }";
+        final DocumentConverter converter = new DocumentConverter(context,
+                view(fun));
+        final Collection<Document> result = converter.convert(
+                doc("{_id:\"hi\", foo: null, bar: null}"), settings(), null);
+        assertThat(result.size(), is(0));
+    }
 
     private CouchDocument doc(final String json) throws JSONException {
         return new CouchDocument(new JSONObject(json));

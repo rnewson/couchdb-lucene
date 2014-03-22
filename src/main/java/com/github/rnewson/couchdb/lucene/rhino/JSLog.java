@@ -25,7 +25,7 @@ public class JSLog extends ScriptableObject {
     private final Logger logger = Logger.getLogger(JSLog.class);
 
     public JSLog() {
-        String[] names = { "error", "warn", "info", "debug", "trace" };
+        String[] names = {"error", "warn", "info", "debug", "trace"};
         defineFunctionProperties(names, JSLog.class, ScriptableObject.DONTENUM);
     }
 
@@ -37,7 +37,7 @@ public class JSLog extends ScriptableObject {
     public void error(String mesg) {
         logger.error(mesg);
     }
-    
+
     public void warn(String mesg) {
         logger.warn(mesg);
     }
