@@ -17,8 +17,9 @@
 package com.github.rnewson.couchdb.lucene;
 
 import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
-import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.SortField;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,12 +55,14 @@ public final class TypedField {
         return type;
     }
 
-    public int toSortField() {
-        return type.toSortField();
+    public SortField.Type toSortField() {
+        return type.toType();
     }
 
-    public Query toRangeQuery(final String lower, final String upper, final boolean inclusive) throws ParseException {
-        return type.toRangeQuery(name, lower, upper, inclusive);
+    public Query toRangeQuery(final String lower, final String upper,
+                              final boolean lowerInclusive, final boolean upperInclusive)
+            throws ParseException {
+        return type.toRangeQuery(name, lower, upper, lowerInclusive, upperInclusive);
     }
 
     public Query toTermQuery(final String text) throws ParseException {

@@ -29,17 +29,17 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.document.*;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.index.*;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.queryParser.QueryParser.Operator;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.vectorhighlight.FastVectorHighlighter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.SingleInstanceLockFactory;
-import org.apache.lucene.util.ReaderUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -67,7 +67,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
         private final Analyzer analyzer;
         private UpdateSequence pending_seq;
-        private IndexReader reader;
+        private DirectoryReader reader;
         private final IndexWriter writer;
         private final Database database;
         private final View view;
@@ -82,7 +82,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             this.view = view;
         }
 
-        public synchronized IndexReader borrowReader(final boolean staleOk)
+        public synchronized DirectoryReader borrowReader(final boolean staleOk)
                 throws IOException, JSONException {
             blockForLatest(staleOk);
             if (reader == null) {
@@ -92,7 +92,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             if (reader != null) {
                 reader.decRef();
             }
-            reader = IndexReader.open(writer, !staleOk);
+            reader = DirectoryReader.open(writer, !staleOk);
             if (readerDirty) {
                 etag = newEtag();
                 readerDirty = false;
@@ -389,7 +389,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
         final IndexState state = getState(req, resp);
         if (state == null)
             return;
-        final IndexReader reader = state.borrowReader(isStaleOk(req));
+        final DirectoryReader reader = state.borrowReader(isStaleOk(req));
         try {
             final JSONObject result = new JSONObject();
             result.put("current", reader.isCurrent());
@@ -400,20 +400,18 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             result.put("digest", state.getDigest());
             result.put("update_seq", getUpdateSequence(reader.getIndexCommit().getUserData()));
             final JSONArray fields = new JSONArray();
-            final Iterator<FieldInfo> it = ReaderUtil.getMergedFieldInfos(reader).iterator();
-            while (it.hasNext()) {
-                final FieldInfo fieldInfo = it.next();
-                if (fieldInfo.name.startsWith("_")) {
-                    continue;
-                }
-                if (fieldInfo.isIndexed) {
-                    fields.put(fieldInfo.name);
+            for (AtomicReaderContext leaf : reader.leaves()) {
+                for (FieldInfo info : leaf.reader().getFieldInfos()) {
+                    if (info.name.startsWith("_")) {
+                        continue;
+                    }
+                    if (info.isIndexed()) {
+                        fields.put(info.name);
+                    }
                 }
             }
             result.put("fields", fields);
-            result.put("last_modified", Long.toString(IndexReader
-                    .lastModified(reader.directory())));
-            result.put("optimized", reader.isOptimized());
+            result.put("version", reader.getVersion());
             result.put("ref_count", reader.getRefCount());
 
             final JSONObject info = new JSONObject();
@@ -498,7 +496,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                     final Set<Term> terms = new HashSet<Term>();
                     rewritten_q.extractTerms(terms);
                     for (final Object term : terms) {
-                        final int freq = searcher.docFreq((Term) term);
+                        final int freq = searcher.getIndexReader().docFreq((Term) term);
                         freqs.put(term.toString(), freq);
                     }
                     queryRow.put("freqs", freqs);
@@ -518,13 +516,14 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                             .getParameter("sort"));
                     final int skip = getIntParameter(req, "skip", 0);
 
-                    final FieldSelector fieldSelector;
+                    final Set<String> fieldsToLoad;
                     if (req.getParameter("include_fields") == null) {
-                        fieldSelector = null;
+                        fieldsToLoad = null;
                     } else {
                         final String[] fields = Utils.splitOnCommas(
                                 req.getParameter("include_fields"));
-                        fieldSelector = new MapFieldSelector(Arrays.asList(fields));
+                        final List<String> list = Arrays.asList(fields);
+                        fieldsToLoad = new HashSet<String>(list);
                     }
 
                     if (sort == null) {
@@ -540,22 +539,26 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                     final JSONArray rows = new JSONArray();
                     final String[] fetch_ids = new String[max];
                     for (int i = skip; i < skip + max; i++) {
-                        final Document doc = searcher.doc(td.scoreDocs[i].doc,
-                                fieldSelector);
+                        final Document doc;
+                        if (fieldsToLoad == null) {
+                            doc = searcher.doc(td.scoreDocs[i].doc);
+                        } else {
+                            doc = searcher.doc(td.scoreDocs[i].doc, fieldsToLoad);
+                        }
 
                         final JSONObject row = new JSONObject();
                         final JSONObject fields = new JSONObject();
                         final JSONObject highlight_rows = new JSONObject();
 
                         // Include stored fields.
-                        for (final Fieldable f : doc.getFields()) {
-                            if (!f.isStored()) {
+                        for (final IndexableField f : doc.getFields()) {
+                            if (!f.fieldType().stored()) {
                                 continue;
                             }
                             final String name = f.name();
                             final Object value;
-                            if (f instanceof NumericField) {
-                                value = ((NumericField) f).getNumericValue();
+                            if (f.numericValue() != null) {
+                                value = f.numericValue();
                             } else {
                                 value = f.stringValue();
                             }
@@ -602,11 +605,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                         }
                         if (highlight_rows.length() > 0) {
                             row.put("highlights", highlight_rows);
-                        }
-                        if (include_termvectors) {
-                            final JsonTermVectorMapper mapper = new JsonTermVectorMapper();
-                            searcher.getIndexReader().getTermFreqVector(td.scoreDocs[i].doc, mapper);
-                            row.put("termvectors", mapper.getObject());
                         }
 
                         rows.put(row);
@@ -712,7 +710,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             if (state.pending_seq.isLaterThan(getUpdateSequence(state.writer))) {
                 final Map<String, String> userData = new HashMap<String, String>();
                 userData.put("last_seq", state.pending_seq.toString());
-                state.writer.commit(userData);
+                state.writer.setCommitData(userData);
+                state.writer.commit();
                 logger.info(view + " now at update_seq " + state.pending_seq);
             }
         }
@@ -746,10 +745,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
     }
 
     private UpdateSequence getUpdateSequence(final Directory dir) throws IOException {
-        if (!IndexReader.indexExists(dir)) {
+        if (!DirectoryReader.indexExists(dir)) {
             return UpdateSequence.START;
         }
-        return getUpdateSequence(IndexReader.getCommitUserData(dir));
+        final List<IndexCommit> commits = DirectoryReader.listCommits(dir);
+        final IndexCommit latest = commits.get(commits.size() - 1);
+        return getUpdateSequence(latest.getUserData());
     }
 
     private UpdateSequence getUpdateSequence(final IndexWriter writer) throws IOException {
@@ -823,13 +824,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
     private IndexWriter newWriter(final Directory dir) throws IOException {
         final IndexWriterConfig config = new IndexWriterConfig(
                 Constants.VERSION, Constants.ANALYZER);
-
-        final LogByteSizeMergePolicy mergePolicy = new LogByteSizeMergePolicy();
-        mergePolicy.setMergeFactor(ini.getInt("lucene.mergeFactor", 10));
-        mergePolicy.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
+        config.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
                 false));
-        config.setMergePolicy(mergePolicy);
-
         config.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB",
                 IndexWriterConfig.DEFAULT_RAM_BUFFER_SIZE_MB));
 

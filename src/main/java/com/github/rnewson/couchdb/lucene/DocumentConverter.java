@@ -24,7 +24,7 @@ import com.github.rnewson.couchdb.lucene.rhino.JSLog;
 import com.github.rnewson.couchdb.lucene.rhino.RhinoDocument;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

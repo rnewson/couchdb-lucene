@@ -87,7 +87,12 @@
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-analyzers</artifactId>
+            <artifactId>lucene-analyzers-common</artifactId>
+            <version>${lucene-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
             <version>${lucene-version}</version>
         </dependency>
         <dependency>
@@ -144,7 +149,7 @@
         </dependency>
     </dependencies>
     <properties>
-        <lucene-version>3.6.2</lucene-version>
+        <lucene-version>4.7.0</lucene-version>
         <tika-version>1.4</tika-version>
         <jetty-version>8.1.14.v20131031</jetty-version>
         <http-version>4.0.1</http-version>

@@ -53,8 +53,8 @@ public final class QueryPlan {
         builder.append(query.getTerm());
         builder.append(",prefixLength=");
         builder.append(query.getPrefixLength());
-        builder.append(",minSimilarity=");
-        builder.append(query.getMinSimilarity());
+        builder.append(",maxEdits=");
+        builder.append(query.getMaxEdits());
     }
 
     private static void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery<?> query) {
@@ -74,9 +74,9 @@ public final class QueryPlan {
     }
 
     private static void planTermRangeQuery(final StringBuilder builder, final TermRangeQuery query) {
-        builder.append(query.getLowerTerm());
+        builder.append(query.getLowerTerm().utf8ToString());
         builder.append(" TO ");
-        builder.append(query.getUpperTerm());
+        builder.append(query.getUpperTerm().utf8ToString());
     }
 
     private static void planWildcardQuery(final StringBuilder builder, final WildcardQuery query) {

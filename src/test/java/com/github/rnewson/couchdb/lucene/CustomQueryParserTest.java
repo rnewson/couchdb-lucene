@@ -19,7 +19,7 @@ package com.github.rnewson.couchdb.lucene;
 import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;

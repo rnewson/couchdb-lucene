@@ -17,51 +17,59 @@
 package com.github.rnewson.couchdb.lucene.couchdb;
 
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.lucene.document.AbstractField;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericField;
+import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.*;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 
 import java.util.Date;
 
 public enum FieldType {
 
-    DATE(8, SortField.LONG) {
+    DATE(8, SortField.Type.LONG) {
         @Override
-        public NumericField toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
-            return field(name, precisionStep, settings).setLongValue(toDate(value));
+        public LongField toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
+            return boost(new LongField(name, toDate(value), settings.getStore()), settings);
         }
 
         @Override
-        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive)
+        public Query toRangeQuery(final String name, final String lower, final String upper,
+                                  final boolean lowerInclusive, final boolean upperInclusive)
                 throws ParseException {
-            return NumericRangeQuery.newLongRange(name, precisionStep, toDate(lower), toDate(upper), inclusive, inclusive);
+            return NumericRangeQuery.newLongRange(name, precisionStep, toDate(lower), toDate(upper),
+                    lowerInclusive, upperInclusive);
         }
 
         @Override
         public Query toTermQuery(final String name, final String text) throws ParseException {
             final long date = toDate(text);
-            return new TermQuery(new Term(name, NumericUtils.longToPrefixCoded(date)));
+            final BytesRef ref = new BytesRef();
+            NumericUtils.longToPrefixCoded(date, 0, ref);
+            return new TermQuery(new Term(name, ref));
         }
 
     },
-    DOUBLE(8, SortField.DOUBLE) {
+    DOUBLE(8, SortField.Type.DOUBLE) {
         @Override
-        public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, precisionStep, settings).setDoubleValue(toDouble(value));
+        public DoubleField toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new DoubleField(name, toDouble(value), settings.getStore()), settings);
         }
 
         @Override
-        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
-            return NumericRangeQuery.newDoubleRange(name, precisionStep, toDouble(lower), toDouble(upper), inclusive, inclusive);
+        public Query toRangeQuery(final String name, final String lower, final String upper,
+                                  final boolean lowerInclusive, final boolean upperInclusive) {
+            return NumericRangeQuery.newDoubleRange(name, precisionStep, toDouble(lower), toDouble(upper),
+                    lowerInclusive, upperInclusive);
         }
 
         @Override
         public Query toTermQuery(final String name, final String text) {
-            return new TermQuery(new Term(name, NumericUtils.doubleToPrefixCoded(toDouble(text))));
+            final long asLong = NumericUtils.doubleToSortableLong(toDouble(text));
+            final BytesRef ref = new BytesRef();
+            NumericUtils.longToPrefixCoded(asLong, 0, ref);
+            return new TermQuery(new Term(name, ref));
         }
 
         private double toDouble(final Object obj) {
@@ -72,20 +80,25 @@ public enum FieldType {
         }
 
     },
-    FLOAT(4, SortField.FLOAT) {
+    FLOAT(4, SortField.Type.FLOAT) {
         @Override
-        public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, 4, settings).setFloatValue(toFloat(value));
+        public FloatField toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new FloatField(name, toFloat(value), settings.getStore()), settings);
         }
 
         @Override
-        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
-            return NumericRangeQuery.newFloatRange(name, precisionStep, toFloat(lower), toFloat(upper), inclusive, inclusive);
+        public Query toRangeQuery(final String name, final String lower, final String upper,
+                                  final boolean lowerInclusive, final boolean upperInclusive) {
+            return NumericRangeQuery.newFloatRange(name, precisionStep, toFloat(lower), toFloat(upper),
+                    lowerInclusive, upperInclusive);
         }
 
         @Override
         public Query toTermQuery(final String name, final String text) {
-            return new TermQuery(new Term(name, NumericUtils.floatToPrefixCoded(toFloat(text))));
+            final int asInt = NumericUtils.floatToSortableInt(toFloat(text));
+            final BytesRef ref = new BytesRef();
+            NumericUtils.intToPrefixCoded(asInt, 0, ref);
+            return new TermQuery(new Term(name, ref));
         }
 
         private float toFloat(final Object obj) {
@@ -95,20 +108,24 @@ public enum FieldType {
             return Float.parseFloat(obj.toString());
         }
     },
-    INT(4, SortField.INT) {
+    INT(4, SortField.Type.INT) {
         @Override
-        public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, 4, settings).setIntValue(toInt(value));
+        public IntField toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new IntField(name, toInt(value), settings.getStore()), settings);
         }
 
         @Override
-        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
-            return NumericRangeQuery.newIntRange(name, precisionStep, toInt(lower), toInt(upper), inclusive, inclusive);
+        public Query toRangeQuery(final String name, final String lower, final String upper,
+                                  final boolean lowerInclusive, final boolean upperInclusive) {
+            return NumericRangeQuery.newIntRange(name, precisionStep, toInt(lower), toInt(upper),
+                    lowerInclusive, upperInclusive);
         }
 
         @Override
         public Query toTermQuery(final String name, final String text) {
-            return new TermQuery(new Term(name, NumericUtils.intToPrefixCoded(toInt(text))));
+            final BytesRef ref = new BytesRef();
+            NumericUtils.intToPrefixCoded(toInt(text), 0, ref);
+            return new TermQuery(new Term(name, ref));
         }
 
         private int toInt(final Object obj) {
@@ -119,15 +136,17 @@ public enum FieldType {
         }
 
     },
-    LONG(8, SortField.LONG) {
+    LONG(8, SortField.Type.LONG) {
         @Override
-        public NumericField toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, precisionStep, settings).setLongValue(toLong(value));
+        public LongField toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new LongField(name, toLong(value), settings.getStore()), settings);
         }
 
         @Override
-        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
-            return NumericRangeQuery.newLongRange(name, precisionStep, toLong(lower), toLong(upper), inclusive, inclusive);
+        public Query toRangeQuery(final String name, final String lower, final String upper,
+                                  final boolean lowerInclusive, final boolean upperInclusive) {
+            return NumericRangeQuery.newLongRange(name, precisionStep, toLong(lower), toLong(upper),
+                    lowerInclusive, upperInclusive);
         }
 
         private long toLong(final Object obj) {
@@ -139,19 +158,23 @@ public enum FieldType {
 
         @Override
         public Query toTermQuery(final String name, final String text) {
-            return new TermQuery(new Term(name, NumericUtils.longToPrefixCoded(toLong(text))));
+            final BytesRef ref = new BytesRef();
+            NumericUtils.longToPrefixCoded(toLong(text), 0, ref);
+            return new TermQuery(new Term(name, ref));
         }
 
     },
-    STRING(0, SortField.STRING) {
+    STRING(0, SortField.Type.STRING) {
         @Override
-        public Field toField(final String name, final Object value, final ViewSettings settings) {
-            return field(name, value, settings);
+        public TextField toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new TextField(name, value.toString(), settings.getStore()), settings);
         }
 
         @Override
-        public Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive) {
-            final TermRangeQuery result = new TermRangeQuery(name, lower, upper, inclusive, inclusive);
+        public Query toRangeQuery(final String name, final String lower, final String upper,
+                                  final boolean lowerInclusive, final boolean upperInclusive) {
+            final TermRangeQuery result = TermRangeQuery.newStringRange(name, lower, upper,
+                    lowerInclusive, upperInclusive);
             result.setRewriteMethod(MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT);
             return result;
         }
@@ -162,16 +185,7 @@ public enum FieldType {
         }
     };
 
-    private static NumericField field(final String name, final int precisionStep, final ViewSettings settings) {
-        return boost(new NumericField(name, precisionStep, settings.getStore(), settings.getIndex().isIndexed()), settings);
-    }
-
-    private static Field field(final String name, final Object value, final ViewSettings settings) {
-        return boost(new Field(name, value.toString(), settings.getStore(), settings.getIndex(), settings.getTermVector()), settings);
-    }
-
-    private static <T extends AbstractField> T boost(final T field, final ViewSettings settings) {
-        field.setOmitNorms(false);
+    private static <T extends Field> T boost(final T field, final ViewSettings settings) {
         field.setBoost(settings.getBoost());
         return field;
     }
@@ -179,24 +193,25 @@ public enum FieldType {
     public static final String[] DATE_PATTERNS = new String[]{"yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZ",
             "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd'T'HH:mm:ss.SSS"};
 
-    private final int sortField;
+    private final SortField.Type type;
 
     protected final int precisionStep;
 
-    private FieldType(final int precisionStep, final int sortField) {
+    private FieldType(final int precisionStep, final SortField.Type type) {
         this.precisionStep = precisionStep;
-        this.sortField = sortField;
+        this.type = type;
     }
 
-    public abstract AbstractField toField(final String name, final Object value, final ViewSettings settings) throws ParseException;
+    public abstract Field toField(final String name, final Object value, final ViewSettings settings) throws ParseException;
 
-    public abstract Query toRangeQuery(final String name, final String lower, final String upper, final boolean inclusive)
+    public abstract Query toRangeQuery(final String name, final String lower, final String upper,
+                                       final boolean lowerInclusive, final boolean upperInclusive)
             throws ParseException;
 
     public abstract Query toTermQuery(final String name, final String text) throws ParseException;
 
-    public final int toSortField() {
-        return sortField;
+    public final SortField.Type toType() {
+        return type;
     }
 
     public static long toDate(final Object obj) throws ParseException {
