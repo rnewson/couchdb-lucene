@@ -110,9 +110,14 @@ public final class Database {
         return httpClient.execute(get, handler);
     }
 
-    public HttpUriRequest getChangesRequest(final UpdateSequence since)
+    public HttpUriRequest getChangesRequest(final UpdateSequence since, final long timeout)
             throws IOException {
-        final String uri = url + "_changes?feed=continuous&heartbeat=15000&include_docs=true";
+        final String uri;
+        if (timeout > -1) {
+            uri = url + "_changes?feed=continuous&timeout="+timeout+"&include_docs=true";
+        } else {
+            uri = url + "_changes?feed=continuous&heartbeat=15000&include_docs=true";
+        }
         return new HttpGet(since.appendSince(uri));
     }
 

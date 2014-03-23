@@ -658,3 +658,10 @@ Lucene automatically converts terms to lower case in wildcard situations. You ca
 [lucene]
 lowercaseExpandedTerms=false
 </pre>
+
+CouchDB-Lucene will keep your indexes up to date automatically but this consumes resources (network sockets). You can ask CouchDB-Lucene to stop updating an index after a timeout with;
+
+<pre>
+[lucene]
+changes_timeout = 60000
+</pre>

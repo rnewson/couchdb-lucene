@@ -314,7 +314,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 }
 
                 if (json.has("last_seq")) {
-                    logger.warn("End of changes detected.");
+                    logger.info("End of changes detected.");
                     break loop;
                 }
 
@@ -444,7 +444,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
         try {
             try {
-                req = database.getChangesRequest(since);
+                final long changes_timeout = ini.getLong("lucene.changes_timeout", -1);
+                req = database.getChangesRequest(since, changes_timeout);
                 logger.info("Indexing from update_seq " + since);
                 client.execute(req, this);
             } finally {
