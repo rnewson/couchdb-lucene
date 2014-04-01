@@ -388,7 +388,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
         final IndexState state = getState(req, resp);
         if (state == null)
             return;
-        final DirectoryReader reader = state.borrowReader(isStaleOk(req));
+        final DirectoryReader reader = state.borrowReader(true);
         try {
             final JSONObject result = new JSONObject();
             result.put("current", reader.isCurrent());
