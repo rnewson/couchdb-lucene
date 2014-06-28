@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.TimeZone;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
@@ -135,9 +136,9 @@ public class DocumentConverterTest {
                 doc("{_id:\"hello\", l1: { l2: {l3:[\"v3\", \"v4\"]}}}"),
                 settings(),
                 null);
-        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[0], is("hello"));
-        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[1], is("v3"));
-        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD)[2], is("v4"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD), hasItemInArray("hello"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD), hasItemInArray("v3"));
+        assertThat(result.iterator().next().getValues(Constants.DEFAULT_FIELD), hasItemInArray("v4"));
     }
 
     @Test
