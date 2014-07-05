@@ -1,7 +1,7 @@
-Version 1.0.0 (UNRELEASED)
+Version 1.0.0
 ---------------------------
 
-* Upgrade to Lucene 4.7.1
+* Upgrade to Lucene 4.9.0
 * Upgrade to Tika 1.5
 * Use the full OOXML Schemas from Apache POI, to make Tika
   able to parse Office documents that use exotic features
