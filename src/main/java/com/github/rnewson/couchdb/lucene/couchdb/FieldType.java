@@ -166,8 +166,9 @@ public enum FieldType {
     },
     STRING(0, SortField.Type.STRING) {
         @Override
-        public TextField toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new TextField(name, value.toString(), settings.getStore()), settings);
+        public Field toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new Field(name, value.toString(), settings.getStore(), settings.getIndex(),
+                    settings.getTermVector()), settings);
         }
 
         @Override
