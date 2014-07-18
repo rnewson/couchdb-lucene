@@ -1,3 +1,9 @@
+Version 1.0.1
+--------------------------
+
+* Use Lucene 4.9.0 index format
+* Honor "index" property when adding strings
+
 Version 1.0.0
 ---------------------------
 
