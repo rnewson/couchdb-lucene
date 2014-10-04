@@ -27,19 +27,30 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
+import org.apache.http.message.BasicHeader;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.net.URL;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.*;
 
 public final class LuceneServlet extends HttpServlet {
 
@@ -116,12 +127,69 @@ public final class LuceneServlet extends HttpServlet {
         ServletUtils.sendJsonSuccess(req, resp);
     }
 
+    private enum AuthMethod { None, Cookie, Basic };
+    private static Pattern basicAuthParser = Pattern.compile( "^Basic (.+)" );
+
     private Couch getCouch(final HttpServletRequest req) throws IOException {
         final String sectionName = new PathParts(req).getKey();
         final Configuration section = ini.getSection(sectionName);
         if (!section.containsKey("url")) {
             throw new FileNotFoundException(sectionName + " is missing or has no url parameter.");
         }
+        
+        AuthMethod authMethod = AuthMethod.None;
+        Cookie cookies[] = req.getCookies();
+        if( cookies != null ) {
+            for( int i = 0; i < cookies.length; i++ ) {
+                // Pass through AuthSession cookie adding domain and path
+                // domain and path are necessary for HttpClient cookie 
+                // selection process to work.
+                if( cookies[i].getName().equals( "AuthSession" ) ) {
+                    BasicCookieStore cs = new BasicCookieStore();
+                    BasicClientCookie c = new BasicClientCookie( 
+                        cookies[i].getName(),
+                        cookies[i].getValue()
+                    );
+                    String domain = (new URL(section.getString("url"))).getHost();
+                    c.setDomain("." + domain);
+                    c.setPath("/");
+                    cs.addCookie( c );
+                    ((DefaultHttpClient)client).setCookieStore( cs );
+                    authMethod = AuthMethod.Cookie;
+                }
+            }
+        }
+
+        if( authMethod == AuthMethod.None ) {
+            String basicAuth = req.getHeader( "Authorization" );
+            if( basicAuth != null ) {
+                Matcher m = basicAuthParser.matcher( basicAuth );
+                if( m.matches() ) {
+                    Header authHdr = new BasicHeader(
+                        HttpHeaders.AUTHORIZATION,
+                        basicAuth
+                    );
+                    List<Header> hdrs = Arrays.asList(authHdr);
+                    client
+                        .getParams()
+                        .setParameter(
+                            ClientPNames.DEFAULT_HEADERS,
+                            hdrs
+                        );
+                    authMethod = AuthMethod.Basic;
+                }
+            }
+        }
+
+        // CouchDB sends cookies with Expires attribute containing commas.
+        // This violates strict spec and thus not compatible with
+        // default BEST_MATCH policy.
+        client
+            .getParams()
+            .setParameter(
+                ClientPNames.COOKIE_POLICY, 
+                CookiePolicy.BROWSER_COMPATIBILITY
+             );
         return new Couch(client, section.getString("url"));
     }
 
