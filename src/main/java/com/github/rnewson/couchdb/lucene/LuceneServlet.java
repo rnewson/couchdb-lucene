@@ -27,13 +27,20 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.net.URL;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -122,6 +129,36 @@ public final class LuceneServlet extends HttpServlet {
         if (!section.containsKey("url")) {
             throw new FileNotFoundException(sectionName + " is missing or has no url parameter.");
         }
+        Cookie cookies[] = req.getCookies();
+        if( cookies != null ) {
+            for( int i = 0; i < cookies.length; i++ ) {
+                // Pass through AuthSession cookie adding domain and path
+                // domain and path are necessary for HttpClient cookie 
+                // selection process to work.
+                if( cookies[i].getName().equals( "AuthSession" ) ) {
+                    BasicCookieStore cs = new BasicCookieStore();
+                    BasicClientCookie c = new BasicClientCookie( 
+                        cookies[i].getName(),
+                        cookies[i].getValue()
+                    );
+                    String domain = (new URL(section.getString("url"))).getHost();
+                    c.setDomain("." + domain);
+                    c.setPath("/");
+                    cs.addCookie( c );
+                    ((DefaultHttpClient)client).setCookieStore( cs );
+                }
+            }
+        }
+
+        // CouchDB sends cookies with Expires attribute containing commas.
+        // This violates strict spec and thus not compatible with
+        // default BEST_MATCH policy.
+        client
+            .getParams()
+            .setParameter(
+                ClientPNames.COOKIE_POLICY, 
+                CookiePolicy.BROWSER_COMPATIBILITY
+             );
         return new Couch(client, section.getString("url"));
     }
 
