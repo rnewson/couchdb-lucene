@@ -32,6 +32,9 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
+import org.apache.http.message.BasicHeader;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -47,6 +50,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.*;
 
 public final class LuceneServlet extends HttpServlet {
 
@@ -123,12 +127,17 @@ public final class LuceneServlet extends HttpServlet {
         ServletUtils.sendJsonSuccess(req, resp);
     }
 
+    private enum AuthMethod { None, Cookie, Basic };
+    private static Pattern basicAuthParser = Pattern.compile( "^Basic (.+)" );
+
     private Couch getCouch(final HttpServletRequest req) throws IOException {
         final String sectionName = new PathParts(req).getKey();
         final Configuration section = ini.getSection(sectionName);
         if (!section.containsKey("url")) {
             throw new FileNotFoundException(sectionName + " is missing or has no url parameter.");
         }
+        
+        AuthMethod authMethod = AuthMethod.None;
         Cookie cookies[] = req.getCookies();
         if( cookies != null ) {
             for( int i = 0; i < cookies.length; i++ ) {
@@ -146,6 +155,28 @@ public final class LuceneServlet extends HttpServlet {
                     c.setPath("/");
                     cs.addCookie( c );
                     ((DefaultHttpClient)client).setCookieStore( cs );
+                    authMethod = AuthMethod.Cookie;
+                }
+            }
+        }
+
+        if( authMethod == AuthMethod.None ) {
+            String basicAuth = req.getHeader( "Authorization" );
+            if( basicAuth != null ) {
+                Matcher m = basicAuthParser.matcher( basicAuth );
+                if( m.matches() ) {
+                    Header authHdr = new BasicHeader(
+                        HttpHeaders.AUTHORIZATION,
+                        basicAuth
+                    );
+                    List<Header> hdrs = Arrays.asList(authHdr);
+                    client
+                        .getParams()
+                        .setParameter(
+                            ClientPNames.DEFAULT_HEADERS,
+                            hdrs
+                        );
+                    authMethod = AuthMethod.Basic;
                 }
             }
         }
