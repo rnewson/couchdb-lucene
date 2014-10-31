@@ -570,7 +570,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                                         fields.put(name, value);
                                     } else {
                                         final Object obj = fields.get(name);
-                                        if (obj instanceof String) {
+                                        if (obj instanceof String || obj instanceof Number) {
                                             final JSONArray arr = new JSONArray();
                                             arr.put(obj);
                                             arr.put(value);
