@@ -28,7 +28,7 @@ import java.util.Date;
 
 public enum FieldType {
 
-    DATE(8, SortField.Type.LONG) {
+    DATE(SortField.Type.LONG) {
         @Override
         public LongField toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
             return boost(new LongField(name, toDate(value), settings.getStore()), settings);
@@ -38,7 +38,7 @@ public enum FieldType {
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive)
                 throws ParseException {
-            return NumericRangeQuery.newLongRange(name, precisionStep, toDate(lower), toDate(upper),
+            return NumericRangeQuery.newLongRange(name, toDate(lower), toDate(upper),
                     lowerInclusive, upperInclusive);
         }
 
@@ -51,7 +51,7 @@ public enum FieldType {
         }
 
     },
-    DOUBLE(8, SortField.Type.DOUBLE) {
+    DOUBLE(SortField.Type.DOUBLE) {
         @Override
         public DoubleField toField(final String name, final Object value, final ViewSettings settings) {
             return boost(new DoubleField(name, toDouble(value), settings.getStore()), settings);
@@ -60,7 +60,7 @@ public enum FieldType {
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive) {
-            return NumericRangeQuery.newDoubleRange(name, precisionStep, toDouble(lower), toDouble(upper),
+            return NumericRangeQuery.newDoubleRange(name, toDouble(lower), toDouble(upper),
                     lowerInclusive, upperInclusive);
         }
 
@@ -80,7 +80,7 @@ public enum FieldType {
         }
 
     },
-    FLOAT(4, SortField.Type.FLOAT) {
+    FLOAT(SortField.Type.FLOAT) {
         @Override
         public FloatField toField(final String name, final Object value, final ViewSettings settings) {
             return boost(new FloatField(name, toFloat(value), settings.getStore()), settings);
@@ -89,7 +89,7 @@ public enum FieldType {
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive) {
-            return NumericRangeQuery.newFloatRange(name, precisionStep, toFloat(lower), toFloat(upper),
+            return NumericRangeQuery.newFloatRange(name, toFloat(lower), toFloat(upper),
                     lowerInclusive, upperInclusive);
         }
 
@@ -108,7 +108,7 @@ public enum FieldType {
             return Float.parseFloat(obj.toString());
         }
     },
-    INT(4, SortField.Type.INT) {
+    INT(SortField.Type.INT) {
         @Override
         public IntField toField(final String name, final Object value, final ViewSettings settings) {
             return boost(new IntField(name, toInt(value), settings.getStore()), settings);
@@ -117,7 +117,7 @@ public enum FieldType {
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive) {
-            return NumericRangeQuery.newIntRange(name, precisionStep, toInt(lower), toInt(upper),
+            return NumericRangeQuery.newIntRange(name, toInt(lower), toInt(upper),
                     lowerInclusive, upperInclusive);
         }
 
@@ -136,7 +136,7 @@ public enum FieldType {
         }
 
     },
-    LONG(8, SortField.Type.LONG) {
+    LONG(SortField.Type.LONG) {
         @Override
         public LongField toField(final String name, final Object value, final ViewSettings settings) {
             return boost(new LongField(name, toLong(value), settings.getStore()), settings);
@@ -145,7 +145,7 @@ public enum FieldType {
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive) {
-            return NumericRangeQuery.newLongRange(name, precisionStep, toLong(lower), toLong(upper),
+            return NumericRangeQuery.newLongRange(name, toLong(lower), toLong(upper),
                     lowerInclusive, upperInclusive);
         }
 
@@ -164,7 +164,7 @@ public enum FieldType {
         }
 
     },
-    STRING(0, SortField.Type.STRING) {
+    STRING(SortField.Type.STRING) {
         @Override
         public Field toField(final String name, final Object value, final ViewSettings settings) {
             return boost(new Field(name, value.toString(), settings.getStore(), settings.getIndex(),
@@ -196,10 +196,8 @@ public enum FieldType {
 
     private final SortField.Type type;
 
-    protected final int precisionStep;
 
-    private FieldType(final int precisionStep, final SortField.Type type) {
-        this.precisionStep = precisionStep;
+    private FieldType(final SortField.Type type) {
         this.type = type;
     }
 
