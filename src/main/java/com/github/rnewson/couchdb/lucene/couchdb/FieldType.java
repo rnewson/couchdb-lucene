@@ -21,7 +21,7 @@ import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.*;
-import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.NumericUtils;
 
 import java.util.Date;
@@ -45,9 +45,9 @@ public enum FieldType {
         @Override
         public Query toTermQuery(final String name, final String text) throws ParseException {
             final long date = toDate(text);
-            final BytesRef ref = new BytesRef();
-            NumericUtils.longToPrefixCoded(date, 0, ref);
-            return new TermQuery(new Term(name, ref));
+            final BytesRefBuilder builder = new BytesRefBuilder();
+            NumericUtils.longToPrefixCoded(date, 0, builder);
+            return new TermQuery(new Term(name, builder.toBytesRef()));
         }
 
     },
@@ -67,9 +67,9 @@ public enum FieldType {
         @Override
         public Query toTermQuery(final String name, final String text) {
             final long asLong = NumericUtils.doubleToSortableLong(toDouble(text));
-            final BytesRef ref = new BytesRef();
-            NumericUtils.longToPrefixCoded(asLong, 0, ref);
-            return new TermQuery(new Term(name, ref));
+            final BytesRefBuilder builder = new BytesRefBuilder();
+            NumericUtils.longToPrefixCoded(asLong, 0, builder);
+            return new TermQuery(new Term(name, builder.toBytesRef()));
         }
 
         private double toDouble(final Object obj) {
@@ -96,9 +96,9 @@ public enum FieldType {
         @Override
         public Query toTermQuery(final String name, final String text) {
             final int asInt = NumericUtils.floatToSortableInt(toFloat(text));
-            final BytesRef ref = new BytesRef();
-            NumericUtils.intToPrefixCoded(asInt, 0, ref);
-            return new TermQuery(new Term(name, ref));
+            final BytesRefBuilder builder = new BytesRefBuilder();
+            NumericUtils.intToPrefixCoded(asInt, 0, builder);
+            return new TermQuery(new Term(name, builder.toBytesRef()));
         }
 
         private float toFloat(final Object obj) {
@@ -123,9 +123,9 @@ public enum FieldType {
 
         @Override
         public Query toTermQuery(final String name, final String text) {
-            final BytesRef ref = new BytesRef();
-            NumericUtils.intToPrefixCoded(toInt(text), 0, ref);
-            return new TermQuery(new Term(name, ref));
+            final BytesRefBuilder builder = new BytesRefBuilder();
+            NumericUtils.intToPrefixCoded(toInt(text), 0, builder);
+            return new TermQuery(new Term(name, builder.toBytesRef()));
         }
 
         private int toInt(final Object obj) {
@@ -158,9 +158,9 @@ public enum FieldType {
 
         @Override
         public Query toTermQuery(final String name, final String text) {
-            final BytesRef ref = new BytesRef();
-            NumericUtils.longToPrefixCoded(toLong(text), 0, ref);
-            return new TermQuery(new Term(name, ref));
+            final BytesRefBuilder builder = new BytesRefBuilder();
+            NumericUtils.longToPrefixCoded(toLong(text), 0, builder);
+            return new TermQuery(new Term(name, builder.toBytesRef()));
         }
 
     },
