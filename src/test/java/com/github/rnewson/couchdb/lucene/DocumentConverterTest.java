@@ -23,6 +23,7 @@ import com.github.rnewson.couchdb.lucene.util.Constants;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
+import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -44,6 +45,7 @@ public class DocumentConverterTest {
     private Context context;
 
     private TimeZone tz;
+    private static final Logger LOG = Logger.getLogger(DocumentConverterTest.class);
 
     @Before
     public void setup() {
@@ -161,10 +163,12 @@ public class DocumentConverterTest {
 
     @Test
     public void testRuntimeException() throws Exception {
+        LOG.warn("You can ignore the following exception stack trace.");
         final DocumentConverter converter = new DocumentConverter(
                 context,
                 view("function(doc) {throw {bad : \"stuff\"}}"));
         final Collection<Document> result = converter.convert(doc("{_id:\"hello\"}"), settings(), null);
+        LOG.warn("You can ignore the preceding exception stack trace.");
         assertThat(result.size(), is(0));
     }
 
