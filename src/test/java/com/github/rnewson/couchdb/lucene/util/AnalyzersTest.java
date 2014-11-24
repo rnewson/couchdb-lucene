@@ -67,6 +67,22 @@ public class AnalyzersTest {
     }
 
     @Test
+    public void testNGramInstance() throws Exception {
+        final Analyzer analyzer = Analyzers.getAnalyzer("ngram");
+        assertThat(analyzer.toString(), containsString("NGramAnalyzer"));
+    }
+
+    @Test
+    public void testNGramTokens() throws Exception {
+        assertThat(analyze("ngram", "hey there"), is(new String[]{"h", "he", "e", "ey", "y", "y ", " ", " t", "t", "th", "h", "he", "e", "er", "r", "re", "e"}));
+    }
+
+    @Test
+    public void testNGramMinMax() throws Exception {
+        assertThat(analyze("ngram:{\"min\":2,\"max\":3}", "hello there"), is(new String[]{"he", "hel", "el", "ell", "ll", "llo", "lo", "lo ", "o ", "o t", " t", " th", "th", "the", "he", "her", "er", "ere", "re"}));
+    }
+
+    @Test
     public void testEmailAddresses() throws Exception {
         assertThat(analyze("standard", "foo@bar.com"), is(new String[]{"foo", "bar.com"}));
         assertThat(analyze("classic", "foo@bar.com"), is(new String[]{"foo@bar.com"}));

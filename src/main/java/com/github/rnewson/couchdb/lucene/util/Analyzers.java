@@ -36,6 +36,7 @@ import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
 import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
+import org.apache.lucene.analysis.ngram.NGramTokenizer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -162,6 +163,15 @@ public enum Analyzers {
         public Analyzer newAnalyzer(final String args) {
             return new WhitespaceAnalyzer(Constants.VERSION);
         }
+    },
+    NGRAM {
+        public Analyzer newAnalyzer(final String args) throws JSONException {
+            final JSONObject json = new JSONObject(args == null ? "{}" : args);
+            int min = json.optInt("min", NGramTokenizer.DEFAULT_MIN_NGRAM_SIZE);
+            int max = json.optInt("max", NGramTokenizer.DEFAULT_MAX_NGRAM_SIZE);
+
+            return new NGramAnalyzer(min, max);
+        }
     };
 
     private static final class PorterStemAnalyzer extends Analyzer {
@@ -169,6 +179,23 @@ public enum Analyzers {
         protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
             Tokenizer source = new LowerCaseTokenizer(Constants.VERSION, reader);
             return new TokenStreamComponents(source, new PorterStemFilter(source));
+        }
+    }
+
+    private static final class NGramAnalyzer extends Analyzer {
+        private int min;
+        private int max;
+
+        public NGramAnalyzer(int min, int max) {
+            this.min = min;
+            this.max = max;
+        }
+
+        @Override
+        protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
+            Tokenizer source = new NGramTokenizer(Constants.VERSION, reader,
+              this.min, this.max);
+            return new TokenStreamComponents(source);
         }
     }
 
