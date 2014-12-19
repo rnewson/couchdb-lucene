@@ -199,6 +199,7 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 <li>standard</li>
 <li>thai</li>
 <li>whitespace</li>
+<li>ngram</li>
 </ul>
 
 <h4>The Snowball Analyzer</h4>
@@ -211,7 +212,7 @@ This analyzer requires an extra argument to specify the language (see <a href="h
 
 Note: the argument is case-sensitive and is passed directly to the <code>SnowballAnalyzer</code>'s constructor.
 
-<h4>The Per-field Analyzer"</h4>
+<h4>The Per-field Analyzer</h4>
 
 The "perfield" option lets you use a different analyzer for different fields and is configured as follows;
 
@@ -224,6 +225,16 @@ Unless overridden, any field name not specified will be handled by the standard 
 <pre>
 "analyzer":"perfield:{default:\"keyword\"}"
 </pre>
+
+<h4>The Ngram Analyzer</h4>
+
+The "ngram" analyzer lets you break down the output of any other analyzer into ngrams ("foo" becomes "fo" and "oo").
+
+<pre>
+"analyzer":"ngram:{analyzer:\"simple\",min:2,max:3}"
+</pre>
+
+If not specified, the delegated analyzer is "standard" and min and max ngram sizes are 1 and 2 respectively.
 
 <h3>The Document class</h3>
 
