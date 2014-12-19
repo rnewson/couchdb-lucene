@@ -17,6 +17,7 @@
 package com.github.rnewson.couchdb.lucene.util;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.AnalyzerWrapper;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.br.BrazilianAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
@@ -36,7 +37,7 @@ import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
 import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
-import org.apache.lucene.analysis.ngram.NGramTokenizer;
+import org.apache.lucene.analysis.ngram.NGramTokenFilter;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -167,10 +168,10 @@ public enum Analyzers {
     NGRAM {
         public Analyzer newAnalyzer(final String args) throws JSONException {
             final JSONObject json = new JSONObject(args == null ? "{}" : args);
-            int min = json.optInt("min", NGramTokenizer.DEFAULT_MIN_NGRAM_SIZE);
-            int max = json.optInt("max", NGramTokenizer.DEFAULT_MAX_NGRAM_SIZE);
-
-            return new NGramAnalyzer(min, max);
+            final Analyzer analyzer = Analyzers.getAnalyzer(json.optString("analyzer", "standard"));
+            int min = json.optInt("min", NGramTokenFilter.DEFAULT_MIN_NGRAM_SIZE);
+            int max = json.optInt("max", NGramTokenFilter.DEFAULT_MAX_NGRAM_SIZE);
+            return new NGramAnalyzer(analyzer, min, max);
         }
     };
 
@@ -182,20 +183,27 @@ public enum Analyzers {
         }
     }
 
-    private static final class NGramAnalyzer extends Analyzer {
-        private int min;
-        private int max;
+    private static final class NGramAnalyzer extends AnalyzerWrapper {
+        private final Analyzer analyzer;
+        private final int min;
+        private final int max;
 
-        public NGramAnalyzer(int min, int max) {
+        public NGramAnalyzer(final Analyzer analyzer, final int min, final int max) {
+            this.analyzer = analyzer;
             this.min = min;
             this.max = max;
         }
 
         @Override
-        protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
-            Tokenizer source = new NGramTokenizer(Constants.VERSION, reader,
-              this.min, this.max);
-            return new TokenStreamComponents(source);
+        protected Analyzer getWrappedAnalyzer(final String fieldName) {
+            return analyzer;
+        }
+
+        @Override
+        protected TokenStreamComponents wrapComponents(String fieldName, TokenStreamComponents components) {
+            return new TokenStreamComponents(components.getTokenizer(),
+                new NGramTokenFilter(Constants.VERSION, components.getTokenStream(),
+                    this.min, this.max));
         }
     }
 
