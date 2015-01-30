@@ -65,7 +65,7 @@ def respond(res, req, key):
 
     # URL-escape each part
     for index, item in enumerate(path):
-        path[index] = urllib.quote(path[index], safe=":/")
+        path[index] = urllib.quote(path[index], safe="")
 
     path = '/'.join(['', key] + path)
     params = urllib.urlencode(
