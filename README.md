@@ -1,4 +1,4 @@
-[![Build Status](https://secure.travis-ci.org/rnewson/couchdb-lucene.png)](http://travis-ci.org/rnewson/couchdb-lucene)
+.. image:: https://secure.travis-ci.org/cloudant/libspatialindex.png
 
 <h1>Version Compatibility</h1>
 
