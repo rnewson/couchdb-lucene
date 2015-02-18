@@ -674,3 +674,4 @@ CouchDB-Lucene will keep your indexes up to date automatically but this consumes
 [lucene]
 changes_timeout = 60000
 </pre>
+
