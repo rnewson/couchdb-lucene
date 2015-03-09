@@ -439,7 +439,7 @@ The following parameters can be passed for more sophisticated searches;
 <dt>include_fields</dt><dd>By default, <i>all</i> stored fields are returned with results. Use a comma-separate list of field names with this parameter to refine the response</dd>
 <dt>highlights</dt><dd>Number of highlights to include with results. Default is <i>0</i>. This uses the <i>fast-vector-highlighter</i> plugin.</dd>
 <dt>highlight_length</dt><dd>Number of characters to include in a highlight row. Default and minimum is <i>18</i>.</dd>
-<dt>limit</dt><dd>the maximum number of results to return</dd>
+<dt>limit</dt><dd>the maximum number of results to return. Default is <i>25</i>.</dd>
 <dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched. Multiple queries can be supplied, separated by commas; the resulting JSON will be an array of responses.</dd>
 <dt>skip</dt><dd>the number of results to skip</dd>
 <dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified). Type-specific sorting is also available by appending the type between angle brackets (e.g, sort=amount&lt;float&gt;). Supported types are 'float', 'double', 'int', 'long' and 'date'.</dd>
