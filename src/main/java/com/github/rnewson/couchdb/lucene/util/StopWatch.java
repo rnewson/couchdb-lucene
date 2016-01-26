@@ -21,7 +21,7 @@ import java.util.Map;
 
 public final class StopWatch {
 
-    private final Map<String, Long> elapsed = new HashMap<String, Long>();
+    private final Map<String, Long> elapsed = new HashMap<>();
 
     private long start = System.nanoTime();
 
