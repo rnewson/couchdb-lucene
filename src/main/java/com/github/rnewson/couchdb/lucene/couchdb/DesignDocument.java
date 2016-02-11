@@ -51,7 +51,7 @@ public class DesignDocument extends CouchDocument {
     public Map<String, View> getAllViews() throws JSONException {
         if (fulltext == null)
             return Collections.emptyMap();
-        final Map<String, View> result = new HashMap<String, View>();
+        final Map<String, View> result = new HashMap<>();
         final Iterator<?> it = fulltext.keys();
         while (it.hasNext()) {
             final Object key = it.next();

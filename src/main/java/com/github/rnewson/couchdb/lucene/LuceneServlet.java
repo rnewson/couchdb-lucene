@@ -49,13 +49,13 @@ public final class LuceneServlet extends HttpServlet {
 
     private final HttpClient client;
 
-    private final Map<Database, DatabaseIndexer> indexers = new HashMap<Database, DatabaseIndexer>();
+    private final Map<Database, DatabaseIndexer> indexers = new HashMap<>();
 
     private final HierarchicalINIConfiguration ini;
 
     private final File root;
 
-    private final Map<Database, Thread> threads = new HashMap<Database, Thread>();
+    private final Map<Database, Thread> threads = new HashMap<>();
 
     public LuceneServlet() throws ConfigurationException, IOException {
         final Config config = new Config();
@@ -74,7 +74,7 @@ public final class LuceneServlet extends HttpServlet {
     private void cleanup(final HttpServletRequest req,
                          final HttpServletResponse resp) throws IOException, JSONException {
         final Couch couch = getCouch(req);
-        final Set<String> dbKeep = new HashSet<String>();
+        final Set<String> dbKeep = new HashSet<>();
         final JSONArray databases = couch.getAllDatabases();
         for (int i = 0; i < databases.length(); i++) {
             final Database db = couch.getDatabase(databases.getString(i));
@@ -84,7 +84,7 @@ public final class LuceneServlet extends HttpServlet {
             }
             dbKeep.add(uuid.toString());
 
-            final Set<String> viewKeep = new HashSet<String>();
+            final Set<String> viewKeep = new HashSet<>();
 
             for (final DesignDocument ddoc : db.getAllDesignDocuments()) {
                 for (final View view : ddoc.getAllViews().values()) {

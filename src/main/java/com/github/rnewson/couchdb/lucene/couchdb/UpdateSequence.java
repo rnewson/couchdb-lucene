@@ -38,7 +38,7 @@ public abstract class UpdateSequence {
     private static class BigCouchUpdateSequence extends UpdateSequence {
 
         private final String since;
-        private final Map<String, Long> vector = new HashMap<String, Long>();
+        private final Map<String, Long> vector = new HashMap<>();
 
         private BigCouchUpdateSequence(final String encodedVector, final String packedSeqs) {
             this.since = encodedVector;
