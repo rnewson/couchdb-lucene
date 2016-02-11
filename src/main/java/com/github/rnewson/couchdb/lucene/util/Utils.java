@@ -26,7 +26,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-public class Utils {
+public final class Utils {
+
+    private Utils() {
+        throw new InstantiationError("This class is not supposed to be instantiated.");
+    }
 
     public static Logger getLogger(final Class<?> clazz, final String suffix) {
         return Logger.getLogger(clazz.getCanonicalName() + "." + suffix);

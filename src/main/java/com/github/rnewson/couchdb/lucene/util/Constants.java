@@ -22,6 +22,10 @@ import org.apache.lucene.util.Version;
 
 public final class Constants {
 
+    private Constants() {
+        throw new InstantiationError("This class is not supposed to be instantiated.");
+    }
+
     public static final Version VERSION = Version.LUCENE_4_10_2;
 
     public static final Analyzer ANALYZER = new StandardAnalyzer(VERSION);

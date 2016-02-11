@@ -28,6 +28,9 @@ import java.io.IOException;
 
 public final class HttpUtils {
 
+    private HttpUtils() {
+        throw new InstantiationError("This class is not supposed to be instantiated.");
+    }
     public static final int delete(final HttpClient httpClient, final String url) throws IOException {
         return httpClient.execute(new HttpDelete(url), new StatusCodeResponseHandler());
     }
