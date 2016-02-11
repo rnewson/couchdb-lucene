@@ -94,7 +94,7 @@ public final class View {
         }
     }
 
-    private String trim(final String fun) {
+    private static String trim(final String fun) {
         String result = fun;
         result = StringUtils.trim(result);
         result = StringUtils.removeStart(result, "\"");
