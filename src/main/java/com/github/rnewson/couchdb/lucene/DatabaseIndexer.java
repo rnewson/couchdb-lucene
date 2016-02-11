@@ -718,12 +718,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
         lastCommit = now();
     }
 
-    private boolean getBooleanParameter(final HttpServletRequest req,
+    private static boolean getBooleanParameter(final HttpServletRequest req,
                                         final String parameterName) {
         return Boolean.parseBoolean(req.getParameter(parameterName));
     }
 
-    private int getIntParameter(final HttpServletRequest req,
+    private static int getIntParameter(final HttpServletRequest req,
                                 final String parameterName, final int defaultValue) {
         final String result = req.getParameter(parameterName);
         return result != null ? Integer.parseInt(result) : defaultValue;
@@ -811,7 +811,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
         latch.countDown();
     }
 
-    private boolean isStaleOk(final HttpServletRequest req) {
+    private static boolean isStaleOk(final HttpServletRequest req) {
         return "ok".equals(req.getParameter("stale"));
     }
 
@@ -852,7 +852,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
         return toPath(parts.getDesignDocumentName(), parts.getViewName());
     }
 
-    private String toPath(final String ddoc, final String view) {
+    private static String toPath(final String ddoc, final String view) {
         return ddoc + "/" + view;
     }
 
