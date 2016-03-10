@@ -27,6 +27,10 @@ import java.io.Writer;
 
 public final class ServletUtils {
 
+    private ServletUtils() {
+        throw new InstantiationError("This class is not supposed to be instantiated.");
+    }
+
     public static boolean getBooleanParameter(final HttpServletRequest req, final String parameterName) {
         return Boolean.parseBoolean(req.getParameter(parameterName));
     }

@@ -28,10 +28,13 @@ import javax.servlet.DispatcherType;
 import java.io.File;
 import java.util.EnumSet;
 
-public class Main {
+public final class Main {
 
     private static final Logger LOG = Logger.getLogger(Main.class);
 
+    private Main() {
+        throw new InstantiationError("This class is not supposed to be instantiated.");
+    }
     /**
      * Run couchdb-lucene.
      */
