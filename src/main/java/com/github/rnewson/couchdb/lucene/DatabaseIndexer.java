@@ -229,7 +229,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
     private final Logger logger;
 
-    private final Map<String, View> paths = new HashMap<String, View>();
+    private final Map<String, View> paths = new HashMap<>();
 
     private HttpUriRequest req;
 
@@ -493,7 +493,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
                     final JSONObject freqs = new JSONObject();
 
-                    final Set<Term> terms = new HashSet<Term>();
+                    final Set<Term> terms = new HashSet<>();
                     rewritten_q.extractTerms(terms);
                     for (final Object term : terms) {
                         final int freq = searcher.getIndexReader().docFreq((Term) term);
@@ -523,7 +523,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                         final String[] fields = Utils.splitOnCommas(
                                 req.getParameter("include_fields"));
                         final List<String> list = Arrays.asList(fields);
-                        fieldsToLoad = new HashSet<String>(list);
+                        fieldsToLoad = new HashSet<>(list);
                     }
 
                     if (sort == null) {
@@ -708,7 +708,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             final IndexState state = entry.getValue();
 
             if (state.pending_seq.isLaterThan(getUpdateSequence(state.writer))) {
-                final Map<String, String> userData = new HashMap<String, String>();
+                final Map<String, String> userData = new HashMap<>();
                 userData.put("last_seq", state.pending_seq.toString());
                 state.writer.setCommitData(userData);
                 state.writer.commit();

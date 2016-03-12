@@ -155,7 +155,7 @@ public final class Database {
     }
 
     private List<DesignDocument> toDesignDocuments(final JSONObject json) throws JSONException {
-        final List<DesignDocument> result = new ArrayList<DesignDocument>();
+        final List<DesignDocument> result = new ArrayList<>();
         for (final JSONObject doc : rows(json)) {
             result.add(new DesignDocument(doc));
         }
@@ -163,15 +163,15 @@ public final class Database {
     }
 
     private List<CouchDocument> toDocuments(final JSONObject json) throws JSONException {
-        final List<CouchDocument> result = new ArrayList<CouchDocument>();
+        final List<CouchDocument> result = new ArrayList<>();
         for (final JSONObject doc : rows(json)) {
             result.add(doc == null ? null : new CouchDocument(doc));
         }
         return result;
     }
 
-    private static List<JSONObject> rows(final JSONObject json) throws JSONException {
-        final List<JSONObject> result = new ArrayList<JSONObject>();
+    private statuc List<JSONObject> rows(final JSONObject json) throws JSONException {
+        final List<JSONObject> result = new ArrayList<>();
         final JSONArray rows = json.getJSONArray("rows");
         for (int i = 0; i < rows.length(); i++) {
             result.add(rows.getJSONObject(i).optJSONObject("doc"));

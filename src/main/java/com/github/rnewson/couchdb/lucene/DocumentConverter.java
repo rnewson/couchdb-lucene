@@ -100,7 +100,7 @@ public final class DocumentConverter {
 
         if (result instanceof NativeArray) {
             final NativeArray nativeArray = (NativeArray) result;
-            final Collection<Document> arrayResult = new ArrayList<Document>((int) nativeArray.getLength());
+            final Collection<Document> arrayResult = new ArrayList<>((int) nativeArray.getLength());
             for (int i = 0; i < (int) nativeArray.getLength(); i++) {
                 if (nativeArray.get(i, null) instanceof RhinoDocument) {
                     final RhinoDocument rhinoDocument = (RhinoDocument) nativeArray.get(i, null);

@@ -113,7 +113,7 @@ public enum Analyzers {
         public Analyzer newAnalyzer(final String args) throws JSONException {
             final JSONObject json = new JSONObject(args == null ? "{}" : args);
             final Analyzer defaultAnalyzer = Analyzers.getAnalyzer(json.optString(Constants.DEFAULT_FIELD, "standard"));
-            final Map<String, Analyzer> analyzers = new HashMap<String, Analyzer>();
+            final Map<String, Analyzer> analyzers = new HashMap<>();
             final Iterator<?> it = json.keys();
             while (it.hasNext()) {
                 final String key = it.next().toString();

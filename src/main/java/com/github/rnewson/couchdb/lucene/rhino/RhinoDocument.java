@@ -123,9 +123,9 @@ public final class RhinoDocument extends ScriptableObject {
         return (RhinoDocument) obj;
     }
 
-    private final List<RhinoAttachment> attachments = new ArrayList<RhinoAttachment>();
+    private final List<RhinoAttachment> attachments = new ArrayList<>();
 
-    private final List<RhinoField> fields = new ArrayList<RhinoField>();
+    private final List<RhinoField> fields = new ArrayList<>();
 
     public RhinoDocument() {
     }
