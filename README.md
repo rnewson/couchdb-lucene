@@ -22,12 +22,13 @@ brew install couchdb-lucene
 
 <ol>
 <li>Install Maven (2 or 3).
-<li>checkout repository
-<li>type 'mvn'
+<li>checkout this github repository ie to: c:\temp\couchdb-lucene-master
+<li>type 'mvn' in the mentioned above directory 
 <li>cd target
 <li>unzip couchdb-lucene-&lt;version&gt;.zip
 <li>cd couchdb-lucene-&lt;version&gt;
 <li>./bin/run
+<li>Access to http://127.0.0.1:5985/ to check it's running, you should get: {"couchdb-lucene":"Welcome","version":"1.0.2-SNAPSHOT"}
 </ol>
 
 The zip file contains all the couchdb-lucene code, dependencies, startup scripts and configuration files you need, so unzip it wherever you wish to install couchdb-lucene.
@@ -40,9 +41,12 @@ mvn war:war
 
 <h1>Configure CouchDB</h1>
 
-The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene;
+The following settings are needed in CouchDB's local.ini (ie: etc\couchdb\default.ini for couchDB versions 1.1 and above) file in order for it to communicate with couchdb-lucene;
+Depending on your version of CouchDB there are two different configurations (you have to set only one of the two):
+1. Hook Script or
+2. Proxy Handler
 
-<h2>Python hook script (for CouchDB versions prior to 1.1)</h2>
+<h2>1. Python hook script (for CouchDB versions prior to 1.1)</h2>
 <pre>
 [couchdb]
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
@@ -68,7 +72,7 @@ fti=/path/to/python "/path/to/couchdb-lucene/tools/couchdb-external-hook.py --op
 <tr><td>--local-key</td><td>The key for the local couchdb instance as known to the couchdb-lucene server</td><td>local</td></tr>
 </table>
 
-<h2>Proxy handler (for CouchDB versions from 1.1 onward)</h2>
+<h2>2. Proxy handler (for CouchDB versions from 1.1 onward)</h2>
 <pre>
 [httpd_global_handlers]
 _fti = {couch_httpd_proxy, handle_proxy_req, &lt;&lt;"http://127.0.0.1:5985"&gt;&gt;}
@@ -113,13 +117,13 @@ Here's an complete example of a design document with couchdb-lucene features:
 
 Here are some example URL's for the given design document;
 
-<h2>Using the Python hook script</h2>
+<h2>Using the option 1 (CouchDB prior to 1.1): Python hook script</h2>
 <pre>
 http://localhost:5984/database/_fti/_design/foo/by_subject?q=hello
 http://localhost:5984/database/_fti/_design/foo/by_content?q=hello
 </pre>
 
-<h2>Using the proxy handler</h2>
+<h2>Using the option 2 (CouchDB from 1.1 onward): proxy handler</h2>
 <pre>
 http://localhost:5984/_fti/local/database/_design/foo/by_subject?q=hello
 http://localhost:5984/_fti/local/database/_design/foo/by_content?q=hello
