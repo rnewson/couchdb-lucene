@@ -17,12 +17,12 @@
 package com.github.rnewson.couchdb.lucene;
 
 import org.apache.log4j.Logger;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.servlets.GzipFilter;
 
 import javax.servlet.DispatcherType;
 import java.io.File;
@@ -43,7 +43,8 @@ public final class Main {
         final File dir = config.getDir();
 
         final Server server = new Server();
-        final SelectChannelConnector connector = new SelectChannelConnector();
+
+        final ServerConnector connector = new ServerConnector(server);
         connector.setHost(config.getConfiguration().getString("lucene.host", "localhost"));
         connector.setPort(config.getConfiguration().getInt("lucene.port", 5985));
 
@@ -57,9 +58,8 @@ public final class Main {
         final ServletContextHandler context = new ServletContextHandler(server, "/",
                 ServletContextHandler.NO_SESSIONS | ServletContextHandler.NO_SECURITY);
         context.addServlet(new ServletHolder(servlet), "/*");
-        context.addFilter(new FilterHolder(new GzipFilter()), "/*",
-                EnumSet.of(DispatcherType.REQUEST));
         context.setErrorHandler(new JSONErrorHandler());
+        context.setGzipHandler(new GzipHandler());
         server.setHandler(context);
 
         server.start();

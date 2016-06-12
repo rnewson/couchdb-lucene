@@ -16,7 +16,6 @@
 
 package com.github.rnewson.couchdb.lucene.util;
 
-import org.eclipse.jetty.http.HttpHeaders;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -73,7 +72,7 @@ public final class ServletUtils {
     public static void sendJsonError(final HttpServletRequest request, final HttpServletResponse response, final int code,
                                      final JSONObject error) throws IOException, JSONException {
         setResponseContentTypeAndEncoding(request, response);
-        response.setHeader(HttpHeaders.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
+        response.setHeader("Cache-Control", "must-revalidate,no-cache,no-store");
         response.setStatus(code);
         error.put("code", code);
 
