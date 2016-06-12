@@ -174,10 +174,8 @@ public enum FieldType {
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive) {
-            final TermRangeQuery result = TermRangeQuery.newStringRange(name, lower, upper,
+            return TermRangeQuery.newStringRange(name, lower, upper,
                     lowerInclusive, upperInclusive);
-            result.setRewriteMethod(MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT);
-            return result;
         }
 
         @Override

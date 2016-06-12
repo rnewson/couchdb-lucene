@@ -26,10 +26,6 @@ public final class Constants {
         throw new InstantiationError("This class is not supposed to be instantiated.");
     }
 
-    public static final Version VERSION = Version.LUCENE_4_10_2;
-
-    public static final Analyzer ANALYZER = new StandardAnalyzer(VERSION);
-
     public static final String APPLICATION_JSON = "application/json";
 
     public static final String DEFAULT_FIELD = "default";

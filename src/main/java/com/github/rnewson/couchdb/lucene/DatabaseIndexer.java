@@ -116,8 +116,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
         }
 
         public Query parse(final String query, final Operator operator, final Analyzer analyzer) throws ParseException, JSONException {
-            final QueryParser parser = new CustomQueryParser(Constants.VERSION,
-                    Constants.DEFAULT_FIELD, analyzer);
+            final QueryParser parser = new CustomQueryParser(Constants.DEFAULT_FIELD, analyzer);
             parser.setDefaultOperator(operator);
             parser.setAllowLeadingWildcard(ini.getBoolean("lucene.allowLeadingWildcard", false));
             parser.setLowercaseExpandedTerms(ini.getBoolean("lucene.lowercaseExpandedTerms", true));
@@ -367,8 +366,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                                 continue loop;
                             }
 
-                            state.writer.updateDocuments(new Term("_id", id), docs,
-                                    view.getAnalyzer());
+                            state.writer.updateDocuments(new Term("_id", id), docs);
                             state.setPendingSequence(seq);
                             state.readerDirty = true;
                         }
@@ -399,12 +397,12 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             result.put("digest", state.getDigest());
             result.put("update_seq", getUpdateSequence(reader.getIndexCommit().getUserData()));
             final JSONArray fields = new JSONArray();
-            for (AtomicReaderContext leaf : reader.leaves()) {
+            for (LeafReaderContext leaf : reader.leaves()) {
                 for (FieldInfo info : leaf.reader().getFieldInfos()) {
                     if (info.name.startsWith("_")) {
                         continue;
                     }
-                    if (info.isIndexed()) {
+                    if (info.getIndexOptions() != IndexOptions.NONE) {
                         fields.put(info.name);
                     }
                 }
@@ -494,7 +492,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                     final JSONObject freqs = new JSONObject();
 
                     final Set<Term> terms = new HashSet<>();
-                    rewritten_q.extractTerms(terms);
+                    final Weight weight = rewritten_q.createWeight(searcher, false);
+
+                    weight.extractTerms(terms);
                     for (final Object term : terms) {
                         final int freq = searcher.getIndexReader().docFreq((Term) term);
                         freqs.put(term.toString(), freq);
@@ -782,7 +782,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                 paths.put(toPath(ddoc.getId(), name), view);
 
                 if (!states.containsKey(view)) {
-                    final Directory dir = FSDirectory.open(viewDir(view, true),
+                    final Directory dir = FSDirectory.open(viewDir(view, true).toPath(),
                             new SingleInstanceLockFactory());
                     final UpdateSequence seq = getUpdateSequence(dir);
                     if (since == null) {
@@ -793,7 +793,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 
                     final DocumentConverter converter = new DocumentConverter(
                             context, view);
-                    final IndexWriter writer = newWriter(dir);
+                    final IndexWriter writer = newWriter(dir, view.getAnalyzer());
 
                     final IndexState state = new IndexState(converter, writer,
                             view.getAnalyzer(), database, view);
@@ -821,9 +821,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
         }
     }
 
-    private IndexWriter newWriter(final Directory dir) throws IOException {
-        final IndexWriterConfig config = new IndexWriterConfig(
-                Constants.VERSION, Constants.ANALYZER);
+    private IndexWriter newWriter(final Directory dir, final Analyzer analyzer) throws IOException {
+        final IndexWriterConfig config = new IndexWriterConfig(analyzer);
         config.setUseCompoundFile(ini.getBoolean("lucene.useCompoundFile",
                 false));
         config.setRAMBufferSizeMB(ini.getDouble("lucene.ramBufferSizeMB",

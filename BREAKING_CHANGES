@@ -1,3 +1,9 @@
+2.0.0
+
+* You must rebuild all indexes
+* Removal of porter and snowball analyzers
+* BYTE and SHORT removed from sort
+
 0.5.1, 0.6.x
 
 Multiple queries must now be comma-separated (previously the document said "multiple q parameters"). This is due to a JSON encoding problem (a JSON object cannot have non-unique keys).

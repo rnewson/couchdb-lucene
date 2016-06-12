@@ -35,7 +35,7 @@ public class CustomQueryParserTest {
 
     @Before
     public void setup() {
-        parser = new CustomQueryParser(Constants.VERSION, "default", new StandardAnalyzer(Constants.VERSION));
+        parser = new CustomQueryParser("default", new StandardAnalyzer());
     }
 
     @Test
