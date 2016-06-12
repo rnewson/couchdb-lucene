@@ -42,6 +42,12 @@ mvn war:war
 
 The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene;
 
+<h2>Proxy handler (for CouchDB versions from 1.1 onward)</h2>
+<pre>
+[httpd_global_handlers]
+_fti = {couch_httpd_proxy, handle_proxy_req, &lt;&lt;"http://127.0.0.1:5985"&gt;&gt;}
+</pre>
+
 <h2>Python hook script (for CouchDB versions prior to 1.1)</h2>
 <pre>
 [couchdb]
@@ -67,12 +73,6 @@ fti=/path/to/python "/path/to/couchdb-lucene/tools/couchdb-external-hook.py --op
 <tr><td>--remote-port</td><td>The port of the couchdb-lucene server</td><td>5985</td></tr>
 <tr><td>--local-key</td><td>The key for the local couchdb instance as known to the couchdb-lucene server</td><td>local</td></tr>
 </table>
-
-<h2>Proxy handler (for CouchDB versions from 1.1 onward)</h2>
-<pre>
-[httpd_global_handlers]
-_fti = {couch_httpd_proxy, handle_proxy_req, &lt;&lt;"http://127.0.0.1:5985"&gt;&gt;}
-</pre>
 
 <h1>Configure couchdb-lucene</h1>
 
