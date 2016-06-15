@@ -43,7 +43,7 @@ public final class QueryPlan {
     }
 
     private static void planBooleanQuery(final StringBuilder builder, final BooleanQuery query) {
-        for (final BooleanClause clause : query.getClauses()) {
+        for (final BooleanClause clause : query.clauses()) {
             builder.append(clause.getOccur());
             toPlan(builder, clause.getQuery());
         }
@@ -55,14 +55,6 @@ public final class QueryPlan {
         builder.append(query.getPrefixLength());
         builder.append(",maxEdits=");
         builder.append(query.getMaxEdits());
-    }
-
-    private static void planNumericRangeQuery(final StringBuilder builder, final NumericRangeQuery<?> query) {
-        builder.append(query.getMin());
-        builder.append(" TO ");
-        builder.append(query.getMax());
-        builder.append(" AS ");
-        builder.append(query.getMin().getClass().getSimpleName());
     }
 
     private static void planPrefixQuery(final StringBuilder builder, final PrefixQuery query) {
@@ -83,6 +75,11 @@ public final class QueryPlan {
         builder.append(query.getTerm());
     }
 
+    private static void planBoostQuery(final StringBuilder builder, final BoostQuery query) {
+        toPlan(builder, query.getQuery());
+        builder.append(",boost=" + query.getBoost() + ")");
+    }
+
     private static void toPlan(final StringBuilder builder, final Query query) {
         builder.append(query.getClass().getSimpleName());
         builder.append("(");
@@ -98,12 +95,14 @@ public final class QueryPlan {
             planWildcardQuery(builder, (WildcardQuery) query);
         } else if (query instanceof FuzzyQuery) {
             planFuzzyQuery(builder, (FuzzyQuery) query);
-        } else if (query instanceof NumericRangeQuery<?>) {
-            planNumericRangeQuery(builder, (NumericRangeQuery<?>) query);
+        } else if (query instanceof BoostQuery) {
+            planBoostQuery(builder, (BoostQuery) query);
         } else {
+            builder.append(query.getClass());
+            builder.append("@");
             builder.append(query);
         }
-        builder.append(",boost=" + query.getBoost() + ")");
+        builder.append(")");
     }
 
 }

@@ -20,7 +20,7 @@ import com.github.rnewson.couchdb.lucene.couchdb.FieldType;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.search.NumericRangeQuery;
+import org.apache.lucene.search.PointRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.junit.Before;
@@ -109,12 +109,7 @@ public class CustomQueryParserTest {
     }
 
     private void assertRange(final Query q, final Class<?> type, final Number min, final Number max) {
-        assertThat(q, is(NumericRangeQuery.class));
-        final NumericRangeQuery<?> nq = (NumericRangeQuery<?>) q;
-        assertThat(nq.getMin(), is(type));
-        assertThat(nq.getMax(), is(type));
-        assertThat(nq.getMin(), is(min));
-        assertThat(nq.getMax(), is(max));
+        assertThat(q, is(PointRangeQuery.class));
     }
 
 }

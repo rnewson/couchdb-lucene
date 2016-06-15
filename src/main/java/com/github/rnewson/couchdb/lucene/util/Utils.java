@@ -18,6 +18,8 @@ package com.github.rnewson.couchdb.lucene.util;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.store.Directory;
 
@@ -41,15 +43,11 @@ public final class Utils {
     }
 
     public static Field text(final String name, final String value, final boolean store) {
-        return new Field(name, value, store ? Store.YES : Store.NO, Field.Index.ANALYZED);
+        return new TextField(name, value, store ? Store.YES : Store.NO);
     }
 
     public static Field token(final String name, final String value, final boolean store) {
-        return new Field(
-                name,
-                value,
-                store ? Store.YES : Store.NO,
-                Field.Index.NOT_ANALYZED_NO_NORMS);
+        return new StringField(name, value, store ? Store.YES : Store.NO);
     }
 
     public static String urlEncode(final String path) {

@@ -121,7 +121,7 @@ public final class CustomQueryParser extends QueryParser {
     protected Query getFieldQuery(final String field, final String queryText, final boolean quoted)
             throws ParseException {
         final TypedField typedField = new TypedField(field);
-        if (typedField.getType() == FieldType.STRING) {
+        if (typedField.getType() == FieldType.TEXT) {
             return super.getFieldQuery(field, queryText, quoted);
         }
         return typedField.toTermQuery(queryText);

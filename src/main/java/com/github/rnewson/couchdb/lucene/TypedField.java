@@ -41,7 +41,7 @@ public final class TypedField {
 
         this.name = matcher.group(1);
         try {
-            this.type = matcher.group(3) == null ? FieldType.STRING : FieldType.valueOf(matcher.group(3).toUpperCase());
+            this.type = matcher.group(3) == null ? FieldType.TEXT : FieldType.valueOf(matcher.group(3).toUpperCase());
         } catch (final IllegalArgumentException e) {
             throw new ParseException("Unrecognized type '" + matcher.group(3) + "'");
         }

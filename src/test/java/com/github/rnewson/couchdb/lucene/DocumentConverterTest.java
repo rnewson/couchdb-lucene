@@ -21,8 +21,8 @@ import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.couchdb.ViewSettings;
 import com.github.rnewson.couchdb.lucene.util.Constants;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.IntField;
-import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.IntPoint;
+import org.apache.lucene.document.LongPoint;
 import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -252,7 +252,7 @@ public class DocumentConverterTest {
                 settings(),
                 null);
         assertThat(result.size(), is(1));
-        assertThat(result.iterator().next().getField("num"), is(LongField.class));
+        assertThat(result.iterator().next().getField("num"), is(LongPoint.class));
     }
 
     @Test
@@ -264,7 +264,7 @@ public class DocumentConverterTest {
                 settings(),
                 null);
         assertThat(result.size(), is(1));
-        assertThat(result.iterator().next().getField("num"), is(LongField.class));
+        assertThat(result.iterator().next().getField("num"), is(LongPoint.class));
     }
 
     @Test
@@ -276,7 +276,7 @@ public class DocumentConverterTest {
                 settings(),
                 null);
         assertThat(result.size(), is(1));
-        assertThat(result.iterator().next().getField("num"), is(LongField.class));
+        assertThat(result.iterator().next().getField("num"), is(LongPoint.class));
         assertThat((Long) (result.iterator().next().getField("num")).numericValue(), is(1284332400000L));
     }
 
@@ -289,7 +289,7 @@ public class DocumentConverterTest {
                 settings(),
                 null);
         assertThat(result.size(), is(1));
-        assertThat(result.iterator().next().getField("num"), is(LongField.class));
+        assertThat(result.iterator().next().getField("num"), is(LongPoint.class));
         assertThat((Long) (result.iterator().next().getField("num")).numericValue(), is(63561900000L));
     }
 
@@ -302,7 +302,7 @@ public class DocumentConverterTest {
                 settings(),
                 null);
         assertThat(result.size(), is(1));
-        assertThat(result.iterator().next().getField("num"), is(IntField.class));
+        assertThat(result.iterator().next().getField("num"), is(IntPoint.class));
     }
 
     @Test

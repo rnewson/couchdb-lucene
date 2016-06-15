@@ -30,46 +30,42 @@ public enum FieldType {
 
     DATE(SortField.Type.LONG) {
         @Override
-        public LongField toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
-            return boost(new LongField(name, toDate(value), settings.getStore()), settings);
+        public LongPoint toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
+            return boost(new LongPoint(name, toDate(value)), settings);
         }
 
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive)
                 throws ParseException {
-            return NumericRangeQuery.newLongRange(name, toDate(lower), toDate(upper),
-                    lowerInclusive, upperInclusive);
+            return LongPoint.newRangeQuery(name,
+                                           lowerInclusive ? toDate(lower) : Math.addExact(toDate(lower), 1),
+                                           upperInclusive ? toDate(upper) : Math.addExact(toDate(upper), -1));
         }
 
         @Override
         public Query toTermQuery(final String name, final String text) throws ParseException {
-            final long date = toDate(text);
-            final BytesRefBuilder builder = new BytesRefBuilder();
-            NumericUtils.longToPrefixCoded(date, 0, builder);
-            return new TermQuery(new Term(name, builder.toBytesRef()));
+            return LongPoint.newExactQuery(name, toDate(text));
         }
 
     },
     DOUBLE(SortField.Type.DOUBLE) {
         @Override
-        public DoubleField toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new DoubleField(name, toDouble(value), settings.getStore()), settings);
+        public DoublePoint toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new DoublePoint(name, toDouble(value)), settings);
         }
 
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive) {
-            return NumericRangeQuery.newDoubleRange(name, toDouble(lower), toDouble(upper),
-                    lowerInclusive, upperInclusive);
+            return DoublePoint.newRangeQuery(name,
+                                             lowerInclusive ? toDouble(lower) : Math.nextUp(toDouble(lower)),
+                                             upperInclusive ? toDouble(upper) : Math.nextDown(toDouble(upper)));
         }
 
         @Override
         public Query toTermQuery(final String name, final String text) {
-            final long asLong = NumericUtils.doubleToSortableLong(toDouble(text));
-            final BytesRefBuilder builder = new BytesRefBuilder();
-            NumericUtils.longToPrefixCoded(asLong, 0, builder);
-            return new TermQuery(new Term(name, builder.toBytesRef()));
+            return DoublePoint.newExactQuery(name, toDouble(text));
         }
 
         private double toDouble(final Object obj) {
@@ -82,23 +78,21 @@ public enum FieldType {
     },
     FLOAT(SortField.Type.FLOAT) {
         @Override
-        public FloatField toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new FloatField(name, toFloat(value), settings.getStore()), settings);
+        public FloatPoint toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new FloatPoint(name, toFloat(value)), settings);
         }
 
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive) {
-            return NumericRangeQuery.newFloatRange(name, toFloat(lower), toFloat(upper),
-                    lowerInclusive, upperInclusive);
+            return FloatPoint.newRangeQuery(name,
+                                            lowerInclusive ? toFloat(lower) : Math.nextUp(toFloat(lower)),
+                                            upperInclusive ? toFloat(upper) : Math.nextDown(toFloat(upper)));
         }
 
         @Override
         public Query toTermQuery(final String name, final String text) {
-            final int asInt = NumericUtils.floatToSortableInt(toFloat(text));
-            final BytesRefBuilder builder = new BytesRefBuilder();
-            NumericUtils.intToPrefixCoded(asInt, 0, builder);
-            return new TermQuery(new Term(name, builder.toBytesRef()));
+            return FloatPoint.newExactQuery(name, toFloat(text));
         }
 
         private float toFloat(final Object obj) {
@@ -110,22 +104,21 @@ public enum FieldType {
     },
     INT(SortField.Type.INT) {
         @Override
-        public IntField toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new IntField(name, toInt(value), settings.getStore()), settings);
+        public IntPoint toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new IntPoint(name, toInt(value)), settings);
         }
 
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive) {
-            return NumericRangeQuery.newIntRange(name, toInt(lower), toInt(upper),
-                    lowerInclusive, upperInclusive);
+            return IntPoint.newRangeQuery(name,
+                                          lowerInclusive ? toInt(lower) : Math.addExact(toInt(lower), 1),
+                                          upperInclusive ? toInt(upper) : Math.addExact(toInt(upper), -1));
         }
 
         @Override
         public Query toTermQuery(final String name, final String text) {
-            final BytesRefBuilder builder = new BytesRefBuilder();
-            NumericUtils.intToPrefixCoded(toInt(text), 0, builder);
-            return new TermQuery(new Term(name, builder.toBytesRef()));
+            return IntPoint.newExactQuery(name, toInt(text));
         }
 
         private int toInt(final Object obj) {
@@ -138,15 +131,21 @@ public enum FieldType {
     },
     LONG(SortField.Type.LONG) {
         @Override
-        public LongField toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new LongField(name, toLong(value), settings.getStore()), settings);
+        public LongPoint toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new LongPoint(name, toLong(value)), settings);
         }
 
         @Override
         public Query toRangeQuery(final String name, final String lower, final String upper,
                                   final boolean lowerInclusive, final boolean upperInclusive) {
-            return NumericRangeQuery.newLongRange(name, toLong(lower), toLong(upper),
-                    lowerInclusive, upperInclusive);
+            return LongPoint.newRangeQuery(name,
+                                           lowerInclusive ? toLong(lower) : Math.addExact(toLong(lower), 1),
+                                           upperInclusive ? toLong(upper) : Math.addExact(toLong(upper), -1));
+        }
+
+        @Override
+        public Query toTermQuery(final String name, final String text) {
+            return LongPoint.newExactQuery(name, toLong(text));
         }
 
         private long toLong(final Object obj) {
@@ -156,19 +155,11 @@ public enum FieldType {
             return Long.parseLong(obj.toString());
         }
 
-        @Override
-        public Query toTermQuery(final String name, final String text) {
-            final BytesRefBuilder builder = new BytesRefBuilder();
-            NumericUtils.longToPrefixCoded(toLong(text), 0, builder);
-            return new TermQuery(new Term(name, builder.toBytesRef()));
-        }
-
     },
     STRING(SortField.Type.STRING) {
         @Override
         public Field toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new Field(name, value.toString(), settings.getStore(), settings.getIndex(),
-                    settings.getTermVector()), settings);
+            return boost(new StringField(name, value.toString(), settings.getStore()), settings);
         }
 
         @Override
@@ -181,6 +172,23 @@ public enum FieldType {
         @Override
         public Query toTermQuery(String name, String text) {
             throw new UnsupportedOperationException("toTermQuery is not supported for FieldType.String.");
+        }
+    },
+    TEXT(null) {
+        @Override
+        public Field toField(final String name, final Object value, final ViewSettings settings) {
+            return boost(new TextField(name, value.toString(), settings.getStore()), settings);
+        }
+
+        @Override
+        public Query toRangeQuery(final String name, final String lower, final String upper,
+                                  final boolean lowerInclusive, final boolean upperInclusive) {
+            throw new UnsupportedOperationException("toRangeQuery is not supported for TEXT");
+        }
+
+        @Override
+        public Query toTermQuery(String name, String text) {
+            throw new UnsupportedOperationException("toTermQuery is not supported for TEXT");
         }
     };
 

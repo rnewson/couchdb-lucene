@@ -91,7 +91,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             if (reader != null) {
                 reader.decRef();
             }
-            reader = DirectoryReader.open(writer, !staleOk);
+            reader = DirectoryReader.open(writer, !staleOk, false);
             if (readerDirty) {
                 etag = newEtag();
                 readerDirty = false;
@@ -527,9 +527,9 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                     }
 
                     if (sort == null) {
-                        td = searcher.search(q, null, skip + limit);
+                        td = searcher.search(q, skip + limit);
                     } else {
-                        td = searcher.search(q, null, skip + limit, sort);
+                        td = searcher.search(q, skip + limit, sort);
                     }
                     stopWatch.lap("search");
 
