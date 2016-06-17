@@ -32,6 +32,7 @@ public enum FieldType {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) throws ParseException {
             to.add(boost(new LongPoint(name, toDate(value)), settings));
+            to.add(new NumericDocValuesField(name, toDate(value)));
         }
 
         @Override
@@ -53,6 +54,7 @@ public enum FieldType {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
             to.add(boost(new DoublePoint(name, toDouble(value)), settings));
+            to.add(new DoubleDocValuesField(name, toDouble(value)));
         }
 
         @Override
@@ -80,6 +82,7 @@ public enum FieldType {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
             to.add(boost(new FloatPoint(name, toFloat(value)), settings));
+            to.add(new FloatDocValuesField(name, toFloat(value)));
         }
 
         @Override
@@ -106,6 +109,7 @@ public enum FieldType {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
             to.add(boost(new IntPoint(name, toInt(value)), settings));
+            to.add(new NumericDocValuesField(name, toInt(value)));
         }
 
         @Override
@@ -133,6 +137,7 @@ public enum FieldType {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
             to.add(boost(new LongPoint(name, toLong(value)), settings));
+            to.add(new NumericDocValuesField(name, toLong(value)));
         }
 
         @Override
