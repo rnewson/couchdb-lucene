@@ -176,7 +176,7 @@ public final class RhinoDocument extends ScriptableObject {
     private void addField(final RhinoField field, final ViewSettings defaults, final Document out) throws ParseException {
         final ViewSettings settings = new ViewSettings(field.settings, defaults);
         final FieldType type = settings.getFieldType();
-        out.add(type.toField(settings.getField(), field.value, settings));
+        type.addFields(settings.getField(), field.value, settings, out);
     }
 
 }

@@ -30,8 +30,8 @@ public enum FieldType {
 
     DATE(SortField.Type.LONG) {
         @Override
-        public LongPoint toField(final String name, final Object value, final ViewSettings settings) throws ParseException {
-            return boost(new LongPoint(name, toDate(value)), settings);
+        public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) throws ParseException {
+            to.add(boost(new LongPoint(name, toDate(value)), settings));
         }
 
         @Override
@@ -51,8 +51,8 @@ public enum FieldType {
     },
     DOUBLE(SortField.Type.DOUBLE) {
         @Override
-        public DoublePoint toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new DoublePoint(name, toDouble(value)), settings);
+        public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
+            to.add(boost(new DoublePoint(name, toDouble(value)), settings));
         }
 
         @Override
@@ -78,8 +78,8 @@ public enum FieldType {
     },
     FLOAT(SortField.Type.FLOAT) {
         @Override
-        public FloatPoint toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new FloatPoint(name, toFloat(value)), settings);
+        public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
+            to.add(boost(new FloatPoint(name, toFloat(value)), settings));
         }
 
         @Override
@@ -104,8 +104,8 @@ public enum FieldType {
     },
     INT(SortField.Type.INT) {
         @Override
-        public IntPoint toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new IntPoint(name, toInt(value)), settings);
+        public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
+            to.add(boost(new IntPoint(name, toInt(value)), settings));
         }
 
         @Override
@@ -131,8 +131,8 @@ public enum FieldType {
     },
     LONG(SortField.Type.LONG) {
         @Override
-        public LongPoint toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new LongPoint(name, toLong(value)), settings);
+        public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
+            to.add(boost(new LongPoint(name, toLong(value)), settings));
         }
 
         @Override
@@ -158,8 +158,8 @@ public enum FieldType {
     },
     STRING(SortField.Type.STRING) {
         @Override
-        public Field toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new StringField(name, value.toString(), settings.getStore()), settings);
+        public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
+            to.add(boost(new StringField(name, value.toString(), settings.getStore()), settings));
         }
 
         @Override
@@ -176,8 +176,8 @@ public enum FieldType {
     },
     TEXT(null) {
         @Override
-        public Field toField(final String name, final Object value, final ViewSettings settings) {
-            return boost(new TextField(name, value.toString(), settings.getStore()), settings);
+        public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
+            to.add(boost(new TextField(name, value.toString(), settings.getStore()), settings));
         }
 
         @Override
@@ -207,7 +207,7 @@ public enum FieldType {
         this.type = type;
     }
 
-    public abstract Field toField(final String name, final Object value, final ViewSettings settings) throws ParseException;
+    public abstract void addFields(final String name, final Object value, final ViewSettings settings, final Document to) throws ParseException;
 
     public abstract Query toRangeQuery(final String name, final String lower, final String upper,
                                        final boolean lowerInclusive, final boolean upperInclusive)
