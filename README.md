@@ -16,7 +16,7 @@ Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">gith
 
 <h1>Minimum System Requirements</h1>
 
-Java 1.7 (or above) is required; Oracle Java 7 or OpenJDK 7 are recommended (55 or higher)
+Java 1.8 is required; Oracle Java 8 or OpenJDK 8 are recommended.
 
 <h1>Build and run couchdb-lucene</h1>
 
