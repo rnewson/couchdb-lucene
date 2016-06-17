@@ -1,5 +1,11 @@
 [![Build Status](https://secure.travis-ci.org/rnewson/couchdb-lucene.png)](http://travis-ci.org/rnewson/couchdb-lucene)
 
+<h1>Stability Warning</h1>
+
+I'm upgrading to Lucene 6 (from 4!). Some breakage likely on master for a while.
+
+Use 1.1.0 release (https://github.com/rnewson/couchdb-lucene/releases/tag/v1.1.0) if you want stable.
+
 <h1>Version Compatibility</h1>
 
 CouchDB-Lucene works with all version of CouchDB from 0.10 upwards.
@@ -153,25 +159,13 @@ The following indexing options can be defaulted;
   <tr>
     <th>type</th>
     <td>the type of the field</td>
-    <td>date, double, float, int, long, string</td>
+    <td>date, double, float, int, long, string, text</td>
     <td>string</td>
   </tr>
   <tr>
     <th>store</th>
     <td>whether the data is stored. The value will be returned in the search result.</td>
     <td>yes, no</td>
-    <td>no</td>
-  </tr>
-  <tr>
-    <th>index</th>
-    <td>whether (and how) the data is indexed</td>
-    <td>analyzed, analyzed_no_norms, no, not_analyzed, not_analyzed_no_norms</td>
-    <td>analyzed</td>
-  </tr>
-  <tr>
-    <th>termvector</th>
-    <td>whether and how a field should have term vectors</td>
-    <td>no, with_offsets, with_positions, with_positions_offsets, yes</td>
     <td>no</td>
   </tr>
   <tr>
