@@ -154,7 +154,7 @@
         </dependency>
     </dependencies>
     <properties>
-        <lucene-version>6.0.1</lucene-version>
+        <lucene-version>6.1.0</lucene-version>
         <tika-version>1.6</tika-version>
         <jetty-version>9.3.9.v20160517</jetty-version>
         <http-version>4.0.1</http-version>
