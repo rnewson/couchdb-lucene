@@ -39,6 +39,7 @@ import org.apache.lucene.search.vectorhighlight.FastVectorHighlighter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.SingleInstanceLockFactory;
+import org.apache.lucene.util.BytesRef;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -594,7 +595,15 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                         }// Include sort order (if any).
                         if (td instanceof TopFieldDocs) {
                             final FieldDoc fd = (FieldDoc) ((TopFieldDocs) td).scoreDocs[i];
-                            row.put("sort_order", fd.fields);
+                            final JSONArray arr = new JSONArray();
+                            for (final Object o : fd.fields) {
+                                if (o instanceof BytesRef) {
+                                    arr.put(((BytesRef)o).utf8ToString());
+                                } else {
+                                    arr.put(o);
+                                }
+                            }
+                            row.put("sort_order", arr);
                         }
                         // Fetch document (if requested).
                         if (include_docs) {

@@ -21,6 +21,7 @@ import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.*;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.NumericUtils;
 
@@ -165,6 +166,7 @@ public enum FieldType {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
             to.add(boost(new StringField(name, value.toString(), settings.getStore()), settings));
+            to.add(new SortedDocValuesField(name, new BytesRef(value.toString())));
         }
 
         @Override
