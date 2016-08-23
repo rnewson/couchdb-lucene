@@ -24,7 +24,7 @@ import org.mozilla.javascript.NativeObject;
 public final class ViewSettings {
 
     public static ViewSettings getDefaultSettings() {
-        return new ViewSettings(Constants.DEFAULT_FIELD, "no", "string", "1.0", null);
+        return new ViewSettings(Constants.DEFAULT_FIELD, "no", "text", "1.0", null);
     }
 
     private final Store store;

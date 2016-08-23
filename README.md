@@ -160,7 +160,7 @@ The following indexing options can be defaulted;
     <th>type</th>
     <td>the type of the field</td>
     <td>date, double, float, int, long, string, text</td>
-    <td>string</td>
+    <td>text</td>
   </tr>
   <tr>
     <th>store</th>
@@ -175,6 +175,10 @@ The following indexing options can be defaulted;
     <td>1.0</td>
   </tr>
 </table>
+
+<h3>String vs Text</h3>
+
+There are two supported types that sound equivalent, <em>string</em> and <em>text</em>, but they are very different. A text field will be tokenized into words and is usually what you expect from a full-text index. A string field is not tokenized, only exact matching will work. The advantage to string fields is that they have a meaningful sort order.
 
 <h3>The Analyzer Option</h3>
 
