@@ -15,7 +15,7 @@ Issue tracking at [github](http://github.com/rnewson/couchdb-lucene/issues).
 Java 1.8 is required; Oracle Java 8 or OpenJDK 8 are recommended.
 
 ## Build and run couchdb-lucene
-If you are on OS X, you might find it easiest to;
+If you are on OS X, you might find it easiest to:
 
 ```bash
 brew install couchdb-lucene
@@ -38,16 +38,16 @@ mvn war:war
 ```
 
 ## Configure CouchDB
-The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene;
+The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene:
 
 ### Proxy handler (for CouchDB versions from 1.1 onward)
-```yaml
+```ini
 [httpd_global_handlers]
 _fti = {couch_httpd_proxy, handle_proxy_req, <<"http://127.0.0.1:5985">>}
 ```
 
 ### Python hook script (for CouchDB versions prior to 1.1)
-```yaml
+```ini
 [couchdb]
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
 
@@ -60,7 +60,7 @@ _fti = {couch_httpd_external, handle_external_req, <<"fti">>}
 
 #### Hook options
 You can pass options to the python script like so:
-```yaml
+```ini
 [external]
 fti=/path/to/python "/path/to/couchdb-lucene/tools/couchdb-external-hook.py --option-name value"
 ```
@@ -75,7 +75,7 @@ fti=/path/to/python "/path/to/couchdb-lucene/tools/couchdb-external-hook.py --op
 couchdb-lucene runs in a single, standalone JVM. As such, you can choose to locate your couchdb-lucene server on a different machine to couchdb if you wish, or keep it on the same machine, it's your call.
 
 ## Start couchdb-lucene
-To start couchdb-lucene, run;
+To start couchdb-lucene, run:
 ```bash
 bin/run
 ```
@@ -104,7 +104,7 @@ Here's an complete example of a design document with couchdb-lucene features:
 }
 ```
 
-Here are some example URL's for the given design document;
+Here are some example URL's for the given design document:
 
 ### Using the Python hook script
 ```
@@ -118,7 +118,7 @@ http://localhost:5984/_fti/local/database/_design/foo/by_subject?q=hello
 http://localhost:5984/_fti/local/database/_design/foo/by_content?q=hello
 ```
 
-A fulltext object contains multiple index view declarations. An index view consists of;
+A fulltext object contains multiple index view declarations. An index view consists of:
 
 ***analyzer***
   (optional) The analyzer to use
@@ -130,7 +130,7 @@ A fulltext object contains multiple index view declarations. An index view consi
   The indexing function itself, documented below.
 
 #### The Defaults Object
-The following indexing options can be defaulted;
+The following indexing options can be defaulted:
 
 |name|description|available options|default|
 |----|-----------|-----------------|-------|
@@ -145,7 +145,7 @@ There are two supported types that sound equivalent, *string* and *text*, but th
 
 #### The Analyzer Option
 
-Lucene has numerous ways of converting free-form text into tokens, these classes are called Analyzer's. By default, the StandardAnalyzer is used which lower-cases all text, drops common English words ("the", "and", and so on), among other things. This processing might not always suit you, so you can choose from several others by setting the "analyzer" field to one of the following values;
+Lucene has numerous ways of converting free-form text into tokens, these classes are called Analyzer's. By default, the StandardAnalyzer is used which lower-cases all text, drops common English words ("the", "and", and so on), among other things. This processing might not always suit you, so you can choose from several others by setting the "analyzer" field to one of the following values:
 
 - brazilian
 - chinese
@@ -167,7 +167,7 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 - ngram
 
 ##### The Snowball Analyzer
-This analyzer requires an extra argument to specify the language (see [here](http://lucene.apache.org/java/3_0_3/api/contrib-snowball/org/apache/lucene/analysis/snowball/SnowballAnalyzer.html) for details);
+This analyzer requires an extra argument to specify the language (see [here](http://lucene.apache.org/java/3_0_3/api/contrib-snowball/org/apache/lucene/analysis/snowball/SnowballAnalyzer.html) for details):
 
 ```json
 "analyzer":"snowball:English"
@@ -176,13 +176,13 @@ This analyzer requires an extra argument to specify the language (see [here](htt
 Note: the argument is case-sensitive and is passed directly to the `SnowballAnalyzer`'s constructor.
 
 ##### The Per-field Analyzer
-The "perfield" option lets you use a different analyzer for different fields and is configured as follows;
+The "perfield" option lets you use a different analyzer for different fields and is configured as follows:
 
 ```json
 "analyzer":"perfield:{field_name:\"analyzer_name\"}"
 ```
 
-Unless overridden, any field name not specified will be handled by the standard analyzer. To change the default, use the special default field name;
+Unless overridden, any field name not specified will be handled by the standard analyzer. To change the default, use the special default field name:
 
 ```json
 "analyzer":"perfield:{default:\"keyword\"}"
@@ -198,7 +198,7 @@ The "ngram" analyzer lets you break down the output of any other analyzer into n
 If not specified, the delegated analyzer is "standard" and min and max ngram sizes are 1 and 2 respectively.
 
 #### The Document class
-You may construct a new Document instance with;
+You may construct a new Document instance with:
 
 ```js
 var doc = new Document();
@@ -343,7 +343,7 @@ Couchdb-lucene uses [Apache Tika](http://lucene.apache.org/tika/) to index attac
 You can perform all types of queries using Lucene's default [query syntax](http://lucene.apache.org/java/3_6_2/queryparsersyntax.html).
 
 ### Numeric range queries
-In addition to normal text-based range searches (using the "field:[lower TO upper]" syntax), couchdb-lucene also supports numeric range searches for the following types: int, long, float, double and date. The type is specified after the field name, as follows;
+In addition to normal text-based range searches (using the "field:[lower TO upper]" syntax), couchdb-lucene also supports numeric range searches for the following types: int, long, float, double and date. The type is specified after the field name, as follows:
 
 |type|example|
 |----|-------|
@@ -366,7 +366,7 @@ Fields indexed with numeric types can still be queried as normal terms, couchdb-
 You may use HTTP GET or POST. For POST, use application/x-www-form-urlencoded format.
 
 ### Search parameters
-The following parameters can be passed for more sophisticated searches;
+The following parameters can be passed for more sophisticated searches:
 
 ***analyzer***
   Override the default analyzer used to parse the q parameter
@@ -513,7 +513,7 @@ The search result contains a number of fields at the top level, in addition to y
 
 ### The search results array
 
-The search results arrays consists of zero, one or more objects with the following fields;
+The search results arrays consists of zero, one or more objects with the following fields:
 
 ***doc***
   The original document from couch, if requested with include_docs=true
@@ -527,7 +527,7 @@ The search results arrays consists of zero, one or more objects with the followi
 ***score***
   The normalized score (0.0-1.0, inclusive) for this match
 
-Here's an example of a JSON response without sorting;
+Here's an example of a JSON response without sorting:
 
 ```json
 {
@@ -550,7 +550,7 @@ Here's an example of a JSON response without sorting;
 }
 ```
 
-And the same with sorting;
+And the same with sorting:
 
 ```json
 {
@@ -610,7 +610,7 @@ Calling couchdb-lucene without arguments returns a JSON object with information 
 http://127.0.0.1:5984/<db>/_fti/_design/foo/<index>
 ```
 
-returns;
+returns:
 
 ```json
 {"current":true,"disk_size":110674,"doc_count":397,"doc_del_count":0,
@@ -625,13 +625,13 @@ For optimal query speed you can optimize your indexes. This causes the index to 
 curl -X POST http://localhost:5984/<db>/_fti/_design/foo/<index>/_optimize
 ```
 
-If you just want to expunge pending deletes, then call;
+If you just want to expunge pending deletes, then call:
 
 ```bash
 curl -X POST http://localhost:5984/<db>/_fti/_design/foo/<index>/_expunge
 ```
 
-If you recreate databases or frequently change your fulltext functions, you will probably have old indexes lying around on disk. To remove all of them, call;
+If you recreate databases or frequently change your fulltext functions, you will probably have old indexes lying around on disk. To remove all of them, call:
 
 ```bash
 curl -X POST http://localhost:5984/<db>/_fti/_cleanup
@@ -639,16 +639,16 @@ curl -X POST http://localhost:5984/<db>/_fti/_cleanup
 
 ## Authentication
 
-By default couchdb-lucene does not attempt to authenticate to CouchDB. If you have set CouchDB's require_valid_user to true, you will need to modify couchdb-lucene.ini. Change the url setting to include a valid username and password. e.g, the default setting is;
+By default couchdb-lucene does not attempt to authenticate to CouchDB. If you have set CouchDB's require_valid_user to true, you will need to modify couchdb-lucene.ini. Change the url setting to include a valid username and password. e.g, the default setting is:
 
-```yaml
+```ini
 [local]
 url=http://localhost:5984/
 ```
 
-Change it to;
+Change it to:
 
-```yaml
+```ini
 [local]
 url=http://foo:bar@localhost:5984/
 ```
@@ -658,23 +658,23 @@ and couchdb-lucene will authenticate to couchdb.
 ## Other Tricks
 A couple of 'expert' options can be set in the couchdb-lucene.ini file;
 
-Leading wildcards are prohibited by default as they perform very poorly most of the time. You can enable them as follows;
+Leading wildcards are prohibited by default as they perform very poorly most of the time. You can enable them as follows:
 
-```yaml
+```ini
 [lucene]
 allowLeadingWildcard=true
 ```
 
-Lucene automatically converts terms to lower case in wildcard situations. You can disable this with;
+Lucene automatically converts terms to lower case in wildcard situations. You can disable this with:
 
-```yaml
+```ini
 [lucene]
 lowercaseExpandedTerms=false
 ```
 
-CouchDB-Lucene will keep your indexes up to date automatically but this consumes resources (network sockets). You can ask CouchDB-Lucene to stop updating an index after a timeout with;
+CouchDB-Lucene will keep your indexes up to date automatically but this consumes resources (network sockets). You can ask CouchDB-Lucene to stop updating an index after a timeout with:
 
-```yaml
+```ini
 [lucene]
 changes_timeout = 60000
 ```
