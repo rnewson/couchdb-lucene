@@ -1,61 +1,53 @@
-[![Build Status](https://secure.travis-ci.org/rnewson/couchdb-lucene.png)](http://travis-ci.org/rnewson/couchdb-lucene)
+# couchdb-lucene [![Build Status](https://secure.travis-ci.org/rnewson/couchdb-lucene.png)](http://travis-ci.org/rnewson/couchdb-lucene)
 
-<h1>Stability Warning</h1>
-
+## Stability Warning
 I'm upgrading to Lucene 6 (from 4!). Some breakage likely on master for a while.
 
 Use 1.1.0 release (https://github.com/rnewson/couchdb-lucene/releases/tag/v1.1.0) if you want stable.
 
-<h1>Version Compatibility</h1>
-
+## Version Compatibility
 CouchDB-Lucene works with all version of CouchDB from 0.10 upwards.
 
-<h1>Issue Tracking</h1>
+## Issue Tracking
+Issue tracking at [github](http://github.com/rnewson/couchdb-lucene/issues).
 
-Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">github</a>.
-
-<h1>Minimum System Requirements</h1>
-
+## Minimum System Requirements
 Java 1.8 is required; Oracle Java 8 or OpenJDK 8 are recommended.
 
-<h1>Build and run couchdb-lucene</h1>
+## Build and run couchdb-lucene
+If you are on OS X, you might find it easiest to:
 
-If you are on OS X, you might find it easiest to;
-
-<pre>
+```bash
 brew install couchdb-lucene
-</pre>
+```
 
-<ol>
-<li>Install Maven (2 or 3).
-<li>checkout repository
-<li>type 'mvn'
-<li>cd target
-<li>unzip couchdb-lucene-&lt;version&gt;.zip
-<li>cd couchdb-lucene-&lt;version&gt;
-<li>./bin/run
-</ol>
+1. Install Maven (2 or 3).
+2. checkout repository
+3. type 'mvn'
+4. cd target
+5. unzip couchdb-lucene-\<version\>.zip
+6. cd couchdb-lucene-\<version\>
+7. ./bin/run
 
 The zip file contains all the couchdb-lucene code, dependencies, startup scripts and configuration files you need, so unzip it wherever you wish to install couchdb-lucene.
 
 If you want to run couchdb-lucene on a servlet container like Tomcat, you can build the war file using Maven
 
-<pre>
+```bash
 mvn war:war
-</pre>
+```
 
-<h1>Configure CouchDB</h1>
+## Configure CouchDB
+The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene:
 
-The following settings are needed in CouchDB's local.ini file in order for it to communicate with couchdb-lucene;
-
-<h2>Proxy handler (for CouchDB versions from 1.1 onward)</h2>
-<pre>
+### Proxy handler (for CouchDB versions from 1.1 onward)
+```ini
 [httpd_global_handlers]
-_fti = {couch_httpd_proxy, handle_proxy_req, &lt;&lt;"http://127.0.0.1:5985"&gt;&gt;}
-</pre>
+_fti = {couch_httpd_proxy, handle_proxy_req, <<"http://127.0.0.1:5985">>}
+```
 
-<h2>Python hook script (for CouchDB versions prior to 1.1)</h2>
-<pre>
+### Python hook script (for CouchDB versions prior to 1.1)
+```ini
 [couchdb]
 os_process_timeout=60000 ; increase the timeout from 5 seconds.
 
@@ -63,47 +55,42 @@ os_process_timeout=60000 ; increase the timeout from 5 seconds.
 fti=/path/to/python /path/to/couchdb-lucene/tools/couchdb-external-hook.py
 
 [httpd_db_handlers]
-_fti = {couch_httpd_external, handle_external_req, &lt;&lt;"fti"&gt;&gt;}
-</pre>
+_fti = {couch_httpd_external, handle_external_req, <<"fti">>}
+```
 
-<h3>Hook options</h3>
+#### Hook options
 You can pass options to the python script like so:
-<pre>
+```ini
 [external]
 fti=/path/to/python "/path/to/couchdb-lucene/tools/couchdb-external-hook.py --option-name value"
-</pre>
+```
 
-<table>
-<tr><th>Option</th><th>Meaning</th><th>Default Value</th></tr>
-<tr><td>--remote-host</td><td>The hostname of the couchdb-lucene server</td><td>localhost</td></tr>
-<tr><td>--remote-port</td><td>The port of the couchdb-lucene server</td><td>5985</td></tr>
-<tr><td>--local-key</td><td>The key for the local couchdb instance as known to the couchdb-lucene server</td><td>local</td></tr>
-</table>
+|Option       |Meaning                                                                     |Default Value|
+|-------------|----------------------------------------------------------------------------|-------------|
+|--remote-host|The hostname of the couchdb-lucene server                                   |localhost    |
+|--remote-port|The port of the couchdb-lucene server                                       |5985         |
+|--local-key  |The key for the local couchdb instance as known to the couchdb-lucene server|local        |
 
-<h1>Configure couchdb-lucene</h1>
-
+## Configure couchdb-lucene
 couchdb-lucene runs in a single, standalone JVM. As such, you can choose to locate your couchdb-lucene server on a different machine to couchdb if you wish, or keep it on the same machine, it's your call.
 
-<h1>Start couchdb-lucene</h1>
-
-To start couchdb-lucene, run;
-<pre>
+## Start couchdb-lucene
+To start couchdb-lucene, run:
+```bash
 bin/run
-</pre>
+```
 
 To stop couchdb-lucene, simply kill the Java process.
 
-<h1>Indexing Strategy</h1>
-
-<h2>Document Indexing</h2>
-
+## Indexing Strategy
+### Document Indexing
 You must supply a index function in order to enable couchdb-lucene as, by default, nothing will be indexed. To suppress a document from the index, return null. It's more typical to return a single Document object which contains everything you'd like to query and retrieve. You may also return an array of Document objects if you wish.
 
 You may add any number of index views in any number of design documents. All searches will be constrained to documents emitted by the index functions.
 
 Here's an complete example of a design document with couchdb-lucene features:
 
-<pre>
+```json
 {
     "_id":"_design/foo",
     "fulltext": {
@@ -115,141 +102,111 @@ Here's an complete example of a design document with couchdb-lucene features:
         }
     }
 }
-</pre>
+```
 
-Here are some example URL's for the given design document;
+Here are some example URL's for the given design document:
 
-<h2>Using the Python hook script</h2>
-<pre>
+### Using the Python hook script
+```
 http://localhost:5984/database/_fti/_design/foo/by_subject?q=hello
 http://localhost:5984/database/_fti/_design/foo/by_content?q=hello
-</pre>
+```
 
-<h2>Using the proxy handler</h2>
-<pre>
+### Using the proxy handler
+```
 http://localhost:5984/_fti/local/database/_design/foo/by_subject?q=hello
 http://localhost:5984/_fti/local/database/_design/foo/by_content?q=hello
-</pre>
+```
 
-A fulltext object contains multiple index view declarations. An index view consists of;
+A fulltext object contains multiple index view declarations. An index view consists of:
 
-<dl>
-<dt>analyzer</dt><dd>(optional) The analyzer to use</dd>
-<dt>defaults</dt><dd>(optional) The default for numerous indexing options can be overridden here. A full list of options follows.</dd>
-<dt>index</dt><dd>The indexing function itself, documented below.</dd>
-</dl>
+***analyzer***
+  (optional) The analyzer to use
 
-<h3>The Defaults Object</h3>
+***defaults***
+  (optional) The default for numerous indexing options can be overridden here. A full list of options follows.
 
-The following indexing options can be defaulted;
+***index***
+  The indexing function itself, documented below.
 
-<table>
-  <tr>
-    <th>name</th>
-    <th>description</th>
-    <th>available options</th>
-    <th>default</th>
-  </tr>
-  <tr>
-    <th>field</th>
-    <td>the field name to index under</td>
-    <td>user-defined</td>
-    <td>default</td>
-  </tr>
-  <tr>
-    <th>type</th>
-    <td>the type of the field</td>
-    <td>date, double, float, int, long, string, text</td>
-    <td>text</td>
-  </tr>
-  <tr>
-    <th>store</th>
-    <td>whether the data is stored. The value will be returned in the search result.</td>
-    <td>yes, no</td>
-    <td>no</td>
-  </tr>
-  <tr>
-    <th>boost</th>
-    <td>Sets the boost factor hits on this field. This value will be multiplied into the score of all hits on this this field of this document.</td>
-    <td>floating-point value</td>
-    <td>1.0</td>
-  </tr>
-</table>
+#### The Defaults Object
+The following indexing options can be defaulted:
 
-<h3>String vs Text</h3>
+|name|description|available options|default|
+|----|-----------|-----------------|-------|
+|field|the field name to index under|user-defined|default|
+|type|the type of the field|date, double, float, int, long, string, text|text|
+|store|whether the data is stored. The value will be returned in the search result.|yes, no|no|
+|boost|Sets the boost factor hits on this field. This value will be multiplied into the score of all hits on this this field of this document.|floating-point value|1.0|
 
-There are two supported types that sound equivalent, <em>string</em> and <em>text</em>, but they are very different. A text field will be tokenized into words and is usually what you expect from a full-text index. A string field is not tokenized, only exact matching will work. The advantage to string fields is that they have a meaningful sort order.
+#### String vs Text
 
-<h3>The Analyzer Option</h3>
+There are two supported types that sound equivalent, *string* and *text*, but they are very different. A text field will be tokenized into words and is usually what you expect from a full-text index. A string field is not tokenized, only exact matching will work. The advantage to string fields is that they have a meaningful sort order.
 
-Lucene has numerous ways of converting free-form text into tokens, these classes are called Analyzer's. By default, the StandardAnalyzer is used which lower-cases all text, drops common English words ("the", "and", and so on), among other things. This processing might not always suit you, so you can choose from several others by setting the "analyzer" field to one of the following values;
+#### The Analyzer Option
 
-<ul>
-<li>brazilian</li>
-<li>chinese</li>
-<li>cjk</li>
-<li>czech</li>
-<li>dutch</li>
-<li>english</li>
-<li>french</li>
-<li>german</li>
-<li>keyword</li>
-<li>perfield</li>
-<li>porter</li>
-<li>russian</li>
-<li>simple</li>
-<li>snowball</li>
-<li>standard</li>
-<li>thai</li>
-<li>whitespace</li>
-<li>ngram</li>
-</ul>
+Lucene has numerous ways of converting free-form text into tokens, these classes are called Analyzer's. By default, the StandardAnalyzer is used which lower-cases all text, drops common English words ("the", "and", and so on), among other things. This processing might not always suit you, so you can choose from several others by setting the "analyzer" field to one of the following values:
 
-<h4>The Snowball Analyzer</h4>
+- brazilian
+- chinese
+- cjk
+- czech
+- dutch
+- english
+- french
+- german
+- keyword
+- perfield
+- porter
+- russian
+- simple
+- snowball
+- standard
+- thai
+- whitespace
+- ngram
 
-This analyzer requires an extra argument to specify the language (see <a href="http://lucene.apache.org/java/3_0_3/api/contrib-snowball/org/apache/lucene/analysis/snowball/SnowballAnalyzer.html">here</a> for details);
+##### The Snowball Analyzer
+This analyzer requires an extra argument to specify the language (see [here](http://lucene.apache.org/java/3_0_3/api/contrib-snowball/org/apache/lucene/analysis/snowball/SnowballAnalyzer.html) for details):
 
-<pre>
+```json
 "analyzer":"snowball:English"
-</pre>
+```
 
-Note: the argument is case-sensitive and is passed directly to the <code>SnowballAnalyzer</code>'s constructor.
+Note: the argument is case-sensitive and is passed directly to the `SnowballAnalyzer`'s constructor.
 
-<h4>The Per-field Analyzer</h4>
+##### The Per-field Analyzer
+The "perfield" option lets you use a different analyzer for different fields and is configured as follows:
 
-The "perfield" option lets you use a different analyzer for different fields and is configured as follows;
-
-<pre>
+```json
 "analyzer":"perfield:{field_name:\"analyzer_name\"}"
-</pre>
+```
 
-Unless overridden, any field name not specified will be handled by the standard analyzer. To change the default, use the special default field name;
+Unless overridden, any field name not specified will be handled by the standard analyzer. To change the default, use the special default field name:
 
-<pre>
+```json
 "analyzer":"perfield:{default:\"keyword\"}"
-</pre>
+```
 
-<h4>The Ngram Analyzer</h4>
-
+##### The Ngram Analyzer
 The "ngram" analyzer lets you break down the output of any other analyzer into ngrams ("foo" becomes "fo" and "oo").
 
-<pre>
+```json
 "analyzer":"ngram:{analyzer:\"simple\",min:2,max:3}"
-</pre>
+```
 
 If not specified, the delegated analyzer is "standard" and min and max ngram sizes are 1 and 2 respectively.
 
-<h3>The Document class</h3>
+#### The Document class
+You may construct a new Document instance with:
 
-You may construct a new Document instance with;
-
-<pre>
+```js
 var doc = new Document();
-</pre>
+```
 
 Data may be added to this document with the add method which takes an optional second object argument that can override any of the above default values.
 
-<pre>
+```js
 // Add with all the defaults.
 doc.add("value");
 
@@ -278,13 +235,11 @@ doc.attachment("attachment field", "attachment name");
 if (doc.foo) {
   log.info("doc has foo property!");
 }
-</pre>
+```
 
-<h3>Example Index Functions</h3>
-
-<h4>Index Everything</h4>
-
-<pre>
+#### Example Index Functions
+##### Index Everything
+```js
 function(doc) {
     var ret = new Document();
 
@@ -313,19 +268,17 @@ function(doc) {
 
     return ret;
 }
-</pre>
+```
 
-<h4>Index Nothing</h4>
-
-<pre>
+##### Index Nothing
+```js
 function(doc) {
   return null;
 }
-</pre>
+```
 
-<h4>Index Select Fields</h4>
-
-<pre>
+##### Index Select Fields
+```js
 function(doc) {
   var result = new Document();
   result.add(doc.subject, {"field":"subject", "store":"yes"});
@@ -333,11 +286,10 @@ function(doc) {
   result.add(new Date(), {"field":"indexed_at"});
   return result;
 }
-</pre>
+```
 
-<h4>Index Attachments</h4>
-
-<pre>
+##### Index Attachments
+```js
 function(doc) {
   var result = new Document();
   for(var a in doc._attachments) {
@@ -345,11 +297,10 @@ function(doc) {
   }
   return result;
 }
-</pre>
+```
 
-<h4>A More Complex Example</h4>
-
-<pre>
+##### A More Complex Example
+```js
 function(doc) {
     var mk = function(name, value, group) {
         var ret = new Document();
@@ -366,160 +317,219 @@ function(doc) {
     }
     return ret;
 }
-</pre>
+```
 
-<h2>Attachment Indexing</h2>
+### Attachment Indexing
+Couchdb-lucene uses [Apache Tika](http://lucene.apache.org/tika/) to index attachments of the following types, assuming the correct content_type is set in couchdb;
 
-Couchdb-lucene uses <a href="http://lucene.apache.org/tika/">Apache Tika</a> to index attachments of the following types, assuming the correct content_type is set in couchdb;
+#### Supported Formats
+- Excel spreadsheets (application/vnd.ms-excel)
+- HTML (text/html)
+- Images (image/*)
+- Java class files
+- Java jar archives
+- MP3 (audio/mp3)
+- OpenDocument (application/vnd.oasis.opendocument.*)
+- Outlook (application/vnd.ms-outlook)
+- PDF (application/pdf)
+- Plain text (text/plain)
+- Powerpoint presentations (application/vnd.ms-powerpoint)
+- RTF (application/rtf)
+- Visio (application/vnd.visio)
+- Word documents (application/msword)
+- XML (application/xml)
 
-<h3>Supported Formats</h3>
+## Searching with couchdb-lucene
+You can perform all types of queries using Lucene's default [query syntax](http://lucene.apache.org/java/3_6_2/queryparsersyntax.html).
 
-<ul>
-<li>Excel spreadsheets (application/vnd.ms-excel)
-<li>HTML (text/html)
-<li>Images (image/*)
-<li>Java class files
-<li>Java jar archives
-<li>MP3 (audio/mp3)
-<li>OpenDocument (application/vnd.oasis.opendocument.*)
-<li>Outlook (application/vnd.ms-outlook)
-<li>PDF (application/pdf)
-<li>Plain text (text/plain)
-<li>Powerpoint presentations (application/vnd.ms-powerpoint)
-<li>RTF (application/rtf)
-<li>Visio (application/vnd.visio)
-<li>Word documents (application/msword)
-<li>XML (application/xml)
-</ul>
+### Numeric range queries
+In addition to normal text-based range searches (using the "field:[lower TO upper]" syntax), couchdb-lucene also supports numeric range searches for the following types: int, long, float, double and date. The type is specified after the field name, as follows:
 
-<h1>Searching with couchdb-lucene</h1>
-
-You can perform all types of queries using Lucene's default <a href="http://lucene.apache.org/java/3_6_2/queryparsersyntax.html">query syntax</a>.
-
-<h2>Numeric range queries</h2>
-
-In addition to normal text-based range searches (using the "field:[lower TO upper]" syntax), couchdb-lucene also supports numeric range searches for the following types: int, long, float, double and date. The type is specified after the field name, as follows;
-
-<table>
-<tr><td>type</td><td>example</td></tr>
-<tr><td>int</td><td>field&lt;int>:[0 TO 100]</td></tr>
-<tr><td>long</td><td>field&lt;long>:[0 TO 100]</td></tr>
-<tr><td>float</td><td>field&lt;float>:[0.0 TO 100.0]</td></tr>
-<tr><td>double</td><td>field&lt;double>:[0.0 TO 100.0]</td></tr>
-<tr><td>date</td><td>field&lt;date>:[from TO to] where from and to match any of these patterns: <code>"yyyy-MM-dd'T'HH:mm:ssZ"</code>, <code>"yyyy-MM-dd'T'HH:mm:ss"<code>, <code>"yyyy-MM-ddZ"</code>, <code>"yyyy-MM-dd"</code>, <code>"yyyy-MM-dd'T'HH:mm:ss.SSSZ"</code>, <code>"yyyy-MM-dd'T'HH:mm:ss.SSS"</code>. So, in order to search for articles published in July, you would issue a following query: <code>published_at&lt;date&gt;:["2010-07-01T00:00:00"+TO+"2010-07-31T23:59:59"]</code></td></tr>
-</table>
+|type|example|
+|----|-------|
+|int|field<int>:[0 TO 100]|
+|long|field<long>:[0 TO 100]|
+|float|field<float>:[0.0 TO 100.0]|
+|double|field<double>:[0.0 TO 100.0]|
+|date|field<date>:[from TO to] where from and to match any of these patterns: `"yyyy-MM-dd'T'HH:mm:ssZ"`, `"yyyy-MM-dd'T'HH:mm:ss"`, `"yyyy-MM-ddZ"`, `"yyyy-MM-dd"`, `"yyyy-MM-dd'T'HH:mm:ss.SSSZ"`, `"yyyy-MM-dd'T'HH:mm:ss.SSS"`. So, in order to search for articles published in July, you would issue a following query: `published_at<date>:["2010-07-01T00:00:00"+TO+"2010-07-31T23:59:59"]`|
 
 An example numeric range query for spatial searching.
 
-<pre>
-?q=pizza AND lat&lt;double>:[51.4707 TO 51.5224] AND long&lt;double>:[-0.6622 TO -0.5775]
-</pre>
+```
+?q=pizza AND lat<double>:[51.4707 TO 51.5224] AND long<double>:[-0.6622 TO -0.5775]
+```
 
-<h2>Numeric term queries</h2>
+### Numeric term queries
+Fields indexed with numeric types can still be queried as normal terms, couchdb-lucene just needs to know the type. For example, `?q=age<long>:12` will find all documents where the field called 'age' has a value of 12 (when the field was indexed as "type":"int".
 
-Fields indexed with numeric types can still be queried as normal terms, couchdb-lucene just needs to know the type. For example, ?q=age&lt;long&gt;:12 will find all documents where the field called 'age' has a value of 12 (when the field was indexed as "type":"int".
-
-<h2>Search methods</h2>
-
+### Search methods
 You may use HTTP GET or POST. For POST, use application/x-www-form-urlencoded format.
 
-<h2>Search parameters</h2>
+### Search parameters
+The following parameters can be passed for more sophisticated searches:
 
-The following parameters can be passed for more sophisticated searches;
+***analyzer***
+  Override the default analyzer used to parse the q parameter
 
-<dl>
-<dt>analyzer</dt><dd>Override the default analyzer used to parse the q parameter</dd>
-<dt>callback</dt><dd>Specify a JSONP callback wrapper. The full JSON result will be prepended with this parameter and also placed with parentheses."</dd>
-<dt>debug</dt><dd>Setting this to true disables response caching (the query is executed every time) and indents the JSON response for readability.</dd>
-<dt>default_operator</dt><dd>Change the default operator for boolean queries. Defaults to "OR", other permitted value is "AND".</dd>
-<dt>force_json<dt><dd>Usually couchdb-lucene determines the Content-Type of its response based on the presence of the Accept header. If Accept contains "application/json", you get "application/json" in the response, otherwise you get "text/plain;charset=utf8". Some tools, like JSONView for FireFox, do not send the Accept header but do render "application/json" responses if received. Setting force_json=true forces all response to "application/json" regardless of the Accept header.</dd>
-<dt>include_docs</dt><dd>whether to include the source docs</dd>
-<dt>include_fields</dt><dd>By default, <i>all</i> stored fields are returned with results. Use a comma-separate list of field names with this parameter to refine the response</dd>
-<dt>highlights</dt><dd>Number of highlights to include with results. Default is <i>0</i>. This uses the <i>fast-vector-highlighter</i> plugin.</dd>
-<dt>highlight_length</dt><dd>Number of characters to include in a highlight row. Default and minimum is <i>18</i>.</dd>
-<dt>limit</dt><dd>the maximum number of results to return. Default is <i>25</i>.</dd>
-<dt>q</dt><dd>the query to run (e.g, subject:hello). If not specified, the default field is searched. Multiple queries can be supplied, separated by commas; the resulting JSON will be an array of responses.</dd>
-<dt>skip</dt><dd>the number of results to skip</dd>
-<dt>sort</dt><dd>the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified). Type-specific sorting is also available by appending the type between angle brackets (e.g, sort=amount&lt;float&gt;). Supported types are 'float', 'double', 'int', 'long' and 'date'.</dd>
-<dt>stale=ok</dt><dd>If you set the <i>stale</i> option to <i>ok</i>, couchdb-lucene will not block if the index is not up to date and it will immediately return results. Therefore searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will block and use the latest data committed to the index. Unlike CouchDBs stale=ok option for views, couchdb-lucene will trigger an index update unless one is already running.</dd>
-</dl>
+***callback***
+  Specify a JSONP callback wrapper. The full JSON result will be prepended with this parameter and also placed with parentheses."
 
-<i>All parameters except 'q' are optional.</i>
+***debug***
+  Setting this to true disables response caching (the query is executed every time) and indents the JSON response for readability.
 
-<h2>Special Fields</h2>
+***default_operator***
+  Change the default operator for boolean queries. Defaults to "OR", other permitted value is "AND".
 
-<dl>
-<dt>_id</dt><dd>The _id of the document.</dd>
-</dl>
+***force_json***
+  Usually couchdb-lucene determines the Content-Type of its response based on the presence of the Accept header. If Accept contains "application/json", you get "application/json" in the response, otherwise you get "text/plain;charset=utf8". Some tools, like JSONView for FireFox, do not send the Accept header but do render "application/json" responses if received. Setting force_json=true forces all response to "application/json" regardless of the Accept header.
 
-<h2>Dublin Core</h2>
+***include_docs***
+  whether to include the source docs
 
+***include_fields***
+  By default, *all* stored fields are returned with results. Use a comma-separate list of field names with this parameter to refine the response
+
+***highlights***
+  Number of highlights to include with results. Default is *0*. This uses the *fast-vector-highlighter* plugin.
+
+***highlight_length***
+  Number of characters to include in a highlight row. Default and minimum is *18*.
+
+***limit***
+  the maximum number of results to return. Default is *25*.
+
+***q***
+  the query to run (e.g, subject:hello). If not specified, the default field is searched. Multiple queries can be supplied, separated by commas; the resulting JSON will be an array of responses.
+
+***skip***
+  the number of results to skip
+
+***sort***
+  the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified). Type-specific sorting is also available by appending the type between angle brackets (e.g, sort=amount<float>). Supported types are 'float', 'double', 'int', 'long' and 'date'.
+
+***stale=ok***
+  If you set the *stale* option to *ok*, couchdb-lucene will not block if the index is not up to date and it will immediately return results. Therefore searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will block and use the latest data committed to the index. Unlike CouchDBs stale=ok option for views, couchdb-lucene will trigger an index update unless one is already running.
+
+*All parameters except 'q' are optional.*
+
+### Special Fields
+***_id***
+  The _id of the document.
+
+### Dublin Core
 All Dublin Core attributes are indexed and stored if detected in the attachment. Descriptions of the fields come from the Tika javadocs.
 
-<dl>
-<dt>_dc.contributor</dt><dd> An entity responsible for making contributions to the content of the resource.</dd>
-<dt>_dc.coverage</dt><dd>The extent or scope of the content of the resource.</dd>
-<dt>_dc.creator</dt><dd>An entity primarily responsible for making the content of the resource.</dd>
-<dt>_dc.date</dt><dd>A date associated with an event in the life cycle of the resource.</dd>
-<dt>_dc.description</dt><dd>An account of the content of the resource.</dd>
-<dt>_dc.format</dt><dd>Typically, Format may include the media-type or dimensions of the resource.</dd>
-<dt>_dc.identifier</dt><dd>Recommended best practice is to identify the resource by means of a string or number conforming to a formal identification system.</dd>
-<dt>_dc.language</dt><dd>A language of the intellectual content of the resource.</dd>
-<dt>_dc.modified</dt><dd>Date on which the resource was changed.</dd>
-<dt>_dc.publisher</dt><dd>An entity responsible for making the resource available.</dd>
-<dt>_dc.relation</dt><dd>A reference to a related resource.</dd>
-<dt>_dc.rights</dt><dd>Information about rights held in and over the resource.</dd>
-<dt>_dc.source</dt><dd>A reference to a resource from which the present resource is derived.</dd>
-<dt>_dc.subject</dt><dd>The topic of the content of the resource.</dd>
-<dt>_dc.title</dt><dd>A name given to the resource.</dd>
-<dt>_dc.type</dt><dd>The nature or genre of the content of the resource.</dd>
-</dl>
 
-<h2>Examples</h2>
+***_dc.contributor***
+   An entity responsible for making contributions to the content of the resource.
 
-<h2>Using the Python hook script</h2>
-<pre>
+***_dc.coverage***
+  The extent or scope of the content of the resource.
+
+***_dc.creator***
+  An entity primarily responsible for making the content of the resource.
+
+***_dc.date***
+  A date associated with an event in the life cycle of the resource.
+
+***_dc.description***
+  An account of the content of the resource.
+
+***_dc.format***
+  Typically, Format may include the media-type or dimensions of the resource.
+
+***_dc.identifier***
+  Recommended best practice is to identify the resource by means of a string or number conforming to a formal identification system.
+
+***_dc.language***
+  A language of the intellectual content of the resource.
+
+***_dc.modified***
+  Date on which the resource was changed.
+
+***_dc.publisher***
+  An entity responsible for making the resource available.
+
+***_dc.relation***
+  A reference to a related resource.
+
+***_dc.rights***
+  Information about rights held in and over the resource.
+
+***_dc.source***
+  A reference to a resource from which the present resource is derived.
+
+***_dc.subject***
+  The topic of the content of the resource.
+
+***_dc.title***
+  A name given to the resource.
+
+***_dc.type***
+  The nature or genre of the content of the resource.
+
+### Examples
+
+### Using the Python hook script
+```
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value
 http://localhost:5984/dbname/_fti/_design/foo/view_name?q=field_name:value&sort=other_field
-http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort=billing_size&lt;long&gt;&q=body:document AND customer:[A TO C]
-</pre>
+http://localhost:5984/dbname/_fti/_design/foo/view_name?debug=true&sort=billing_size<long>&q=body:document AND customer:[A TO C]
+```
 
-<h2>Using the proxy handler</h2>
-<pre>
+### Using the proxy handler
+```
 http://localhost:5984/_fti/local/dbname/_design/foo/view_name?q=field_name:value
 http://localhost:5984/_fti/local/dbname/_design/foo/view_name?q=field_name:value&sort=other_field
-http://localhost:5984/_fti/local/dbname/_design/foo/view_name?debug=true&sort=billing_size&lt;long&gt;&q=body:document AND customer:[A TO C]
-</pre>
+http://localhost:5984/_fti/local/dbname/_design/foo/view_name?debug=true&sort=billing_size<long>&q=body:document AND customer:[A TO C]
+```
 
-<h2>Search Results Format</h2>
-
+### Search Results Format
 The search result contains a number of fields at the top level, in addition to your search results.
 
-<dl>
-<dt>etag</dt><dd>An opaque token that reflects the current version of the index. This value is also returned in an ETag header to facilitate HTTP caching.</dd>
-<dt>fetch_duration</dt><dd>The number of milliseconds spent retrieving the documents.</dd>
-<dt>limit</dt><dd>The maximum number of results that can appear.</dd>
-<dt>q</dt><dd>The query that was executed.</dd>
-<dt>rows</dt><dd>The search results array, described below.</dd>
-<dt>search_duration</dt><dd>The number of milliseconds spent performing the search.</dd>
-<dt>skip</dt><dd>The number of initial matches that was skipped.</dd>
-<dt>total_rows</dt><dd>The total number of matches for this query.</dd>
-</dl>
+***etag***
+  An opaque token that reflects the current version of the index. This value is also returned in an ETag header to facilitate HTTP caching.
 
-<h2>The search results array</h2>
+***fetch_duration***
+  The number of milliseconds spent retrieving the documents.
 
-The search results arrays consists of zero, one or more objects with the following fields;
+***limit***
+  The maximum number of results that can appear.
 
-<dl>
-<dt>doc</dt><dd>The original document from couch, if requested with include_docs=true</dd>
-<dt>fields</dt><dd>All the fields that were stored with this match</dd>
-<dt>id</dt><dd>The unique identifier for this match.</dd>
-<dt>score</dt><dd>The normalized score (0.0-1.0, inclusive) for this match</dd>
-</dl>
+***q***
+  The query that was executed.
 
-Here's an example of a JSON response without sorting;
+***rows***
+  The search results array, described below.
 
-<pre>
+***search_duration***
+  The number of milliseconds spent performing the search.
+
+***skip***
+  The number of initial matches that was skipped.
+
+***total_rows***
+  The total number of matches for this query.
+
+### The search results array
+
+The search results arrays consists of zero, one or more objects with the following fields:
+
+***doc***
+  The original document from couch, if requested with include_docs=true
+
+***fields***
+  All the fields that were stored with this match
+
+***id***
+  The unique identifier for this match.
+
+***score***
+  The normalized score (0.0-1.0, inclusive) for this match
+
+Here's an example of a JSON response without sorting:
+
+```json
 {
   "q": "+content:enron",
   "skip": 0,
@@ -538,11 +548,11 @@ Here's an example of a JSON response without sorting;
     }
   ]
 }
-</pre>
+```
 
-And the same with sorting;
+And the same with sorting:
 
-<pre>
+```json
 {
   "q": "+content:enron",
   "skip": 0,
@@ -588,88 +598,84 @@ And the same with sorting;
     }
   ]
 }
-</pre>
+```
 
-<h3>Content-Type of response</h3>
-
+#### Content-Type of response
 The Content-Type of the response is negotiated via the Accept request header like CouchDB itself. If the Accept header includes "application/json" then that is also the Content-Type of the response. If not, "text/plain;charset=utf-8" is used.
 
-<h1>Fetching information about the index</h1>
-
+## Fetching information about the index
 Calling couchdb-lucene without arguments returns a JSON object with information about the index.
 
-<pre>
-http://127.0.0.1:5984/&lt;db>/_fti/_design/foo/&lt;index&gt;
-</pre>
+```
+http://127.0.0.1:5984/<db>/_fti/_design/foo/<index>
+```
 
-returns;
+returns:
 
-<pre>
+```json
 {"current":true,"disk_size":110674,"doc_count":397,"doc_del_count":0,
 "fields":["default","number"],"last_modified":"1263066382000",
 "optimized":true,"ref_count":2}
-</pre>
+```
 
-<h1>Index Maintenance</h1>
-
+## Index Maintenance
 For optimal query speed you can optimize your indexes. This causes the index to be rewritten into a single segment.
 
-<pre>
-curl -X POST http://localhost:5984/&lt;db>/_fti/_design/foo/&lt;index>/_optimize
-</pre>
+```bash
+curl -X POST http://localhost:5984/<db>/_fti/_design/foo/<index>/_optimize
+```
 
-If you just want to expunge pending deletes, then call;
+If you just want to expunge pending deletes, then call:
 
-<pre>
-curl -X POST http://localhost:5984/&lt;db>/_fti/_design/foo/&lt;index>/_expunge
-</pre>
+```bash
+curl -X POST http://localhost:5984/<db>/_fti/_design/foo/<index>/_expunge
+```
 
-If you recreate databases or frequently change your fulltext functions, you will probably have old indexes lying around on disk. To remove all of them, call;
+If you recreate databases or frequently change your fulltext functions, you will probably have old indexes lying around on disk. To remove all of them, call:
 
-<pre>
-curl -X POST http://localhost:5984/&lt;db>/_fti/_cleanup
-</pre>
+```bash
+curl -X POST http://localhost:5984/<db>/_fti/_cleanup
+```
 
-<h1>Authentication</h1>
+## Authentication
 
-By default couchdb-lucene does not attempt to authenticate to CouchDB. If you have set CouchDB's require_valid_user to true, you will need to modify couchdb-lucene.ini. Change the url setting to include a valid username and password. e.g, the default setting is;
+By default couchdb-lucene does not attempt to authenticate to CouchDB. If you have set CouchDB's require_valid_user to true, you will need to modify couchdb-lucene.ini. Change the url setting to include a valid username and password. e.g, the default setting is:
 
-<pre>
+```ini
 [local]
 url=http://localhost:5984/
-</pre>
+```
 
-Change it to;
+Change it to:
 
-<pre>
+```ini
 [local]
 url=http://foo:bar@localhost:5984/
-</pre>
+```
 
 and couchdb-lucene will authenticate to couchdb.
 
-<h1>Other Tricks</h1>
-
+## Other Tricks
 A couple of 'expert' options can be set in the couchdb-lucene.ini file;
 
-Leading wildcards are prohibited by default as they perform very poorly most of the time. You can enable them as follows;
+Leading wildcards are prohibited by default as they perform very poorly most of the time. You can enable them as follows:
 
-<pre>
+```ini
 [lucene]
 allowLeadingWildcard=true
-</pre>
+```
 
-Lucene automatically converts terms to lower case in wildcard situations. You can disable this with;
+Lucene automatically converts terms to lower case in wildcard situations. You can disable this with:
 
-<pre>
+```ini
 [lucene]
 lowercaseExpandedTerms=false
-</pre>
+```
 
-CouchDB-Lucene will keep your indexes up to date automatically but this consumes resources (network sockets). You can ask CouchDB-Lucene to stop updating an index after a timeout with;
+CouchDB-Lucene will keep your indexes up to date automatically but this consumes resources (network sockets). You can ask CouchDB-Lucene to stop updating an index after a timeout with:
 
-<pre>
+```ini
 [lucene]
 changes_timeout = 60000
-</pre>
+```
 
