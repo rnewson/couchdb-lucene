@@ -51,7 +51,15 @@ public abstract class UpdateSequence {
                     final OtpErlangTuple tuple = (OtpErlangTuple) list.elementAt(i);
                     final OtpErlangObject node = tuple.elementAt(0);
                     final OtpErlangObject range = tuple.elementAt(1);
-                    final OtpErlangLong node_seq = (OtpErlangLong) tuple.elementAt(2);
+                    final OtpErlangObject seq_obj = tuple.elementAt(2);
+                    final OtpErlangLong node_seq;
+                    if (seq_obj instanceof OtpErlangLong) {
+                        node_seq = (OtpErlangLong) seq_obj;
+                    } else if (seq_obj instanceof OtpErlangTuple) {
+                        node_seq = (OtpErlangLong) ((OtpErlangTuple)seq_obj).elementAt(0);
+                    } else {
+                        throw new IllegalArgumentException("could not decode seq");
+                    }
                     vector.put(node + "-" + range, node_seq.longValue());
                 }
             } catch (final OtpErlangDecodeException e) {
