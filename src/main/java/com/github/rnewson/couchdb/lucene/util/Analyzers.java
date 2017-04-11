@@ -16,33 +16,40 @@
 
 package com.github.rnewson.couchdb.lucene.util;
 
+import java.io.Reader;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.AnalyzerWrapper;
-import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.br.BrazilianAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
-import org.apache.lucene.analysis.core.LowerCaseTokenizer;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.cz.CzechAnalyzer;
 import org.apache.lucene.analysis.de.GermanAnalyzer;
 import org.apache.lucene.analysis.fr.FrenchAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
+import org.apache.lucene.analysis.ngram.NGramTokenFilter;
 import org.apache.lucene.analysis.nl.DutchAnalyzer;
 import org.apache.lucene.analysis.ru.RussianAnalyzer;
 import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
-import org.apache.lucene.analysis.ngram.NGramTokenFilter;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.Reader;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 public enum Analyzers {
 
@@ -110,14 +117,14 @@ public enum Analyzers {
         @Override
         public Analyzer newAnalyzer(final String args) throws JSONException {
             final JSONObject json = new JSONObject(args == null ? "{}" : args);
-            final Analyzer defaultAnalyzer = Analyzers.getAnalyzer(json.optString(Constants.DEFAULT_FIELD, "standard"));
+            final Analyzer defaultAnalyzer = fromSpec(json, Constants.DEFAULT_FIELD);
             final Map<String, Analyzer> analyzers = new HashMap<>();
             final Iterator<?> it = json.keys();
             while (it.hasNext()) {
                 final String key = it.next().toString();
                 if (Constants.DEFAULT_FIELD.equals(key))
                     continue;
-                analyzers.put(key, Analyzers.getAnalyzer(json.getString(key)));
+                analyzers.put(key, fromSpec(json, key));
             }
             return new PerFieldAnalyzerWrapper(defaultAnalyzer, analyzers);
         }
@@ -154,12 +161,16 @@ public enum Analyzers {
     NGRAM {
         public Analyzer newAnalyzer(final String args) throws JSONException {
             final JSONObject json = new JSONObject(args == null ? "{}" : args);
-            final Analyzer analyzer = Analyzers.getAnalyzer(json.optString("analyzer", "standard"));
+            Analyzer analyzer = fromSpec(json);
             int min = json.optInt("min", NGramTokenFilter.DEFAULT_MIN_NGRAM_SIZE);
             int max = json.optInt("max", NGramTokenFilter.DEFAULT_MAX_NGRAM_SIZE);
             return new NGramAnalyzer(analyzer, min, max);
         }
     };
+
+    public abstract Analyzer newAnalyzer(final String args) throws JSONException;
+	
+	static Logger logger = Logger.getLogger(Analyzers.class.getName());
 
     private static final class NGramAnalyzer extends AnalyzerWrapper {
         private final Analyzer analyzer;
@@ -185,6 +196,19 @@ public enum Analyzers {
                     this.min, this.max));
         }
     }
+	
+	public static Analyzer fromSpec(final JSONObject json, final String analyzerKey) {
+    	JSONObject spec = json.optJSONObject(analyzerKey);
+    	if (spec != null) {
+    		return Analyzers.getAnalyzer(spec);
+    	} else {
+    		return Analyzers.getAnalyzer(json.optString(analyzerKey, Constants.DEFAULT_ANALYZER));
+    	}
+	}
+	
+	public static Analyzer fromSpec(final JSONObject json) {
+		return fromSpec(json, Constants.ANALYZER);
+	}
 
     public static Analyzer getAnalyzer(final String str) throws JSONException {
         final String[] parts = str.split(":", 2);
@@ -192,7 +216,262 @@ public enum Analyzers {
         final String args = parts.length == 2 ? parts[1] : null;
         return Analyzers.valueOf(name).newAnalyzer(args);
     }
+    
+    public static Analyzer getAnalyzer(final JSONObject json) {
+    	String className = json.optString(Constants.CLASS);
+    	JSONArray params = json.optJSONArray(Constants.PARAMS);
+        
+    	Analyzer newAnalyzer = null;
+    	
+        if (className == null || className.isEmpty()) {
+            logger.error("Lucene index: analyzer class name is not defined");
+            return null;
+        }
 
-    public abstract Analyzer newAnalyzer(final String args) throws JSONException;
+        // is the class accessible?
+        Class<?> clazz = null;
+        try {
+        	clazz = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+        	logger.error(String.format("Lucene index: analyzer class %s not found. (%s)", className, e.getMessage()));
+        	return null;
+        }
 
+        // Is the class an Analyzer?
+        if (!Analyzer.class.isAssignableFrom(clazz)) {
+        	logger.error(String.format("Lucene index: analyzer class has to be a subclass of %s", Analyzer.class.getName()));
+        	return null;
+        }
+
+        // Get list of parameters
+        List<KeyTypedValue> cParams;
+        try {
+        	cParams = getAllConstructorParameters(params);
+        } catch (ParameterException pe) {
+        	// Unable to parse parameters.
+        	logger.error(String.format("Unable to get parameters for %s: %s", className, pe.getMessage()), pe);
+        	cParams = new ArrayList<>();
+        }
+
+        // Iterate over all parameters, convert data to two arrays
+        // that can be used in the reflection code
+        final Class<?> cParamClasses[] = new Class<?>[cParams.size()];
+        final Object cParamValues[] = new Object[cParams.size()];
+        for (int i = 0; i < cParams.size(); i++) {
+        	KeyTypedValue ktv = cParams.get(i);
+        	cParamClasses[i] = ktv.getValueClass();
+        	cParamValues[i] = ktv.getValue();
+        }
+
+        // Create new analyzer
+        newAnalyzer = createInstance(clazz, cParamClasses, cParamValues);
+
+        if (newAnalyzer == null) {
+            logger.error(String.format("Unable to create analyzer '%s'", className));
+        }
+    	return null;
+    }
+
+    /**
+     * Create instance of the lucene analyzer with provided arguments
+     *
+     * @param clazz The analyzer class
+     * @param vcParamClasses The parameter classes
+     * @param vcParamValues The parameter values
+     * @return The lucene analyzer
+     */
+    private static Analyzer createInstance(Class<?> clazz, Class<?>[] vcParamClasses, Object[] vcParamValues) {
+
+        String className = clazz.getName();
+
+        try {
+            final Constructor<?> cstr = clazz.getDeclaredConstructor(vcParamClasses);
+            cstr.setAccessible(true);
+
+            if (logger.isDebugEnabled()) {
+            	logger.debug(String.format("Using analyzer %s", className));
+            }
+
+            return (Analyzer) cstr.newInstance(vcParamValues);
+
+        } catch (IllegalArgumentException | IllegalAccessException | InstantiationException | InvocationTargetException | SecurityException e) {
+        	logger.error(String.format("Exception while instantiating analyzer class %s: %s", className, e.getMessage()), e);
+        } catch (NoSuchMethodException ex) {
+        	logger.error(String.format("Could not find matching analyzer class constructor%s: %s", className, ex.getMessage()), ex);
+        }
+
+        return null;
+    }
+
+    /**
+     * Retrieve parameter info from all <param/> elements.
+     *
+     * @param config The <analyzer/> element from the provided configuration
+     * @return List of triples key-value-valueType
+     * @throws org.exist.indexing.lucene.AnalyzerConfig.ParameterException
+     */
+    private static List<KeyTypedValue> getAllConstructorParameters(JSONArray params) throws ParameterException {
+        final List<KeyTypedValue> parameters = new ArrayList<>();
+
+        for (int i = 0; i < params.length(); i++) {
+            parameters.add(getConstructorParameter(params.getJSONObject(i)));
+        }
+
+        return parameters;
+    }
+
+    /**
+     * Retrieve configuration information from one json param object. Type
+     * information is used to construct actual data containing objects.
+     * 
+     * Each param object looks like:
+     * 
+     * <pre>{ "name": &lt;a name>, "type": &lt;oneof: set, bool, int, file, string>, "value": &lt;value> }</pre>
+     * 
+     * The name is not used. Values of type <code>set</code> are JSON arrays and 
+     * are used to represent lucene CharArraySets such as for stop words in StandardAnalyzer
+     *
+     * @param param Element that represents <param/>
+     * @return Triple key-value-value-type
+     * @throws org.exist.indexing.lucene.AnalyzerConfig.ParameterException
+     */
+    private static KeyTypedValue getConstructorParameter(JSONObject param) throws ParameterException {
+
+    	final String name = param.optString("name");
+    	final String type = param.optString("type", "string");
+    	final String value = param.optString("value");
+
+    	KeyTypedValue parameter = null;
+
+    	switch (type) {
+
+    	case "string": {
+    		if (value == null) {
+    			throw new ParameterException("The 'value' attribute of a string param must exist and must contain a String value.");
+    		}
+    			
+    		parameter = new KeyTypedValue(name, value, String.class);
+
+    		break;
+    	}
+
+    	// case "java.io.FileReader":
+    	case "file": {
+
+    		if (value == null) {
+    			throw new ParameterException("The 'value' field of a file param must exist and must contain a file name.");
+    		}
+
+    		try {
+    			// ToDo: check where to close reader to prevent resource leakage
+    			Reader fileReader = new java.io.FileReader(value);
+    			parameter = new KeyTypedValue(name, fileReader, Reader.class);
+
+    		} catch (java.io.FileNotFoundException ex) {
+    			logger.error(String.format("File '%s' could not be found.", value), ex);
+    		}
+    		break;
+    	}
+
+    	// case "org.apache.lucene.analysis.util.CharArraySet":
+    	case "set": {
+    		JSONArray values = param.optJSONArray("value");
+
+    		if (values == null) {
+    			throw new ParameterException("The 'value' field of a set param must exist and must contain a json array of strings.");
+    		}
+
+    		final Set<String> set = new HashSet<>();
+
+        	for (int i = 0; i < values.length(); i++) {
+        		set.add(values.getString(i));
+        	}
+
+    		parameter = new KeyTypedValue(name, CharArraySet.copy(set), CharArraySet.class);
+    		break;
+    	}
+
+    	// case "java.lang.Integer":
+    	case "int":
+
+    		if (value == null) {
+    			throw new ParameterException("The 'value' field of an int param must exist and must contain an integer value.");
+    		}
+
+    		try {
+    			final Integer n = Integer.parseInt(value);
+    			parameter = new KeyTypedValue(name, n);
+    		} catch (NumberFormatException ex) {
+    			logger.error(String.format("Value %s could not be converted to an integer. %s", value, ex.getMessage()));
+    		}
+    		break;
+
+    		// case "java.lang.Boolean":
+    	case "boolean":
+
+    		if (value == null) {
+    			throw new ParameterException("The 'value' field of a boolean param must exist and must contain a boolean value.");
+    		}
+
+    		final boolean b = Boolean.parseBoolean(value);
+    		parameter = new KeyTypedValue(name, b);
+    		break;
+
+    	default:
+    		// FallBack there was no match
+    		logger.error(String.format("Unknown lucene analyzer parameter type: %s", type));
+    		break;
+    	}
+
+    	return parameter;
+    }
+
+    /**
+     * CLass for containing the Triple : key (name), corresponding value and
+     * class type of value.
+     */
+    private static class KeyTypedValue {
+
+        private final String key;
+        private final Object value;
+        private final Class<?> valueClass;
+
+        public KeyTypedValue(String key, Object value) {
+            this(key, value, value.getClass());
+        }
+
+        public KeyTypedValue(String key, Object value, Class<?> valueClass) {
+            this.key = key;
+            this.value = value;
+            this.valueClass = valueClass;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public Class<?> getValueClass() {
+            return valueClass;
+        }
+    }
+
+    /**
+     * Exception class to for reporting problems with the parameters.
+     */
+    private static class ParameterException extends Exception {
+
+        private static final long serialVersionUID = -4823392401966008877L;
+
+        public ParameterException(String message) {
+            super(message);
+        }
+
+        public ParameterException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }
