@@ -50,6 +50,13 @@ Most analyzers provide a nullary constructor so a minimal analyzer configuration
 "analyzer": { "class": "org.apache.lucene.analysis.hy.ArmenianAnalyzer" }
 ```
 
+or
+
+```json
+"analyzer": { "class": "org.apache.lucene.analysis.hy.DutchAnalyzer",
+              "params": [] }
+```
+
 The `SmartChineseAnalyzer` can be configured as follows:
 
 ```json
@@ -58,11 +65,11 @@ The `SmartChineseAnalyzer` can be configured as follows:
       "params": [
           { "name": "useDefaultStopWords",
             "type": "boolean",
-            "value": "true"} ]
+            "value": true } ]
     }
 ```
 
-All of the exsmples so far refer to analyzers that are found in the Lucene distribution that is included with couchdb-lucene. All that is needed to add custom analyzers is to put the analyzer class and any dependencies (packaged in a jar typically) on the classpath of couchdb-lucene. A simple way of doing this is to put a jar with the custom analyzers in the `./lib` directory of the couchdb-lucene install. For example,
+All of the examples so far refer to analyzers that are found in the Lucene distribution that is included with couchdb-lucene. All that is needed to add custom analyzers is to put the analyzer class and any dependencies (packaged in a jar typically) on the classpath of couchdb-lucene. A simple way of doing this is to put a jar with the custom analyzers in the `./lib` directory of the couchdb-lucene install. For example:
 
 ```json
 "analyzer":

@@ -521,26 +521,15 @@ public enum Analyzers {
 		// "java.lang.Integer":
 		case "int":
 
-			if (value == null) {
-				throw new ParameterException("The 'value' field of an int param must exist and must contain an integer value.");
-			}
+			Integer n = param.optInt("value");
+			parameter = new KeyTypedValue(name, n);
 
-			try {
-				final Integer n = Integer.parseInt(value);
-				parameter = new KeyTypedValue(name, n);
-			} catch (NumberFormatException ex) {
-				logger.error(String.format("Value %s could not be converted to an integer. %s", value, ex.getMessage()));
-			}
 			break;
 
 		// "java.lang.Boolean":
 		case "boolean":
 
-			if (value == null) {
-				throw new ParameterException("The 'value' field of a boolean param must exist and must contain a boolean value.");
-			}
-
-			final boolean b = Boolean.parseBoolean(value);
+			boolean b = param.optBoolean("value");
 			parameter = new KeyTypedValue(name, b);
 			break;
 
