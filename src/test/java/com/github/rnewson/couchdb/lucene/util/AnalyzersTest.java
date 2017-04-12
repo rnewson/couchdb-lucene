@@ -95,6 +95,45 @@ public class AnalyzersTest {
     	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
     	assertThat(analyzer, is(org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer.class));
     }
+    
+    @Test
+    public void testClassInstance4() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"german\": {} }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(org.apache.lucene.analysis.de.GermanAnalyzer.class));
+    }
+    
+    @Test
+    public void testClassInstance5() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"cjk\": \"\" }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(org.apache.lucene.analysis.cjk.CJKAnalyzer.class));
+    }
+    
+    @Test
+    public void testClassInstance6() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"ngram\": { \"analyzer\": \"simple\", \"min\": 2, \"max\": 3 } }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(Analyzers.NGramAnalyzer.class));
+    }
+
+    @Test
+    public void testClassInstance7() throws Exception {
+        final Analyzer analyzer = Analyzers.getAnalyzer("perfield:{default:\"keyword\", lang_bo:{\"class\":\"org.apache.lucene.analysis.core.WhitespaceAnalyzer\"}, lang_sa:{\"class\":\"org.apache.lucene.analysis.hi.HindiAnalyzer\"}}");
+        assertThat(analyzer, is(PerFieldAnalyzerWrapper.class));
+        assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.core.KeywordAnalyzer"));
+        assertThat(analyzer.toString(), containsString("lang_bo=org.apache.lucene.analysis.core.WhitespaceAnalyzer"));
+        assertThat(analyzer.toString(), containsString("lang_sa=org.apache.lucene.analysis.hi.HindiAnalyzer"));
+    }
+
+    @Test
+    public void testClassInstance8() throws Exception {
+    	final Analyzer analyzer = Analyzers.fromSpec("{\"perfield\":{\"default\": \"keyword\",\"lang_bo\": {\"class\": \"org.apache.lucene.analysis.core.WhitespaceAnalyzer\"},\"lang_sa\": {\"class\": \"org.apache.lucene.analysis.hi.HindiAnalyzer\"}}}");
+        assertThat(analyzer, is(PerFieldAnalyzerWrapper.class));
+        assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.core.KeywordAnalyzer"));
+        assertThat(analyzer.toString(), containsString("lang_bo=org.apache.lucene.analysis.core.WhitespaceAnalyzer"));
+        assertThat(analyzer.toString(), containsString("lang_sa=org.apache.lucene.analysis.hi.HindiAnalyzer"));
+    }
 
     @Test
     public void testNGramTokens() throws Exception {

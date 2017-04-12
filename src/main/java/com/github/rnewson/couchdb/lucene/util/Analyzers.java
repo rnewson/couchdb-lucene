@@ -261,7 +261,7 @@ public enum Analyzers {
 
 	static Logger logger = Logger.getLogger(Analyzers.class.getName());
 
-	private static final class NGramAnalyzer extends AnalyzerWrapper {
+	protected static final class NGramAnalyzer extends AnalyzerWrapper {
 		private final Analyzer analyzer;
 		private final int min;
 		private final int max;
@@ -331,8 +331,6 @@ public enum Analyzers {
 	public static Analyzer getAnalyzer(final JSONObject json) {
 		String className = json.optString(Constants.CLASS);
 		JSONArray params = json.optJSONArray(Constants.PARAMS);
-		
-		System.err.println("getAnalyzer for " + className + "  with  " + params);
 
 		Analyzer newAnalyzer = null;
 
@@ -341,6 +339,9 @@ public enum Analyzers {
 			if (it.hasNext()) {
 				String key = (String) it.next();
 				String args = json.optString(key);
+				
+				System.err.println("getAnalyzer builtins for " + key + "  with  " + args);
+				
 				JSONObject obj = json.optJSONObject(key);
 				try {
 					if (obj != null) {
@@ -354,6 +355,8 @@ public enum Analyzers {
 			logger.error("Lucene index: analyzer class name is not defined");
 			return null;
 		}
+		
+		System.err.println("getAnalyzer for " + className + "  with  " + params);
 
 		// is the class accessible?
 		Class<?> clazz = null;
