@@ -340,8 +340,6 @@ public enum Analyzers {
 				String key = (String) it.next();
 				String args = json.optString(key);
 				
-				System.err.println("getAnalyzer builtins for " + key + "  with  " + args);
-				
 				JSONObject obj = json.optJSONObject(key);
 				try {
 					if (obj != null) {
@@ -355,22 +353,18 @@ public enum Analyzers {
 			logger.error("Lucene index: analyzer class name is not defined");
 			return null;
 		}
-		
-		System.err.println("getAnalyzer for " + className + "  with  " + params);
 
 		// is the class accessible?
 		Class<?> clazz = null;
 		try {
 			clazz = Class.forName(className);
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
 			logger.error(String.format("Lucene index: analyzer class %s not found. (%s)", className, e.getMessage()));
 			return null;
 		}
 
 		// Is the class an Analyzer?
 		if (!Analyzer.class.isAssignableFrom(clazz)) {
-			System.err.println("getAnalyzer NOT ASSIGNABLE");
 			logger.error(String.format("Lucene index: analyzer class has to be a subclass of %s", Analyzer.class.getName()));
 			return null;
 		}
@@ -380,8 +374,6 @@ public enum Analyzers {
 		try {
 			cParams = getAllConstructorParameters(params);
 		} catch (ParameterException pe) {
-			pe.printStackTrace();
-			// Unable to parse parameters.
 			logger.error(String.format("Unable to get parameters for %s: %s", className, pe.getMessage()), pe);
 			cParams = new ArrayList<>();
 		}
@@ -417,14 +409,10 @@ public enum Analyzers {
 	private static Analyzer createInstance(Class<?> clazz, Class<?>[] vcParamClasses, Object[] vcParamValues) {
 
 		String className = clazz.getName();
-		
-		System.err.println("createInstance for className: " + className);
 
 		try {
 			final Constructor<?> cstr = clazz.getDeclaredConstructor(vcParamClasses);
 			cstr.setAccessible(true);
-			
-			System.err.println("createInstance with constructor: " + cstr);
 
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("Using analyzer %s", className));
@@ -433,10 +421,8 @@ public enum Analyzers {
 			return (Analyzer) cstr.newInstance(vcParamValues);
 
 		} catch (IllegalArgumentException | IllegalAccessException | InstantiationException | InvocationTargetException | SecurityException e) {
-			e.printStackTrace();
 			logger.error(String.format("Exception while instantiating analyzer class %s: %s", className, e.getMessage()), e);
 		} catch (NoSuchMethodException ex) {
-			ex.printStackTrace();
 			logger.error(String.format("Could not find matching analyzer class constructor%s: %s", className, ex.getMessage()), ex);
 		}
 
@@ -567,6 +553,7 @@ public enum Analyzers {
 		private final Object value;
 		private final Class<?> valueClass;
 
+		@SuppressWarnings("unused")
 		public KeyTypedValue(String key, Object value) {
 			this(key, value, value.getClass());
 		}
