@@ -200,7 +200,7 @@ If not specified, the delegated analyzer is "standard" and min and max ngram siz
 ##### Configuring additional analyzers
 
 There are many other analyzers included in Lucene and there are occasions where custom analyzers are needed. 
-There is now support for [configuring additional analyzers](CONFIGURING_ANALYZERS.md) without needing to modify couchdb-lucene.
+There is now support for [configuring additional analyzers](CONFIGURING_ANALYZERS.md) without needing to further modify couchdb-lucene.
 
 #### The Document class
 You may construct a new Document instance with:

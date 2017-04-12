@@ -76,15 +76,51 @@ All of the exsmples so far refer to analyzers that are found in the Lucene distr
 
 The set of possible parameter types is not exhaustive, but for analyzers that have constructor parameters not included among the types available (e.g., `org.apache.lucene.analysis.ja.JapaneseAnalyzer`), it is sufficient to build a wrapper analyzer that retrieves information from a file and builds the necessary parameters and then calls the appropriate constructor.
 
-The analyzer configuration extension may be used in the `perfield` and `ngram` analyzer configurations as needed:
+The analyzer configuration extension may be used in the `perfield` and `ngram` analyzer configurations as well as with the `analyzer` parameter in a search request:
 
 ```json
 "analyzer": 
     "perfield:{
-        default:\"keyword",
+        default:\"keyword\",
         lang_bo:{\"class\":\"io.bdrc.lucene.bo.TibetanAnalyzer\"},
         lang_sa:{\"class\":\"org.apache.lucene.analysis.hi.HindiAnalyzer\"}
     }"
 ```
 
 The above illustrates that extension configurations can be mixed with the current couchdb-lucene configurations.
+
+The extension also permits using json notation in place of the current analyzer syntax:
+
+```json
+"analyzer": 
+    { "perfield":
+        {"default": "keyword",
+         "lang_bo": {"class": "io.bdrc.lucene.bo.TibetanAnalyzer"},
+         "lang_sa": {"class": "org.apache.lucene.analysis.hi.HindiAnalyzer"}
+        } 
+    }
+```
+
+or
+
+```json
+"analyzer": { "german": {} }
+```
+
+or
+
+```json
+"analyzer": { "cjk": "" }
+```
+
+or
+
+```json
+"analyzer": { "snowball": "English" }
+```
+
+or
+
+```json
+"analyzer": { "ngram": { "analyzer": "simple", "min": 2, "max": 3 } }
+```

@@ -58,10 +58,20 @@ public enum Analyzers {
 		public Analyzer newAnalyzer(final String args) {
 			return new BrazilianAnalyzer();
 		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
+			return new BrazilianAnalyzer();
+		}
 	},
 	CHINESE {
 		@Override
 		public Analyzer newAnalyzer(final String args) {
+			return new SmartChineseAnalyzer();
+		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
 			return new SmartChineseAnalyzer();
 		}
 	},
@@ -70,10 +80,20 @@ public enum Analyzers {
 		public Analyzer newAnalyzer(final String args) {
 			return new CJKAnalyzer();
 		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
+			return new CJKAnalyzer();
+		}
 	},
 	CLASSIC {
 		@Override
 		public Analyzer newAnalyzer(final String args) {
+			return new ClassicAnalyzer();
+		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
 			return new ClassicAnalyzer();
 		}
 	},
@@ -82,10 +102,20 @@ public enum Analyzers {
 		public Analyzer newAnalyzer(final String args) {
 			return new CzechAnalyzer();
 		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
+			return new CzechAnalyzer();
+		}
 	},
 	DUTCH {
 		@Override
 		public Analyzer newAnalyzer(final String args) {
+			return new DutchAnalyzer();
+		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
 			return new DutchAnalyzer();
 		}
 	},
@@ -94,10 +124,20 @@ public enum Analyzers {
 		public Analyzer newAnalyzer(final String args) {
 			return new StandardAnalyzer();
 		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
+			return new StandardAnalyzer();
+		}
 	},
 	FRENCH {
 		@Override
 		public Analyzer newAnalyzer(final String args) {
+			return new FrenchAnalyzer();
+		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
 			return new FrenchAnalyzer();
 		}
 	},
@@ -106,10 +146,20 @@ public enum Analyzers {
 		public Analyzer newAnalyzer(final String args) {
 			return new GermanAnalyzer();
 		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
+			return new GermanAnalyzer();
+		}
 	},
 	KEYWORD {
 		@Override
 		public Analyzer newAnalyzer(final String args) {
+			return new KeywordAnalyzer();
+		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
 			return new KeywordAnalyzer();
 		}
 	},
@@ -117,6 +167,11 @@ public enum Analyzers {
 		@Override
 		public Analyzer newAnalyzer(final String args) throws JSONException {
 			final JSONObject json = new JSONObject(args == null ? "{}" : args);
+			return PERFIELD.newAnalyzer(json);
+		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject json) throws JSONException {
 			final Analyzer defaultAnalyzer = fromSpec(json, Constants.DEFAULT_FIELD);
 			final Map<String, Analyzer> analyzers = new HashMap<>();
 			final Iterator<?> it = json.keys();
@@ -134,10 +189,20 @@ public enum Analyzers {
 		public Analyzer newAnalyzer(final String args) {
 			return new RussianAnalyzer();
 		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
+			return new RussianAnalyzer();
+		}
 	},
 	SIMPLE {
 		@Override
 		public Analyzer newAnalyzer(final String args) {
+			return new SimpleAnalyzer();
+		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
 			return new SimpleAnalyzer();
 		}
 	},
@@ -146,21 +211,43 @@ public enum Analyzers {
 		public Analyzer newAnalyzer(final String args) {
 			return new StandardAnalyzer();
 		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
+			return new StandardAnalyzer();
+		}
 	},
 	THAI {
 		@Override
 		public Analyzer newAnalyzer(final String args) {
 			return new ThaiAnalyzer();
 		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
+			return new ThaiAnalyzer();
+		}
 	},
 	WHITESPACE {
+		@Override
 		public Analyzer newAnalyzer(final String args) {
+			return new WhitespaceAnalyzer();
+		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject args) {
 			return new WhitespaceAnalyzer();
 		}
 	},
 	NGRAM {
+		@Override
 		public Analyzer newAnalyzer(final String args) throws JSONException {
 			final JSONObject json = new JSONObject(args == null ? "{}" : args);
+			return NGRAM.newAnalyzer(json);
+		}
+		
+		@Override
+		public Analyzer newAnalyzer(final JSONObject json) throws JSONException {
 			Analyzer analyzer = fromSpec(json);
 			int min = json.optInt("min", NGramTokenFilter.DEFAULT_MIN_NGRAM_SIZE);
 			int max = json.optInt("max", NGramTokenFilter.DEFAULT_MAX_NGRAM_SIZE);
@@ -169,6 +256,8 @@ public enum Analyzers {
 	};
 
 	public abstract Analyzer newAnalyzer(final String args) throws JSONException;
+
+	public abstract Analyzer newAnalyzer(final JSONObject args) throws JSONException;
 
 	static Logger logger = Logger.getLogger(Analyzers.class.getName());
 
@@ -200,14 +289,36 @@ public enum Analyzers {
 	public static Analyzer fromSpec(final JSONObject json, final String analyzerKey) {
 		JSONObject spec = json.optJSONObject(analyzerKey);
 		if (spec != null) {
-			return Analyzers.getAnalyzer(spec);
+			return getAnalyzer(spec);
 		} else {
-			return Analyzers.getAnalyzer(json.optString(analyzerKey, Constants.DEFAULT_ANALYZER));
+			return getAnalyzer(json.optString(analyzerKey, Constants.DEFAULT_ANALYZER));
 		}
 	}
 
 	public static Analyzer fromSpec(final JSONObject json) {
 		return fromSpec(json, Constants.ANALYZER);
+	}
+
+	/*
+	 * called from DatabaseIndexer when handling an http search request
+	 */
+	public static Analyzer fromSpec(String str) {
+		if (str == null) {
+			return getAnalyzer(Constants.DEFAULT_ANALYZER);
+		} 
+		
+		str = str.trim();
+		
+		if (str.startsWith("{")) {
+			try {
+				return getAnalyzer( new JSONObject(str) );
+			
+			} catch (Exception ex) {
+				return getAnalyzer( Constants.DEFAULT_ANALYZER );
+			}
+		}
+		
+		return getAnalyzer(str);
 	}
 
 	public static Analyzer getAnalyzer(final String str) throws JSONException {
@@ -224,6 +335,20 @@ public enum Analyzers {
 		Analyzer newAnalyzer = null;
 
 		if (className == null || className.isEmpty()) {
+			Iterator<?> it = json.keys();
+			if (it.hasNext()) {
+				String key = (String) it.next();
+				String args = json.optString(key);
+				JSONObject obj = json.optJSONObject(key);
+				try {
+					if (obj != null) {
+						return Analyzers.valueOf(key.toUpperCase()).newAnalyzer(obj);
+					} else {
+						return Analyzers.valueOf(key.toUpperCase()).newAnalyzer(args);
+					}
+				} catch (Exception ex) { }
+			}
+
 			logger.error("Lucene index: analyzer class name is not defined");
 			return null;
 		}
