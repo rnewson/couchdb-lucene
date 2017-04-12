@@ -18,11 +18,13 @@ package com.github.rnewson.couchdb.lucene.util;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.fr.FrenchAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -70,6 +72,28 @@ public class AnalyzersTest {
     public void testNGramInstance() throws Exception {
         final Analyzer analyzer = Analyzers.getAnalyzer("ngram");
         assertThat(analyzer.toString(), containsString("NGramAnalyzer"));
+    }
+    
+    @Test
+    public void testClassInstance() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"class\": \"org.apache.lucene.analysis.core.KeywordAnalyzer\" }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(KeywordAnalyzer.class));
+    }
+    
+    @Test
+    public void testClassInstance2() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"class\": \"org.apache.lucene.analysis.nl.DutchAnalyzer\", \"params\": [] }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(org.apache.lucene.analysis.nl.DutchAnalyzer.class));
+    }
+    
+    @Test
+    public void testClassInstance3() throws Exception {
+    	final JSONObject obj = 
+    	  new JSONObject("{ \"class\": \"org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer\", \"params\": [ { \"name\": \"useDefaultStopWords\", \"type\": \"boolean\", \"value\": true } ] }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer.class));
     }
 
     @Test

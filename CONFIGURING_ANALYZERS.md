@@ -53,7 +53,7 @@ Most analyzers provide a nullary constructor so a minimal analyzer configuration
 or
 
 ```json
-"analyzer": { "class": "org.apache.lucene.analysis.hy.DutchAnalyzer",
+"analyzer": { "class": "org.apache.lucene.analysis.nl.DutchAnalyzer",
               "params": [] }
 ```
 

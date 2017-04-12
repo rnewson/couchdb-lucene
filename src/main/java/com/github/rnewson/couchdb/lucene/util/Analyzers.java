@@ -331,6 +331,8 @@ public enum Analyzers {
 	public static Analyzer getAnalyzer(final JSONObject json) {
 		String className = json.optString(Constants.CLASS);
 		JSONArray params = json.optJSONArray(Constants.PARAMS);
+		
+		System.err.println("getAnalyzer for " + className + "  with  " + params);
 
 		Analyzer newAnalyzer = null;
 
@@ -358,12 +360,14 @@ public enum Analyzers {
 		try {
 			clazz = Class.forName(className);
 		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
 			logger.error(String.format("Lucene index: analyzer class %s not found. (%s)", className, e.getMessage()));
 			return null;
 		}
 
 		// Is the class an Analyzer?
 		if (!Analyzer.class.isAssignableFrom(clazz)) {
+			System.err.println("getAnalyzer NOT ASSIGNABLE");
 			logger.error(String.format("Lucene index: analyzer class has to be a subclass of %s", Analyzer.class.getName()));
 			return null;
 		}
@@ -373,6 +377,7 @@ public enum Analyzers {
 		try {
 			cParams = getAllConstructorParameters(params);
 		} catch (ParameterException pe) {
+			pe.printStackTrace();
 			// Unable to parse parameters.
 			logger.error(String.format("Unable to get parameters for %s: %s", className, pe.getMessage()), pe);
 			cParams = new ArrayList<>();
@@ -394,7 +399,8 @@ public enum Analyzers {
 		if (newAnalyzer == null) {
 			logger.error(String.format("Unable to create analyzer '%s'", className));
 		}
-		return null;
+		
+		return newAnalyzer;
 	}
 
 	/**
@@ -408,10 +414,14 @@ public enum Analyzers {
 	private static Analyzer createInstance(Class<?> clazz, Class<?>[] vcParamClasses, Object[] vcParamValues) {
 
 		String className = clazz.getName();
+		
+		System.err.println("createInstance for className: " + className);
 
 		try {
 			final Constructor<?> cstr = clazz.getDeclaredConstructor(vcParamClasses);
 			cstr.setAccessible(true);
+			
+			System.err.println("createInstance with constructor: " + cstr);
 
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("Using analyzer %s", className));
@@ -420,8 +430,10 @@ public enum Analyzers {
 			return (Analyzer) cstr.newInstance(vcParamValues);
 
 		} catch (IllegalArgumentException | IllegalAccessException | InstantiationException | InvocationTargetException | SecurityException e) {
+			e.printStackTrace();
 			logger.error(String.format("Exception while instantiating analyzer class %s: %s", className, e.getMessage()), e);
 		} catch (NoSuchMethodException ex) {
+			ex.printStackTrace();
 			logger.error(String.format("Could not find matching analyzer class constructor%s: %s", className, ex.getMessage()), ex);
 		}
 
@@ -521,8 +533,8 @@ public enum Analyzers {
 		// "java.lang.Integer":
 		case "int":
 
-			Integer n = param.optInt("value");
-			parameter = new KeyTypedValue(name, n);
+			int n = param.optInt("value");
+			parameter = new KeyTypedValue(name, n, int.class);
 
 			break;
 
@@ -530,7 +542,7 @@ public enum Analyzers {
 		case "boolean":
 
 			boolean b = param.optBoolean("value");
-			parameter = new KeyTypedValue(name, b);
+			parameter = new KeyTypedValue(name, b, boolean.class);
 			break;
 
 		default:
