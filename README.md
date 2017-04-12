@@ -156,6 +156,7 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 - french
 - german
 - keyword
+- ngram
 - perfield
 - porter
 - russian
@@ -164,7 +165,6 @@ Lucene has numerous ways of converting free-form text into tokens, these classes
 - standard
 - thai
 - whitespace
-- ngram
 
 ##### The Snowball Analyzer
 This analyzer requires an extra argument to specify the language (see [here](http://lucene.apache.org/java/3_0_3/api/contrib-snowball/org/apache/lucene/analysis/snowball/SnowballAnalyzer.html) for details):
@@ -196,6 +196,11 @@ The "ngram" analyzer lets you break down the output of any other analyzer into n
 ```
 
 If not specified, the delegated analyzer is "standard" and min and max ngram sizes are 1 and 2 respectively.
+
+##### Configuring additional analyzers
+
+There are many other analyzers included in Lucene and there are occasions where custom analyzers are needed. 
+There is now support for [configuring additional analyzers](CONFIGURING_ANALYZERS.md) without needing to modify couchdb-lucene.
 
 #### The Document class
 You may construct a new Document instance with:
@@ -347,11 +352,11 @@ In addition to normal text-based range searches (using the "field:[lower TO uppe
 
 |type|example|
 |----|-------|
-|int|field<int>:[0 TO 100]|
-|long|field<long>:[0 TO 100]|
-|float|field<float>:[0.0 TO 100.0]|
-|double|field<double>:[0.0 TO 100.0]|
-|date|field<date>:[from TO to] where from and to match any of these patterns: `"yyyy-MM-dd'T'HH:mm:ssZ"`, `"yyyy-MM-dd'T'HH:mm:ss"`, `"yyyy-MM-ddZ"`, `"yyyy-MM-dd"`, `"yyyy-MM-dd'T'HH:mm:ss.SSSZ"`, `"yyyy-MM-dd'T'HH:mm:ss.SSS"`. So, in order to search for articles published in July, you would issue a following query: `published_at<date>:["2010-07-01T00:00:00"+TO+"2010-07-31T23:59:59"]`|
+|int|`field<int>:[0 TO 100]`|
+|long|`field<long>:[0 TO 100]`|
+|float|`field<float>:[0.0 TO 100.0]`|
+|double|`field<double>:[0.0 TO 100.0]`|
+|date|`field<date>:[from TO to]` where from and to match any of these patterns: `"yyyy-MM-dd'T'HH:mm:ssZ"`, `"yyyy-MM-dd'T'HH:mm:ss"`, `"yyyy-MM-ddZ"`, `"yyyy-MM-dd"`, `"yyyy-MM-dd'T'HH:mm:ss.SSSZ"`, `"yyyy-MM-dd'T'HH:mm:ss.SSS"`. So, in order to search for articles published in July, you would issue a following query: `published_at<date>:["2010-07-01T00:00:00"+TO+"2010-07-31T23:59:59"]`|
 
 An example numeric range query for spatial searching.
 
