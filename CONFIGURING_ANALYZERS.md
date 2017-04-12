@@ -69,7 +69,7 @@ All of the exsmples so far refer to analyzers that are found in the Lucene distr
     { "class": "io.bdrc.lucene.bo.TibetanAnalyzer",
       "params": [
           { "name": "headWords",
-            "type"" "file",
+            "type": "file",
             "value": "/usr/local/analyzers/bo/headWords.txt" } ]
     }
 ```
