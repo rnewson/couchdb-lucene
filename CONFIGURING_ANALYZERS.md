@@ -1,7 +1,8 @@
 # Configuring Analyzers
 
 There are many other analyzers included in Lucene and there are occasions where custom analyzers are needed. 
-There is now support for configuring additional analyzers without needing to further modify couchdb-lucene.
+There is now support for configuring additional analyzers without needing to further modify couchdb-lucene. 
+This extension is a loose adaptation of the [eXist-db/Lucene integration](https://github.com/eXist-db/exist/blob/develop/extensions/indexes/lucene/src/org/exist/indexing/lucene/AnalyzerConfig.java)
 
 The basic approach is to refer to the analyzer by its java class name, e.g., `org.apache.lucene.analysis.ar.ArabicAnalyzer` or `io.bdrc.lucene.bo.TibetanAnalyzer`
 and specify any parameters that need to be supplied to the analyzer constructor, such as stop words or exclusion words lists and the like.
