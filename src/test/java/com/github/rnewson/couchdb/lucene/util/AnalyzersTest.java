@@ -114,7 +114,7 @@ public class AnalyzersTest {
     public void testClassInstance6() throws Exception {
     	final JSONObject obj = new JSONObject("{ \"ngram\": { \"analyzer\": \"simple\", \"min\": 2, \"max\": 3 } }");
     	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
-    	assertThat(analyzer, is(Analyzers.NGramAnalyzer.class));
+    	assertThat(analyzer.toString(), containsString("NGramAnalyzer"));
     }
 
     @Test

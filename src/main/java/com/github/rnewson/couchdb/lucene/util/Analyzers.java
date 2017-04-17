@@ -16,6 +16,32 @@
 
 package com.github.rnewson.couchdb.lucene.util;
 
+import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.AnalyzerWrapper;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.br.BrazilianAnalyzer;
+import org.apache.lucene.analysis.cjk.CJKAnalyzer;
+import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.LowerCaseTokenizer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.cz.CzechAnalyzer;
+import org.apache.lucene.analysis.de.GermanAnalyzer;
+import org.apache.lucene.analysis.fr.FrenchAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
+import org.apache.lucene.analysis.nl.DutchAnalyzer;
+import org.apache.lucene.analysis.ru.RussianAnalyzer;
+import org.apache.lucene.analysis.standard.ClassicAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.th.ThaiAnalyzer;
+import org.apache.lucene.analysis.ngram.NGramTokenFilter;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -27,146 +53,122 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.AnalyzerWrapper;
-import org.apache.lucene.analysis.CharArraySet;
-import org.apache.lucene.analysis.br.BrazilianAnalyzer;
-import org.apache.lucene.analysis.cjk.CJKAnalyzer;
-import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
-import org.apache.lucene.analysis.core.KeywordAnalyzer;
-import org.apache.lucene.analysis.core.SimpleAnalyzer;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
-import org.apache.lucene.analysis.cz.CzechAnalyzer;
-import org.apache.lucene.analysis.de.GermanAnalyzer;
-import org.apache.lucene.analysis.fr.FrenchAnalyzer;
-import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
-import org.apache.lucene.analysis.ngram.NGramTokenFilter;
-import org.apache.lucene.analysis.nl.DutchAnalyzer;
-import org.apache.lucene.analysis.ru.RussianAnalyzer;
-import org.apache.lucene.analysis.standard.ClassicAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.th.ThaiAnalyzer;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 public enum Analyzers {
 
-	BRAZILIAN {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new BrazilianAnalyzer();
-		}
+    BRAZILIAN {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new BrazilianAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new BrazilianAnalyzer();
 		}
-	},
-	CHINESE {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new SmartChineseAnalyzer();
-		}
+    },
+    CHINESE {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new SmartChineseAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new SmartChineseAnalyzer();
 		}
-	},
-	CJK {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new CJKAnalyzer();
-		}
+    },
+    CJK {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new CJKAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new CJKAnalyzer();
 		}
-	},
-	CLASSIC {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new ClassicAnalyzer();
-		}
+    },
+    CLASSIC {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new ClassicAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new ClassicAnalyzer();
 		}
-	},
-	CZECH {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new CzechAnalyzer();
-		}
+    },
+    CZECH {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new CzechAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new CzechAnalyzer();
 		}
-	},
-	DUTCH {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new DutchAnalyzer();
-		}
+    },
+    DUTCH {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new DutchAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new DutchAnalyzer();
 		}
-	},
-	ENGLISH {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new StandardAnalyzer();
-		}
+    },
+    ENGLISH {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new StandardAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new StandardAnalyzer();
 		}
-	},
-	FRENCH {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new FrenchAnalyzer();
-		}
+    },
+    FRENCH {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new FrenchAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new FrenchAnalyzer();
 		}
-	},
-	GERMAN {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new GermanAnalyzer();
-		}
+    },
+    GERMAN {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new GermanAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new GermanAnalyzer();
 		}
-	},
-	KEYWORD {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new KeywordAnalyzer();
-		}
+    },
+    KEYWORD {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new KeywordAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new KeywordAnalyzer();
 		}
-	},
-	PERFIELD {
-		@Override
-		public Analyzer newAnalyzer(final String args) throws JSONException {
-			final JSONObject json = new JSONObject(args == null ? "{}" : args);
+    },
+    PERFIELD {
+        @Override
+        public Analyzer newAnalyzer(final String args) throws JSONException {
+            final JSONObject json = new JSONObject(args == null ? "{}" : args);
 			return PERFIELD.newAnalyzer(json);
 		}
 		
@@ -183,66 +185,64 @@ public enum Analyzers {
 			}
 			return new PerFieldAnalyzerWrapper(defaultAnalyzer, analyzers);
 		}
-	},
-	RUSSIAN {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new RussianAnalyzer();
-		}
+    },
+    RUSSIAN {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new RussianAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new RussianAnalyzer();
 		}
-	},
-	SIMPLE {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new SimpleAnalyzer();
-		}
+    },
+    SIMPLE {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new SimpleAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new SimpleAnalyzer();
 		}
-	},
-	STANDARD {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new StandardAnalyzer();
-		}
+    },
+    STANDARD {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new StandardAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new StandardAnalyzer();
 		}
-	},
-	THAI {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new ThaiAnalyzer();
-		}
+    },
+    THAI {
+        @Override
+        public Analyzer newAnalyzer(final String args) {
+            return new ThaiAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new ThaiAnalyzer();
 		}
-	},
-	WHITESPACE {
-		@Override
-		public Analyzer newAnalyzer(final String args) {
-			return new WhitespaceAnalyzer();
-		}
+    },
+    WHITESPACE {
+        public Analyzer newAnalyzer(final String args) {
+            return new WhitespaceAnalyzer();
+        }
 		
 		@Override
 		public Analyzer newAnalyzer(final JSONObject args) {
 			return new WhitespaceAnalyzer();
 		}
-	},
-	NGRAM {
-		@Override
-		public Analyzer newAnalyzer(final String args) throws JSONException {
-			final JSONObject json = new JSONObject(args == null ? "{}" : args);
+    },
+    NGRAM {
+        public Analyzer newAnalyzer(final String args) throws JSONException {
+            final JSONObject json = new JSONObject(args == null ? "{}" : args);
 			return NGRAM.newAnalyzer(json);
 		}
 		
@@ -253,40 +253,34 @@ public enum Analyzers {
 			int max = json.optInt("max", NGramTokenFilter.DEFAULT_MAX_NGRAM_SIZE);
 			return new NGramAnalyzer(analyzer, min, max);
 		}
-	};
+    };
 
-	public abstract Analyzer newAnalyzer(final String args) throws JSONException;
+    private static final class NGramAnalyzer extends AnalyzerWrapper {
+        private final Analyzer analyzer;
+        private final int min;
+        private final int max;
 
-	public abstract Analyzer newAnalyzer(final JSONObject args) throws JSONException;
+        public NGramAnalyzer(final Analyzer analyzer, final int min, final int max) {
+            super(Analyzer.GLOBAL_REUSE_STRATEGY);
+            this.analyzer = analyzer;
+            this.min = min;
+            this.max = max;
+        }
 
-	static Logger logger = Logger.getLogger(Analyzers.class.getName());
+        @Override
+        protected Analyzer getWrappedAnalyzer(final String fieldName) {
+            return analyzer;
+        }
 
-	protected static final class NGramAnalyzer extends AnalyzerWrapper {
-		private final Analyzer analyzer;
-		private final int min;
-		private final int max;
+        @Override
+        protected TokenStreamComponents wrapComponents(String fieldName, TokenStreamComponents components) {
+            return new TokenStreamComponents(components.getTokenizer(),
+                new NGramTokenFilter(components.getTokenStream(),
+                    this.min, this.max));
+        }
+    }
 
-		public NGramAnalyzer(final Analyzer analyzer, final int min, final int max) {
-			super(Analyzer.GLOBAL_REUSE_STRATEGY);
-			this.analyzer = analyzer;
-			this.min = min;
-			this.max = max;
-		}
-
-		@Override
-		protected Analyzer getWrappedAnalyzer(final String fieldName) {
-			return analyzer;
-		}
-
-		@Override
-		protected TokenStreamComponents wrapComponents(String fieldName, TokenStreamComponents components) {
-			return new TokenStreamComponents(components.getTokenizer(),
-					new NGramTokenFilter(components.getTokenStream(),
-							this.min, this.max));
-		}
-	}
-
-	public static Analyzer fromSpec(final JSONObject json, final String analyzerKey) {
+	public static Analyzer fromSpec(final JSONObject json, final String analyzerKey) throws JSONException {
 		JSONObject spec = json.optJSONObject(analyzerKey);
 		if (spec != null) {
 			return getAnalyzer(spec);
@@ -302,7 +296,7 @@ public enum Analyzers {
 	/*
 	 * called from DatabaseIndexer when handling an http search request
 	 */
-	public static Analyzer fromSpec(String str) {
+	public static Analyzer fromSpec(String str) throws JSONException {
 		if (str == null) {
 			return getAnalyzer(Constants.DEFAULT_ANALYZER);
 		} 
@@ -321,12 +315,12 @@ public enum Analyzers {
 		return getAnalyzer(str);
 	}
 
-	public static Analyzer getAnalyzer(final String str) throws JSONException {
-		final String[] parts = str.split(":", 2);
-		final String name = parts[0].toUpperCase();
-		final String args = parts.length == 2 ? parts[1] : null;
-		return Analyzers.valueOf(name).newAnalyzer(args);
-	}
+    public static Analyzer getAnalyzer(final String str) throws JSONException {
+        final String[] parts = str.split(":", 2);
+        final String name = parts[0].toUpperCase();
+        final String args = parts.length == 2 ? parts[1] : null;
+        return Analyzers.valueOf(name).newAnalyzer(args);
+    }
 
 	public static Analyzer getAnalyzer(final JSONObject json) {
 		String className = json.optString(Constants.CLASS);
@@ -436,7 +430,7 @@ public enum Analyzers {
 	 * @return List of triples key-value-valueType
 	 * @throws org.exist.indexing.lucene.AnalyzerConfig.ParameterException
 	 */
-	private static List<KeyTypedValue> getAllConstructorParameters(JSONArray params) throws ParameterException {
+	private static List<KeyTypedValue> getAllConstructorParameters(JSONArray params) throws ParameterException, JSONException {
 		final List<KeyTypedValue> parameters = new ArrayList<>();
 
 		if (params != null) {
@@ -588,4 +582,11 @@ public enum Analyzers {
 			super(message);
 		}
 	}
+
+    public abstract Analyzer newAnalyzer(final String args) throws JSONException;
+
+	public abstract Analyzer newAnalyzer(final JSONObject args) throws JSONException;
+
+	static Logger logger = Logger.getLogger(Analyzers.class.getName());
+
 }
