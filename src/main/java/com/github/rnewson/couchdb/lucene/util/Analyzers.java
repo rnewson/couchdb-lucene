@@ -289,7 +289,7 @@ public enum Analyzers {
 		}
 	}
 
-	public static Analyzer fromSpec(final JSONObject json) {
+	public static Analyzer fromSpec(final JSONObject json) throws JSONException {
 		return fromSpec(json, Constants.ANALYZER);
 	}
 
@@ -367,7 +367,7 @@ public enum Analyzers {
 		List<KeyTypedValue> cParams;
 		try {
 			cParams = getAllConstructorParameters(params);
-		} catch (ParameterException pe) {
+		} catch (Exception pe) {
 			logger.error(String.format("Unable to get parameters for %s: %s", className, pe.getMessage()), pe);
 			cParams = new ArrayList<>();
 		}
@@ -457,7 +457,7 @@ public enum Analyzers {
 	 * @return Triple key-value-value-type
 	 * @throws org.exist.indexing.lucene.AnalyzerConfig.ParameterException
 	 */
-	private static KeyTypedValue getConstructorParameter(JSONObject param) throws ParameterException {
+	private static KeyTypedValue getConstructorParameter(JSONObject param) throws ParameterException, JSONException {
 
 		final String name = param.optString("name");
 		final String type = param.optString("type", "string");
