@@ -18,11 +18,13 @@ package com.github.rnewson.couchdb.lucene.util;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.fr.FrenchAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -70,6 +72,67 @@ public class AnalyzersTest {
     public void testNGramInstance() throws Exception {
         final Analyzer analyzer = Analyzers.getAnalyzer("ngram");
         assertThat(analyzer.toString(), containsString("NGramAnalyzer"));
+    }
+    
+    @Test
+    public void testClassInstance() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"class\": \"org.apache.lucene.analysis.core.KeywordAnalyzer\" }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(KeywordAnalyzer.class));
+    }
+    
+    @Test
+    public void testClassInstance2() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"class\": \"org.apache.lucene.analysis.nl.DutchAnalyzer\", \"params\": [] }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(org.apache.lucene.analysis.nl.DutchAnalyzer.class));
+    }
+    
+    @Test
+    public void testClassInstance3() throws Exception {
+    	final JSONObject obj = 
+    	  new JSONObject("{ \"class\": \"org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer\", \"params\": [ { \"name\": \"useDefaultStopWords\", \"type\": \"boolean\", \"value\": true } ] }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer.class));
+    }
+    
+    @Test
+    public void testClassInstance4() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"german\": {} }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(org.apache.lucene.analysis.de.GermanAnalyzer.class));
+    }
+    
+    @Test
+    public void testClassInstance5() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"cjk\": \"\" }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer, is(org.apache.lucene.analysis.cjk.CJKAnalyzer.class));
+    }
+    
+    @Test
+    public void testClassInstance6() throws Exception {
+    	final JSONObject obj = new JSONObject("{ \"ngram\": { \"analyzer\": \"simple\", \"min\": 2, \"max\": 3 } }");
+    	final Analyzer analyzer = Analyzers.getAnalyzer(obj);
+    	assertThat(analyzer.toString(), containsString("NGramAnalyzer"));
+    }
+
+    @Test
+    public void testClassInstance7() throws Exception {
+        final Analyzer analyzer = Analyzers.getAnalyzer("perfield:{default:\"keyword\", lang_bo:{\"class\":\"org.apache.lucene.analysis.core.WhitespaceAnalyzer\"}, lang_sa:{\"class\":\"org.apache.lucene.analysis.hi.HindiAnalyzer\"}}");
+        assertThat(analyzer, is(PerFieldAnalyzerWrapper.class));
+        assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.core.KeywordAnalyzer"));
+        assertThat(analyzer.toString(), containsString("lang_bo=org.apache.lucene.analysis.core.WhitespaceAnalyzer"));
+        assertThat(analyzer.toString(), containsString("lang_sa=org.apache.lucene.analysis.hi.HindiAnalyzer"));
+    }
+
+    @Test
+    public void testClassInstance8() throws Exception {
+    	final Analyzer analyzer = Analyzers.fromSpec("{\"perfield\":{\"default\": \"keyword\",\"lang_bo\": {\"class\": \"org.apache.lucene.analysis.core.WhitespaceAnalyzer\"},\"lang_sa\": {\"class\": \"org.apache.lucene.analysis.hi.HindiAnalyzer\"}}}");
+        assertThat(analyzer, is(PerFieldAnalyzerWrapper.class));
+        assertThat(analyzer.toString(), containsString("default=org.apache.lucene.analysis.core.KeywordAnalyzer"));
+        assertThat(analyzer.toString(), containsString("lang_bo=org.apache.lucene.analysis.core.WhitespaceAnalyzer"));
+        assertThat(analyzer.toString(), containsString("lang_sa=org.apache.lucene.analysis.hi.HindiAnalyzer"));
     }
 
     @Test

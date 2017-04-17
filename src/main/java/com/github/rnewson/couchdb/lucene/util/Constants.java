@@ -30,4 +30,12 @@ public final class Constants {
 
     public static final String DEFAULT_FIELD = "default";
 
+	public static final String DEFAULT_ANALYZER = "standard";
+	public static final String ANALYZER = "analyzer";
+	public static final String INDEX = "index";
+	public static final String DEFAULTS = "defaults";
+	public static final String CLASS = "class";
+	public static final String PARAMS = "params";
+	public static final String TYPE = "type";
+	public static final String VALUE = "value";
 }

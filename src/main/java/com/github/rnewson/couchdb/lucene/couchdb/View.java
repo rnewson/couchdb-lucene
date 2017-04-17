@@ -17,6 +17,8 @@
 package com.github.rnewson.couchdb.lucene.couchdb;
 
 import com.github.rnewson.couchdb.lucene.util.Analyzers;
+import com.github.rnewson.couchdb.lucene.util.Constants;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.json.JSONException;
@@ -32,20 +34,12 @@ import java.security.NoSuchAlgorithmException;
 
 public final class View {
 
-    private static final String DEFAULT_ANALYZER = "standard";
-
-    private static final String ANALYZER = "analyzer";
-
-    private static final String INDEX = "index";
-
-    private static final String DEFAULTS = "defaults";
-
     private final JSONObject json;
 
     private final String name;
 
     public View(final String name, final JSONObject json) {
-        if (!json.has(INDEX)) {
+        if (!json.has(Constants.INDEX)) {
             throw new IllegalArgumentException(json + " is not an index");
         }
         this.name = name;
@@ -53,17 +47,16 @@ public final class View {
     }
 
     public Analyzer getAnalyzer() throws JSONException {
-        return Analyzers
-                .getAnalyzer(json.optString(ANALYZER, DEFAULT_ANALYZER));
+    	return Analyzers.fromSpec(json);
     }
 
     public ViewSettings getDefaultSettings() throws JSONException {
-        return json.has(DEFAULTS) ? new ViewSettings(json
-                .getJSONObject(DEFAULTS)) : ViewSettings.getDefaultSettings();
+        return json.has(Constants.DEFAULTS) ? new ViewSettings(json
+                .getJSONObject(Constants.DEFAULTS)) : ViewSettings.getDefaultSettings();
     }
 
     public String getFunction() throws JSONException {
-        return trim(json.getString(INDEX));
+        return trim(json.getString(Constants.INDEX));
     }
 
     public Function compileFunction(final Context context,
