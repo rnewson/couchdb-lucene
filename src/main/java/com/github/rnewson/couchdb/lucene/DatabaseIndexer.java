@@ -124,8 +124,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             return parser.parse(query);
         }
 
-        public Analyzer analyzer(final String analyzerName) throws JSONException {
-            return analyzerName == null ? this.analyzer : Analyzers.getAnalyzer(analyzerName);
+        public Analyzer analyzer(final String spec) throws JSONException {
+            return spec == null ? this.analyzer : Analyzers.fromSpec(spec);
         }
 
         private synchronized void close() throws IOException {
