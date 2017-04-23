@@ -197,6 +197,11 @@ The "ngram" analyzer lets you break down the output of any other analyzer into n
 
 If not specified, the delegated analyzer is "standard" and min and max ngram sizes are 1 and 2 respectively.
 
+##### Configuring additional analyzers
+
+There are many other analyzers included in Lucene and there are also occasions where custom analyzers not included in Lucene are needed. 
+There is now support for [configuring additional analyzers](CONFIGURING_ANALYZERS.md) without needing to further modify couchdb-lucene.
+
 #### The Document class
 You may construct a new Document instance with:
 
