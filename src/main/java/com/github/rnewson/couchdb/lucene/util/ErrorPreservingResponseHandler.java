@@ -30,7 +30,7 @@ public final class ErrorPreservingResponseHandler implements ResponseHandler<Str
     public String handleResponse(final HttpResponse response) throws HttpResponseException, IOException {
         final StatusLine statusLine = response.getStatusLine();
         final HttpEntity entity = response.getEntity();
-        final String str = entity == null ? null : EntityUtils.toString(entity);
+        final String str = entity == null ? null : EntityUtils.toString(entity, "UTF-8");
 
         if (statusLine.getStatusCode() >= 300) {
             throw new HttpResponseException(statusLine.getStatusCode(), str);
