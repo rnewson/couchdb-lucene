@@ -170,7 +170,7 @@ public final class Database {
         return result;
     }
 
-    private List<JSONObject> rows(final JSONObject json) throws JSONException {
+    private statuc List<JSONObject> rows(final JSONObject json) throws JSONException {
         final List<JSONObject> result = new ArrayList<>();
         final JSONArray rows = json.getJSONArray("rows");
         for (int i = 0; i < rows.length(); i++) {
