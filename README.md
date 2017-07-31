@@ -1,4 +1,4 @@
-# couchdb-lucene [![Build Status](https://secure.travis-ci.org/rnewson/couchdb-lucene.png)](http://travis-ci.org/rnewson/couchdb-lucene)
+# couchdb-lucene [![Build Status](https://secure.travis-ci.org/rnewson/couchdb-lucene.svg)](http://travis-ci.org/rnewson/couchdb-lucene)
 
 ## Stability Warning
 I'm upgrading to Lucene 6 (from 4!). Some breakage likely on master for a while.
