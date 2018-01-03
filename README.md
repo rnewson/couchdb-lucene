@@ -356,7 +356,7 @@ In addition to normal text-based range searches (using the "field:[lower TO uppe
 |long|field<long>:[0 TO 100]|
 |float|field<float>:[0.0 TO 100.0]|
 |double|field<double>:[0.0 TO 100.0]|
-|date|field<date>:[from TO to] where from and to match any of these patterns: `"yyyy-MM-dd'T'HH:mm:ssZ"`, `"yyyy-MM-dd'T'HH:mm:ss"`, `"yyyy-MM-ddZ"`, `"yyyy-MM-dd"`, `"yyyy-MM-dd'T'HH:mm:ss.SSSZ"`, `"yyyy-MM-dd'T'HH:mm:ss.SSS"`. So, in order to search for articles published in July, you would issue a following query: `published_at<date>:["2010-07-01T00:00:00"+TO+"2010-07-31T23:59:59"]`|
+|date|field<date>:[from TO to] where from and to match any of these patterns: `"yyyy-MM-dd'T'HH:mm:ssZ"`, `"yyyy-MM-dd HH:mm:ss"`, `"yyyy-MM-dd'T'HH:mm:ss"`, `"yyyy-MM-ddZ"`, `"yyyy-MM-dd"`, `"yyyy-MM-dd'T'HH:mm:ss.SSSZ"`, `"yyyy-MM-dd'T'HH:mm:ss.SSS"`. So, in order to search for articles published in July, you would issue a following query: `published_at<date>:["2010-07-01T00:00:00"+TO+"2010-07-31T23:59:59"]`|
 
 An example numeric range query for spatial searching.
 
