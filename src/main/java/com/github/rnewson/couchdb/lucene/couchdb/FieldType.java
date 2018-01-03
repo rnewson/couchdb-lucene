@@ -204,7 +204,7 @@ public enum FieldType {
         return field;
     }
 
-    public static final String[] DATE_PATTERNS = new String[]{"yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZ",
+    public static final String[] DATE_PATTERNS = new String[]{"yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd' 'HH:mm:ss", "yyyy-MM-ddZ",
             "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd'T'HH:mm:ss.SSS"};
 
     private final SortField.Type type;
