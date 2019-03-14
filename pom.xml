@@ -58,17 +58,17 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>1.4</version>
+            <version>2.6</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
-            <version>1.6</version>
+            <version>1.10</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.5</version>
+            <version>1.12</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
@@ -155,9 +155,9 @@
     </dependencies>
     <properties>
         <lucene-version>6.4.1</lucene-version>
-        <tika-version>1.6</tika-version>
-        <jetty-version>9.3.9.v20160517</jetty-version>
-        <http-version>4.0.1</http-version>
+        <tika-version>1.20</tika-version>
+        <jetty-version>9.3.24.v20180605</jetty-version>
+        <http-version>4.4.1</http-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8
         </project.reporting.outputEncoding>
