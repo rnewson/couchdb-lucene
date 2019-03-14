@@ -1,9 +1,4 @@
-# couchdb-lucene [![Build Status](https://secure.travis-ci.org/rnewson/couchdb-lucene.png)](http://travis-ci.org/rnewson/couchdb-lucene)
-
-## Stability Warning
-I'm upgrading to Lucene 6 (from 4!). Some breakage likely on master for a while.
-
-Use 1.1.0 release (https://github.com/rnewson/couchdb-lucene/releases/tag/v1.1.0) if you want stable.
+# couchdb-lucene [![Build Status](https://secure.travis-ci.org/rnewson/couchdb-lucene.svg)](http://travis-ci.org/rnewson/couchdb-lucene)
 
 ## Version Compatibility
 CouchDB-Lucene works with all version of CouchDB from 0.10 upwards.
