@@ -155,8 +155,8 @@
     </dependencies>
     <properties>
         <lucene-version>6.4.1</lucene-version>
-        <tika-version>1.20</tika-version>
-        <jetty-version>9.3.24.v20180605</jetty-version>
+        <tika-version>1.22</tika-version>
+        <jetty-version>9.4.24.v20191120</jetty-version>
         <http-version>4.4.1</http-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8
