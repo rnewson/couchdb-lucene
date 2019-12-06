@@ -405,7 +405,7 @@ The following parameters can be passed for more sophisticated searches:
   the number of results to skip
 
 ***sort***
-  the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified). Type-specific sorting is also available by appending the type between angle brackets (e.g, sort=amount<float>). Supported types are 'float', 'double', 'int', 'long' and 'date'.
+  the comma-separated fields to sort on. Prefix with / for ascending order and \ for descending order (ascending is the default if not specified). Type-specific sorting is also available by appending the type between angle brackets (e.g, sort=amount<float>). Supported types are 'string', 'float', 'double', 'int', 'long' and 'date'.
 
 ***stale=ok***
   If you set the *stale* option to *ok*, couchdb-lucene will not block if the index is not up to date and it will immediately return results. Therefore searches may be faster as Lucene caches important data (especially for sorting). A query without stale=ok will block and use the latest data committed to the index. Unlike CouchDBs stale=ok option for views, couchdb-lucene will trigger an index update unless one is already running.
