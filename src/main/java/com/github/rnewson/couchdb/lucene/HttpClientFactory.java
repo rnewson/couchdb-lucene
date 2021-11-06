@@ -61,7 +61,7 @@ public final class HttpClientFactory {
 
     private HttpClientFactory () {
         throw new InstantiationError("This class is not supposed to be instantiated.");
-    }	
+    }
 
     private static final class PreemptiveAuthenticationRequestInterceptor
             implements HttpRequestInterceptor {

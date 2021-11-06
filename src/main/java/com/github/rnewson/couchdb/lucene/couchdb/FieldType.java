@@ -18,12 +18,9 @@ package com.github.rnewson.couchdb.lucene.couchdb;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.lucene.document.*;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.*;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.BytesRefBuilder;
-import org.apache.lucene.util.NumericUtils;
 
 import java.util.Date;
 
@@ -32,7 +29,7 @@ public enum FieldType {
     DATE(SortField.Type.LONG) {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) throws ParseException {
-            to.add(boost(new LongPoint(name, toDate(value)), settings));
+            to.add(new LongPoint(name, toDate(value)));
             to.add(new NumericDocValuesField(name, toDate(value)));
         }
 
@@ -54,7 +51,7 @@ public enum FieldType {
     DOUBLE(SortField.Type.DOUBLE) {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
-            to.add(boost(new DoublePoint(name, toDouble(value)), settings));
+            to.add(new DoublePoint(name, toDouble(value)));
             to.add(new DoubleDocValuesField(name, toDouble(value)));
         }
 
@@ -82,7 +79,7 @@ public enum FieldType {
     FLOAT(SortField.Type.FLOAT) {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
-            to.add(boost(new FloatPoint(name, toFloat(value)), settings));
+            to.add(new FloatPoint(name, toFloat(value)));
             to.add(new FloatDocValuesField(name, toFloat(value)));
         }
 
@@ -109,7 +106,7 @@ public enum FieldType {
     INT(SortField.Type.INT) {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
-            to.add(boost(new IntPoint(name, toInt(value)), settings));
+            to.add(new IntPoint(name, toInt(value)));
             to.add(new NumericDocValuesField(name, toInt(value)));
         }
 
@@ -137,7 +134,7 @@ public enum FieldType {
     LONG(SortField.Type.LONG) {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
-            to.add(boost(new LongPoint(name, toLong(value)), settings));
+            to.add(new LongPoint(name, toLong(value)));
             to.add(new NumericDocValuesField(name, toLong(value)));
         }
 
@@ -165,7 +162,7 @@ public enum FieldType {
     STRING(SortField.Type.STRING) {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
-            to.add(boost(new StringField(name, value.toString(), settings.getStore()), settings));
+            to.add(new StringField(name, value.toString(), settings.getStore()));
             to.add(new SortedDocValuesField(name, new BytesRef(value.toString())));
         }
 
@@ -184,7 +181,7 @@ public enum FieldType {
     TEXT(null) {
         @Override
         public void addFields(final String name, final Object value, final ViewSettings settings, final Document to) {
-            to.add(boost(new TextField(name, value.toString(), settings.getStore()), settings));
+            to.add(new TextField(name, value.toString(), settings.getStore()));
         }
 
         @Override
@@ -198,11 +195,6 @@ public enum FieldType {
             throw new UnsupportedOperationException("toTermQuery is not supported for TEXT");
         }
     };
-
-    private static <T extends Field> T boost(final T field, final ViewSettings settings) {
-        field.setBoost(settings.getBoost());
-        return field;
-    }
 
     public static final String[] DATE_PATTERNS = new String[]{"yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-ddZ",
             "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd'T'HH:mm:ss.SSS"};

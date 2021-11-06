@@ -20,12 +20,10 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.AnalyzerWrapper;
 import org.apache.lucene.analysis.CharArraySet;
-import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.br.BrazilianAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
-import org.apache.lucene.analysis.core.LowerCaseTokenizer;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.cz.CzechAnalyzer;
@@ -232,8 +230,8 @@ public enum Analyzers {
         @Override
         public Analyzer newAnalyzer(final JSONObject json) throws JSONException {
             Analyzer analyzer = fromSpec(json);
-            int min = json.optInt("min", NGramTokenFilter.DEFAULT_MIN_NGRAM_SIZE);
-            int max = json.optInt("max", NGramTokenFilter.DEFAULT_MAX_NGRAM_SIZE);
+            int min = json.optInt("min", 1);
+            int max = json.optInt("max", 2);
             return new NGramAnalyzer(analyzer, min, max);
         }
     };
@@ -257,9 +255,9 @@ public enum Analyzers {
 
         @Override
         protected TokenStreamComponents wrapComponents(String fieldName, TokenStreamComponents components) {
-            return new TokenStreamComponents(components.getTokenizer(),
+            return new TokenStreamComponents(components.getSource(),
                 new NGramTokenFilter(components.getTokenStream(),
-                    this.min, this.max));
+                    this.min, this.max, false));
         }
     }
 
@@ -282,7 +280,7 @@ public enum Analyzers {
     public static Analyzer fromSpec(String str) throws JSONException {
         if (str == null) {
             return getAnalyzer(Constants.DEFAULT_ANALYZER);
-        } 
+        }
 
         if (str.startsWith("{")) {
             try {
@@ -405,13 +403,13 @@ public enum Analyzers {
     }
 
     /**
-     * Parse an analyzer constructor parameter spec. 
-     * 
+     * Parse an analyzer constructor parameter spec.
+     *
      * Each param spec looks like:
-     * 
+     *
      * <pre>{ "name": &lt;a name>, "type": &lt;oneof: set, bool, int, file, string>, "value": &lt;value> }</pre>
-     * 
-     * The name serves to document the purpose of the parameter. Values of type <code>set</code> are JSON arrays and 
+     *
+     * The name serves to document the purpose of the parameter. Values of type <code>set</code> are JSON arrays and
      * are used to represent lucene CharArraySets such as for stop words in StandardAnalyzer
      *
      * @param param json object specifying an analyzer parameter
@@ -478,7 +476,7 @@ public enum Analyzers {
 
             boolean b = param.optBoolean("value");
             return new ParamSpec(name, b, boolean.class);
-        
+
         default:
             // there was no match
             logger.error("Unknown parameter type: " + type + " for param: " + name + " with value: " + value);

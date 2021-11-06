@@ -16,7 +16,7 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
