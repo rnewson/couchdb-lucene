@@ -47,8 +47,8 @@ import org.json.JSONObject;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.SocketException;
 import java.util.*;
