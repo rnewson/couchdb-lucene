@@ -28,12 +28,12 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${http-version}</version>
+            <version>4.5.13</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>${http-version}</version>
+            <version>4.4.15</version>
         </dependency>
         <dependency>
             <groupId>net.jcip</groupId>
@@ -158,7 +158,6 @@
         <lucene-version>6.4.1</lucene-version>
         <tika-version>1.22</tika-version>
         <jetty-version>11.0.7</jetty-version>
-        <http-version>4.4.1</http-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8
         </project.reporting.outputEncoding>
