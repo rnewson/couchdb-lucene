@@ -16,7 +16,8 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -30,7 +31,7 @@ import java.util.EnumSet;
 
 public final class Main {
 
-    private static final Logger LOG = Logger.getLogger(Main.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private Main() {
         throw new InstantiationError("This class is not supposed to be instantiated.");

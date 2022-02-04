@@ -27,7 +27,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.*;
@@ -251,7 +252,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
         this.root = root;
         this.database = database;
         this.ini = ini;
-        this.logger = Logger.getLogger(DatabaseIndexer.class.getName() + "."
+        this.logger = LoggerFactory.getLogger(DatabaseIndexer.class.getName() + "."
                 + database.getInfo().getName());
     }
 

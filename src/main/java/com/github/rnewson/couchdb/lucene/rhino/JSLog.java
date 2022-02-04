@@ -16,13 +16,14 @@
 
 package com.github.rnewson.couchdb.lucene.rhino;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.mozilla.javascript.ScriptableObject;
 
 public class JSLog extends ScriptableObject {
 
     private static final long serialVersionUID = 1L;
-    private final Logger logger = Logger.getLogger(JSLog.class);
+    private final Logger logger = LoggerFactory.getLogger(JSLog.class);
 
     public JSLog() {
         String[] names = {"error", "warn", "info", "debug", "trace"};

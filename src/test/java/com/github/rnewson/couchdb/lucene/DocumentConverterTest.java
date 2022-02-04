@@ -23,7 +23,8 @@ import com.github.rnewson.couchdb.lucene.util.Constants;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.LongPoint;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -45,7 +46,7 @@ public class DocumentConverterTest {
     private Context context;
 
     private TimeZone tz;
-    private static final Logger LOG = Logger.getLogger(DocumentConverterTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DocumentConverterTest.class);
 
     @Before
     public void setup() {

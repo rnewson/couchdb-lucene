@@ -16,7 +16,8 @@
 
 package com.github.rnewson.couchdb.lucene.util;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.AnalyzerWrapper;
 import org.apache.lucene.analysis.CharArraySet;
@@ -538,6 +539,6 @@ public enum Analyzers {
 
     public abstract Analyzer newAnalyzer(final JSONObject args) throws JSONException;
 
-    static Logger logger = Logger.getLogger(Analyzers.class.getName());
+    static Logger logger = LoggerFactory.getLogger(Analyzers.class.getName());
 
 }

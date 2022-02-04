@@ -16,7 +16,8 @@
 
 package com.github.rnewson.couchdb.lucene.util;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
@@ -35,7 +36,7 @@ public final class Utils {
     }
 
     public static Logger getLogger(final Class<?> clazz, final String suffix) {
-        return Logger.getLogger(clazz.getCanonicalName() + "." + suffix);
+        return LoggerFactory.getLogger(clazz.getCanonicalName() + "." + suffix);
     }
 
     public static boolean getStaleOk(final HttpServletRequest req) {

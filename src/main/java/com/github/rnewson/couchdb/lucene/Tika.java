@@ -16,8 +16,8 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.document.Document;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
@@ -36,7 +36,7 @@ public final class Tika {
 
     private static final String DC = "_dc.";
 
-    private static final Logger log = LogManager.getLogger(Tika.class);
+    private static final Logger log = LoggerFactory.getLogger(Tika.class);
 
     private final org.apache.tika.Tika tika = new org.apache.tika.Tika();
 

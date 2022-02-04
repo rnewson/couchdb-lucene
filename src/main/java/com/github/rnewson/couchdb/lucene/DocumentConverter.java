@@ -22,7 +22,8 @@ import com.github.rnewson.couchdb.lucene.couchdb.View;
 import com.github.rnewson.couchdb.lucene.couchdb.ViewSettings;
 import com.github.rnewson.couchdb.lucene.rhino.JSLog;
 import com.github.rnewson.couchdb.lucene.rhino.RhinoDocument;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.json.JSONArray;
@@ -40,7 +41,7 @@ import java.util.Iterator;
 public final class DocumentConverter {
 
     private static final Collection<Document> NO_DOCUMENTS = Collections.emptyList();
-    private static final Logger LOG = Logger.getLogger(DocumentConverter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DocumentConverter.class);
 
     private final Context context;
     private final Function viewFun;

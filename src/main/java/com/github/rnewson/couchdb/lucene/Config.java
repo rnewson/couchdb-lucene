@@ -20,7 +20,9 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.http.client.HttpClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +30,7 @@ import java.net.MalformedURLException;
 
 public final class Config {
 
-    private static final Logger LOG = Logger.getLogger(Config.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Config.class);
 
     private static final String CONFIG_FILE = "couchdb-lucene.ini";
     private static final String LUCENE_DIR = "lucene.dir";

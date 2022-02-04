@@ -27,7 +27,8 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,7 +44,7 @@ import java.util.*;
 
 public final class LuceneServlet extends HttpServlet {
 
-    private static final Logger LOG = Logger.getLogger(LuceneServlet.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LuceneServlet.class);
 
     private static final long serialVersionUID = 1L;
 
