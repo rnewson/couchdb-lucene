@@ -26,7 +26,6 @@ import org.apache.lucene.analysis.br.BrazilianAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
-import org.apache.lucene.analysis.core.LowerCaseTokenizer;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.cz.CzechAnalyzer;
@@ -35,9 +34,10 @@ import org.apache.lucene.analysis.fr.FrenchAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.nl.DutchAnalyzer;
 import org.apache.lucene.analysis.ru.RussianAnalyzer;
-import org.apache.lucene.analysis.standard.ClassicAnalyzer;
+import org.apache.lucene.analysis.classic.ClassicAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
+import org.apache.lucene.analysis.ngram.NGramTokenizer;
 import org.apache.lucene.analysis.ngram.NGramTokenFilter;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -233,8 +233,8 @@ public enum Analyzers {
         @Override
         public Analyzer newAnalyzer(final JSONObject json) throws JSONException {
             Analyzer analyzer = fromSpec(json);
-            int min = json.optInt("min", NGramTokenFilter.DEFAULT_MIN_NGRAM_SIZE);
-            int max = json.optInt("max", NGramTokenFilter.DEFAULT_MAX_NGRAM_SIZE);
+            int min = json.optInt("min", NGramTokenizer.DEFAULT_MIN_NGRAM_SIZE);
+            int max = json.optInt("max", NGramTokenizer.DEFAULT_MAX_NGRAM_SIZE);
             return new NGramAnalyzer(analyzer, min, max);
         }
     };
@@ -258,9 +258,8 @@ public enum Analyzers {
 
         @Override
         protected TokenStreamComponents wrapComponents(String fieldName, TokenStreamComponents components) {
-            return new TokenStreamComponents(components.getTokenizer(),
-                new NGramTokenFilter(components.getTokenStream(),
-                    this.min, this.max));
+	    final NGramTokenFilter filter = new NGramTokenFilter(components.getTokenStream(), min, max, false);
+	    return new TokenStreamComponents(components.getSource(), filter);
         }
     }
 

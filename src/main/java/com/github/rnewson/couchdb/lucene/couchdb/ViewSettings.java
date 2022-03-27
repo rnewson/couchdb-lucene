@@ -24,20 +24,19 @@ import org.mozilla.javascript.NativeObject;
 public final class ViewSettings {
 
     public static ViewSettings getDefaultSettings() {
-        return new ViewSettings(Constants.DEFAULT_FIELD, "no", "text", "1.0", null);
+        return new ViewSettings(Constants.DEFAULT_FIELD, "no", "text", null);
     }
 
     private final Store store;
     private final String field;
     private final FieldType type;
-    private final float boost;
 
     public ViewSettings(final JSONObject json) {
         this(json, getDefaultSettings());
     }
 
     public ViewSettings(final JSONObject json, final ViewSettings defaults) {
-        this(json.optString("field", null), json.optString("store", null), json.optString("type", null), json.optString("boost", null), defaults);
+        this(json.optString("field", null), json.optString("store", null), json.optString("type", null), defaults);
     }
 
     public ViewSettings(final NativeObject obj) {
@@ -45,18 +44,13 @@ public final class ViewSettings {
     }
 
     public ViewSettings(final NativeObject obj, final ViewSettings defaults) {
-        this(get(obj, "field"), get(obj, "store"), get(obj, "type"), get(obj, "boost"), defaults);
+        this(get(obj, "field"), get(obj, "store"), get(obj, "type"), defaults);
     }
 
-    private ViewSettings(final String field, final String store, final String type, final String boost, final ViewSettings defaults) {
+    private ViewSettings(final String field, final String store, final String type, final ViewSettings defaults) {
         this.field = field != null ? field : defaults.getField();
         this.store = store != null ? Store.valueOf(store.toUpperCase()) : defaults.getStore();
         this.type = type != null ? FieldType.valueOf(type.toUpperCase()) : defaults.getFieldType();
-        this.boost = boost != null ? Float.valueOf(boost) : defaults.getBoost();
-    }
-
-    public float getBoost() {
-        return boost;
     }
 
     public Store getStore() {

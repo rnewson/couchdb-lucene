@@ -121,7 +121,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             final QueryParser parser = new CustomQueryParser(Constants.DEFAULT_FIELD, analyzer);
             parser.setDefaultOperator(operator);
             parser.setAllowLeadingWildcard(ini.getBoolean("lucene.allowLeadingWildcard", false));
-            parser.setLowercaseExpandedTerms(ini.getBoolean("lucene.lowercaseExpandedTerms", true));
             return parser.parse(query);
         }
 
@@ -494,9 +493,8 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                     final JSONObject freqs = new JSONObject();
 
                     final Set<Term> terms = new HashSet<>();
-                    final Weight weight = rewritten_q.createWeight(searcher, false);
-
-                    weight.extractTerms(terms);
+		    final QueryVisitor visitor = QueryVisitor.termCollector(terms);
+		    rewritten_q.visit(visitor);
                     for (final Object term : terms) {
                         final int freq = searcher.getIndexReader().docFreq((Term) term);
                         freqs.put(term.toString(), freq);
@@ -536,7 +534,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
                     stopWatch.lap("search");
 
                     // Fetch matches (if any).
-                    final int max = Math.max(0, Math.min(td.totalHits - skip,
+                    final int max = (int) Math.max(0, Math.min(td.totalHits.value - skip,
                             limit));
                     final JSONArray rows = new JSONArray();
                     final String[] fetch_ids = new String[max];
@@ -720,7 +718,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
             if (state.pending_seq.isLaterThan(getUpdateSequence(state.writer))) {
                 final Map<String, String> userData = new HashMap<>();
                 userData.put("last_seq", state.pending_seq.toString());
-                state.writer.setCommitData(userData);
+                state.writer.setLiveCommitData(userData.entrySet());
                 state.writer.commit();
                 logger.info(view + " now at update_seq " + state.pending_seq);
             }

@@ -87,12 +87,12 @@
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-analyzers-common</artifactId>
+            <artifactId>lucene-analysis-common</artifactId>
             <version>${lucene-version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-analyzers-smartcn</artifactId>
+            <artifactId>lucene-analysis-smartcn</artifactId>
             <version>${lucene-version}</version>
         </dependency>
         <dependency>
@@ -155,7 +155,7 @@
         </dependency>
     </dependencies>
     <properties>
-        <lucene-version>6.4.1</lucene-version>
+        <lucene-version>9.1.0</lucene-version>
         <tika-version>1.22</tika-version>
         <jetty-version>11.0.7</jetty-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
